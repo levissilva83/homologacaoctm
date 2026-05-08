@@ -11632,7 +11632,7 @@
         var _ctmId = (function() {
             try { return localStorage.getItem('ctm_id') || 'matrix'; } catch(e) { return 'matrix'; }
         })();
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxIYmg-cHNZef1hCCR5_NsSqq-ZQdEkdafkX_8W3hIhWRXnNGOhJNIodz2ZPhAgeu-Y/exec'
+        const SCRIPT_URL = 'https://script.google.com/macros/library/d/1I5G5PQNIratzSccyeXwkjgD4bXSFRoomK7veAoY8xClh_pe2dWUQSwvt/49'
                          + '?ctm=' + _ctmId;
 
         // ── Verifica se o cliente existe no registry ──────────────
@@ -11837,7 +11837,7 @@
 
         // Catálogo de modalidades disponíveis — pode ser expandido pelo admin
         // ── Plano e limites globais (carregado via getAssinatura) ──
-        var _planLimits = { alunos: 9999, modalidades: 99, filiais: 99, cobranca: true, redesBeneficio: true, fotoCheckin: true, qrCode: true };
+        var _planLimits = { alunos: 9999, modalidades: 99, filiais: 99, cobranca: true, redesBeneficio: true, fotoCheckin: true, qrCode: true, pixWhatsapp: true };
         var _planId     = '';
         var _planNomes  = {
             'basico':       'CT Manager Básico',
@@ -11919,10 +11919,10 @@
 
             // Aplica _planLimits do plano identificado se ainda padrão
             if (_planLimits.alunos === 9999) {
-                var _lim = { basico: { alunos:100, modalidades:1, filiais:1, cobranca:false, redesBeneficio:false, fotoCheckin:false, qrCode:false },
-                             profissional: { alunos:200, modalidades:3, filiais:1, cobranca:true,  redesBeneficio:true,  fotoCheckin:false, qrCode:true  },
-                             premium:      { alunos:500, modalidades:5, filiais:3, cobranca:true,  redesBeneficio:true,  fotoCheckin:true,  qrCode:true  },
-                             trial:        { alunos:20,  modalidades:1, filiais:1, cobranca:false, redesBeneficio:false, fotoCheckin:false, qrCode:false } };
+                var _lim = { basico: { alunos:100, modalidades:1, filiais:1, cobranca:false, redesBeneficio:false, fotoCheckin:false, qrCode:false, pixWhatsapp:false },
+                             profissional: { alunos:200, modalidades:3, filiais:1, cobranca:true,  redesBeneficio:true,  fotoCheckin:false, qrCode:true,  pixWhatsapp:true  },
+                             premium:      { alunos:500, modalidades:5, filiais:3, cobranca:true,  redesBeneficio:true,  fotoCheckin:true,  qrCode:true,  pixWhatsapp:true  },
+                             trial:        { alunos:20,  modalidades:1, filiais:1, cobranca:false, redesBeneficio:false, fotoCheckin:false, qrCode:false, pixWhatsapp:false } };
                 if (_lim[_planId]) _planLimits = _lim[_planId];
             }
 
@@ -11943,6 +11943,11 @@
                 _lockByPlan('qrCodeSection', '📲 QR Code de Check-in', 'profissional');
             }
             // Checkin por Foto (somente Premium)
+            // PIX + WhatsApp cobrança (Profissional+)
+            if (_planLimits.pixWhatsapp === false) {
+                _lockByPlan('cobWAConfigBox', '💸 PIX + WhatsApp (Cobrança)', 'profissional');
+                _lockByPlan('cobBatchBtn', '⚡ Cobrar em lote', 'profissional');
+            }
             if (_planLimits.fotoCheckin === false) {
                 _lockByPlan('admPainelTab6', '📸 Checkin por Foto', 'premium');
             }
@@ -13711,7 +13716,22 @@
             if (principalSel) principalSel.innerHTML = '<option value="">— Selecione a principal —</option>';
             var activeMods = (currentMods || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
             var gradData   = modalidadesGrad || {};
-            MODALIDADES_CATALOG.forEach(function(mod) {
+
+            // Usa MODALIDADES_CATALOG se disponível, senão aguarda e tenta novamente
+            var _catalog = (MODALIDADES_CATALOG && MODALIDADES_CATALOG.length > 0) ? MODALIDADES_CATALOG : [];
+            if (_catalog.length === 0) {
+                grid.innerHTML = '<div style="font-size:11px;color:var(--text-3);padding:8px;">⏳ Carregando modalidades...</div>';
+                setTimeout(function(){
+                    if (MODALIDADES_CATALOG && MODALIDADES_CATALOG.length > 0) {
+                        renderStuModalidadesGrid(currentMods, principalMod, modalidadesGrad);
+                    } else {
+                        grid.innerHTML = '<div style="font-size:11px;color:var(--text-3);padding:8px;">Configure as modalidades em Admin → Sistema → Modalidades.</div>';
+                    }
+                }, 1500);
+                return;
+            }
+
+            _catalog.forEach(function(mod) {
                 var isChecked  = activeMods.indexOf(mod.id) !== -1;
                 var modGrad    = gradData[mod.id] || {};
                 var nivelSalvo = modGrad.nivel || modGrad.faixa || ''; // v4.9: suporta 'nivel' e legado 'faixa'
@@ -32064,7 +32084,14 @@
             loadGraduacoes(email);
 
             // ── Renderiza seção de modalidades atribuídas ──
-            renderStuModalidadesGrid(s.modalidades || s.tipoPerfil || '', s.modalidadePrincipal || '', s.modalidadesGrad || {});
+            // Garante que o catálogo de modalidades está carregado antes de renderizar
+            if (!MODALIDADES_CATALOG || MODALIDADES_CATALOG.length === 0) {
+                _carregarCatalogModalidades().then(function(){
+                    renderStuModalidadesGrid(s.modalidades || s.tipoPerfil || '', s.modalidadePrincipal || '', s.modalidadesGrad || {});
+                });
+            } else {
+                renderStuModalidadesGrid(s.modalidades || s.tipoPerfil || '', s.modalidadePrincipal || '', s.modalidadesGrad || {});
+            }
 
             // ── Build graduation form for this student's modality ──
             var stuPrimaryMod = (s.modalidadePrincipal || (s.modalidades || '').split(',')[0] || 'bjj').trim();
