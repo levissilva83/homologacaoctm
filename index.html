@@ -22840,15 +22840,17 @@
                 var d = new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]));
                 return p[2] + '/' + p[1];
             }).join(', ');
-            existingFab.innerHTML =
-                '<button id="cronoFabClose" style="padding:9px 14px;border-radius:20px;background:rgba(0,0,0,0.6);color:rgba(255,255,255,0.5);border:1px solid rgba(255,255,255,0.1);font-size:11px;cursor:pointer;">✕</button>' +
-                '<button id="cronoFabCreate" style="padding:10px 18px;border-radius:20px;background:linear-gradient(135deg,var(--adm-primary),#f5c542);color:#000;border:none;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(201,162,58,0.4);">' +
-                'style="padding:10px 18px;border-radius:20px;background:linear-gradient(135deg,var(--adm-primary),#f5c542);color:#000;border:none;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(201,162,58,0.4);">' +
-                '📚 Criar aula para: ' + labels + '</button>';
-            var closeBtn  = document.getElementById('cronoFabClose');
-            var createBtn = document.getElementById('cronoFabCreate');
-            if (closeBtn)  closeBtn.onclick  = function(){ existingFab.remove(); _admCronoSelectedDates = []; renderAdmCronoCal(); renderCronoAgenda(); };
-            if (createBtn) createBtn.onclick = function(){ _cronoNewAulaMode = true; openCronoNewAulaPanel(); };
+            existingFab.innerHTML = '';
+            var closeBtn = document.createElement('button');
+            closeBtn.textContent = '✕';
+            closeBtn.style.cssText = 'padding:9px 14px;border-radius:20px;background:rgba(0,0,0,0.7);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.15);font-size:13px;cursor:pointer;';
+            closeBtn.onclick = function(){ existingFab.remove(); _admCronoSelectedDates = []; renderAdmCronoCal(); renderCronoAgenda(); };
+            var createBtn = document.createElement('button');
+            createBtn.textContent = '📚 Criar aula para: ' + labels;
+            createBtn.style.cssText = 'padding:10px 18px;border-radius:20px;background:linear-gradient(135deg,#C9A23A,#f5c542);color:#000;border:none;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(201,162,58,0.35);';
+            createBtn.onclick = function(){ _cronoNewAulaMode = true; openCronoNewAulaPanel(); };
+            existingFab.appendChild(closeBtn);
+            existingFab.appendChild(createBtn);
         }
 
         function renderAdmSelectedDates() {
@@ -26357,11 +26359,9 @@
                 var token = sessionStorage.getItem('sessionToken') || '';
                 var email = (currentUser && currentUser.email) ? currentUser.email : '';
 
-                // Se o usuário está ATIVO no LICENCIADOS, nunca mostra trial
-                // Verificação client-side antes de chamar o backend
-                if (currentUser && (currentUser.licStatus === 'ATIVO' || currentUser.licStatus === 'PAGO')) {
-                    return false;
-                }
+                // Se ATIVO/PAGO no LICENCIADOS: não mostra overlay de bloqueio
+                // MAS ainda chama o backend para checar se há banner de aviso de trial
+                var _licStatusOk = currentUser && (currentUser.licStatus === 'ATIVO' || currentUser.licStatus === 'PAGO');
 
                 var r = await fetch(SCRIPT_URL, {
                     method: 'POST',
@@ -26371,10 +26371,13 @@
                 var data = await r.json();
 
                 if (data.success && data.bloqueado) {
-                    showTrialBlocked(data);
-                    return true;
+                    // Não bloqueia quem está ATIVO/PAGO no LICENCIADOS
+                    if (!_licStatusOk) {
+                        showTrialBlocked(data);
+                        return true;
+                    }
                 }
-                // Banner de trial: só para admin E se status não é ATIVO
+                // Banner de aviso de trial: mostra para admin em TRIAL (com dias restantes)
                 if (data.modoTrial && data.diasRestantes !== null && data.diasRestantes > 0) {
                     if (typeof getRole === 'function' && getRole() === 'admin') {
                         showTrialBanner(data.diasRestantes);
