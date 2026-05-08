@@ -13717,17 +13717,28 @@
             var activeMods = (currentMods || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
             var gradData   = modalidadesGrad || {};
 
-            // Usa MODALIDADES_CATALOG se disponível, senão aguarda e tenta novamente
+            // Catalog: usa MODALIDADES_CATALOG; se vazio usa mods ativas do aluno como fallback
             var _catalog = (MODALIDADES_CATALOG && MODALIDADES_CATALOG.length > 0) ? MODALIDADES_CATALOG : [];
+
+            // Fallback: se catalog ainda não carregou, monta lista mínima das mods já atribuídas
+            if (_catalog.length === 0 && activeMods.length > 0) {
+                _catalog = activeMods.map(function(id) {
+                    var known = {
+                        bjj:'BJJ', muay_thai:'Muay Thai', muay_thai_khan:'Muay Thai Khan',
+                        judo:'Judô', karate:'Karatê', karate_kyokushin:'Karate Kyokushin',
+                        capoeira:'Capoeira', boxe:'Boxe', kickboxing:'Kickboxing',
+                        taekwondo:'Taekwondo', mma:'MMA', wrestling:'Wrestling'
+                    };
+                    return { id: id, nome: known[id] || id, icon: '🥋', cor: '#C9A23A', corRGB: '201,162,58', ativo: true, faixas: [] };
+                });
+            }
+
+            // Se ainda vazio, recarrega e re-renderiza
             if (_catalog.length === 0) {
-                grid.innerHTML = '<div style="font-size:11px;color:var(--text-3);padding:8px;">⏳ Carregando modalidades...</div>';
-                setTimeout(function(){
-                    if (MODALIDADES_CATALOG && MODALIDADES_CATALOG.length > 0) {
-                        renderStuModalidadesGrid(currentMods, principalMod, modalidadesGrad);
-                    } else {
-                        grid.innerHTML = '<div style="font-size:11px;color:var(--text-3);padding:8px;">Configure as modalidades em Admin → Sistema → Modalidades.</div>';
-                    }
-                }, 1500);
+                grid.innerHTML = '<div style="font-size:11px;color:var(--adm-text-3);padding:8px;">⏳ Carregando...</div>';
+                _carregarCatalogModalidades().then(function(){
+                    renderStuModalidadesGrid(currentMods, principalMod, modalidadesGrad);
+                });
                 return;
             }
 
@@ -32084,13 +32095,12 @@
             loadGraduacoes(email);
 
             // ── Renderiza seção de modalidades atribuídas ──
-            // Garante que o catálogo de modalidades está carregado antes de renderizar
+            renderStuModalidadesGrid(s.modalidades || s.tipoPerfil || '', s.modalidadePrincipal || '', s.modalidadesGrad || {});
+            // Recarrega catálogo em segundo plano para garantir dados completos
             if (!MODALIDADES_CATALOG || MODALIDADES_CATALOG.length === 0) {
                 _carregarCatalogModalidades().then(function(){
                     renderStuModalidadesGrid(s.modalidades || s.tipoPerfil || '', s.modalidadePrincipal || '', s.modalidadesGrad || {});
                 });
-            } else {
-                renderStuModalidadesGrid(s.modalidades || s.tipoPerfil || '', s.modalidadePrincipal || '', s.modalidadesGrad || {});
             }
 
             // ── Build graduation form for this student's modality ──
