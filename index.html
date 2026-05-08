@@ -9711,7 +9711,10 @@
                     <div class="admin-section">
                         <div class="admin-section-header">
                             <div class="admin-section-title">👥 Alunos Cadastrados <span class="admin-badge green" id="adminStudentsBadge" style="display:none">0</span></div>
-                            <button class="admin-refresh-btn" onclick="loadStudentsList()">↻</button>
+                            <div style="display:flex;gap:6px;">
+                                <button onclick="adminAbrirNovoAluno()" style="padding:5px 10px;background:rgba(201,162,58,0.12);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.3);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">+ Novo Aluno</button>
+                                <button class="admin-refresh-btn" onclick="loadStudentsList()">↻</button>
+                            </div>
                         </div>
                         <div style="margin-bottom:8px;">
                             <input type="text" id="adminStudentSearch" placeholder="Buscar por nome ou email..." oninput="filterStudentsList()" style="width:100%;box-sizing:border-box;">
@@ -10165,22 +10168,6 @@
                         <div id="modulesMsg" style="padding:0 12px 8px;"></div>
                     </div>
 
-                    <!-- System Health -->
-                    <div class="admin-section">
-                        <div class="admin-section-header">
-                            <div class="admin-section-title">🏥 Saúde do Sistema</div>
-                            <button class="admin-refresh-btn" onclick="loadSystemHealth()">↻</button>
-                        </div>
-                        <div id="sysHealthScore" class="sys-health-score" style="display:none;">
-                            <div class="sys-health-circle" id="sysHealthCircle"><span id="sysHealthNum">--</span></div>
-                            <div class="sys-health-info">
-                                <div class="sys-health-label" id="sysHealthLabel">Verificando...</div>
-                                <div class="sys-health-time" id="sysHealthTime"></div>
-                            </div>
-                        </div>
-                        <div id="sysHealthStats" class="admin-stats" style="display:none;"></div>
-                        <div id="sysHealthIssues"></div>
-                    </div>
                     <!-- 🏢 Centros de Treinamento movidos para Painel Admin → Cronograma tab -->
 
                     <!-- Modal: Cadastrar nova modalidade -->
@@ -11612,7 +11599,7 @@
         var _ctmId = (function() {
             try { return localStorage.getItem('ctm_id') || 'matrix'; } catch(e) { return 'matrix'; }
         })();
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxIYmg-cHNZef1hCCR5_NsSqq-ZQdEkdafkX_8W3hIhWRXnNGOhJNIodz2ZPhAgeu-Y/exec'
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxcQRFuGCMHBUycPxosfXWyUkbjmWn55JeFK55_tP_ZzbQ8AaS1WIlJj3ChXQxU_KmR/exec'
                          + '?ctm=' + _ctmId;
 
         // ── Verifica se o cliente existe no registry ──────────────
@@ -22732,9 +22719,10 @@
             _admCronoCalMonth += dir;
             if (_admCronoCalMonth > 11) { _admCronoCalMonth = 0; _admCronoCalYear++; }
             if (_admCronoCalMonth < 0)  { _admCronoCalMonth = 11; _admCronoCalYear--; }
-            if (!_cronoNewAulaMode) _admCronoSelectedDates = [];
+            _admCronoSelectedDates = [];
+            var _fab = document.getElementById('cronoFabBtn'); if (_fab) _fab.remove();
             renderAdmCronoCal();
-            if (!_cronoNewAulaMode) renderCronoAgenda();
+            renderCronoAgenda();
         }
 
         function renderAdmCronoCal() {
@@ -22777,25 +22765,21 @@
         }
 
         function toggleAdmCronoDate(dateStr) {
+            // Sempre multi-select — toggle on/off
+            var idx = _admCronoSelectedDates.indexOf(dateStr);
+            if (idx !== -1) {
+                _admCronoSelectedDates.splice(idx, 1);
+            } else {
+                _admCronoSelectedDates.push(dateStr);
+            }
+            _admCronoSelectedDates.sort();
+            renderAdmCronoCal();
+
             if (_cronoNewAulaMode) {
-                var idx = _admCronoSelectedDates.indexOf(dateStr);
-                if (idx !== -1) _admCronoSelectedDates.splice(idx, 1);
-                else _admCronoSelectedDates.push(dateStr);
-                _admCronoSelectedDates.sort();
-                renderAdmCronoCal();
                 openCronoNewAulaPanel();
             } else {
-                if (_admCronoSelectedDates.length === 1 && _admCronoSelectedDates[0] === dateStr) {
-                    _admCronoSelectedDates = [];
-                } else {
-                    _admCronoSelectedDates = [dateStr];
-                }
-                renderAdmCronoCal();
                 renderCronoAgenda();
-                var agendaEl = document.getElementById('cronoAgendaList');
-                if (agendaEl && _admCronoSelectedDates.length > 0) {
-                    setTimeout(function() { agendaEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100);
-                }
+                _renderCronoFabBtn();
             }
         }
 
@@ -23046,11 +23030,9 @@
             var ov = document.getElementById('cronoAulaOverlay');
             if (ov) ov.style.display = 'none';
             _cronoNewAulaMode = false;
-            if (_admCronoSelectedDates.length > 1) {
-                _admCronoSelectedDates = [_admCronoSelectedDates[0]];
-                renderAdmCronoCal();
-                renderCronoAgenda();
-            }
+            renderAdmCronoCal();
+            renderCronoAgenda();
+            _renderCronoFabBtn();
         }
 
         async function saveCronogramaAula() {
@@ -29020,6 +29002,7 @@
                     h += '</div></div>';
                     h += '<div style="margin-top:8px;display:flex;justify-content:flex-end;">';
                     h += '<button onclick="openStuModal(\'' + escapeHtml(a.email) + '\')" style="width:36px;height:36px;background:rgba(255,255,255,0.05);color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:8px;font-size:14px;cursor:pointer;" title="Ver perfil completo">👤</button>';
+                        h += '<button onclick="adminConfirmarPresencaManual(\'' + escapeHtml(a.email) + '\',\'' + escapeHtml(a.name||'') + '\')" style="width:36px;height:36px;background:rgba(74,222,128,0.08);color:#4ade80;border:1px solid rgba(74,222,128,0.2);border-radius:8px;font-size:14px;cursor:pointer;" title="Confirmar presença manual">✓</button>';
                     h += '</div>';
                     h += '</div>';
                 });
@@ -29643,24 +29626,52 @@
 
             try {
                 // Gera PIX avulso via backend
-                var res = await secureFetch('cobrarAgora', { targetEmail: email });
+                // Usa gerarPixAdmin — endpoint específico para admin gerar PIX de aluno
+                var res = await secureFetch('gerarPixAdmin', { email: email, valor: valor });
 
                 var pixCode  = '';
                 var pixQR    = '';
-                var valorFmt = 'R$ ' + parseFloat(valor||0).toFixed(2);
+                var chavePix = '';
+                var valorFmt = 'R\$ ' + parseFloat(valor||0).toFixed(2);
 
-                if (res.success && res.data && res.data.pixCode) {
-                    pixCode = res.data.pixCode;
-                    pixQR   = res.data.qrBase64 || '';
-                    valorFmt = 'R$ ' + parseFloat(res.data.valor||valor||0).toFixed(2);
+                if (res.success && res.data) {
+                    var d = res.data;
+                    pixCode  = d.pixCode  || '';
+                    pixQR    = d.qrBase64 || '';
+                    chavePix = d.chavePix || ''; // PIX manual (chave estática)
+                    if (!pixCode && chavePix) pixCode = chavePix; // usa chave estática se não gerou dinâmico
+                    valorFmt = 'R\$ ' + parseFloat(d.valor||valor||0).toFixed(2);
                 }
 
                 // Monta mensagem WhatsApp
-                var _vencTxt = vencimento ? '\u{1F4C5} *Vencimento:* ' + vencimento + '\n' : '';
+                // Formata data de vencimento em pt-BR (dd/mm/yyyy)
+                var _vencFormatado = '';
+                if (vencimento) {
+                    try {
+                        var _dv = new Date(vencimento);
+                        if (!isNaN(_dv.getTime())) {
+                            _vencFormatado = ('0'+_dv.getDate()).slice(-2) + '/' + ('0'+(_dv.getMonth()+1)).slice(-2) + '/' + _dv.getFullYear();
+                        } else {
+                            // Já pode vir como dd/mm/yyyy — usa direto
+                            _vencFormatado = vencimento.toString().replace(/[^0-9\/]/g,'').trim() || vencimento;
+                        }
+                    } catch(eDv) { _vencFormatado = vencimento; }
+                }
+                var _vencTxt = _vencFormatado ? '\u{1F4C5} *Vencimento:* ' + _vencFormatado + '\n' : '';
                 var _pixTxt  = pixCode
                     ? '\u{1F7E2} *Chave PIX (copia e cola):*\n' + pixCode + '\n\n\u2705 Ap\u00F3s o pagamento, seu acesso \u00E9 liberado automaticamente.\n'
-                    : '\uD83D\uDCB3 *Acesse o app para pagar:*\nhttps://ctapp.online/?ctm=' + (typeof _currentCtmId !== 'undefined' ? _currentCtmId : '') + '\n\n';
-                var msg = 'Ol\u00E1, *' + nome + '*! \uD83D\uDC4B\n\n\uD83D\uDCCB *Mensalidade em aberto* \u2014 ' + (planoNome || 'CTM Manager') + '\n\uD83D\uDCB0 *Valor:* ' + valorFmt + '\n' + _vencTxt + '\n' + _pixTxt + '\nD\u00FAvidas? Responda esta mensagem. \uD83D\uDE4F';
+                    : '';
+                var _ctmLink = 'https://ctapp.online/?ctm=' + (typeof _currentCtmId !== 'undefined' && _currentCtmId ? _currentCtmId : '');
+                var _appLine = pixCode
+                    ? '\u{1F7E2} *Chave PIX (copia e cola):*\n`' + pixCode + '`\n\n\u2705 Ap\u00F3s o pagamento, seu acesso \u00E9 liberado automaticamente.'
+                    : '\uD83D\uDCB3 ' + _ctmLink;
+                var msg = 'Ol\u00E1, *' + nome + '*! \uD83D\uDC4B\n'
+                    + 'Passando para lembrar que a mensalidade do *' + (planoNome || 'CTM Manager').toUpperCase() + '* est\u00E1 em aberto. \uD83D\uDE0A\n\n'
+                    + '\uD83D\uDCB0 *Valor:* ' + valorFmt + ' '
+                    + (_vencFormatado ? '\uD83D\uDCC5 *Vencimento:* ' + _vencFormatado : '') + '\n\n'
+                    + 'Para manter o acesso e a continuidade dos treinos normalmente, o pagamento pode ser realizado pelo app:\n'
+                    + _appLine + '\n\n'
+                    + 'Qualquer d\u00FAvida, estou \u00E0 disposi\u00E7\u00E3o. \uD83D\uDE4F';
 
                 var waEncoded = encodeURIComponent(msg);
                 var waNum = _cobWANumero ? '55' + _cobWANumero.replace(/\D/g,'') : '';
@@ -30277,70 +30288,101 @@
         }
 
         // ===== ADMIN: TREINOS CUSTOMIZADOS =====
+        // Treinos pré-definidos padrão do sistema
+        var _TREINOS_PADRAO = [
+            { id:'_pad_funcional',      nome:'Funcional Básico',      cor:'#3b82f6', descricao:'Treino funcional para iniciantes',
+              exercicios:[{nome:'Burpee',sets:'3x15'},{nome:'Prancha',sets:'3x60s'},{nome:'Agachamento com Salto',sets:'4x12'},{nome:'Mountain Climber',sets:'3x20'}] },
+            { id:'_pad_condicionamento',nome:'Condicionamento',        cor:'#f97316', descricao:'Melhora de resistência cardíaca',
+              exercicios:[{nome:'Pular Corda',sets:'5x2min'},{nome:'Corrida no Lugar',sets:'4x1min'},{nome:'Jumping Jack',sets:'4x30'},{nome:'Polichinelo',sets:'3x40'}] },
+            { id:'_pad_aquecimento',    nome:'Aquecimento Geral',      cor:'#fbbf24', descricao:'Mobilidade e ativação muscular',
+              exercicios:[{nome:'Rotação de Pescoço',sets:'10x cada lado'},{nome:'Rotação de Ombros',sets:'10x'},{nome:'Agachamento Livre',sets:'2x10'},{nome:'Avanço',sets:'2x10'}] },
+            { id:'_pad_abdomen',        nome:'Abdômen e Core',         cor:'#22c55e', descricao:'Fortalecimento do core',
+              exercicios:[{nome:'Abdominal Crunch',sets:'4x20'},{nome:'Prancha',sets:'3x45s'},{nome:'Bicicleta',sets:'3x20'},{nome:'Elevação de Pernas',sets:'3x15'}] },
+            { id:'_pad_flexibilidade',  nome:'Flexibilidade',          cor:'#a78bfa', descricao:'Alongamento e mobilidade',
+              exercicios:[{nome:'Quadril',sets:'30s cada'},{nome:'Isquiotibiais',sets:'30s'},{nome:'Ombros',sets:'30s'},{nome:'Coluna',sets:'30s'}] },
+        ];
+
         async function loadAdminTreinos() {
             var el = document.getElementById('adminTreinosList');
             if (!el) return;
             try {
                 var data = await secureFetch('getTreinosCustom', {});
-                if (!data.success || !data.treinos.length) {
-                    el.innerHTML = '<div class="admin-empty" style="font-size:11px;">Nenhum treino customizado ainda</div>';
-                    return;
-                }
+                var customTreinos = (data.success && data.treinos) ? data.treinos : [];
+                var removedIds = customTreinos.filter(function(t){ return t.id && t.id.endsWith('_removed'); }).map(function(t){ return t.id.replace('_removed',''); });
+                var userTreinos = customTreinos.filter(function(t){ return t.id && !t.id.endsWith('_removed'); });
                 var h = '';
-                data.treinos.forEach(function(t) {
-                    h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;margin-bottom:4px;background:var(--adm-bg-card);border:1px solid var(--adm-border);">';
-                    h += '<div style="width:14px;height:14px;border-radius:50%;background:' + escapeHtml(t.cor) + ';flex-shrink:0;"></div>';
-                    h += '<div style="flex:1;min-width:0;">';
-                    h += '<div style="font-size:12px;font-weight:700;color:var(--adm-text-1);">' + escapeHtml(t.nome) + '</div>';
-                    h += '<div style="font-size:10px;color:var(--adm-text-3);">' + (t.exercicios.length) + ' exercícios' + (t.descricao ? ' · ' + escapeHtml(t.descricao) : '') + '</div>';
-                    h += '</div>';
-                    h += '<button onclick="adminExcluirTreino(\'' + t.id + '\')" style="padding:4px 8px;background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.2);border-radius:5px;font-size:10px;cursor:pointer;">✕</button>';
+
+                h += '<div style="font-size:9px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">Padrão do sistema</div>';
+                _TREINOS_PADRAO.forEach(function(t) {
+                    var removed = removedIds.indexOf(t.id) !== -1;
+                    h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;margin-bottom:4px;background:var(--adm-bg-card);border:1px solid var(--adm-border);' + (removed?'opacity:.4;':'') + '">';
+                    h += '<div style="width:12px;height:12px;border-radius:50%;background:' + t.cor + ';flex-shrink:0;"></div>';
+                    h += '<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:700;color:var(--adm-text-1);">' + escapeHtml(t.nome) + (removed?' <span style="font-size:9px;color:#f87171;">(removido)</span>':'') + '</div>';
+                    h += '<div style="font-size:10px;color:var(--adm-text-3);">' + t.exercicios.length + ' exercícios · ' + escapeHtml(t.descricao) + '</div></div>';
+                    if (removed) {
+                        h += '<button id="btn_rest_' + t.id + '" style="padding:4px 8px;background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.2);border-radius:5px;font-size:10px;cursor:pointer;">↺ Restaurar</button>';
+                    } else {
+                        h += '<button id="btn_rem_' + t.id + '" style="padding:4px 8px;background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.2);border-radius:5px;font-size:10px;cursor:pointer;">✕</button>';
+                    }
                     h += '</div>';
                 });
+
+                if (userTreinos.length > 0) {
+                    h += '<div style="font-size:9px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;margin:10px 0 6px;">Criados por você</div>';
+                    userTreinos.forEach(function(t) {
+                        h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;margin-bottom:4px;background:var(--adm-bg-card);border:1px solid var(--adm-border);">';
+                        h += '<div style="width:12px;height:12px;border-radius:50%;background:' + escapeHtml(t.cor) + ';flex-shrink:0;"></div>';
+                        h += '<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:700;color:var(--adm-text-1);">' + escapeHtml(t.nome) + '</div>';
+                        h += '<div style="font-size:10px;color:var(--adm-text-3);">' + t.exercicios.length + ' exercícios' + (t.descricao?' · '+escapeHtml(t.descricao):'') + '</div></div>';
+                        h += '<button id="btn_del_' + escapeHtml(t.id) + '" style="padding:4px 8px;background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.2);border-radius:5px;font-size:10px;cursor:pointer;">✕</button>';
+                        h += '</div>';
+                    });
+                }
+                h += '<button id="btnRestTodos" style="width:100%;margin-top:10px;padding:7px;background:transparent;color:var(--adm-text-3);border:1px dashed var(--adm-border);border-radius:8px;font-size:10px;cursor:pointer;">↺ Restaurar todos os treinos padrão</button>';
                 el.innerHTML = h;
+
+                // Wire buttons
+                _TREINOS_PADRAO.forEach(function(t) {
+                    var removed = removedIds.indexOf(t.id) !== -1;
+                    var btn = document.getElementById(removed ? 'btn_rest_'+t.id : 'btn_rem_'+t.id);
+                    if (btn) {
+                        if (removed) btn.onclick = function(){ adminRestaurarTreino(t.id); };
+                        else         btn.onclick = function(){ adminRemoverTreinoPadrao(t.id); };
+                    }
+                });
+                userTreinos.forEach(function(t) {
+                    var btn = document.getElementById('btn_del_' + t.id);
+                    if (btn) btn.onclick = function(){ adminExcluirTreino(t.id); };
+                });
+                var btnRest = document.getElementById('btnRestTodos');
+                if (btnRest) btnRest.onclick = adminRestaurarTodosOsPadroes;
+
             } catch(e) {
                 el.innerHTML = '<div class="admin-empty">Erro: ' + e.message + '</div>';
             }
         }
 
-        async function adminSalvarTreino() {
-            var nome  = (document.getElementById('adminTreinoNome').value || '').trim();
-            var desc  = (document.getElementById('adminTreinoDesc').value || '').trim();
-            var exsRaw = (document.getElementById('adminTreinoExs').value || '').trim();
-            var cor   = document.getElementById('adminTreinoCor').value || '#3b82f6';
-            var msg   = document.getElementById('adminTreinoMsg');
-            if (!nome) { msg.style.color='#f87171'; msg.textContent='⚠️ Nome obrigatório'; return; }
-            // Parse exercícios: "Nome | Séries" por linha
-            var exs = exsRaw.split('\n').map(function(l) {
-                l = l.trim(); if (!l) return null;
-                var parts = l.split('|');
-                return { nome: (parts[0]||'').trim(), sets: (parts[1]||'').trim() };
-            }).filter(Boolean);
-            msg.style.color='var(--adm-text-3)'; msg.textContent='Salvando...';
-            try {
-                var result = await secureFetch('saveTreinoCustom', {
-                    nome: nome, descricao: desc,
-                    exercicios: JSON.stringify(exs), cor: cor
-                });
-                if (result.success) {
-                    msg.style.color='#4ade80'; msg.textContent='✅ ' + result.message;
-                    document.getElementById('adminTreinoNome').value = '';
-                    document.getElementById('adminTreinoDesc').value = '';
-                    document.getElementById('adminTreinoExs').value  = '';
-                    loadAdminTreinos();
-                    _treinosCustom = []; // força reload no frontend do aluno
-                } else { msg.style.color='#f87171'; msg.textContent='❌ ' + (result.message||'Erro'); }
-            } catch(e) { msg.style.color='#f87171'; msg.textContent='❌ ' + e.message; }
+        async function adminRemoverTreinoPadrao(id) {
+            if (!confirm('Remover este treino padrão da lista dos alunos?')) return;
+            try { await secureFetch('saveTreinoCustom', { nome: '_removed', id: id+'_removed', descricao:'_removed', exercicios:'[]', cor:'#000' }); loadAdminTreinos(); }
+            catch(e) { alert('Erro: ' + e.message); }
         }
 
-        async function adminExcluirTreino(id) {
-            if (!confirm('Excluir este treino?')) return;
+        async function adminRestaurarTreino(id) {
+            try { await secureFetch('deleteTreinoCustom', { id: id+'_removed' }); loadAdminTreinos(); }
+            catch(e) { alert('Erro: ' + e.message); }
+        }
+
+        async function adminRestaurarTodosOsPadroes() {
+            if (!confirm('Restaurar todos os treinos padrão?')) return;
             try {
-                var result = await secureFetch('deleteTreinoCustom', { id: id });
-                if (result.success) loadAdminTreinos();
-                else alert(result.message || 'Erro');
+                for (var i = 0; i < _TREINOS_PADRAO.length; i++) {
+                    try { await secureFetch('deleteTreinoCustom', { id: _TREINOS_PADRAO[i].id+'_removed' }); } catch(ei){}
+                }
+                loadAdminTreinos();
             } catch(e) { alert('Erro: ' + e.message); }
         }
+
 
         // ===== ADMIN: IBJJF UPDATES =====
 
@@ -31780,6 +31822,95 @@
             if (evt && evt.target) evt.target.classList.add('active');
             loadAdminRanking();
         }
+
+        // ══ CENÁRIO 1: Admin/Professor cadastra novo aluno ══════════
+        function adminAbrirNovoAluno() {
+            // Abre um modal simples para criar novo aluno
+            var existing = document.getElementById('novoAlunoModal');
+            if (existing) { existing.style.display = 'flex'; return; }
+
+            var modal = document.createElement('div');
+            modal.id = 'novoAlunoModal';
+            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9990;display:flex;align-items:center;justify-content:center;padding:16px;';
+
+            var card = document.createElement('div');
+            card.style.cssText = 'background:var(--adm-bg-card);border:1px solid rgba(201,162,58,0.25);border-radius:16px;width:100%;max-width:400px;padding:20px;';
+            card.innerHTML =
+                '<div style="font-size:15px;font-weight:800;color:var(--adm-primary);margin-bottom:14px;">👤 Cadastrar Novo Aluno</div>' +
+                '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">' +
+                '<input id="novoAlunoNome" type="text" placeholder="Nome completo *" style="padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;">' +
+                '<input id="novoAlunoEmail" type="email" placeholder="E-mail *" style="padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;">' +
+                '<input id="novoAlunoTel" type="tel" placeholder="Telefone (opcional)" style="padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;">' +
+                '<input id="novoAlunoNasc" type="date" placeholder="Data de nascimento" style="padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;">' +
+                '<div style="font-size:10px;color:var(--adm-text-3);">A senha inicial será: <strong style="color:var(--adm-primary);">senha123</strong> — o aluno pode alterar depois.</div>' +
+                '</div>' +
+                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
+                '<button id="novoAlunoCancelarBtn" style="padding:11px;background:transparent;color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:9px;font-size:13px;cursor:pointer;">Cancelar</button>' +
+                '<button id="novoAlunoSalvarBtn" style="padding:11px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;">✅ Cadastrar</button>' +
+                '</div>' +
+                '<div id="novoAlunoMsg" style="text-align:center;font-size:11px;margin-top:8px;min-height:14px;"></div>';
+
+            modal.appendChild(card);
+            document.body.appendChild(modal);
+
+            document.getElementById('novoAlunoCancelarBtn').onclick = function(){ modal.style.display='none'; };
+            modal.onclick = function(e){ if(e.target===modal) modal.style.display='none'; };
+            document.getElementById('novoAlunoSalvarBtn').onclick = adminSalvarNovoAluno;
+        }
+
+        async function adminSalvarNovoAluno() {
+            var nome  = (document.getElementById('novoAlunoNome').value || '').trim();
+            var email = (document.getElementById('novoAlunoEmail').value || '').trim().toLowerCase();
+            var tel   = (document.getElementById('novoAlunoTel').value || '').trim();
+            var nasc  = (document.getElementById('novoAlunoNasc').value || '').trim();
+            var msg   = document.getElementById('novoAlunoMsg');
+            var btn   = document.getElementById('novoAlunoSalvarBtn');
+
+            if (!nome) { msg.style.color='#f87171'; msg.textContent='Nome obrigatório'; return; }
+            if (!email || !email.includes('@')) { msg.style.color='#f87171'; msg.textContent='E-mail válido obrigatório'; return; }
+
+            btn.disabled = true; btn.textContent = '⏳ Cadastrando...';
+            msg.style.color='var(--adm-text-3)'; msg.textContent='';
+
+            try {
+                // Usa requestAccount para criar a conta
+                var res = await secureFetch('adminCreateStudent', {
+                    nome: nome, email: email, telefone: tel,
+                    nascimento: nasc, ct: allCTs && allCTs[0] ? (allCTs[0].name || allCTs[0]) : '',
+                    senhaTemp: 'senha123'
+                });
+                if (res.success) {
+                    msg.style.color='#4ade80'; msg.textContent='✅ Aluno cadastrado! Senha: senha123';
+                    document.getElementById('novoAlunoNome').value = '';
+                    document.getElementById('novoAlunoEmail').value = '';
+                    document.getElementById('novoAlunoTel').value = '';
+                    document.getElementById('novoAlunoNasc').value = '';
+                    setTimeout(function(){ loadStudentsList(); document.getElementById('novoAlunoModal').style.display='none'; }, 1500);
+                } else {
+                    msg.style.color='#f87171'; msg.textContent='❌ ' + (res.message||'Erro ao cadastrar');
+                }
+            } catch(e) { msg.style.color='#f87171'; msg.textContent='❌ ' + e.message; }
+            finally { btn.disabled=false; btn.textContent='✅ Cadastrar'; }
+        }
+
+        // ══ CENÁRIO 2: Admin confirma presença manual de aluno ═══
+        async function adminConfirmarPresencaManual(email, nome) {
+            var _nome = nome || email;
+            if (!confirm('Confirmar presença de ' + _nome + ' agora?')) return;
+            try {
+                var res = await secureFetch('adminManualCheckin', {
+                    targetEmail: email,
+                    confirmedBy: currentUser.email
+                });
+                if (res.success) {
+                    alert('✅ Presença de ' + _nome + ' confirmada!');
+                    if (typeof loadStudentsList === 'function') loadStudentsList();
+                } else {
+                    alert('❌ ' + (res.message || 'Erro ao confirmar presença'));
+                }
+            } catch(e) { alert('Erro: ' + e.message); }
+        }
+
 
         function openStuModal(email) {
             var s = adminStudentsCache.find(function(st) { return st.email === email; });
