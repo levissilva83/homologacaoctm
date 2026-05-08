@@ -9207,18 +9207,15 @@
                                 <label style="font-size:10px;color:var(--adm-text-3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;">Datas selecionadas no calendário</label>
                                 <div id="cronoNewDatesChips" style="font-size:11px;color:var(--adm-primary);font-weight:600;min-height:20px;"></div>
                             </div>
-                            <div style="margin-bottom:12px;">
-                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;">Horário</label>
-                                <div style="display:flex;gap:8px;align-items:center;">
-                                    <select id="cronoAdmHorarioSelect" onchange="cronoOnHorarioSelect(this.value)" style="flex:1;padding:10px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;">
-                                        <option value="">⏰ Selecione o horário</option>
-                                    </select>
-                                    <input type="time" id="cronoAdmHorario" placeholder="HH:MM" style="width:90px;box-sizing:border-box;padding:10px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:14px;" title="Ou digite um horário personalizado">
+                            <div style="display:grid;grid-template-columns:110px 1fr;gap:10px;margin-bottom:12px;">
+                                <div>
+                                    <label style="font-size:10px;color:var(--adm-text-3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;">Horário</label>
+                                    <input type="time" id="cronoAdmHorario" style="width:100%;box-sizing:border-box;padding:10px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:14px;">
                                 </div>
-                            </div>
-                            <div style="margin-bottom:12px;">
-                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;">Tema da aula *</label>
-                                <input type="text" id="cronoAdmTema" placeholder="Ex: Guarda De La Riva" style="width:100%;box-sizing:border-box;padding:10px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;">
+                                <div>
+                                    <label style="font-size:10px;color:var(--adm-text-3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;">Tema da aula *</label>
+                                    <input type="text" id="cronoAdmTema" placeholder="Ex: Guarda De La Riva" style="width:100%;box-sizing:border-box;padding:10px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;">
+                                </div>
                             </div>
                             <div>
                                 <label style="font-size:10px;color:var(--adm-text-3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;">Descrição</label>
@@ -10037,23 +10034,6 @@
 
                             <!-- KPIs -->
                             <div id="cobKPIs" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:10px;"></div>
-                            <!-- Config WhatsApp cobrança -->
-                            <div id="cobWAConfigBox" style="background:rgba(37,211,102,0.05);border:1px solid rgba(37,211,102,0.2);border-radius:10px;padding:10px 12px;margin-bottom:8px;display:none;">
-                                <div style="font-size:9px;font-weight:700;color:#25D366;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;">📱 Número para cobranças WhatsApp</div>
-                                <div style="display:flex;gap:6px;align-items:center;">
-                                    <span style="font-size:11px;color:var(--adm-text-3);">+55</span>
-                                    <input id="cobWANumero" type="tel" placeholder="11987654321" maxlength="11"
-                                        style="flex:1;padding:7px 10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid rgba(37,211,102,0.3);border-radius:7px;font-size:13px;font-family:monospace;">
-                                    <button onclick="salvarConfigCobrancaWA()" style="padding:7px 12px;background:#25D366;color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">Salvar</button>
-                                </div>
-                                <div style="font-size:9px;color:var(--adm-text-3);margin-top:4px;">Este número aparece nos links WhatsApp de cobrança para os alunos</div>
-                            </div>
-                            <!-- Botão cobrar todos -->
-                            <div id="cobBatchBtn" style="display:none;margin-bottom:8px;">
-                                <button onclick="cobrarTodosAtrasadosWA()" style="width:100%;padding:10px;background:linear-gradient(135deg,rgba(37,211,102,0.15),rgba(37,211,102,0.08));color:#25D366;border:1.5px solid rgba(37,211,102,0.35);border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;">
-                                    <span>⚡ Cobrar todos inadimplentes</span>
-                                </button>
-                            </div>
 
                             <!-- Filtros de status -->
                             <div style="display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap;">
@@ -10183,53 +10163,6 @@
                         <div id="modulosPlanInfo" style="padding:10px 12px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;"></div>
                         <div id="modulesToggleList" style="padding:12px;"><div class="admin-empty">Carregando...</div></div>
                         <div id="modulesMsg" style="padding:0 12px 8px;"></div>
-                    </div>
-
-                    <!-- ═══ NOVA MODALIDADE ═══ -->
-                    <div class="admin-section">
-                        <div class="admin-section-header">
-                            <div class="admin-section-title">➕ Nova Modalidade</div>
-                            <button class="admin-refresh-btn" onclick="document.getElementById('novaModForm').style.display=document.getElementById('novaModForm').style.display==='none'?'block':'none'">±</button>
-                        </div>
-                        <div id="novaModForm" style="display:none;padding:4px 0 8px;">
-                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-                                <div>
-                                    <label style="font-size:10px;color:var(--adm-text-3);font-weight:700;display:block;margin-bottom:3px;">Nome *</label>
-                                    <input id="novaModNome" type="text" placeholder="Ex: Kung Fu" style="width:100%;box-sizing:border-box;padding:8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:12px;" oninput="novaModGerarId()">
-                                </div>
-                                <div>
-                                    <label style="font-size:10px;color:var(--adm-text-3);font-weight:700;display:block;margin-bottom:3px;">ID (gerado automático)</label>
-                                    <input id="novaModId" type="text" placeholder="ex: kung_fu" style="width:100%;box-sizing:border-box;padding:8px;background:var(--adm-bg-elevated);color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:7px;font-size:12px;font-family:monospace;">
-                                </div>
-                            </div>
-                            <div style="display:grid;grid-template-columns:60px 1fr 1fr;gap:8px;margin-bottom:8px;">
-                                <div>
-                                    <label style="font-size:10px;color:var(--adm-text-3);font-weight:700;display:block;margin-bottom:3px;">Ícone</label>
-                                    <input id="novaModIcon" type="text" value="🥋" maxlength="4" style="width:100%;box-sizing:border-box;padding:8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:18px;text-align:center;">
-                                </div>
-                                <div>
-                                    <label style="font-size:10px;color:var(--adm-text-3);font-weight:700;display:block;margin-bottom:3px;">Cor (hex)</label>
-                                    <input id="novaModCor" type="color" value="#C9A23A" style="width:100%;box-sizing:border-box;height:34px;padding:2px 4px;background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:7px;cursor:pointer;">
-                                </div>
-                                <div>
-                                    <label style="font-size:10px;color:var(--adm-text-3);font-weight:700;display:block;margin-bottom:3px;">Graduação</label>
-                                    <select id="novaModGradTipo" style="width:100%;padding:8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:11px;">
-                                        <option value="faixa_cintura">🥋 Faixa</option>
-                                        <option value="prajied">🤼 Prajied</option>
-                                        <option value="corda">🪢 Corda</option>
-                                        <option value="nenhum">— Nenhum</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div style="margin-bottom:10px;">
-                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:700;display:block;margin-bottom:3px;">Descrição</label>
-                                <input id="novaModDesc" type="text" placeholder="Breve descrição da modalidade" style="width:100%;box-sizing:border-box;padding:8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:12px;">
-                            </div>
-                            <button onclick="salvarNovaModalidade()" style="width:100%;padding:11px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:9px;font-weight:800;font-size:13px;cursor:pointer;">
-                                ➕ Criar Modalidade
-                            </button>
-                            <div id="novaModMsg" style="font-size:11px;text-align:center;margin-top:6px;min-height:16px;"></div>
-                        </div>
                     </div>
 
                     <!-- System Health -->
@@ -11298,7 +11231,7 @@
     </div>
 
     <!-- STUDENT EDITOR MODAL (ADMIN) -->
-    <div id="stuModal2" class="stu-modal-overlay">
+    <div id="stuModal" class="stu-modal-overlay">
         <div class="stu-modal">
             <div class="stu-modal-header">
                 <div class="stu-modal-toprow">
@@ -11418,10 +11351,10 @@
                         <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;line-height:1.5;">
                             Marque as modalidades que este aluno pratica no CT. Cada modalidade terá seu próprio perfil de graduação e check-in.
                         </div>
-                        <div id="stuModalidadesGrid2" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                        <div id="stuModalidadesGrid" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
                         <div style="margin-top:12px;">
                             <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:5px;">⭐ Modalidade Principal (carregada no login)</label>
-                            <select id="stuModalidadePrincipal2" style="width:100%;padding:8px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:12px;">
+                            <select id="stuModalidadePrincipal" style="width:100%;padding:8px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:12px;">
                                 <option value="">— Selecione a principal —</option>
                             </select>
                         </div>
@@ -11990,7 +11923,6 @@
                 _lockByPlan('qrCodeSection', '📲 QR Code de Check-in', 'profissional');
             }
             // Checkin por Foto (somente Premium)
-            // PIX + WhatsApp cobrança (Profissional+)
             if (_planLimits.pixWhatsapp === false) {
                 _lockByPlan('cobWAConfigBox', '💸 PIX + WhatsApp (Cobrança)', 'profissional');
                 _lockByPlan('cobBatchBtn', '⚡ Cobrar em lote', 'profissional');
@@ -12009,7 +11941,6 @@
         // Filtrado pelo contrato do licenciado (col H de LICENCIADOS)
         var MODALIDADES_CATALOG = [];  // preenchido por _carregarCatalogModalidades()
 
-        // Retorna apenas as modalidades ATIVAS no CT atual (usadas no cronograma e em todo o sistema)
         function _getModsAtivas() {
             return (MODALIDADES_CATALOG || []).filter(function(m) { return m.ativo !== false; });
         }
@@ -12722,45 +12653,6 @@
                 var s = this.getSchema(modId);
                 if (!s || !s.graduacao.hasGraduacao) return [];
                 return s.graduacao.faixas || [];
-            },
-
-            // Retorna faixas filtradas pela idade — para BJJ filtra kids/adulto
-            getFaixasPorIdade: function(modId, nascimento) {
-                var todas = this.getFaixas(modId);
-                if (modId !== 'bjj' || !nascimento) return todas;
-
-                // Calcula idade
-                var idade = 0;
-                try {
-                    var dtNasc = nascimento instanceof Date ? nascimento : new Date(nascimento);
-                    if (isNaN(dtNasc.getTime())) {
-                        // Tenta formato dd/MM/yyyy
-                        var pts = nascimento.toString().split('/');
-                        if (pts.length === 3) dtNasc = new Date(parseInt(pts[2]), parseInt(pts[1])-1, parseInt(pts[0]));
-                    }
-                    if (!isNaN(dtNasc.getTime())) {
-                        var hoje = new Date();
-                        idade = hoje.getFullYear() - dtNasc.getFullYear();
-                        if (hoje.getMonth() < dtNasc.getMonth() ||
-                           (hoje.getMonth() === dtNasc.getMonth() && hoje.getDate() < dtNasc.getDate())) idade--;
-                    }
-                } catch(e) {}
-
-                // BJJ: < 16 anos = kids, >= 16 anos = adulto
-                var isKids = idade > 0 && idade < 16;
-
-                return todas.filter(function(f) {
-                    var lbl = (f.label || '').toLowerCase();
-                    var id  = (f.id  || '').toLowerCase();
-                    var kidsFlag = lbl.includes('kids') || lbl.includes('infantil') ||
-                                   id.includes('cinza') || id.includes('amarela') ||
-                                   id.includes('laranja') || id.includes('verde') ||
-                                   id.includes('branca-cinza');
-                    // Branca sem "(adulto)" pode ser kids ou adulto — mantém para ambos
-                    if (id === 'branca' || lbl === 'branca') return true;
-                    if (isKids) return kidsFlag || !lbl.includes('adulto');
-                    return !kidsFlag; // adulto: exclui faixas kids
-                });
             },
 
             /** Retorna um valor de nomenclatura — null se não configurado */
@@ -13763,33 +13655,7 @@
             if (principalSel) principalSel.innerHTML = '<option value="">— Selecione a principal —</option>';
             var activeMods = (currentMods || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
             var gradData   = modalidadesGrad || {};
-
-            // Catalog: usa MODALIDADES_CATALOG; se vazio usa mods ativas do aluno como fallback
-            var _catalog = (MODALIDADES_CATALOG && MODALIDADES_CATALOG.length > 0) ? MODALIDADES_CATALOG : [];
-
-            // Fallback: se catalog ainda não carregou, monta lista mínima das mods já atribuídas
-            if (_catalog.length === 0 && activeMods.length > 0) {
-                _catalog = activeMods.map(function(id) {
-                    var known = {
-                        bjj:'BJJ', muay_thai:'Muay Thai', muay_thai_khan:'Muay Thai Khan',
-                        judo:'Judô', karate:'Karatê', karate_kyokushin:'Karate Kyokushin',
-                        capoeira:'Capoeira', boxe:'Boxe', kickboxing:'Kickboxing',
-                        taekwondo:'Taekwondo', mma:'MMA', wrestling:'Wrestling'
-                    };
-                    return { id: id, nome: known[id] || id, icon: '🥋', cor: '#C9A23A', corRGB: '201,162,58', ativo: true, faixas: [] };
-                });
-            }
-
-            // Se ainda vazio, recarrega e re-renderiza
-            if (_catalog.length === 0) {
-                grid.innerHTML = '<div style="font-size:11px;color:var(--adm-text-3);padding:8px;">⏳ Carregando...</div>';
-                _carregarCatalogModalidades().then(function(){
-                    renderStuModalidadesGrid(currentMods, principalMod, modalidadesGrad);
-                });
-                return;
-            }
-
-            _catalog.forEach(function(mod) {
+            MODALIDADES_CATALOG.forEach(function(mod) {
                 var isChecked  = activeMods.indexOf(mod.id) !== -1;
                 var modGrad    = gradData[mod.id] || {};
                 var nivelSalvo = modGrad.nivel || modGrad.faixa || ''; // v4.9: suporta 'nivel' e legado 'faixa'
@@ -13801,8 +13667,7 @@
                 var hasPrajied= schema && ModalidadeGuard.hasPrajied(mod.id);
                 var hasCorda  = schema && ModalidadeGuard.hasCorda(mod.id);
                 var hasGrad   = schema && ModalidadeGuard.hasGraduacao(mod.id);
-                var _nascAluno = (aluno && aluno.nascimento) ? aluno.nascimento : '';
-                var faixasArr = hasGrad ? ModalidadeGuard.getFaixasPorIdade(mod.id, _nascAluno) : [];
+                var faixasArr = hasGrad ? ModalidadeGuard.getFaixas(mod.id) : [];
                 var maxGraus  = (schema && schema.graduacao.maxGrausPorFaixa != null) ? schema.graduacao.maxGrausPorFaixa : 4;
                 var labelNivel= ModalidadeGuard.getNomenclatura(mod.id, 'faixa') || 'Faixa';
                 var labelGrau = ModalidadeGuard.getNomenclatura(mod.id, 'grau')  || 'Grau';
@@ -17618,16 +17483,7 @@
             }
             gradForm.style.display = '';
 
-            // Determina nascimento: admin graduando aluno → usa birthday do aluno
-            // Aluno vendo própria graduação → usa birthday próprio
-            var _nascPerfil = '';
-            if (typeof stuModalEmail !== 'undefined' && stuModalEmail && typeof adminStudentsCache !== 'undefined') {
-                var _stuData = adminStudentsCache.find(function(st){ return st.email === stuModalEmail; });
-                if (_stuData && _stuData.nascimento) _nascPerfil = _stuData.nascimento;
-            }
-            if (!_nascPerfil) _nascPerfil = (currentUser && currentUser.nascimento) ? currentUser.nascimento : '';
-            var faixas = ModalidadeGuard.getFaixasPorIdade(modId, _nascPerfil);
-            if (!faixas.length) faixas = schema.graduacao.faixas || [];
+            var faixas   = schema.graduacao.faixas || [];
             var lFaixa   = ModalidadeGuard.getNomenclatura(modId, 'faixa') || 'Rank';
             var lGrau    = ModalidadeGuard.getNomenclatura(modId, 'grau')  || 'Nível';
             var maxG     = schema.graduacao.maxGrausPorFaixa || 4;
@@ -17788,15 +17644,7 @@
             var schema   = ModalidadeGuard.getSchema(modId);
             var grad     = schema ? schema.graduacao : null;
             var tipoGrad = grad ? grad.tipo : 'faixa_cintura';
-            // Busca nascimento do aluno no cache de alunos do admin
-            var _nascAdm = '';
-            if (typeof stuModalEmail !== 'undefined' && stuModalEmail && typeof adminStudentsCache !== 'undefined') {
-                var _stuAdm = adminStudentsCache.find(function(st){ return st.email === stuModalEmail; });
-                if (_stuAdm && _stuAdm.nascimento) _nascAdm = _stuAdm.nascimento;
-            }
-            if (!_nascAdm) _nascAdm = (alunoData && alunoData.nascimento) ? alunoData.nascimento : '';
-            var faixas  = ModalidadeGuard.getFaixasPorIdade(modId, _nascAdm);
-            if (!faixas.length) faixas = (grad && grad.faixas) ? grad.faixas : [];
+            var faixas   = (grad && grad.faixas) ? grad.faixas : [];
             var hasGrad  = grad && grad.hasGraduacao;
             var labelNivel = (schema && schema.nomenclatura && schema.nomenclatura.faixa) || 'Nível';
             var labelGrau  = (schema && schema.nomenclatura && schema.nomenclatura.grau)  || 'Grau';
@@ -22827,9 +22675,9 @@
         function renderAdmModalidadeChips() {
             var el = document.getElementById('cronoAdmModalidadeChips');
             if (!el) return;
-            // Só lista modalidades ativas no CT
-            var catalog = _getModsAtivas();
-            if (catalog.length === 0) { el.innerHTML = '<span style="font-size:10px;color:var(--adm-text-3);">Nenhuma modalidade ativa. Configure em Admin → Sistema → Modalidades.</span>'; return; }
+            // Só lista modalidades do contrato
+            var catalog = (MODALIDADES_CATALOG || []).filter(function(m){ return m.ativo !== false; });
+            if (catalog.length === 0) { el.innerHTML = '<span style="font-size:10px;color:var(--adm-text-3);">Nenhuma modalidade no contrato</span>'; return; }
             el.innerHTML = '';
             catalog.forEach(function(mod) {
                 var isSelected = _admCronoFilterModalidades.indexOf(mod.id) !== -1;
@@ -22848,14 +22696,45 @@
             });
         }
 
+
+        function _renderCronoFabBtn() {
+            var existingFab = document.getElementById('cronoFabBtn');
+            if (_admCronoSelectedDates.length === 0) {
+                if (existingFab) existingFab.remove();
+                return;
+            }
+            if (!existingFab) {
+                existingFab = document.createElement('div');
+                existingFab.id = 'cronoFabBtn';
+                existingFab.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9098;display:flex;gap:8px;';
+                document.body.appendChild(existingFab);
+            }
+            var dayNames = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+            var labels = _admCronoSelectedDates.map(function(ds) {
+                var p = ds.split('-');
+                var d = new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]));
+                return p[2] + '/' + p[1];
+            }).join(', ');
+            existingFab.innerHTML = '';
+            var closeBtn = document.createElement('button');
+            closeBtn.textContent = '✕';
+            closeBtn.style.cssText = 'padding:9px 14px;border-radius:20px;background:rgba(0,0,0,0.7);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.15);font-size:13px;cursor:pointer;';
+            closeBtn.onclick = function(){ existingFab.remove(); _admCronoSelectedDates = []; renderAdmCronoCal(); renderCronoAgenda(); };
+            var createBtn = document.createElement('button');
+            createBtn.textContent = '📚 Criar aula para: ' + labels;
+            createBtn.style.cssText = 'padding:10px 18px;border-radius:20px;background:linear-gradient(135deg,#C9A23A,#f5c542);color:#000;border:none;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(201,162,58,0.35);';
+            createBtn.onclick = function(){ _cronoNewAulaMode = true; openCronoNewAulaPanel(); };
+            existingFab.appendChild(closeBtn);
+            existingFab.appendChild(createBtn);
+        }
+
         function admCronoCalNav(dir) {
             _admCronoCalMonth += dir;
             if (_admCronoCalMonth > 11) { _admCronoCalMonth = 0; _admCronoCalYear++; }
             if (_admCronoCalMonth < 0)  { _admCronoCalMonth = 11; _admCronoCalYear--; }
-            _admCronoSelectedDates = [];
-            var fab = document.getElementById('cronoFabBtn'); if (fab) fab.remove();
+            if (!_cronoNewAulaMode) _admCronoSelectedDates = [];
             renderAdmCronoCal();
-            renderCronoAgenda();
+            if (!_cronoNewAulaMode) renderCronoAgenda();
         }
 
         function renderAdmCronoCal() {
@@ -22898,54 +22777,26 @@
         }
 
         function toggleAdmCronoDate(dateStr) {
-            // Sempre permite multi-select — toggle on/off
-            var idx = _admCronoSelectedDates.indexOf(dateStr);
-            if (idx !== -1) {
-                _admCronoSelectedDates.splice(idx, 1);
-            } else {
-                _admCronoSelectedDates.push(dateStr);
-            }
-            _admCronoSelectedDates.sort();
-            renderAdmCronoCal();
-
             if (_cronoNewAulaMode) {
+                var idx = _admCronoSelectedDates.indexOf(dateStr);
+                if (idx !== -1) _admCronoSelectedDates.splice(idx, 1);
+                else _admCronoSelectedDates.push(dateStr);
+                _admCronoSelectedDates.sort();
+                renderAdmCronoCal();
                 openCronoNewAulaPanel();
             } else {
+                if (_admCronoSelectedDates.length === 1 && _admCronoSelectedDates[0] === dateStr) {
+                    _admCronoSelectedDates = [];
+                } else {
+                    _admCronoSelectedDates = [dateStr];
+                }
+                renderAdmCronoCal();
                 renderCronoAgenda();
-                _renderCronoFabBtn();
+                var agendaEl = document.getElementById('cronoAgendaList');
+                if (agendaEl && _admCronoSelectedDates.length > 0) {
+                    setTimeout(function() { agendaEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100);
+                }
             }
-        }
-
-        // Botão flutuante "Criar aula(s) para X dias selecionados"
-        function _renderCronoFabBtn() {
-            var existingFab = document.getElementById('cronoFabBtn');
-            if (_admCronoSelectedDates.length === 0) {
-                if (existingFab) existingFab.remove();
-                return;
-            }
-            if (!existingFab) {
-                existingFab = document.createElement('div');
-                existingFab.id = 'cronoFabBtn';
-                existingFab.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:9098;display:flex;gap:8px;';
-                document.body.appendChild(existingFab);
-            }
-            var dayNames = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-            var labels = _admCronoSelectedDates.map(function(ds) {
-                var p = ds.split('-');
-                var d = new Date(parseInt(p[0]),parseInt(p[1])-1,parseInt(p[2]));
-                return p[2] + '/' + p[1];
-            }).join(', ');
-            existingFab.innerHTML = '';
-            var closeBtn = document.createElement('button');
-            closeBtn.textContent = '✕';
-            closeBtn.style.cssText = 'padding:9px 14px;border-radius:20px;background:rgba(0,0,0,0.7);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.15);font-size:13px;cursor:pointer;';
-            closeBtn.onclick = function(){ existingFab.remove(); _admCronoSelectedDates = []; renderAdmCronoCal(); renderCronoAgenda(); };
-            var createBtn = document.createElement('button');
-            createBtn.textContent = '📚 Criar aula para: ' + labels;
-            createBtn.style.cssText = 'padding:10px 18px;border-radius:20px;background:linear-gradient(135deg,#C9A23A,#f5c542);color:#000;border:none;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(201,162,58,0.35);';
-            createBtn.onclick = function(){ _cronoNewAulaMode = true; openCronoNewAulaPanel(); };
-            existingFab.appendChild(closeBtn);
-            existingFab.appendChild(createBtn);
         }
 
         function renderAdmSelectedDates() {
@@ -23038,8 +22889,7 @@
             el.innerHTML = h;
         }
 
-        // Preenche o select de horários com os horários cadastrados no CT + modalidade selecionada
-        // Usa _getHorariosHoje que entende os dois formatos: por-modalidade e por-dia
+
         function _populateCronoHorarios() {
             var sel = document.getElementById('cronoAdmHorarioSelect');
             var timeInput = document.getElementById('cronoAdmHorario');
@@ -23131,22 +22981,7 @@
             }
         }
 
-        function cronoOnHorarioSelect(val) {
-            var timeInput = document.getElementById('cronoAdmHorario');
-            if (!timeInput) return;
-            if (val && val !== '__manual__') {
-                timeInput.value = val;
-                timeInput.style.display = 'none';
-            } else if (val === '__manual__') {
-                timeInput.style.display = '';
-                timeInput.value = '';
-                timeInput.focus();
-            } else {
-                timeInput.value = '';
-                timeInput.style.display = 'none';
-            }
-        }
-
+        function cronoOnHorarioSelect(val) { var ti=document.getElementById('cronoAdmHorario'); if(!ti)return; if(val&&val!=='__manual__'){ti.value=val;ti.style.display='none';}else if(val==='__manual__'){ti.style.display='';ti.value='';ti.focus();}else{ti.value='';ti.style.display='none';}}
 
         function openCronoNewAulaPanel() {
             _cronoNewAulaMode = true;
@@ -23171,7 +23006,7 @@
             var modEl = document.getElementById('cronoNewModalidadeChips');
             if (modEl) {
                 modEl.innerHTML = '';
-                _getModsAtivas().forEach(function(mod) {
+                (MODALIDADES_CATALOG || []).filter(function(m){ return m.ativo !== false; }).forEach(function(mod) {
                     var isSelected = _admCronoSelectedModalidade === mod.id;
                     var btn = document.createElement('button');
                     btn.style.cssText = 'padding:6px 12px;border-radius:8px;font-size:11px;font-weight:' + (isSelected?'800':'600') + ';cursor:pointer;border:1px solid ' + (isSelected?'var(--adm-primary)':'var(--adm-border)') + ';background:' + (isSelected?'var(--adm-primary)':'var(--adm-bg-elevated)') + ';color:' + (isSelected?'#000':'var(--adm-text-2)') + ';';
@@ -23182,8 +23017,8 @@
                     });
                     modEl.appendChild(btn);
                 });
-                if (_getModsAtivas().length === 0) {
-                    modEl.innerHTML = '<span style="font-size:10px;color:var(--adm-text-3);">Nenhuma modalidade ativa. Configure em Sistema → Modalidades.</span>';
+                if ((MODALIDADES_CATALOG||[]).filter(function(m){ return m.ativo !== false; }).length === 0) {
+                    modEl.innerHTML = '<span style="font-size:10px;color:var(--adm-text-3);">Nenhuma modalidade ativa</span>';
                 }
             }
             var datesEl = document.getElementById('cronoNewDatesChips');
@@ -23203,11 +23038,6 @@
             if (panel) panel.style.display = 'flex';
             var ov = document.getElementById('cronoAulaOverlay');
             if (ov) ov.style.display = 'block';
-            // Popula horários cadastrados no CT
-            _populateCronoHorarios();
-            // Esconde input manual por padrão (aparece só se selecionar "Outro")
-            var ti = document.getElementById('cronoAdmHorario');
-            if (ti) ti.style.display = 'none';
         }
 
         function closeCronoNewAulaPanel() {
@@ -23216,10 +23046,11 @@
             var ov = document.getElementById('cronoAulaOverlay');
             if (ov) ov.style.display = 'none';
             _cronoNewAulaMode = false;
-            // Mantém datas selecionadas para o usuário ver no calendário
-            renderAdmCronoCal();
-            renderCronoAgenda();
-            _renderCronoFabBtn();
+            if (_admCronoSelectedDates.length > 1) {
+                _admCronoSelectedDates = [_admCronoSelectedDates[0]];
+                renderAdmCronoCal();
+                renderCronoAgenda();
+            }
         }
 
         async function saveCronogramaAula() {
@@ -26476,9 +26307,11 @@
                 var token = sessionStorage.getItem('sessionToken') || '';
                 var email = (currentUser && currentUser.email) ? currentUser.email : '';
 
-                // Se ATIVO/PAGO no LICENCIADOS: não mostra overlay de bloqueio
-                // MAS ainda chama o backend para checar se há banner de aviso de trial
-                var _licStatusOk = currentUser && (currentUser.licStatus === 'ATIVO' || currentUser.licStatus === 'PAGO');
+                // Se o usuário está ATIVO no LICENCIADOS, nunca mostra trial
+                // Verificação client-side antes de chamar o backend
+                if (currentUser && (currentUser.licStatus === 'ATIVO' || currentUser.licStatus === 'PAGO')) {
+                    return false;
+                }
 
                 var r = await fetch(SCRIPT_URL, {
                     method: 'POST',
@@ -26488,13 +26321,10 @@
                 var data = await r.json();
 
                 if (data.success && data.bloqueado) {
-                    // Não bloqueia quem está ATIVO/PAGO no LICENCIADOS
-                    if (!_licStatusOk) {
-                        showTrialBlocked(data);
-                        return true;
-                    }
+                    showTrialBlocked(data);
+                    return true;
                 }
-                // Banner de aviso de trial: mostra para admin em TRIAL (com dias restantes)
+                // Banner de trial: só para admin E se status não é ATIVO
                 if (data.modoTrial && data.diasRestantes !== null && data.diasRestantes > 0) {
                     if (typeof getRole === 'function' && getRole() === 'admin') {
                         showTrialBanner(data.diasRestantes);
@@ -28443,66 +28273,6 @@
             if (el) el.innerHTML = ''; // planos removidos
         }
 
-        // Gera ID automático a partir do nome
-        function novaModGerarId() {
-            var nome = (document.getElementById('novaModNome')||{}).value || '';
-            var id   = nome.toLowerCase()
-                .normalize('NFD').replace(/[̀-ͯ]/g, '') // remove acentos
-                .replace(/[^a-z0-9\s]/g, '')
-                .trim()
-                .replace(/\s+/g, '_');
-            var el = document.getElementById('novaModId');
-            if (el) el.value = id;
-        }
-
-        // Converte cor hex para RGB
-        function _hexToRGB(hex) {
-            var r = parseInt(hex.slice(1,3),16);
-            var g = parseInt(hex.slice(3,5),16);
-            var b = parseInt(hex.slice(5,7),16);
-            return r + ',' + g + ',' + b;
-        }
-
-        async function salvarNovaModalidade() {
-            var nome     = (document.getElementById('novaModNome')||{}).value || '';
-            var id       = (document.getElementById('novaModId')||{}).value || '';
-            var icon     = (document.getElementById('novaModIcon')||{}).value || '🥋';
-            var cor      = (document.getElementById('novaModCor')||{}).value || '#C9A23A';
-            var gradTipo = (document.getElementById('novaModGradTipo')||{}).value || 'nenhum';
-            var desc     = (document.getElementById('novaModDesc')||{}).value || '';
-            var msgEl    = document.getElementById('novaModMsg');
-
-            if (!nome.trim()) { if (msgEl) { msgEl.textContent = '❌ Nome obrigatório'; msgEl.style.color='#f87171'; } return; }
-            if (!id.trim())   { novaModGerarId(); id = (document.getElementById('novaModId')||{}).value || ''; }
-            if (!id.trim())   { if (msgEl) { msgEl.textContent = '❌ ID inválido'; msgEl.style.color='#f87171'; } return; }
-
-            var corRGB = _hexToRGB(cor);
-            if (msgEl) { msgEl.textContent = '⏳ Salvando...'; msgEl.style.color = 'var(--adm-text-3)'; }
-
-            try {
-                var res = await secureFetch('saveModalidade', {
-                    id: id, nome: nome, icon: icon, cor: cor,
-                    corRGB: corRGB, desc: desc, gradTipo: gradTipo, ativo: true
-                });
-                if (res.success) {
-                    if (msgEl) { msgEl.textContent = '✅ ' + res.message; msgEl.style.color = '#4ade80'; }
-                    // Limpa formulário
-                    ['novaModNome','novaModId','novaModDesc'].forEach(function(fid){
-                        var el = document.getElementById(fid); if(el) el.value='';
-                    });
-                    // Recarrega catálogo e toggle list
-                    await _carregarCatalogModalidades();
-                    loadModulesConfig();
-                    setTimeout(function(){ if(msgEl) msgEl.textContent=''; }, 3000);
-                } else {
-                    if (msgEl) { msgEl.textContent = '❌ ' + (res.message||'Erro'); msgEl.style.color='#f87171'; }
-                }
-            } catch(e) {
-                if (msgEl) { msgEl.textContent = '❌ ' + e.message; msgEl.style.color='#f87171'; }
-            }
-        }
-
-
         function renderModulesToggle() {
             var container = document.getElementById('modulesToggleList');
             if (!container) return;
@@ -30036,19 +29806,6 @@
                     kpiEl.style.gridTemplateColumns = 'repeat(5,1fr)';
                 }
 
-                // Botão "Cobrar todos atrasados"
-                var batchEl = document.getElementById('cobBatchBtn');
-                if (batchEl) {
-                    var atrasados = (data.pagamentos||[]).filter(function(p){ return ['ATRASADO','PENDENTE'].indexOf((p.status||'').toUpperCase()) !== -1; });
-                    if (atrasados.length > 0) {
-                        batchEl.style.display = 'block';
-                        batchEl.querySelector('span').textContent = '⚡ Cobrar todos (' + atrasados.length + ' inadimplentes)';
-                        batchEl._atrasados = atrasados;
-                    } else {
-                        batchEl.style.display = 'none';
-                    }
-                }
-
                 if (!pags.length) {
                     el.innerHTML = '<div class="admin-empty" style="font-size:11px;">Nenhum registro encontrado</div>';
                     return;
@@ -30116,7 +29873,7 @@
             } catch(e) {
                 el.innerHTML = '<div class="admin-empty" style="font-size:10px;">❌ Erro de conexão</div>';
             }
-        } // end _openStuModalContent
+        }
 
         async function confirmarPagtoManual(email) {
             if (!confirm('Confirmar pagamento de ' + email + '?')) return;
@@ -30397,19 +30154,10 @@
                 return;
             }
             el.innerHTML = '';
-            // URL base correta: sempre https://ctapp.online/?ctm=CTMID
-            // Obtém ctmId da URL atual (?ctm=...) ou do currentUser
-            var _urlParams  = new URLSearchParams(window.location.search);
-            var _ctmIdBase  = _urlParams.get('ctm') || (currentUser && currentUser.ctmId) || '';
-            var _baseCheckin = 'https://ctapp.online/?ctm=' + (_ctmIdBase || '');
+            var baseURL = window.location.href.split('?')[0];
             allCTs.forEach(function(ct) {
                 var ctName = typeof ct === 'string' ? ct : (ct.name || ct.toString());
-                // URL de checkin: usa a URL base com ctmId correto
-                // Se tiver múltiplos CTs (filiais), adiciona o nome do CT como parâmetro
-                var checkinURL = _baseCheckin;
-                if (allCTs.length > 1) {
-                    checkinURL = _baseCheckin + '&ct=' + encodeURIComponent(ctName);
-                }
+                var checkinURL = baseURL + '?qr=' + encodeURIComponent(ctName) + '&acao=checkin';
 
                 var card = document.createElement('div');
                 card.style.cssText = 'background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:14px;padding:16px;';
@@ -30428,23 +30176,13 @@
                     '<div style="display:flex;justify-content:center;padding:12px;background:#fff;border-radius:10px;">' +
                         '<canvas id="qrCanvas_' + btoa(ctName).replace(/[^a-zA-Z0-9]/g,'') + '" width="160" height="160"></canvas>' +
                     '</div>' +
-                    '<div style="margin-top:10px;">' +
-                        '<div style="font-size:9px;color:var(--adm-text-3);margin-bottom:4px;">URL do QR Code (editável):</div>' +
-                        '<div style="display:flex;gap:6px;">' +
-                            '<input id="qrUrl_' + btoa(ctName).replace(/[^a-zA-Z0-9]/g,'') + '" value="' + escapeHtml(checkinURL) + '" ' +
-                            'style="flex:1;padding:6px 8px;background:var(--adm-bg-card);color:var(--adm-text-2);border:1px solid var(--adm-border);border-radius:6px;font-size:10px;font-family:monospace;">' +
-                        '</div>' +
-                    '</div>';
+                    '<div style="font-size:9px;color:var(--adm-text-3);text-align:center;margin-top:8px;word-break:break-all;">' + escapeHtml(checkinURL) + '</div>';
 
                 el.appendChild(card);
 
-                // Wire up URL input → re-generates QR on change
-                var _canvasId = 'qrCanvas_' + btoa(ctName).replace(/[^a-zA-Z0-9]/g,'');
-                var _urlInput = document.getElementById('qrUrl_' + btoa(ctName).replace(/[^a-zA-Z0-9]/g,''));
-                if (_urlInput) {
-                    (function(cid){ _urlInput.addEventListener('input', function(){ generateQRCode(this.value, cid); }); })(_canvasId);
-                }
-                generateQRCode(checkinURL, _canvasId);
+                // Gera o QR code no canvas
+                var canvasId = 'qrCanvas_' + btoa(ctName).replace(/[^a-zA-Z0-9]/g,'');
+                generateQRCode(checkinURL, canvasId);
             });
         }
 
@@ -32052,18 +31790,6 @@
             modal.style.display = 'block';
             document.body.style.overflow = 'hidden';
 
-            // Garante catálogo carregado ANTES de renderizar o grid de modalidades
-            if (!MODALIDADES_CATALOG || MODALIDADES_CATALOG.length === 0) {
-                _carregarCatalogModalidades().then(function() {
-                    _openStuModalContent(s, email);
-                });
-                return;
-            }
-            _openStuModalContent(s, email);
-        }
-
-        function _openStuModalContent(s, email) {
-
             // Hero
             document.getElementById('stuAvatar').textContent = (s.name || '?').charAt(0).toUpperCase();
             document.getElementById('stuHeroName').textContent = s.name || '—';
@@ -32215,12 +31941,6 @@
 
             // ── Renderiza seção de modalidades atribuídas ──
             renderStuModalidadesGrid(s.modalidades || s.tipoPerfil || '', s.modalidadePrincipal || '', s.modalidadesGrad || {});
-            // Recarrega catálogo em segundo plano para garantir dados completos
-            if (!MODALIDADES_CATALOG || MODALIDADES_CATALOG.length === 0) {
-                _carregarCatalogModalidades().then(function(){
-                    renderStuModalidadesGrid(s.modalidades || s.tipoPerfil || '', s.modalidadePrincipal || '', s.modalidadesGrad || {});
-                });
-            }
 
             // ── Build graduation form for this student's modality ──
             var stuPrimaryMod = (s.modalidadePrincipal || (s.modalidades || '').split(',')[0] || 'bjj').trim();
