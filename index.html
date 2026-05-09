@@ -28843,12 +28843,28 @@
                 }
             } catch(e) { /* sem horários no CT — ok, modo livre */ }
 
-            // Se o CT não tem nenhuma modalidade com horário, cria entradas vazias
-            // para cada modalidade do aluno, permitindo entrada manual
+            // Se o CT não retornou slots, cria entradas vazias por modalidade do aluno
+            // (permite entrada manual mesmo sem grade cadastrada no CT)
             if (Object.keys(slotsPorMod).length === 0 && modalidades) {
                 modalidades.split(',').forEach(function(m) {
                     m = m.trim();
                     if (m) slotsPorMod[m] = [];
+                });
+            }
+
+            // Garante que o modMap tem todas as modalidades do aluno, mesmo as que
+            // não vieram do backend (lookup no MODALIDADES_CATALOG local)
+            if (modalidades && typeof MODALIDADES_CATALOG !== 'undefined') {
+                modalidades.split(',').forEach(function(m) {
+                    m = m.trim().toLowerCase();
+                    if (!m || modMap[m]) return;
+                    for (var mi = 0; mi < MODALIDADES_CATALOG.length; mi++) {
+                        if (MODALIDADES_CATALOG[mi].id === m) {
+                            modMap[m] = { nome: MODALIDADES_CATALOG[mi].nome, icon: MODALIDADES_CATALOG[mi].icon };
+                            break;
+                        }
+                    }
+                    if (!modMap[m]) modMap[m] = { nome: m.replace(/_/g,' '), icon: '🥋' };
                 });
             }
 
@@ -28910,31 +28926,23 @@
 
                 if (slots.length > 0) {
                     // Agrupa por dia para exibição clara
-                    if (groups.length > 0) {
-                        h += '<div id="slotCbs_' + modId + '" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;">';
-                        groups.forEach(function(grp) {
-                            // Linha de dias
-                            h += '<div>';
+                    h += '<div id="slotCbs_' + modId + '" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;">';
+                    var renderGroups = groups.length > 0 ? groups : [{ dias: '', horarios: slots }];
+                    renderGroups.forEach(function(grp) {
+                        h += '<div>';
+                        // Label de dias — omite se vazio (horário global sem dias específicos)
+                        if (grp.dias) {
                             h += '<div style="font-size:10px;font-weight:700;color:var(--text-3);letter-spacing:.4px;margin-bottom:5px;">📅 ' + escapeHtml(grp.dias) + '</div>';
-                            h += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
-                            grp.horarios.forEach(function(slot) {
-                                var key     = isGlobal ? slot : (modId + ':' + slot);
-                                var checked = !!_horarioSlotsState[key];
-                                h += _buildCheckboxHtml(key, slot, checked);
-                            });
-                            h += '</div></div>';
-                        });
-                        h += '</div>';
-                    } else {
-                        // Fallback: lista plana sem agrupamento por dia
-                        h += '<div id="slotCbs_' + modId + '" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">';
-                        slots.forEach(function(slot) {
+                        }
+                        h += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+                        grp.horarios.forEach(function(slot) {
                             var key     = isGlobal ? slot : (modId + ':' + slot);
                             var checked = !!_horarioSlotsState[key];
                             h += _buildCheckboxHtml(key, slot, checked);
                         });
-                        h += '</div>';
-                    }
+                        h += '</div></div>';
+                    });
+                    h += '</div>';
                 } else {
                     h += '<div style="font-size:10px;color:var(--text-3);margin-bottom:8px;padding:4px 0;">';
                     h += '⚠️ Nenhum horário cadastrado neste CT ainda. Use o campo abaixo.</div>';
@@ -31811,7 +31819,7 @@
                 html += '</div></div>';
 
                 // ── Seção 1: Horários por dia ──
-                html += '<div class="ct-mod-section-label">📅 Horários de funcionamento</div>';
+                html += '<div class="ct-mod-section-label">📅 Grade Horária</div>';
                 html += _renderDayRows(ctName, mod.id, schedule, modHpd);
 
                 // ── Seção 2: Gestão de Turmas ──
