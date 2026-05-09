@@ -11599,7 +11599,7 @@
         var _ctmId = (function() {
             try { return localStorage.getItem('ctm_id') || 'matrix'; } catch(e) { return 'matrix'; }
         })();
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxcQRFuGCMHBUycPxosfXWyUkbjmWn55JeFK55_tP_ZzbQ8AaS1WIlJj3ChXQxU_KmR/exec'
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwbVzupyFJoaJFinChGyKEL70PpnS_4MHjkwIOsBzag3SBUg-Z6kputF0bm15sBTXf2/exec'
                          + '?ctm=' + _ctmId;
 
         // ── Verifica se o cliente existe no registry ──────────────
@@ -12491,6 +12491,127 @@
                     roadmapTipo:      'cintura',
                     iconeEvo:         '🥋',
                 },
+            },
+
+            kung_fu: {
+                id: 'kung_fu',
+                graduacao: {
+                    tipo: 'faixa_cintura', hasGraduacao: true, hasFaixa: true, hasPrajied: false,
+                    labelFaixa: 'Faixa', labelGrau: 'Thuan', labelGrauPlural: 'Thuans',
+                    maxGrausPorFaixa: null, simbolo: 'thuan',
+                    faixas: [
+                        { id:'Amarela',              label:'Faixa Amarela',              emoji:'🟡',   cor:'#EAB308', cssClass:'amarela',          next:'Amarela-I-Ponteira',    ordemProgresso:1  },
+                        { id:'Amarela-I-Ponteira',   label:'Fx. Amarela I Ponteira',     emoji:'🟡⬛', cor:'#EAB308', cssClass:'amarela-ponteira', next:'Amarela-II-Ponteira',   ordemProgresso:2  },
+                        { id:'Amarela-II-Ponteira',  label:'Fx. Amarela II Ponteira',    emoji:'🟡⬛', cor:'#EAB308', cssClass:'amarela-ponteira', next:'Amarela-III-Ponteira',  ordemProgresso:3  },
+                        { id:'Amarela-III-Ponteira', label:'Fx. Amarela III Ponteira',   emoji:'🟡⬛', cor:'#EAB308', cssClass:'amarela-ponteira', next:'Vermelha-Instrutor',    ordemProgresso:4  },
+                        { id:'Vermelha-Instrutor',   label:'Fx. Vermelha Instrutor',     emoji:'🔴',   cor:'#DC2626', cssClass:'vermelha',         next:'Vermelha-Ponta-Preta',  ordemProgresso:5  },
+                        { id:'Vermelha-Ponta-Preta', label:'Fx. Vermelha Ponta Preta',   emoji:'🔴⚫', cor:'#DC2626', cssClass:'vermelha-preta',   next:'Preta',                 ordemProgresso:6  },
+                        { id:'Preta',                label:'Faixa Preta',                emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',            next:'Preta-1Thuan',          ordemProgresso:7  },
+                        { id:'Preta-1Thuan',         label:'Preta 1° Thuan',             emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',            next:'Preta-2Thuan',          ordemProgresso:8  },
+                        { id:'Preta-2Thuan',         label:'Preta 2° Thuan',             emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',            next:'Preta-3Thuan',          ordemProgresso:9  },
+                        { id:'Preta-3Thuan',         label:'Preta 3° Thuan',             emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',            next:'Preta-4Thuan',          ordemProgresso:10 },
+                        { id:'Preta-4Thuan',         label:'Preta 4° Thuan — Mestre',    emoji:'⚫⬜', cor:'#1a1a1a', cssClass:'preta',            next:'Preta-5Thuan',          ordemProgresso:11 },
+                        { id:'Preta-5Thuan',         label:'Preta 5° Thuan — Mestre',    emoji:'⚫⬜', cor:'#1a1a1a', cssClass:'preta',            next:'Preta-6Thuan',          ordemProgresso:12 },
+                        { id:'Preta-6Thuan',         label:'Preta 6° Thuan — Mestre',    emoji:'⚫⬜', cor:'#1a1a1a', cssClass:'preta',            next:'Preta-7Thuan',          ordemProgresso:13 },
+                        { id:'Preta-7Thuan',         label:'Preta 7° Thuan — Mestre',    emoji:'⚫⬜', cor:'#1a1a1a', cssClass:'preta',            next:'Preta-8Thuan',          ordemProgresso:14 },
+                        { id:'Preta-8Thuan',         label:'Preta 8° Thuan — Grão-Mestre','emoji':'⚫⬜', cor:'#1a1a1a', cssClass:'preta',         next:'Preta-9Thuan',          ordemProgresso:15 },
+                        { id:'Preta-9Thuan',         label:'Preta 9° Thuan — Grão-Mestre','emoji':'⚫⬜', cor:'#1a1a1a', cssClass:'preta',         next:'Preta-10Thuan',         ordemProgresso:16 },
+                        { id:'Preta-10Thuan',        label:'Preta 10° Thuan — Grão-Mestre','emoji':'⚫⬜',cor:'#1a1a1a', cssClass:'preta',         next:null,                    ordemProgresso:17 },
+                    ],
+                },
+                nomenclatura: {
+                    treino: 'Treino / Kung Fu', aula: 'Aula', professor: 'Sifu / Mestre',
+                    aluno: 'Discípulo', academia: 'Kwoon', faixa: 'Faixa', faixas: 'Faixas',
+                    grau: 'Thuan', graus: 'Thuans', confirmarBtn: '🐉 Treinei',
+                    evolucaoTitulo: 'Minha Progressão', roadmapTitulo: '🐉 Kung Fu — Garra do Dragão do Norte',
+                    roadmapSub: 'Da Faixa Amarela ao 10° Thuan',
+                },
+                ui: { mostrarFaixa:true, mostrarGraus:false, mostrarPrajied:false, mostrarRoadmap:true, mostrarFrequencia:true, mostrarCriterios:false, roadmapTipo:'cintura', iconeEvo:'🐉' },
+            },
+
+            bjj_kids: {
+                id: 'bjj_kids',
+                graduacao: {
+                    tipo: 'faixa_cintura', hasGraduacao: true, hasFaixa: true, hasPrajied: false,
+                    labelFaixa: 'Faixa', labelGrau: 'Grau', labelGrauPlural: 'Graus',
+                    maxGrausPorFaixa: 4, simbolo: 'grau',
+                    faixas: [
+                        { id:'Branca',         label:'Branca',          emoji:'⚪',   cor:'#e8e8e8', cssClass:'branca',     next:'Cinza-Branca',    ordemProgresso:1  },
+                        { id:'Cinza-Branca',   label:'Cinza/Branca',    emoji:'⚪🩶', cor:'#bdbdbd', cssClass:'cinza-b',    next:'Cinza',           ordemProgresso:2  },
+                        { id:'Cinza',          label:'Cinza',           emoji:'🩶',   cor:'#9e9e9e', cssClass:'cinza',      next:'Cinza-Preta',     ordemProgresso:3  },
+                        { id:'Cinza-Preta',    label:'Cinza/Preta',     emoji:'🩶⚫', cor:'#757575', cssClass:'cinza-p',    next:'Amarela-Branca',  ordemProgresso:4  },
+                        { id:'Amarela-Branca', label:'Amarela/Branca',  emoji:'⚪🟡', cor:'#fff176', cssClass:'amarela-b',  next:'Amarela',         ordemProgresso:5  },
+                        { id:'Amarela',        label:'Amarela',         emoji:'🟡',   cor:'#fdd835', cssClass:'amarela',    next:'Amarela-Preta',   ordemProgresso:6  },
+                        { id:'Amarela-Preta',  label:'Amarela/Preta',   emoji:'🟡⚫', cor:'#f9a825', cssClass:'amarela-p',  next:'Laranja-Branca',  ordemProgresso:7  },
+                        { id:'Laranja-Branca', label:'Laranja/Branca',  emoji:'⚪🟠', cor:'#ffb74d', cssClass:'laranja-b',  next:'Laranja',         ordemProgresso:8  },
+                        { id:'Laranja',        label:'Laranja',         emoji:'🟠',   cor:'#fb8c00', cssClass:'laranja',    next:'Laranja-Preta',   ordemProgresso:9  },
+                        { id:'Laranja-Preta',  label:'Laranja/Preta',   emoji:'🟠⚫', cor:'#e65100', cssClass:'laranja-p',  next:'Verde-Branca',    ordemProgresso:10 },
+                        { id:'Verde-Branca',   label:'Verde/Branca',    emoji:'⚪🟢', cor:'#81c784', cssClass:'verde-b',    next:'Verde',           ordemProgresso:11 },
+                        { id:'Verde',          label:'Verde',           emoji:'🟢',   cor:'#43a047', cssClass:'verde',      next:'Verde-Preta',     ordemProgresso:12 },
+                        { id:'Verde-Preta',    label:'Verde/Preta',     emoji:'🟢⚫', cor:'#2e7d32', cssClass:'verde-p',    next:null,              ordemProgresso:13 },
+                    ],
+                },
+                nomenclatura: {
+                    treino:'Treino', aula:'Aula', professor:'Professor', aluno:'Aluno',
+                    academia:'Academia', faixa:'Faixa', faixas:'Faixas', grau:'Grau', graus:'Graus',
+                    confirmarBtn:'🥋 Treinei', evolucaoTitulo:'Minha Progressão',
+                    roadmapTitulo:'🥋 BJJ Kids — Sistema IBJJF', roadmapSub:'Da Branca à Verde/Preta',
+                },
+                ui: { mostrarFaixa:true, mostrarGraus:true, mostrarPrajied:false, mostrarRoadmap:true, mostrarFrequencia:true, mostrarCriterios:false, roadmapTipo:'cintura', iconeEvo:'🥋' },
+            },
+
+            muay_thai_kids: {
+                id: 'muay_thai_kids',
+                graduacao: {
+                    tipo: 'prajied', hasGraduacao: true, hasFaixa: false, hasPrajied: true,
+                    labelFaixa: 'Prajied', labelGrau: 'Grau', labelGrauPlural: 'Graus',
+                    maxGrausPorFaixa: null, simbolo: 'grau',
+                    faixas: [
+                        { id:'branco',   label:'Branco (Grau 1)',    emoji:'🤍', cor:'#f5f5f5', cssClass:'branco',   next:'amarelo',  ordemProgresso:1 },
+                        { id:'amarelo',  label:'Amarelo (Grau 2)',   emoji:'🟡', cor:'#fdd835', cssClass:'amarelo',  next:'laranja',  ordemProgresso:2 },
+                        { id:'laranja',  label:'Laranja (Grau 3)',   emoji:'🟠', cor:'#fb8c00', cssClass:'laranja',  next:'verde',    ordemProgresso:3 },
+                        { id:'verde',    label:'Verde (Grau 4)',     emoji:'🟢', cor:'#43a047', cssClass:'verde',    next:'azul',     ordemProgresso:4 },
+                        { id:'azul',     label:'Azul (Grau 5)',      emoji:'🔵', cor:'#1565c0', cssClass:'azul',     next:'vermelho', ordemProgresso:5 },
+                        { id:'vermelho', label:'Vermelho (Grau 6)',  emoji:'🔴', cor:'#dc2626', cssClass:'vermelho', next:'preto',    ordemProgresso:6 },
+                        { id:'preto',    label:'Preto (Grau 7)',     emoji:'⚫', cor:'#1a1a1a', cssClass:'preto',    next:null,       ordemProgresso:7 },
+                    ],
+                },
+                nomenclatura: {
+                    treino:'Treino', aula:'Aula', professor:'Kru / Professor', aluno:'Aluno',
+                    academia:'Academia', faixa:'Prajied', faixas:'Prajieds', grau:'Grau', graus:'Graus',
+                    confirmarBtn:'🥊 Treinei', evolucaoTitulo:'Minha Progressão',
+                    roadmapTitulo:'🥊 Muay Thai Kids', roadmapSub:'Do Prajied Branco ao Preto',
+                },
+                ui: { mostrarFaixa:true, mostrarGraus:false, mostrarPrajied:true, mostrarRoadmap:true, mostrarFrequencia:true, mostrarCriterios:false, roadmapTipo:'prajied', iconeEvo:'🥊' },
+            },
+
+            taekwondo: {
+                id: 'taekwondo',
+                graduacao: {
+                    tipo: 'faixa_cintura', hasGraduacao: true, hasFaixa: true, hasPrajied: false,
+                    labelFaixa: 'Faixa / Geup', labelGrau: 'Dan', labelGrauPlural: 'Dans',
+                    maxGrausPorFaixa: 9, simbolo: 'geup_dan',
+                    faixas: [
+                        { id:'geup_10', label:'10° Geup — Branca',                   emoji:'⚪',   cor:'#e8e8e8', cssClass:'branca',           next:'geup_9',  ordemProgresso:1  },
+                        { id:'geup_9',  label:'9° Geup — Amarela',                   emoji:'🟡',   cor:'#fdd835', cssClass:'amarela',          next:'geup_8',  ordemProgresso:2  },
+                        { id:'geup_8',  label:'8° Geup — Amarela c/ listra verde',   emoji:'🟡🟢', cor:'#f9a825', cssClass:'amarela-verde',     next:'geup_7',  ordemProgresso:3  },
+                        { id:'geup_7',  label:'7° Geup — Verde',                     emoji:'🟢',   cor:'#43a047', cssClass:'verde',            next:'geup_6',  ordemProgresso:4  },
+                        { id:'geup_6',  label:'6° Geup — Verde c/ listra azul',      emoji:'🟢🔵', cor:'#2e7d32', cssClass:'verde-azul',        next:'geup_5',  ordemProgresso:5  },
+                        { id:'geup_5',  label:'5° Geup — Azul',                      emoji:'🔵',   cor:'#1565c0', cssClass:'azul',             next:'geup_4',  ordemProgresso:6  },
+                        { id:'geup_4',  label:'4° Geup — Azul c/ listra vermelha',   emoji:'🔵🔴', cor:'#1976d2', cssClass:'azul-vermelha',     next:'geup_3',  ordemProgresso:7  },
+                        { id:'geup_3',  label:'3° Geup — Vermelha',                  emoji:'🔴',   cor:'#c62828', cssClass:'vermelha',         next:'geup_2',  ordemProgresso:8  },
+                        { id:'geup_2',  label:'2° Geup — Vermelha c/ listra preta',  emoji:'🔴⚫', cor:'#e53935', cssClass:'vermelha-preta',    next:'geup_1',  ordemProgresso:9  },
+                        { id:'geup_1',  label:'1° Geup — Vermelha (Poom/Dan)',        emoji:'🔴',   cor:'#b71c1c', cssClass:'vermelha',         next:'preta',   ordemProgresso:10 },
+                        { id:'preta',   label:'Faixa Preta (1°–9° Dan — Kukkiwon)',   emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',            next:null,      ordemProgresso:11 },
+                    ],
+                },
+                nomenclatura: {
+                    treino:'Treinamento', aula:'Aula', professor:'Sabumnim', aluno:'Aluno',
+                    academia:'Dojang', faixa:'Faixa / Geup', faixas:'Faixas', grau:'Dan', graus:'Dans',
+                    confirmarBtn:'🥋 Treinei', evolucaoTitulo:'Minha Progressão',
+                    roadmapTitulo:'🥋 Taekwondo — Sistema Kukkiwon', roadmapSub:'Do 10° Geup ao 9° Dan',
+                },
+                ui: { mostrarFaixa:true, mostrarGraus:true, mostrarPrajied:false, mostrarRoadmap:true, mostrarFrequencia:true, mostrarCriterios:false, roadmapTipo:'cintura', iconeEvo:'🥋' },
             },
 
             kickboxing: {
@@ -13670,15 +13791,45 @@
                         maxGraus = 6; // Faixa Preta: graus 1°–6°
                     }
                 }
-                // ── Filtro de idade: aplica para QUALQUER modalidade com idadeMin/idadeMax ──
-                // Funciona com BJJ, Karatê Kids, Krav Maga, ou qualquer modalidade na planilha
-                // Fonte única: aba Faixas (colunas idade_min e idade_max)
+                // ── Filtro por idade: usa data de nascimento do aluno para mostrar só Kids ou Adulto ──
                 if (hasGrad && faixasArr.length > 0) {
+                    // Busca nascimento: 1) campo do formulário 2) cache de alunos 3) currentUser
                     var _nascInput = document.getElementById('stuNascimento');
-                    var _nascVal   = _nascInput ? _nascInput.value : '';
-                    var _idade     = _nascVal ? calcIdade(_nascVal) : null;
-                    var _temFiltro = faixasArr.some(function(f){ return (f.idadeMin > 0) || (f.idadeMax > 0); });
-                    if (_temFiltro && _idade !== null) {
+                    var _nascVal   = (_nascInput && _nascInput.value) ? _nascInput.value : '';
+                    if (!_nascVal && stuModalEmail && typeof adminStudentsCache !== 'undefined') {
+                        var _stuCached = adminStudentsCache.find(function(st){ return st.email === stuModalEmail; });
+                        if (_stuCached && _stuCached.nascimento) _nascVal = _stuCached.nascimento;
+                    }
+                    if (!_nascVal && typeof currentUser !== 'undefined' && currentUser && currentUser.nascimento) {
+                        _nascVal = currentUser.nascimento;
+                    }
+                    var _idade = _nascVal ? calcIdade(_nascVal) : null;
+
+                    // Para BJJ: forçar filtro por idade mesmo sem idadeMin/idadeMax nas faixas
+                    // Kids = labels contêm "(Kids)" ; Adulto = não contêm
+                    var _isBJJMod = (mod.id === 'bjj');
+                    if (_isBJJMod && _idade !== null) {
+                        var _isKidsByAge = _idade < 16;
+                        faixasArr = faixasArr.filter(function(f) {
+                            var lbl = (f.label || f.id || '').toLowerCase();
+                            var isKidsFaixa = lbl.includes('kids') || lbl.includes('cinza') || lbl.includes('amarela-branca') ||
+                                              lbl.includes('laranja-branca') || lbl.includes('verde-branca') ||
+                                              lbl.includes('amarela-preta') || lbl.includes('laranja-preta') || lbl.includes('verde-preta') ||
+                                              ['Cinza-Branca','Cinza','Cinza-Preta','Amarela-Branca','Amarela-Preta',
+                                               'Laranja-Branca','Laranja','Laranja-Preta','Verde-Branca','Verde','Verde-Preta'].indexOf(f.id) !== -1;
+                            // Para alunos Kids só mostra Kids; para adultos só mostra Adulto
+                            return _isKidsByAge ? isKidsFaixa : !isKidsFaixa;
+                        });
+                        if (faixasArr.length === 0) {
+                            // fallback: usa getFaixasPorIdade
+                            faixasArr = ModalidadeGuard.getFaixasPorIdade(mod.id, _nascVal) || ModalidadeGuard.getFaixas(mod.id);
+                        }
+                        _isKids = _isKidsByAge;
+                        if (_isKids) { labelNivel = 'Faixa (Kids)'; showGrau = false; }
+                    }
+
+                    var _temFiltroIdade = faixasArr.some(function(f){ return (f.idadeMin > 0) || (f.idadeMax > 0); });
+                    if (_temFiltroIdade && _idade !== null) {
                         var _ff = faixasArr.filter(function(f) {
                             var minOk = !f.idadeMin || _idade >= f.idadeMin;
                             var maxOk = !f.idadeMax || _idade <= f.idadeMax;
@@ -16377,6 +16528,27 @@
             'Preta-8Dan':    { order: 19, emoji: '⚫⭐', cls: 'preta',        next: 'Preta-9Dan' },
             'Preta-9Dan':    { order: 20, emoji: '⚫⭐', cls: 'preta',        next: 'Preta-10Dan' },
             'Preta-10Dan':   { order: 21, emoji: '⚫⭐', cls: 'preta',        next: null }
+        };
+
+        // ── Kung Fu — Garra do Dragão do Norte ─────────────────
+        const BELT_CONFIG_KUNG_FU = {
+            'Amarela':              { order:  1, emoji: '🟡',   cls: 'amarela',          next: 'Amarela-I-Ponteira' },
+            'Amarela-I-Ponteira':   { order:  2, emoji: '🟡⬛', cls: 'amarela-ponteira', next: 'Amarela-II-Ponteira' },
+            'Amarela-II-Ponteira':  { order:  3, emoji: '🟡⬛', cls: 'amarela-ponteira', next: 'Amarela-III-Ponteira' },
+            'Amarela-III-Ponteira': { order:  4, emoji: '🟡⬛', cls: 'amarela-ponteira', next: 'Vermelha-Instrutor' },
+            'Vermelha-Instrutor':   { order:  5, emoji: '🔴',   cls: 'vermelha',         next: 'Vermelha-Ponta-Preta' },
+            'Vermelha-Ponta-Preta': { order:  6, emoji: '🔴⚫', cls: 'vermelha-preta',   next: 'Preta' },
+            'Preta':                { order:  7, emoji: '⚫',   cls: 'preta',            next: 'Preta-1Thuan' },
+            'Preta-1Thuan':         { order:  8, emoji: '⚫',   cls: 'preta',            next: 'Preta-2Thuan' },
+            'Preta-2Thuan':         { order:  9, emoji: '⚫',   cls: 'preta',            next: 'Preta-3Thuan' },
+            'Preta-3Thuan':         { order: 10, emoji: '⚫',   cls: 'preta',            next: 'Preta-4Thuan' },
+            'Preta-4Thuan':         { order: 11, emoji: '⚫⬜', cls: 'preta',            next: 'Preta-5Thuan' },
+            'Preta-5Thuan':         { order: 12, emoji: '⚫⬜', cls: 'preta',            next: 'Preta-6Thuan' },
+            'Preta-6Thuan':         { order: 13, emoji: '⚫⬜', cls: 'preta',            next: 'Preta-7Thuan' },
+            'Preta-7Thuan':         { order: 14, emoji: '⚫⬜', cls: 'preta',            next: 'Preta-8Thuan' },
+            'Preta-8Thuan':         { order: 15, emoji: '⚫⬜', cls: 'preta',            next: 'Preta-9Thuan' },
+            'Preta-9Thuan':         { order: 16, emoji: '⚫⬜', cls: 'preta',            next: 'Preta-10Thuan' },
+            'Preta-10Thuan':        { order: 17, emoji: '⚫⬜', cls: 'preta',            next: null }
         };
 
         // Kids graduation system (IBJJF)
@@ -28134,7 +28306,7 @@
         // Permissões de UI — espelho simplificado do backend PERMISSIONS
         var UI_PERMISSIONS = {
             admin: [
-                'deleteStudent','adminUpdateStudent','setProfessor',
+                'deleteStudent','adminUpdateStudent','setProfessor','adminCreateStudent','adminManualCheckin',
                 'saveCTSchedule','saveCTDetails',
                 'saveGradConfig','saveGradConfigMod','saveExameConfig',
                 'saveModulesConfig','deactivateAccount','reactivateAccount',
@@ -29661,10 +29833,13 @@
                 var _pixTxt  = pixCode
                     ? '\u{1F7E2} *Chave PIX (copia e cola):*\n' + pixCode + '\n\n\u2705 Ap\u00F3s o pagamento, seu acesso \u00E9 liberado automaticamente.\n'
                     : '';
-                var _ctmLink = 'https://ctapp.online/?ctm=' + (typeof _currentCtmId !== 'undefined' && _currentCtmId ? _currentCtmId : '');
+                // ctmId vem da URL atual (?ctm=xxx) ou do currentUser
+                var _ctmIdMsg = (new URLSearchParams(window.location.search)).get('ctm') || '';
+                if (!_ctmIdMsg && currentUser && currentUser.ctmId) _ctmIdMsg = currentUser.ctmId;
+                var _ctmLink = 'https://ctapp.online/?ctm=' + _ctmIdMsg;
                 var _appLine = pixCode
-                    ? '\u{1F7E2} *Chave PIX (copia e cola):*\n`' + pixCode + '`\n\n\u2705 Ap\u00F3s o pagamento, seu acesso \u00E9 liberado automaticamente.'
-                    : '\uD83D\uDCB3 ' + _ctmLink;
+                    ? '\u{1F7E2} *Chave PIX (copia e cola):*\n' + pixCode + '\n\n\u2705 Ap\u00F3s o pagamento, seu acesso \u00E9 liberado automaticamente.'
+                    : (_ctmIdMsg ? '\uD83D\uDCB3 ' + _ctmLink : '\uD83D\uDCB3 Acesse o app com seu professor para regularizar.');
                 var msg = 'Ol\u00E1, *' + nome + '*! \uD83D\uDC4B\n'
                     + 'Passando para lembrar que a mensalidade do *' + (planoNome || 'CTM Manager').toUpperCase() + '* est\u00E1 em aberto. \uD83D\uDE0A\n\n'
                     + '\uD83D\uDCB0 *Valor:* ' + valorFmt + ' '
@@ -33952,7 +34127,20 @@
 
             } catch(ex) {
                 document.getElementById('fotoPreviewImg').src = _fotoDataUrl;
-                document.getElementById('fotoErroMsg').textContent = '⚠️ ' + (ex.message || 'Erro ao analisar. Tente novamente.');
+                var _errMsg = ex.message || 'Erro ao analisar. Tente novamente.';
+                // Mensagem diferente para usuário sem produto adquirido
+                if (_errMsg.indexOf('__PRODUTO_NAO_ADQUIRIDO__') !== -1) {
+                    _errMsg = '💬 Para utilizar o Checkin por Foto com IA, entre em contato com o suporte para adquirir este recurso.';
+                    document.getElementById('fotoErroMsg').style.background = 'rgba(201,162,58,0.08)';
+                    document.getElementById('fotoErroMsg').style.borderColor = 'rgba(201,162,58,0.25)';
+                    document.getElementById('fotoErroMsg').style.color = '#C9A23A';
+                } else {
+                    document.getElementById('fotoErroMsg').style.background = 'rgba(239,68,68,0.1)';
+                    document.getElementById('fotoErroMsg').style.borderColor = 'rgba(239,68,68,0.3)';
+                    document.getElementById('fotoErroMsg').style.color = '#EF4444';
+                    _errMsg = '⚠️ ' + _errMsg;
+                }
+                document.getElementById('fotoErroMsg').textContent = _errMsg;
                 document.getElementById('fotoErroMsg').style.display = 'block';
                 setFase(1);
             }
