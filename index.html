@@ -8580,12 +8580,19 @@
                                     <option value="Faixa preta">Chegar à faixa preta</option>
                                 </select>
                             </div>
-                            <div class="perfil-field">
-                                <label>Horário preferido de treino</label>
-                                <select id="perfilHorario">
-                                    <option value="Manhã">Manhã (6h-11:59h)</option>
-                                    <option value="Noite">Noite (18h-23:59h)</option>
-                                </select>
+                            <div class="perfil-field" id="perfilHorarioField">
+                                <label>⏰ Horários de Treino</label>
+                                <!-- Input oculto: mantém compatibilidade com saveProfile -->
+                                <input type="hidden" id="perfilHorario">
+                                <!-- Seletor dinâmico de slots por modalidade -->
+                                <div id="perfilHorarioSlots" style="margin-top:4px;">
+                                    <div style="font-size:11px;color:var(--text-3);padding:8px;background:var(--bg-elevated);border-radius:8px;border:1px solid var(--border);">
+                                        Carregando horários disponíveis...
+                                    </div>
+                                </div>
+                                <div style="font-size:10px;color:var(--text-3);margin-top:6px;line-height:1.4;">
+                                    Selecione os horários que você costuma treinar. O professor usará isso para a lista de presença.
+                                </div>
                             </div>
                             <div class="perfil-field">
                                 <label>Experiência anterior</label>
@@ -9735,19 +9742,25 @@
                 <div class="admin-container">
                     <div class="adm-page-title">
                         <h2>📋 Lista de Presença</h2>
-                        <p>Presença por CT, turno e horário de aula</p>
+                        <p>Alunos confirmados e ausentes por modalidade e horário</p>
                     </div>
 
                     <div class="admin-section">
                         <!-- Filtros -->
                         <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-                            <select id="presListCT" onchange="loadPresencaList()" style="flex:1;min-width:100px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                            <select id="presListCT" onchange="onPresListCTChange()" style="flex:1;min-width:100px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
                                 <option value="">Todos os CTs</option>
                             </select>
-                            <select id="presListMod" onchange="loadPresencaList()" style="flex:1;min-width:110px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                            <select id="presListMod" onchange="onPresListModChange()" style="flex:1;min-width:110px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
                                 <option value="">Todas as modalidades</option>
                             </select>
                             <input type="date" id="presListDate" onchange="loadPresencaList()" style="flex:1;min-width:120px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                        </div>
+                        <!-- Filtro de horário específico (populado dinamicamente) -->
+                        <div id="presListHorarioFilter" style="display:none;margin-bottom:8px;">
+                            <select id="presListHorario" onchange="loadPresencaList()" style="width:100%;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                <option value="">Todos os horários</option>
+                            </select>
                         </div>
                         <!-- Período -->
                         <div style="display:flex;gap:4px;margin-bottom:12px;">
@@ -9755,8 +9768,8 @@
                             <button class="admin-filter-btn" onclick="setPresListPeriod('semana',this)">Semana</button>
                             <button class="admin-filter-btn" onclick="setPresListPeriod('mes',this)">Mês</button>
                         </div>
-                        <!-- KPI Cards Turno -->
-                        <div id="presListKPI" style="display:none;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;"></div>
+                        <!-- KPI Cards -->
+                        <div id="presListKPI" style="display:none;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;"></div>
                         <!-- Results -->
                         <div id="presListResults"><div class="admin-empty">Selecione CT e data</div></div>
                         <!-- Gerar Relatório -->
@@ -19247,6 +19260,8 @@
             
             // 3) Then fetch from backend to get latest data
             fetchProfileFromBackend();
+            // 4) Load dynamic horario slots from CT schedule
+            loadHorarioSlots();
             
             document.getElementById('perfilSenhaAtual').value = '';
             document.getElementById('perfilSenhaNova').value = '';
@@ -19268,6 +19283,8 @@
                 // Não preenche o campo avatar com base64 gigante vindo do backend
                 // (é gerenciado separadamente por loadAvatarFromData)
                 if (f.key === 'avatar') continue;
+                // perfilHorario é hidden input — atualiza o hidden input normalmente
+                // a UI de checkboxes será re-renderizada por loadHorarioSlots
                 el.value = val;
             }
             // Carrega avatar: prioridade → backend (se tiver) → localStorage por email
@@ -19289,6 +19306,32 @@
                 loadAvatarFromData(null);
             }
             updateProfileCompleteness();
+            // Se a UI de slots já foi carregada, re-renderiza com valor atualizado do backend
+            var slotsContainer = document.getElementById('perfilHorarioSlots');
+            if (slotsContainer && slotsContainer.querySelector('input[data-slot-key]')) {
+                var inp = document.getElementById('perfilHorario');
+                var savedVal = inp ? inp.value : '';
+                _horarioSlotsState = {};
+                if (savedVal) {
+                    savedVal.split(',').forEach(function(part) {
+                        part = part.trim();
+                        if (part) _horarioSlotsState[part] = true;
+                    });
+                }
+                // Re-checa todos os checkboxes
+                var cbs = slotsContainer.querySelectorAll('input[data-slot-key]');
+                cbs.forEach(function(cb) {
+                    var k = cb.dataset.slotKey;
+                    var checked = !!_horarioSlotsState[k];
+                    cb.checked = checked;
+                    var lbl = cb.parentElement;
+                    if (lbl && lbl.tagName === 'LABEL') {
+                        lbl.style.background  = checked ? 'rgba(201,162,58,0.15)' : 'var(--bg-card)';
+                        lbl.style.borderColor = checked ? 'rgba(201,162,58,0.4)'  : 'var(--border)';
+                        lbl.style.color       = checked ? 'var(--gold)'            : 'var(--text-2)';
+                    }
+                });
+            }
         }
 
         async function fetchProfileFromBackend() {
@@ -28638,8 +28681,10 @@
         // ═══════════════════════════════════════════════════
         // LISTA DE PRESENÇA (ADMIN TAB)
         // ═══════════════════════════════════════════════════
-        var _presListPeriod = 'dia';
-        var _presListData = []; // cached for report
+        var _presListPeriod    = 'dia';
+        var _presListData         = [];  // confirmados — cached for report
+        var _presListAllRegistered = []; // cadastrados — cached for report
+        var _presListCTHorarios   = {};  // { modId: ['20:00','06:00'] } — cached por CT
 
         async function initPresencaList() {
             var sel = document.getElementById('presListCT');
@@ -28662,6 +28707,60 @@
                 dateEl.value = today.getFullYear() + '-' + ('0'+(today.getMonth()+1)).slice(-2) + '-' + ('0'+today.getDate()).slice(-2);
             }
             loadPresencaList();
+        }
+
+        // Quando o CT muda: recarrega horários disponíveis no filtro de horário
+        async function onPresListCTChange() {
+            var ct  = document.getElementById('presListCT').value;
+            var mod = document.getElementById('presListMod').value;
+            _presListCTHorarios = {};
+            var horFilter = document.getElementById('presListHorarioFilter');
+            var horSel    = document.getElementById('presListHorario');
+            if (!ct) {
+                if (horFilter) horFilter.style.display = 'none';
+                if (horSel) horSel.innerHTML = '<option value="">Todos os horários</option>';
+            } else {
+                // Tenta carregar horários do CT (precisa de auth — só funciona logado como admin/professor)
+                try {
+                    var params = { ct: ct };
+                    if (mod) params.modalidades = mod;
+                    var res = await secureFetch('getHorariosCT', params);
+                    if (res && res.success && res.slotsPorMod) {
+                        _presListCTHorarios = res.slotsPorMod;
+                        _populatePresListHorarios(mod);
+                    }
+                } catch(e) { /* sem horários específicos — OK */ }
+            }
+            loadPresencaList();
+        }
+
+        // Quando a modalidade muda: atualiza o filtro de horários
+        function onPresListModChange() {
+            var mod = document.getElementById('presListMod').value;
+            _populatePresListHorarios(mod);
+            loadPresencaList();
+        }
+
+        // Popula o select de horários com base no CT e modalidade selecionados
+        function _populatePresListHorarios(modFilter) {
+            var horFilter = document.getElementById('presListHorarioFilter');
+            var horSel    = document.getElementById('presListHorario');
+            if (!horFilter || !horSel) return;
+            var uniqueTimes = {};
+            var ids = Object.keys(_presListCTHorarios);
+            ids.forEach(function(modId) {
+                if (modFilter && modId !== modFilter && modId !== '_global') return;
+                (_presListCTHorarios[modId] || []).forEach(function(t) { uniqueTimes[t] = true; });
+            });
+            var times = Object.keys(uniqueTimes).sort();
+            if (times.length === 0) {
+                horFilter.style.display = 'none';
+                horSel.innerHTML = '<option value="">Todos os horários</option>';
+            } else {
+                horSel.innerHTML = '<option value="">Todos os horários</option>' +
+                    times.map(function(t){ return '<option value="' + escapeHtml(t) + '">🕐 ' + escapeHtml(t) + '</option>'; }).join('');
+                horFilter.style.display = 'block';
+            }
         }
 
         function setPresListPeriod(period, btn) {
@@ -28718,6 +28817,288 @@
             return { de: baseDate, ate: baseDate };
         }
 
+        // ══════════════════════════════════════════════════════
+        // HORÁRIO DO ALUNO — Seletor dinâmico por modalidade
+        // ══════════════════════════════════════════════════════
+        var _horarioSlotsState = {}; // { "bjj:20:00": true, "bjj:07:30": true, ... }
+        var _horarioModMap     = {}; // cache do modMap retornado pelo backend
+
+        // ── Carrega horários do CT e renderiza o seletor ───────────────────
+        async function loadHorarioSlots() {
+            if (!currentUser || !currentUser.ct) return;
+            var container = document.getElementById('perfilHorarioSlots');
+            if (!container) return;
+            container.innerHTML = '<div style="font-size:11px;color:var(--text-3);padding:8px;">Carregando horários...</div>';
+
+            var modalidades = currentUser.modalidades || '';
+            var slotsPorMod = {}, modMap = {};
+
+            try {
+                var res = await secureFetch('getHorariosCT', { ct: currentUser.ct, modalidades: modalidades });
+                if (res && res.success && res.slotsPorMod) {
+                    slotsPorMod = res.slotsPorMod;
+                    modMap      = res.modMap || {};
+                }
+            } catch(e) { /* sem horários no CT — ok, modo livre */ }
+
+            // Se o CT não tem nenhuma modalidade com horário, cria entradas vazias
+            // para cada modalidade do aluno, permitindo entrada manual
+            if (Object.keys(slotsPorMod).length === 0 && modalidades) {
+                modalidades.split(',').forEach(function(m) {
+                    m = m.trim();
+                    if (m) slotsPorMod[m] = []; // lista vazia → só campo livre
+                });
+            }
+
+            _horarioModMap = modMap;
+            _renderHorarioSlots(slotsPorMod, modMap);
+        }
+
+        // ── Renderiza checkboxes + campo de entrada manual por modalidade ──
+        function _renderHorarioSlots(slotsPorMod, modMap) {
+            var container = document.getElementById('perfilHorarioSlots');
+            if (!container) return;
+
+            // Restaura estado salvo (valor do hidden input)
+            var savedVal = document.getElementById('perfilHorario').value || '';
+            _horarioSlotsState = {};
+            if (savedVal) {
+                savedVal.split(',').forEach(function(part) {
+                    part = part.trim();
+                    if (part) _horarioSlotsState[part] = true;
+                });
+            }
+
+            var modIds = Object.keys(slotsPorMod).sort();
+
+            // Nenhuma modalidade conhecida: exibe campo livre genérico
+            if (modIds.length === 0) {
+                container.innerHTML =
+                    '<div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;padding:10px;">' +
+                    '<div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;">⏰ Horários de treino</div>' +
+                    _buildCustomInput('_global', 'Adicionar horário (ex: 20:00)') +
+                    _buildCustomTagsHtml('_global') +
+                    '</div>';
+                container.innerHTML += ''; // força repaint
+                _syncHorarioHiddenInput();
+                return;
+            }
+
+            var h = '<div style="display:flex;flex-direction:column;gap:10px;">';
+            modIds.forEach(function(modId) {
+                var slots   = slotsPorMod[modId] || [];
+                var modInfo = modMap[modId] || { nome: modId.replace(/_/g,' '), icon: '🥋' };
+                var isGlobal = modId === '_global';
+                var label   = isGlobal ? '⏰ Todos os horários' : (modInfo.icon + ' ' + modInfo.nome);
+
+                h += '<div id="slotBlock_' + modId + '" style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;padding:10px;">';
+                if (!isGlobal) h += '<div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;">' + escapeHtml(label) + '</div>';
+
+                // Checkboxes dos horários do CT
+                if (slots.length > 0) {
+                    h += '<div id="slotCbs_' + modId + '" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">';
+                    slots.forEach(function(slot) {
+                        var key     = isGlobal ? slot : (modId + ':' + slot);
+                        var checked = !!_horarioSlotsState[key];
+                        h += _buildCheckboxHtml(key, slot, checked);
+                    });
+                    h += '</div>';
+                } else {
+                    h += '<div style="font-size:10px;color:var(--text-3);margin-bottom:8px;">Nenhum horário cadastrado no CT — use o campo abaixo.</div>';
+                }
+
+                // Tags de horários personalizados já salvos para esta modalidade
+                h += '<div id="customTags_' + modId + '" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;">';
+                h += _buildCustomTagsContent(modId, slots);
+                h += '</div>';
+
+                // Campo de entrada livre
+                h += _buildCustomInput(modId, 'Adicionar horário (ex: 07:30)');
+                h += '</div>';
+            });
+            h += '</div>';
+            container.innerHTML = h;
+            _syncHorarioHiddenInput();
+        }
+
+        // Gera o HTML de um checkbox de slot do CT
+        function _buildCheckboxHtml(key, slot, checked) {
+            return '<label style="display:flex;align-items:center;gap:5px;padding:6px 10px;background:' +
+                (checked ? 'rgba(201,162,58,0.15)' : 'var(--bg-card)') +
+                ';border:1px solid ' + (checked ? 'rgba(201,162,58,0.4)' : 'var(--border)') +
+                ';border-radius:20px;cursor:pointer;font-size:12px;font-weight:600;color:' +
+                (checked ? 'var(--gold)' : 'var(--text-2)') + ';">' +
+                '<input type="checkbox" data-slot-key="' + escapeHtml(key) + '" ' + (checked ? 'checked' : '') +
+                ' onchange="onHorarioSlotChange(this)" style="accent-color:var(--gold);width:14px;height:14px;">' +
+                '🕐 ' + escapeHtml(slot) + '</label>';
+        }
+
+        // Gera o HTML do campo de entrada manual + botão adicionar
+        // ── Gera HTML do campo de entrada manual (sem aspas aninhadas nos handlers) ──
+        function _buildCustomInput(modId, placeholder) {
+            // Usa data-mod-id + funções _addSlotFromBtn/_addSlotFromInput
+            // para evitar aspas aninhadas dentro de onclick/onkeydown gerado
+            return '<div style="display:flex;gap:6px;align-items:center;">' +
+                '<input type="time" id="customTimeInput_' + modId + '"' +
+                ' data-mod-id="' + modId + '"' +
+                ' onkeydown="_addSlotFromInput(event,this)"' +
+                ' style="flex:1;padding:7px 10px;background:var(--bg-card);color:var(--text-1);' +
+                'border:1px solid var(--border);border-radius:8px;font-size:12px;">' +
+                '<button type="button"' +
+                ' data-mod-id="' + modId + '"' +
+                ' onclick="_addSlotFromBtn(this)"' +
+                ' style="padding:7px 12px;background:rgba(201,162,58,0.12);color:var(--gold);' +
+                'border:1px solid rgba(201,162,58,0.3);border-radius:8px;font-size:12px;' +
+                'font-weight:700;cursor:pointer;white-space:nowrap;">+ Adicionar</button>' +
+                '</div>';
+        }
+
+        // Gera HTML das tags de horários personalizados salvos (excluindo os do CT)
+        function _buildCustomTagsContent(modId, ctSlots) {
+            var isGlobal   = modId === '_global';
+            var ctSlotKeys = {};
+            (ctSlots || []).forEach(function(s) {
+                ctSlotKeys[isGlobal ? s : (modId + ':' + s)] = true;
+            });
+            var h = '';
+            Object.keys(_horarioSlotsState).forEach(function(k) {
+                if (!_horarioSlotsState[k]) return;
+                if (ctSlotKeys[k]) return;
+                var belongsHere = false;
+                if (isGlobal) {
+                    belongsHere = k.indexOf(':') === -1 || !k.match(/^[a-z_]+:\d/);
+                } else {
+                    belongsHere = k.indexOf(modId + ':') === 0;
+                }
+                if (!belongsHere) return;
+                var display = k.replace(modId + ':', '');
+                // data-slot-key e data-mod-id — sem aspas aninhadas
+                h += '<span style="display:inline-flex;align-items:center;gap:4px;padding:5px 10px;' +
+                     'background:rgba(201,162,58,0.15);border:1px solid rgba(201,162,58,0.4);' +
+                     'border-radius:20px;font-size:12px;font-weight:600;color:var(--gold);">' +
+                     '\u23f0 ' + escapeHtml(display) +
+                     '<span data-slot-key="' + escapeHtml(k) + '" data-mod-id="' + escapeHtml(modId) + '"' +
+                     ' onclick="_removeSlotFromTag(this)"' +
+                     ' style="cursor:pointer;font-size:16px;line-height:1;color:rgba(201,162,58,0.7);' +
+                     'padding-left:4px;font-weight:900;">&times;</span>' +
+                     '</span>';
+            });
+            return h;
+        }
+
+        function _buildCustomTagsHtml(modId) {
+            return '<div id="customTags_' + modId + '" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;">' +
+                   _buildCustomTagsContent(modId, []) + '</div>';
+        }
+
+        // ── Adiciona horário manual digitado pelo aluno ────────────────────
+        function addCustomSlot(modId) {
+            var inp = document.getElementById('customTimeInput_' + modId);
+            if (!inp) return;
+            var val = inp.value.trim();
+            if (!val) { inp.focus(); return; }
+
+            // Aceita HH:MM (input type=time já formata) ou texto livre
+            // Valida formato HH:MM mínimo
+            if (!/^\d{1,2}:\d{2}$/.test(val)) {
+                inp.style.borderColor = '#f87171';
+                setTimeout(function(){ inp.style.borderColor = ''; }, 1200);
+                return;
+            }
+
+            var isGlobal = modId === '_global';
+            var key = isGlobal ? val : (modId + ':' + val);
+
+            if (_horarioSlotsState[key]) {
+                inp.value = '';
+                return; // já existe
+            }
+
+            _horarioSlotsState[key] = true;
+            inp.value = '';
+            _syncHorarioHiddenInput();
+
+            // Atualiza a div de tags sem re-renderizar tudo
+            var tagsDiv = document.getElementById('customTags_' + modId);
+            if (tagsDiv) {
+                // Descobre ctSlots desta modalidade para _buildCustomTagsContent
+                var ctSlots = [];
+                var cbsDiv  = document.getElementById('slotCbs_' + modId);
+                if (cbsDiv) {
+                    cbsDiv.querySelectorAll('input[type=checkbox]').forEach(function(cb) {
+                        var k = cb.dataset.slotKey || '';
+                        ctSlots.push(k.replace(modId + ':', ''));
+                    });
+                }
+                tagsDiv.innerHTML = _buildCustomTagsContent(modId, ctSlots);
+            }
+        }
+
+        // ── Remove horário manual (tag ×) ─────────────────────────────────
+        function removeCustomSlot(key, modId) {
+            delete _horarioSlotsState[key];
+            _syncHorarioHiddenInput();
+            var tagsDiv = document.getElementById('customTags_' + modId);
+            if (tagsDiv) {
+                var ctSlots = [];
+                var cbsDiv  = document.getElementById('slotCbs_' + modId);
+                if (cbsDiv) {
+                    cbsDiv.querySelectorAll('input[type=checkbox]').forEach(function(cb) {
+                        var k = cb.dataset.slotKey || '';
+                        ctSlots.push(k.replace(modId + ':', ''));
+                    });
+                }
+                tagsDiv.innerHTML = _buildCustomTagsContent(modId, ctSlots);
+            }
+        }
+
+        // ── Wrappers sem aspas aninhadas (chamados por data-attributes) ────
+        function _addSlotFromInput(event, inp) {
+            if (event.keyCode !== 13 && event.which !== 13) return;
+            event.preventDefault();
+            var modId = inp.getAttribute('data-mod-id') || '_global';
+            addCustomSlot(modId);
+        }
+
+        function _addSlotFromBtn(btn) {
+            var modId = btn.getAttribute('data-mod-id') || '_global';
+            addCustomSlot(modId);
+        }
+
+        function _removeSlotFromTag(span) {
+            var key   = span.getAttribute('data-slot-key') || '';
+            var modId = span.getAttribute('data-mod-id')   || '_global';
+            removeCustomSlot(key, modId);
+        }
+
+        // ── Checkbox do CT toggled ─────────────────────────────────────────
+        function onHorarioSlotChange(cb) {
+            var key = cb.dataset.slotKey;
+            if (cb.checked) {
+                _horarioSlotsState[key] = true;
+            } else {
+                delete _horarioSlotsState[key];
+            }
+            var lbl = cb.parentElement;
+            if (lbl && lbl.tagName === 'LABEL') {
+                lbl.style.background  = cb.checked ? 'rgba(201,162,58,0.15)' : 'var(--bg-card)';
+                lbl.style.borderColor = cb.checked ? 'rgba(201,162,58,0.4)'  : 'var(--border)';
+                lbl.style.color       = cb.checked ? 'var(--gold)'            : 'var(--text-2)';
+            }
+            _syncHorarioHiddenInput();
+        }
+
+        // ── Serializa estado → hidden input (col R) ────────────────────────
+        function _syncHorarioHiddenInput() {
+            var keys = Object.keys(_horarioSlotsState).filter(function(k){ return _horarioSlotsState[k]; });
+            var inp  = document.getElementById('perfilHorario');
+            if (inp) inp.value = keys.join(',');
+        }
+
+        // ══════════════════════════════════════════════════════
+        // LISTA DE PRESENÇA (ADMIN TAB) — v5.3
+        // Exibe: Confirmados + Não Confirmados por modalidade/horário
+        // ══════════════════════════════════════════════════════
         async function loadPresencaList() {
             var ct = document.getElementById('presListCT').value;
             var modSel = document.getElementById('presListMod');
@@ -28731,166 +29112,296 @@
                     modSel.appendChild(opt);
                 });
             }
-            var container = document.getElementById('presListResults');
+            var container    = document.getElementById('presListResults');
             var kpiContainer = document.getElementById('presListKPI');
             var range = getDateRange();
             if (!range.de) { container.innerHTML = '<div class="admin-empty">Selecione uma data</div>'; kpiContainer.style.display = 'none'; return; }
             container.innerHTML = '<div class="admin-empty">Carregando...</div>';
             kpiContainer.style.display = 'none';
             try {
+                var horSel2 = document.getElementById('presListHorario');
+                var horVal  = horSel2 ? horSel2.value : '';
                 var params = { ct: ct, dataDe: range.de, dataAte: range.ate };
-                if (mod) params.modalidade = mod;
+                if (mod)    params.modalidade = mod;
+                if (horVal) params.horario    = horVal;
                 var data = await secureFetch('getPresencaList', params);
                 if (!data.success) { container.innerHTML = '<div class="admin-empty">' + (data.message || 'Erro') + '</div>'; return; }
-                
-                var list = data.presencas || [];
-                _presListData = list;
-                
-                if (list.length === 0) {
+
+                var confirmed     = data.presencas         || [];
+                var allRegistered = data.alunosCadastrados || [];
+                _presListData          = confirmed;
+                _presListAllRegistered = allRegistered;
+
+                // ── KPI cards ──────────────────────────────────────────
+                var totalConfirmados = confirmed.length;
+                var totalCadastrados = allRegistered.length;
+                var totalAusentes    = allRegistered.filter(function(a){ return !a.confirmado; }).length;
+
+                kpiContainer.style.display = 'grid';
+                kpiContainer.innerHTML =
+                    '<div style="padding:10px;border-radius:10px;text-align:center;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);">' +
+                        '<div style="font-size:22px;font-weight:900;color:#4ade80;">' + totalConfirmados + '</div>' +
+                        '<div style="font-size:9px;color:var(--adm-text-3);font-weight:600;">✅ CONFIRMADOS</div>' +
+                    '</div>' +
+                    '<div style="padding:10px;border-radius:10px;text-align:center;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);">' +
+                        '<div style="font-size:22px;font-weight:900;color:#f87171;">' + totalAusentes + '</div>' +
+                        '<div style="font-size:9px;color:var(--adm-text-3);font-weight:600;">❌ AUSENTES</div>' +
+                    '</div>' +
+                    '<div style="padding:10px;border-radius:10px;text-align:center;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);">' +
+                        '<div style="font-size:22px;font-weight:900;color:#6366f1;">' + totalCadastrados + '</div>' +
+                        '<div style="font-size:9px;color:var(--adm-text-3);font-weight:600;">👥 ESPERADOS</div>' +
+                    '</div>';
+
+                // ── Renderiza por modalidade → horário ─────────────────
+                // Primeiro constrói mapa de presença real (confirmados) por mod+horário
+                var confirmedByModHor = {}; // "bjj|20:00" → [ {email, nome, ...} ]
+                confirmed.forEach(function(p) {
+                    var k = (p.modalidade || '') + '|' + (p.horario || '');
+                    if (!confirmedByModHor[k]) confirmedByModHor[k] = [];
+                    confirmedByModHor[k].push(p);
+                });
+
+                // Constrói mapa de cadastrados por mod+horário
+                var registeredByModHor = {}; // "bjj|20:00" → [ {email, nome, confirmado} ]
+                allRegistered.forEach(function(a) {
+                    var k = (a.modalidade || '') + '|' + (a.horario || '');
+                    if (!registeredByModHor[k]) registeredByModHor[k] = [];
+                    registeredByModHor[k].push(a);
+                });
+
+                // Combina chaves de ambos os mapas
+                var allKeys = {};
+                Object.keys(confirmedByModHor).forEach(function(k){ allKeys[k] = true; });
+                Object.keys(registeredByModHor).forEach(function(k){ allKeys[k] = true; });
+                var sortedKeys = Object.keys(allKeys).sort();
+
+                if (sortedKeys.length === 0 && confirmed.length === 0) {
                     container.innerHTML = '<div class="admin-empty">Nenhuma presença no período' + (ct ? ' para ' + ct : '') + '</div>';
                     kpiContainer.style.display = 'none';
                     return;
                 }
-                
-                // Count by turno
-                var totalManha = 0, totalNoite = 0, totalOutros = 0;
-                list.forEach(function(p) {
-                    var t = getTurno(p.horario);
-                    if (t === 'manha') totalManha++;
-                    else if (t === 'noite') totalNoite++;
-                    else totalOutros++;
+
+                // Agrupa por modalidade para exibição
+                var byMod = {}; // modId → { modLabel, slots: { horario → { confirmados, ausentes } } }
+                sortedKeys.forEach(function(k) {
+                    var parts = k.split('|');
+                    var modId = parts[0] || 'geral';
+                    var hor   = parts[1] || 'Sem horário';
+                    if (!byMod[modId]) byMod[modId] = { slots: {} };
+                    if (!byMod[modId].slots[hor]) byMod[modId].slots[hor] = { confirmados: [], ausentes: [] };
+
+                    // Confirmados deste slot (da Presença sheet, pode ter alunos sem registro de horário)
+                    var cfList = confirmedByModHor[k] || [];
+                    byMod[modId].slots[hor].confirmados = cfList;
+
+                    // Ausentes: cadastrados que não confirmaram
+                    var regList = registeredByModHor[k] || [];
+                    byMod[modId].slots[hor].ausentes = regList.filter(function(a){ return !a.confirmado; });
                 });
-                
-                // KPI cards
-                kpiContainer.style.display = 'grid';
-                kpiContainer.innerHTML = 
-                    '<div style="padding:10px;border-radius:10px;text-align:center;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);">' +
-                        '<div style="font-size:22px;font-weight:900;color:#fbbf24;">' + totalManha + '</div>' +
-                        '<div style="font-size:9px;color:var(--adm-text-3);font-weight:600;">🌅 MANHÃ</div>' +
-                    '</div>' +
-                    '<div style="padding:10px;border-radius:10px;text-align:center;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);">' +
-                        '<div style="font-size:22px;font-weight:900;color:#6366f1;">' + totalNoite + '</div>' +
-                        '<div style="font-size:9px;color:var(--adm-text-3);font-weight:600;">🌙 NOITE</div>' +
-                    '</div>' +
-                    '<div style="padding:10px;border-radius:10px;text-align:center;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);">' +
-                        '<div style="font-size:22px;font-weight:900;color:#22c55e;">' + list.length + '</div>' +
-                        '<div style="font-size:9px;color:var(--adm-text-3);font-weight:600;">📊 TOTAL</div>' +
-                    '</div>';
-                
-                // Group by turno → horário
-                var byTurno = { manha: {}, noite: {}, outros: {} };
-                list.forEach(function(p) {
-                    var t = getTurno(p.horario);
-                    var hor = p.horario || 'Sem horário';
-                    if (!byTurno[t][hor]) byTurno[t][hor] = [];
-                    byTurno[t][hor].push(p);
-                });
-                
-                var h = '';
-                ['manha', 'noite', 'outros'].forEach(function(turno) {
-                    var horarios = byTurno[turno];
-                    var keys = Object.keys(horarios).sort();
-                    if (keys.length === 0) return;
-                    
-                    var turnoTotal = 0;
-                    keys.forEach(function(k) { turnoTotal += horarios[k].length; });
-                    
-                    var turnoColor = turno === 'manha' ? '#fbbf24' : turno === 'noite' ? '#6366f1' : '#64748b';
-                    h += '<div style="margin-bottom:16px;">';
-                    h += '<div style="font-size:13px;font-weight:900;color:' + turnoColor + ';padding:8px 0;border-bottom:2px solid ' + turnoColor + ';margin-bottom:8px;">' + getTurnoLabel(turno) + ' <span style="font-size:11px;font-weight:600;">(' + turnoTotal + ')</span></div>';
-                    
-                    keys.forEach(function(hor) {
-                        var items = horarios[hor];
-                        h += '<div style="margin-bottom:10px;margin-left:8px;">';
-                        h += '<div style="font-size:11px;font-weight:700;color:var(--adm-text-2);padding:4px 0;">🕐 ' + escapeHtml(hor) + ' <span style="font-size:10px;color:var(--adm-text-3);font-weight:600;">(' + items.length + ' alunos)</span></div>';
-                        items.forEach(function(p) {
-                            var isKid = p.email && p.email.indexOf('@kids.ct') !== -1;
-                            h += '<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--adm-bg-elevated);border-radius:6px;margin-bottom:2px;">';
-                            h += '<div style="font-size:11px;font-weight:600;color:var(--adm-text-1);flex:1;">' + escapeHtml(p.nome);
-                            if (isKid) h += ' <span style="font-size:8px;background:#6c3ce0;color:#fff;padding:1px 5px;border-radius:3px;">KIDS</span>';
-                            h += '</div>';
-                            h += '<div style="font-size:9px;color:var(--adm-text-3);">' + escapeHtml(p.ct || '') + '</div>';
-                            if (_presListPeriod !== 'dia' && p.data) {
-                                var dp = p.data.split('-');
-                                h += '<div style="font-size:9px;color:var(--adm-text-3);">' + dp[2] + '/' + dp[1] + '</div>';
-                            }
-                            h += '</div>';
+
+                // Adiciona confirmados que não têm correspondente em alunosCadastrados
+                // (alunos antigos sem horário no perfil mas que fizeram check-in)
+                if (allRegistered.length === 0) {
+                    // Fallback: apenas a lista de confirmados agrupada por turno
+                    var byTurno2 = { manha: {}, noite: {}, outros: {} };
+                    confirmed.forEach(function(p) {
+                        var t = getTurno(p.horario);
+                        var hor = p.horario || 'Sem horário';
+                        if (!byTurno2[t][hor]) byTurno2[t][hor] = [];
+                        byTurno2[t][hor].push(p);
+                    });
+                    var hFallback = '';
+                    ['manha', 'noite', 'outros'].forEach(function(turno) {
+                        var horarios = byTurno2[turno];
+                        var keys2 = Object.keys(horarios).sort();
+                        if (!keys2.length) return;
+                        var turnoColor = turno === 'manha' ? '#fbbf24' : turno === 'noite' ? '#6366f1' : '#64748b';
+                        var turnoTotal = 0; keys2.forEach(function(kk){ turnoTotal += horarios[kk].length; });
+                        hFallback += '<div style="margin-bottom:16px;">';
+                        hFallback += '<div style="font-size:13px;font-weight:900;color:' + turnoColor + ';padding:8px 0;border-bottom:2px solid ' + turnoColor + ';margin-bottom:8px;">' + getTurnoLabel(turno) + ' <span style="font-size:11px;">(' + turnoTotal + ')</span></div>';
+                        keys2.forEach(function(hor) {
+                            hFallback += _renderSlotBlock(hor, horarios[hor], [], false);
                         });
-                        h += '</div>';
+                        hFallback += '</div>';
+                    });
+                    container.innerHTML = hFallback || '<div class="admin-empty">Nenhuma presença no período</div>';
+                    document.getElementById('presRelatorio').style.display = 'none';
+                    return;
+                }
+
+                // ── Renderização final: modalidade → horário → confirmados + ausentes ──
+                var h = '';
+                var modIds2 = Object.keys(byMod).sort();
+                modIds2.forEach(function(modId) {
+                    var modData  = byMod[modId];
+                    var modLabel = _getModLabel(modId);
+                    var horSlots = Object.keys(modData.slots).sort();
+                    var modTotal = 0;
+                    horSlots.forEach(function(hor) {
+                        modTotal += modData.slots[hor].confirmados.length;
+                    });
+
+                    h += '<div style="margin-bottom:20px;">';
+                    h += '<div style="font-size:13px;font-weight:900;color:var(--adm-primary);padding:8px 10px;background:rgba(201,162,58,0.07);border-radius:8px;border-left:3px solid var(--adm-primary);margin-bottom:10px;">';
+                    h += escapeHtml(modLabel) + ' <span style="font-size:11px;font-weight:600;opacity:0.7;">(' + modTotal + ' confirmados)</span></div>';
+
+                    horSlots.forEach(function(hor) {
+                        var slot = modData.slots[hor];
+                        h += _renderSlotBlock(hor, slot.confirmados, slot.ausentes, true);
                     });
                     h += '</div>';
                 });
-                
-                container.innerHTML = h;
+
+                container.innerHTML = h || '<div class="admin-empty">Nenhum dado para exibir</div>';
                 document.getElementById('presRelatorio').style.display = 'none';
             } catch(e) {
                 container.innerHTML = '<div class="admin-empty">Erro: ' + e.message + '</div>';
             }
         }
 
+        /** Retorna label legível de uma modalidade usando MODALIDADES_CATALOG se disponível */
+        function _getModLabel(modId) {
+            if (!modId || modId === 'geral') return '🥋 Geral';
+            if (typeof MODALIDADES_CATALOG !== 'undefined') {
+                for (var i = 0; i < MODALIDADES_CATALOG.length; i++) {
+                    if (MODALIDADES_CATALOG[i].id === modId) return MODALIDADES_CATALOG[i].icon + ' ' + MODALIDADES_CATALOG[i].nome;
+                }
+            }
+            return '🥋 ' + modId.charAt(0).toUpperCase() + modId.slice(1).replace(/_/g,' ');
+        }
+
+        /** Renderiza um bloco de slot de horário com confirmados e ausentes */
+        function _renderSlotBlock(hor, confirmados, ausentes, showAusentes) {
+            var h = '<div style="margin-bottom:12px;margin-left:8px;">';
+            var totalEsperados = confirmados.length + (ausentes ? ausentes.length : 0);
+            h += '<div style="font-size:11px;font-weight:700;color:var(--adm-text-2);padding:4px 0;margin-bottom:6px;">';
+            h += '🕐 ' + escapeHtml(hor);
+            h += ' <span style="font-size:10px;color:var(--adm-text-3);">(' + confirmados.length + ' confirmados';
+            if (showAusentes && ausentes && ausentes.length > 0) h += ' · ' + ausentes.length + ' ausentes';
+            h += ' · ' + totalEsperados + ' esperados)</span></div>';
+
+            // ── Confirmados ──
+            if (confirmados.length > 0) {
+                h += '<div style="margin-bottom:6px;">';
+                h += '<div style="font-size:9px;font-weight:800;color:#4ade80;letter-spacing:.5px;margin-bottom:4px;">✅ CONFIRMARAM TREINO</div>';
+                confirmados.forEach(function(p) {
+                    var isKid = p.email && p.email.indexOf('@kids.ct') !== -1;
+                    h += '<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.12);border-radius:6px;margin-bottom:2px;">';
+                    h += '<span style="font-size:14px;">✅</span>';
+                    h += '<div style="font-size:11px;font-weight:600;color:var(--adm-text-1);flex:1;">' + escapeHtml(p.nome);
+                    if (isKid) h += ' <span style="font-size:8px;background:#6c3ce0;color:#fff;padding:1px 5px;border-radius:3px;">KIDS</span>';
+                    h += '</div>';
+                    if (_presListPeriod !== 'dia' && p.data) {
+                        var dp = p.data.split('-');
+                        h += '<div style="font-size:9px;color:var(--adm-text-3);">' + dp[2] + '/' + dp[1] + '</div>';
+                    }
+                    h += '</div>';
+                });
+                h += '</div>';
+            }
+
+            // ── Ausentes ──
+            if (showAusentes && ausentes && ausentes.length > 0) {
+                h += '<div>';
+                h += '<div style="font-size:9px;font-weight:800;color:#f87171;letter-spacing:.5px;margin-bottom:4px;">❌ NÃO CONFIRMARAM TREINO</div>';
+                ausentes.forEach(function(a) {
+                    h += '<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:rgba(248,113,113,0.04);border:1px solid rgba(248,113,113,0.12);border-radius:6px;margin-bottom:2px;">';
+                    h += '<span style="font-size:14px;">❌</span>';
+                    h += '<div style="font-size:11px;font-weight:600;color:var(--adm-text-2);flex:1;">' + escapeHtml(a.nome) + '</div>';
+                    h += '</div>';
+                });
+                h += '</div>';
+            }
+
+            h += '</div>';
+            return h;
+        }
+
         function gerarRelatorioPresenca() {
-            var list = _presListData;
-            if (!list || list.length === 0) { alert('Nenhum dado para gerar relatório. Faça uma busca primeiro.'); return; }
-            
-            var ct = document.getElementById('presListCT').value || 'Todos os CTs';
+            var list    = _presListData;
+            var listReg = _presListAllRegistered || [];
+            if ((!list || list.length === 0) && listReg.length === 0) { alert('Nenhum dado para gerar relatório. Faça uma busca primeiro.'); return; }
+
+            var ct       = document.getElementById('presListCT').value || 'Todos os CTs';
             var modLabel = '';
-            var modSelR = document.getElementById('presListMod');
+            var modSelR  = document.getElementById('presListMod');
             if (modSelR && modSelR.value) {
                 modLabel = ' · ' + (modSelR.options[modSelR.selectedIndex] ? modSelR.options[modSelR.selectedIndex].textContent : modSelR.value);
             }
-            var range = getDateRange();
+            var range        = getDateRange();
             var periodoLabel = _presListPeriod === 'dia' ? range.de : range.de + ' a ' + range.ate;
-            
-            // Stats
-            var totalManha = 0, totalNoite = 0, totalOutros = 0;
-            var byCT = {}, byAluno = {};
+
+            // ── Stats ──────────────────────────────────────────────────
+            var totalConfirmados = list.length;
+            var totalEsperados   = listReg.length;
+            var totalAusentes    = listReg.filter(function(a){ return !a.confirmado; }).length;
+            var taxaPresenca     = totalEsperados > 0 ? Math.round((totalConfirmados / totalEsperados) * 100) : 0;
+            var byCT = {}, byAluno = {}, byMod = {};
+
             list.forEach(function(p) {
-                var t = getTurno(p.horario);
-                if (t === 'manha') totalManha++;
-                else if (t === 'noite') totalNoite++;
-                else totalOutros++;
-                
                 var ctName = p.ct || 'Sem CT';
-                byCT[ctName] = (byCT[ctName] || 0) + 1;
+                byCT[ctName]    = (byCT[ctName] || 0) + 1;
                 byAluno[p.nome] = (byAluno[p.nome] || 0) + 1;
+                var m = p.modalidade || 'geral';
+                byMod[m] = (byMod[m] || 0) + 1;
             });
-            
+
+            // Alunos que faltaram (cadastrados, não confirmaram)
+            var ausentesArr = listReg.filter(function(a){ return !a.confirmado; })
+                                     .map(function(a){ return a.nome; })
+                                     .filter(function(n,i,arr){ return arr.indexOf(n) === i; });
+
             // Top alunos (sort by frequency)
-            var alunoArr = Object.keys(byAluno).map(function(k) { return { nome: k, count: byAluno[k] }; });
-            alunoArr.sort(function(a, b) { return b.count - a.count; });
-            
+            var alunoArr = Object.keys(byAluno).map(function(k){ return { nome: k, count: byAluno[k] }; });
+            alunoArr.sort(function(a, b){ return b.count - a.count; });
+
             var container = document.getElementById('presRelatorio');
             var h = '';
             h += '<div style="padding:16px;background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:12px;">';
-            
+
             // Header
             h += '<div style="text-align:center;margin-bottom:14px;">';
             h += '<div style="font-size:15px;font-weight:900;color:var(--adm-text-1);">📊 Relatório de Presença</div>';
             h += '<div style="font-size:11px;color:var(--adm-text-3);">' + escapeHtml(ct) + modLabel + ' · ' + periodoLabel + '</div>';
             h += '</div>';
-            
-            // Summary
+
+            // Summary KPI
             h += '<div style="display:grid;grid-template-columns:repeat(3,minmax(70px,1fr));gap:6px;margin-bottom:12px;">';
-            h += '<div style="text-align:center;"><div style="font-size:20px;font-weight:900;color:#fbbf24;">' + totalManha + '</div><div style="font-size:9px;color:var(--adm-text-3);">Manhã</div></div>';
-            h += '<div style="text-align:center;"><div style="font-size:20px;font-weight:900;color:#6366f1;">' + totalNoite + '</div><div style="font-size:9px;color:var(--adm-text-3);">Noite</div></div>';
-            h += '<div style="text-align:center;"><div style="font-size:20px;font-weight:900;color:#22c55e;">' + list.length + '</div><div style="font-size:9px;color:var(--adm-text-3);">Total</div></div>';
+            h += '<div style="text-align:center;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15);border-radius:10px;padding:8px;">';
+            h += '<div style="font-size:20px;font-weight:900;color:#4ade80;">' + totalConfirmados + '</div><div style="font-size:9px;color:var(--adm-text-3);">✅ Confirmados</div></div>';
+            h += '<div style="text-align:center;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.15);border-radius:10px;padding:8px;">';
+            h += '<div style="font-size:20px;font-weight:900;color:#f87171;">' + totalAusentes + '</div><div style="font-size:9px;color:var(--adm-text-3);">❌ Ausentes</div></div>';
+            h += '<div style="text-align:center;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.15);border-radius:10px;padding:8px;">';
+            h += '<div style="font-size:20px;font-weight:900;color:#6366f1;">' + totalEsperados + '</div><div style="font-size:9px;color:var(--adm-text-3);">👥 Esperados</div></div>';
             h += '</div>';
-            
-            // % turno bar
-            var pctM = list.length > 0 ? Math.round((totalManha / list.length) * 100) : 0;
-            var pctN = list.length > 0 ? Math.round((totalNoite / list.length) * 100) : 0;
-            h += '<div style="margin-bottom:14px;">';
-            h += '<div style="font-size:10px;font-weight:700;color:var(--adm-text-2);margin-bottom:4px;">Distribuição por turno</div>';
-            h += '<div style="display:flex;height:10px;border-radius:5px;overflow:hidden;">';
-            if (pctM > 0) h += '<div style="width:' + pctM + '%;background:#fbbf24;"></div>';
-            if (pctN > 0) h += '<div style="width:' + pctN + '%;background:#6366f1;"></div>';
-            if (100 - pctM - pctN > 0) h += '<div style="width:' + (100 - pctM - pctN) + '%;background:#64748b;"></div>';
-            h += '</div>';
-            h += '<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--adm-text-3);margin-top:2px;">';
-            h += '<span>🌅 ' + pctM + '%</span><span>🌙 ' + pctN + '%</span>';
-            h += '</div></div>';
-            
-            // By CT
+
+            // Taxa de presença
+            if (totalEsperados > 0) {
+                var taxaColor = taxaPresenca >= 80 ? '#4ade80' : taxaPresenca >= 50 ? '#fbbf24' : '#f87171';
+                h += '<div style="margin-bottom:14px;">';
+                h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">';
+                h += '<div style="font-size:10px;font-weight:700;color:var(--adm-text-2);">Taxa de Presença</div>';
+                h += '<div style="font-size:14px;font-weight:900;color:' + taxaColor + ';">' + taxaPresenca + '%</div></div>';
+                h += '<div style="height:8px;background:var(--adm-border);border-radius:4px;overflow:hidden;">';
+                h += '<div style="height:100%;width:' + taxaPresenca + '%;background:' + taxaColor + ';border-radius:4px;transition:width .3s;"></div></div>';
+                h += '</div>';
+            }
+
+            // Por modalidade
+            var modIds = Object.keys(byMod);
+            if (modIds.length > 1) {
+                h += '<div style="margin-bottom:14px;">';
+                h += '<div style="font-size:10px;font-weight:700;color:var(--adm-text-2);margin-bottom:4px;">Por Modalidade</div>';
+                modIds.sort().forEach(function(mid) {
+                    h += '<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:11px;">';
+                    h += '<span style="color:var(--adm-text-1);">' + escapeHtml(_getModLabel(mid)) + '</span>';
+                    h += '<span style="color:var(--adm-primary-bright);font-weight:700;">' + byMod[mid] + '</span>';
+                    h += '</div>';
+                });
+                h += '</div>';
+            }
+
+            // Por CT
             if (Object.keys(byCT).length > 1) {
                 h += '<div style="margin-bottom:14px;">';
                 h += '<div style="font-size:10px;font-weight:700;color:var(--adm-text-2);margin-bottom:4px;">Por CT</div>';
@@ -28902,10 +29413,20 @@
                 });
                 h += '</div>';
             }
-            
+
+            // Ausentes nomeados
+            if (ausentesArr.length > 0) {
+                h += '<div style="margin-bottom:14px;">';
+                h += '<div style="font-size:10px;font-weight:700;color:#f87171;margin-bottom:4px;">❌ Alunos que faltaram</div>';
+                ausentesArr.forEach(function(nome) {
+                    h += '<div style="padding:3px 0;font-size:11px;color:var(--adm-text-2);">• ' + escapeHtml(nome) + '</div>';
+                });
+                h += '</div>';
+            }
+
             // Top alunos
             h += '<div style="margin-bottom:8px;">';
-            h += '<div style="font-size:10px;font-weight:700;color:var(--adm-text-2);margin-bottom:4px;">Alunos mais presentes</div>';
+            h += '<div style="font-size:10px;font-weight:700;color:var(--adm-text-2);margin-bottom:4px;">🏆 Mais presentes</div>';
             alunoArr.slice(0, 10).forEach(function(a, idx) {
                 var medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : (idx + 1) + '.';
                 h += '<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px;">';
