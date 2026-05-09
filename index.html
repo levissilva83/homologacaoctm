@@ -28987,15 +28987,33 @@
 
         // Gera o HTML de um checkbox de slot do CT
         function _buildCheckboxHtml(key, slot, checked) {
-            var bg     = checked ? 'rgba(201,162,58,0.15)' : 'var(--bg-card)';
-            var border = checked ? 'rgba(201,162,58,0.4)'  : 'var(--border)';
-            var color  = checked ? 'var(--gold)'            : 'var(--text-2)';
-            return '<label style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;' +
-                'background:' + bg + ';border:1px solid ' + border + ';border-radius:24px;' +
-                'cursor:pointer;font-size:13px;font-weight:700;color:' + color + ';transition:all .15s;">' +
-                '<input type="checkbox" data-slot-key="' + escapeHtml(key) + '" ' + (checked ? 'checked' : '') +
-                ' onchange="onHorarioSlotChange(this)" style="accent-color:var(--gold);width:15px;height:15px;">' +
-                '🕐 ' + escapeHtml(slot) + '</label>';
+            // Checkmark box visível + horário — claramente multi-seleção
+            var bg     = checked ? 'rgba(201,162,58,0.12)' : 'var(--bg-card)';
+            var border = checked ? 'var(--gold)'            : 'var(--border)';
+            var iconBg = checked ? 'var(--gold)'            : 'transparent';
+            var iconBd = checked ? 'var(--gold)'            : 'var(--adm-border,#334155)';
+            var check  = checked ? '✓' : '';
+            var textColor = checked ? 'var(--gold)' : 'var(--text-1)';
+
+            return '<label style="display:inline-flex;align-items:center;gap:8px;' +
+                'padding:8px 14px 8px 10px;background:' + bg + ';' +
+                'border:1.5px solid ' + border + ';border-radius:10px;' +
+                'cursor:pointer;transition:all .15s;user-select:none;">' +
+                // Checkbox oculto (acessibilidade + estado)
+                '<input type="checkbox" data-slot-key="' + escapeHtml(key) + '" ' +
+                (checked ? 'checked' : '') +
+                ' onchange="onHorarioSlotChange(this)"' +
+                ' style="position:absolute;opacity:0;width:0;height:0;pointer-events:none;">' +
+                // Ícone de checkbox customizado
+                '<span style="display:inline-flex;align-items:center;justify-content:center;' +
+                'width:18px;height:18px;flex-shrink:0;border-radius:5px;' +
+                'background:' + iconBg + ';border:2px solid ' + iconBd + ';' +
+                'font-size:12px;font-weight:900;color:#000;transition:all .15s;">' +
+                check + '</span>' +
+                // Horário
+                '<span style="font-size:13px;font-weight:700;color:' + textColor + ';">🕐 ' +
+                escapeHtml(slot) + '</span>' +
+                '</label>';
         }
 
         // Gera o HTML do campo de entrada manual + botão adicionar
@@ -29144,11 +29162,22 @@
             } else {
                 delete _horarioSlotsState[key];
             }
+            // Atualiza estilo do label e ícone de checkbox customizado
             var lbl = cb.parentElement;
             if (lbl && lbl.tagName === 'LABEL') {
-                lbl.style.background  = cb.checked ? 'rgba(201,162,58,0.15)' : 'var(--bg-card)';
-                lbl.style.borderColor = cb.checked ? 'rgba(201,162,58,0.4)'  : 'var(--border)';
-                lbl.style.color       = cb.checked ? 'var(--gold)'            : 'var(--text-2)';
+                var c = cb.checked;
+                lbl.style.background  = c ? 'rgba(201,162,58,0.12)' : 'var(--bg-card)';
+                lbl.style.borderColor = c ? 'var(--gold)'            : 'var(--border)';
+                // Ícone customizado (primeiro span filho após o input)
+                var icon = lbl.querySelector('span');
+                if (icon) {
+                    icon.style.background  = c ? 'var(--gold)' : 'transparent';
+                    icon.style.borderColor = c ? 'var(--gold)' : 'var(--adm-border,#334155)';
+                    icon.textContent       = c ? '\u2713' : '';
+                }
+                // Cor do texto (segundo span)
+                var spans = lbl.querySelectorAll('span');
+                if (spans[1]) spans[1].style.color = c ? 'var(--gold)' : 'var(--text-1)';
             }
             _syncHorarioHiddenInput();
         }
