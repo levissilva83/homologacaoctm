@@ -28825,10 +28825,21 @@
 
         // ── Carrega horários do CT e renderiza o seletor ───────────────────
         async function loadHorarioSlots() {
-            if (!currentUser || !currentUser.ct) return;
+            if (!currentUser) return;
             var container = document.getElementById('perfilHorarioSlots');
             if (!container) return;
-            container.innerHTML = '<div style="font-size:11px;color:var(--text-3);padding:8px;">Carregando horários...</div>';
+
+            var ctNome = currentUser.ct || '';
+
+            // Mostra CT name enquanto carrega
+            container.innerHTML =
+                '<div style="font-size:11px;color:var(--text-3);padding:8px 0 4px;">' +
+                (ctNome
+                    ? '🏫 CT: <strong style="color:var(--text-2);">' + escapeHtml(ctNome) + '</strong> — carregando grade...'
+                    : '⚠️ Nenhum CT vinculado ao seu cadastro.') +
+                '</div>';
+
+            if (!ctNome) return;
 
             var modalidades = currentUser.modalidades || '';
             var slotsPorMod = {}, diasPorSlot = {}, diasOrdenados = {}, modMap = {};
@@ -28869,13 +28880,13 @@
             }
 
             _horarioModMap = modMap;
-            _renderHorarioSlots(slotsPorMod, modMap, diasPorSlot, diasOrdenados);
+            _renderHorarioSlots(slotsPorMod, modMap, diasPorSlot, diasOrdenados, ctNome);
         }
 
         // ── Renderiza horários do CT agrupados por dia + campo livre ──────
         // diasOrdenados: { bjj: [ { dias: "Ter, Qui", horarios: ["07:30","21:00"] }, ... ] }
         // diasPorSlot:   { bjj: { "07:30": "Ter, Qui", "21:00": "Ter, Qui" } }
-        function _renderHorarioSlots(slotsPorMod, modMap, diasPorSlot, diasOrdenados) {
+        function _renderHorarioSlots(slotsPorMod, modMap, diasPorSlot, diasOrdenados, ctNome) {
             var container = document.getElementById('perfilHorarioSlots');
             if (!container) return;
             diasPorSlot   = diasPorSlot   || {};
@@ -28906,6 +28917,11 @@
             }
 
             var h = '<div style="display:flex;flex-direction:column;gap:12px;">';
+            if (ctNome) {
+                h += '<div style="font-size:11px;color:var(--text-3);padding:2px 0 4px;">';
+                h += '🏫 <strong style="color:var(--text-2);">' + escapeHtml(ctNome) + '</strong>';
+                h += '</div>';
+            }
             modIds.forEach(function(modId) {
                 var slots    = slotsPorMod[modId] || [];
                 var modInfo  = modMap[modId] || { nome: modId.replace(/_/g,' '), icon: '🥋' };
@@ -28919,6 +28935,9 @@
                 // Cabeçalho da modalidade
                 h += '<div style="padding:10px 12px 6px;border-bottom:1px solid var(--border);">';
                 h += '<div style="font-size:12px;font-weight:700;color:var(--text-1);">' + escapeHtml(label) + '</div>';
+                if (ctNome) {
+                    h += '<div style="font-size:10px;color:var(--text-3);margin-top:3px;">🏫 ' + escapeHtml(ctNome) + '</div>';
+                }
                 h += '<div style="font-size:10px;color:var(--text-3);margin-top:2px;">Selecione os horários que você costuma treinar</div>';
                 h += '</div>';
 
