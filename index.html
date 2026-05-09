@@ -28831,13 +28831,15 @@
             container.innerHTML = '<div style="font-size:11px;color:var(--text-3);padding:8px;">Carregando horários...</div>';
 
             var modalidades = currentUser.modalidades || '';
-            var slotsPorMod = {}, modMap = {};
+            var slotsPorMod = {}, diasPorSlot = {}, diasOrdenados = {}, modMap = {};
 
             try {
                 var res = await secureFetch('getHorariosCT', { ct: currentUser.ct, modalidades: modalidades });
                 if (res && res.success && res.slotsPorMod) {
-                    slotsPorMod = res.slotsPorMod;
-                    modMap      = res.modMap || {};
+                    slotsPorMod   = res.slotsPorMod   || {};
+                    diasPorSlot   = res.diasPorSlot   || {};
+                    diasOrdenados = res.diasOrdenados || {};
+                    modMap        = res.modMap        || {};
                 }
             } catch(e) { /* sem horários no CT — ok, modo livre */ }
 
@@ -28846,20 +28848,24 @@
             if (Object.keys(slotsPorMod).length === 0 && modalidades) {
                 modalidades.split(',').forEach(function(m) {
                     m = m.trim();
-                    if (m) slotsPorMod[m] = []; // lista vazia → só campo livre
+                    if (m) slotsPorMod[m] = [];
                 });
             }
 
             _horarioModMap = modMap;
-            _renderHorarioSlots(slotsPorMod, modMap);
+            _renderHorarioSlots(slotsPorMod, modMap, diasPorSlot, diasOrdenados);
         }
 
-        // ── Renderiza checkboxes + campo de entrada manual por modalidade ──
-        function _renderHorarioSlots(slotsPorMod, modMap) {
+        // ── Renderiza horários do CT agrupados por dia + campo livre ──────
+        // diasOrdenados: { bjj: [ { dias: "Ter, Qui", horarios: ["07:30","21:00"] }, ... ] }
+        // diasPorSlot:   { bjj: { "07:30": "Ter, Qui", "21:00": "Ter, Qui" } }
+        function _renderHorarioSlots(slotsPorMod, modMap, diasPorSlot, diasOrdenados) {
             var container = document.getElementById('perfilHorarioSlots');
             if (!container) return;
+            diasPorSlot   = diasPorSlot   || {};
+            diasOrdenados = diasOrdenados || {};
 
-            // Restaura estado salvo (valor do hidden input)
+            // Restaura estado salvo
             var savedVal = document.getElementById('perfilHorario').value || '';
             _horarioSlotsState = {};
             if (savedVal) {
@@ -28871,50 +28877,81 @@
 
             var modIds = Object.keys(slotsPorMod).sort();
 
-            // Nenhuma modalidade conhecida: exibe campo livre genérico
+            // Nenhuma modalidade conhecida: campo livre genérico
             if (modIds.length === 0) {
                 container.innerHTML =
                     '<div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;padding:10px;">' +
                     '<div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;">⏰ Horários de treino</div>' +
-                    _buildCustomInput('_global', 'Adicionar horário (ex: 20:00)') +
+                    _buildCustomInput('_global', 'ex: 20:00') +
                     _buildCustomTagsHtml('_global') +
                     '</div>';
-                container.innerHTML += ''; // força repaint
                 _syncHorarioHiddenInput();
                 return;
             }
 
-            var h = '<div style="display:flex;flex-direction:column;gap:10px;">';
+            var h = '<div style="display:flex;flex-direction:column;gap:12px;">';
             modIds.forEach(function(modId) {
-                var slots   = slotsPorMod[modId] || [];
-                var modInfo = modMap[modId] || { nome: modId.replace(/_/g,' '), icon: '🥋' };
+                var slots    = slotsPorMod[modId] || [];
+                var modInfo  = modMap[modId] || { nome: modId.replace(/_/g,' '), icon: '🥋' };
                 var isGlobal = modId === '_global';
-                var label   = isGlobal ? '⏰ Todos os horários' : (modInfo.icon + ' ' + modInfo.nome);
+                var label    = isGlobal ? '⏰ Horários disponíveis' : (modInfo.icon + ' ' + modInfo.nome);
+                var groups   = diasOrdenados[modId] || [];   // [{ dias, horarios }]
+                var dpSlot   = diasPorSlot[modId]   || {};   // { "07:30": "Ter, Qui" }
 
-                h += '<div id="slotBlock_' + modId + '" style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;padding:10px;">';
-                if (!isGlobal) h += '<div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;">' + escapeHtml(label) + '</div>';
+                h += '<div id="slotBlock_' + modId + '" style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px;overflow:hidden;">';
 
-                // Checkboxes dos horários do CT
+                // Cabeçalho da modalidade
+                h += '<div style="padding:10px 12px 6px;border-bottom:1px solid var(--border);">';
+                h += '<div style="font-size:12px;font-weight:700;color:var(--text-1);">' + escapeHtml(label) + '</div>';
+                h += '<div style="font-size:10px;color:var(--text-3);margin-top:2px;">Selecione os horários que você costuma treinar</div>';
+                h += '</div>';
+
+                h += '<div style="padding:10px 12px;">';
+
                 if (slots.length > 0) {
-                    h += '<div id="slotCbs_' + modId + '" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">';
-                    slots.forEach(function(slot) {
-                        var key     = isGlobal ? slot : (modId + ':' + slot);
-                        var checked = !!_horarioSlotsState[key];
-                        h += _buildCheckboxHtml(key, slot, checked);
-                    });
-                    h += '</div>';
+                    // Agrupa por dia para exibição clara
+                    if (groups.length > 0) {
+                        h += '<div id="slotCbs_' + modId + '" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;">';
+                        groups.forEach(function(grp) {
+                            // Linha de dias
+                            h += '<div>';
+                            h += '<div style="font-size:10px;font-weight:700;color:var(--text-3);letter-spacing:.4px;margin-bottom:5px;">📅 ' + escapeHtml(grp.dias) + '</div>';
+                            h += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+                            grp.horarios.forEach(function(slot) {
+                                var key     = isGlobal ? slot : (modId + ':' + slot);
+                                var checked = !!_horarioSlotsState[key];
+                                h += _buildCheckboxHtml(key, slot, checked);
+                            });
+                            h += '</div></div>';
+                        });
+                        h += '</div>';
+                    } else {
+                        // Fallback: lista plana sem agrupamento por dia
+                        h += '<div id="slotCbs_' + modId + '" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">';
+                        slots.forEach(function(slot) {
+                            var key     = isGlobal ? slot : (modId + ':' + slot);
+                            var checked = !!_horarioSlotsState[key];
+                            h += _buildCheckboxHtml(key, slot, checked);
+                        });
+                        h += '</div>';
+                    }
                 } else {
-                    h += '<div style="font-size:10px;color:var(--text-3);margin-bottom:8px;">Nenhum horário cadastrado no CT — use o campo abaixo.</div>';
+                    h += '<div style="font-size:10px;color:var(--text-3);margin-bottom:8px;padding:4px 0;">';
+                    h += '⚠️ Nenhum horário cadastrado neste CT ainda. Use o campo abaixo.</div>';
                 }
 
-                // Tags de horários personalizados já salvos para esta modalidade
-                h += '<div id="customTags_' + modId + '" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px;">';
+                // Tags de horários personalizados
+                h += '<div id="customTags_' + modId + '" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">';
                 h += _buildCustomTagsContent(modId, slots);
                 h += '</div>';
 
-                // Campo de entrada livre
-                h += _buildCustomInput(modId, 'Adicionar horário (ex: 07:30)');
+                // Campo de entrada manual (sempre visível)
+                h += '<div style="border-top:1px solid var(--border);padding-top:8px;margin-top:2px;">';
+                h += '<div style="font-size:10px;color:var(--text-3);margin-bottom:6px;">➕ Adicionar outro horário manualmente</div>';
+                h += _buildCustomInput(modId, 'ex: 07:30');
                 h += '</div>';
+
+                h += '</div></div>'; // fecha padding + card
             });
             h += '</div>';
             container.innerHTML = h;
@@ -28923,13 +28960,14 @@
 
         // Gera o HTML de um checkbox de slot do CT
         function _buildCheckboxHtml(key, slot, checked) {
-            return '<label style="display:flex;align-items:center;gap:5px;padding:6px 10px;background:' +
-                (checked ? 'rgba(201,162,58,0.15)' : 'var(--bg-card)') +
-                ';border:1px solid ' + (checked ? 'rgba(201,162,58,0.4)' : 'var(--border)') +
-                ';border-radius:20px;cursor:pointer;font-size:12px;font-weight:600;color:' +
-                (checked ? 'var(--gold)' : 'var(--text-2)') + ';">' +
+            var bg     = checked ? 'rgba(201,162,58,0.15)' : 'var(--bg-card)';
+            var border = checked ? 'rgba(201,162,58,0.4)'  : 'var(--border)';
+            var color  = checked ? 'var(--gold)'            : 'var(--text-2)';
+            return '<label style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;' +
+                'background:' + bg + ';border:1px solid ' + border + ';border-radius:24px;' +
+                'cursor:pointer;font-size:13px;font-weight:700;color:' + color + ';transition:all .15s;">' +
                 '<input type="checkbox" data-slot-key="' + escapeHtml(key) + '" ' + (checked ? 'checked' : '') +
-                ' onchange="onHorarioSlotChange(this)" style="accent-color:var(--gold);width:14px;height:14px;">' +
+                ' onchange="onHorarioSlotChange(this)" style="accent-color:var(--gold);width:15px;height:15px;">' +
                 '🕐 ' + escapeHtml(slot) + '</label>';
         }
 
@@ -29220,7 +29258,7 @@
                         hFallback += '<div style="margin-bottom:16px;">';
                         hFallback += '<div style="font-size:13px;font-weight:900;color:' + turnoColor + ';padding:8px 0;border-bottom:2px solid ' + turnoColor + ';margin-bottom:8px;">' + getTurnoLabel(turno) + ' <span style="font-size:11px;">(' + turnoTotal + ')</span></div>';
                         keys2.forEach(function(hor) {
-                            hFallback += _renderSlotBlock(hor, horarios[hor], [], false);
+                            hFallback += _renderSlotBlock(hor, horarios[hor], [], false, { ct: ct, data: range.de });
                         });
                         hFallback += '</div>';
                     });
@@ -29241,13 +29279,21 @@
                         modTotal += modData.slots[hor].confirmados.length;
                     });
 
+                    var modTotalSemCheckin = 0;
+                    horSlots.forEach(function(hor) {
+                        modTotalSemCheckin += modData.slots[hor].ausentes ? modData.slots[hor].ausentes.length : 0;
+                    });
                     h += '<div style="margin-bottom:20px;">';
                     h += '<div style="font-size:13px;font-weight:900;color:var(--adm-primary);padding:8px 10px;background:rgba(201,162,58,0.07);border-radius:8px;border-left:3px solid var(--adm-primary);margin-bottom:10px;">';
-                    h += escapeHtml(modLabel) + ' <span style="font-size:11px;font-weight:600;opacity:0.7;">(' + modTotal + ' confirmados)</span></div>';
+                    h += escapeHtml(modLabel);
+                    h += ' <span style="font-size:11px;font-weight:600;color:#4ade80;"> ✅ ' + modTotal + '</span>';
+                    if (modTotalSemCheckin > 0) h += ' <span style="font-size:11px;font-weight:600;color:#94a3b8;"> · 📋 ' + modTotalSemCheckin + '</span>';
+                    h += '</div>';
 
                     horSlots.forEach(function(hor) {
                         var slot = modData.slots[hor];
-                        h += _renderSlotBlock(hor, slot.confirmados, slot.ausentes, true);
+                        var meta = { ct: ct, modalidade: modId, data: range.de };
+                        h += _renderSlotBlock(hor, slot.confirmados, slot.ausentes, true, meta);
                     });
                     h += '</div>';
                 });
@@ -29271,50 +29317,137 @@
         }
 
         /** Renderiza um bloco de slot de horário com confirmados e ausentes */
-        function _renderSlotBlock(hor, confirmados, ausentes, showAusentes) {
-            var h = '<div style="margin-bottom:12px;margin-left:8px;">';
-            var totalEsperados = confirmados.length + (ausentes ? ausentes.length : 0);
-            h += '<div style="font-size:11px;font-weight:700;color:var(--adm-text-2);padding:4px 0;margin-bottom:6px;">';
-            h += '🕐 ' + escapeHtml(hor);
-            h += ' <span style="font-size:10px;color:var(--adm-text-3);">(' + confirmados.length + ' confirmados';
-            if (showAusentes && ausentes && ausentes.length > 0) h += ' · ' + ausentes.length + ' ausentes';
-            h += ' · ' + totalEsperados + ' esperados)</span></div>';
+        // ─────────────────────────────────────────────────────────
+        // _renderSlotBlock — duas colunas: Presentes | Sem check-in
+        // meta = { ct, modalidade, data } para confirmação manual
+        // ─────────────────────────────────────────────────────────
+        function _renderSlotBlock(hor, confirmados, ausentes, showAusentes, meta) {
+            var ausArr = (showAusentes && ausentes) ? ausentes : [];
+            if (confirmados.length === 0 && ausArr.length === 0) return '';
 
-            // ── Confirmados ──
-            if (confirmados.length > 0) {
-                h += '<div style="margin-bottom:6px;">';
-                h += '<div style="font-size:9px;font-weight:800;color:#4ade80;letter-spacing:.5px;margin-bottom:4px;">✅ CONFIRMARAM TREINO</div>';
+            meta = meta || {};
+            var horLabel       = hor || 'Sem horário agendado';
+            var isNoSchedule   = !hor;
+            var totalEsperados = confirmados.length + ausArr.length;
+            var horIcon        = isNoSchedule ? '📋' : '🕐';
+            // ID único para o container deste slot (usado por _confirmarSelecionados)
+            var slotId = 'slot_' + (meta.modalidade || 'g') + '_' + (hor || 'sh').replace(':', '');
+
+            var h = '<div id="' + slotId + '" style="margin-bottom:16px;">';
+
+            // ── Cabeçalho do slot ──
+            h += '<div style="font-size:11px;font-weight:700;color:var(--adm-text-2);padding:6px 0;margin-bottom:8px;border-bottom:1px solid var(--adm-border);">';
+            h += horIcon + ' <strong>' + escapeHtml(horLabel) + '</strong>';
+            h += ' <span style="font-size:10px;font-weight:400;color:var(--adm-text-3);">';
+            h += confirmados.length + ' presentes · ' + ausArr.length + ' sem check-in · ' + totalEsperados + ' esperados';
+            h += '</span></div>';
+
+            // ── Duas colunas ──
+            h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">';
+
+            // ── Coluna 1: Presentes ──────────────────────────────────
+            h += '<div>';
+            h += '<div style="font-size:9px;font-weight:800;color:#4ade80;letter-spacing:.6px;margin-bottom:6px;padding:3px 6px;background:rgba(74,222,128,0.07);border-radius:5px;display:inline-block;">✅ PRESENTES (' + confirmados.length + ')</div>';
+            if (confirmados.length === 0) {
+                h += '<div style="font-size:10px;color:var(--adm-text-3);padding:4px 0;">Nenhum confirmado</div>';
+            } else {
                 confirmados.forEach(function(p) {
                     var isKid = p.email && p.email.indexOf('@kids.ct') !== -1;
-                    h += '<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.12);border-radius:6px;margin-bottom:2px;">';
-                    h += '<span style="font-size:14px;">✅</span>';
-                    h += '<div style="font-size:11px;font-weight:600;color:var(--adm-text-1);flex:1;">' + escapeHtml(p.nome);
-                    if (isKid) h += ' <span style="font-size:8px;background:#6c3ce0;color:#fff;padding:1px 5px;border-radius:3px;">KIDS</span>';
+                    h += '<div style="display:flex;align-items:center;gap:6px;padding:5px 6px;background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.1);border-radius:6px;margin-bottom:3px;">';
+                    h += '<span style="font-size:12px;flex-shrink:0;">✅</span>';
+                    h += '<div style="font-size:11px;font-weight:600;color:var(--adm-text-1);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">';
+                    h += escapeHtml(p.nome);
+                    if (isKid) h += '<span style="font-size:7px;background:#6c3ce0;color:#fff;padding:1px 3px;border-radius:3px;margin-left:3px;">KIDS</span>';
                     h += '</div>';
                     if (_presListPeriod !== 'dia' && p.data) {
                         var dp = p.data.split('-');
-                        h += '<div style="font-size:9px;color:var(--adm-text-3);">' + dp[2] + '/' + dp[1] + '</div>';
+                        h += '<div style="font-size:8px;color:var(--adm-text-3);flex-shrink:0;">' + dp[2] + '/' + dp[1] + '</div>';
                     }
                     h += '</div>';
                 });
-                h += '</div>';
             }
-
-            // ── Ausentes ──
-            if (showAusentes && ausentes && ausentes.length > 0) {
-                h += '<div>';
-                h += '<div style="font-size:9px;font-weight:800;color:#f87171;letter-spacing:.5px;margin-bottom:4px;">❌ NÃO CONFIRMARAM TREINO</div>';
-                ausentes.forEach(function(a) {
-                    h += '<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:rgba(248,113,113,0.04);border:1px solid rgba(248,113,113,0.12);border-radius:6px;margin-bottom:2px;">';
-                    h += '<span style="font-size:14px;">❌</span>';
-                    h += '<div style="font-size:11px;font-weight:600;color:var(--adm-text-2);flex:1;">' + escapeHtml(a.nome) + '</div>';
-                    h += '</div>';
-                });
-                h += '</div>';
-            }
-
             h += '</div>';
+
+            // ── Coluna 2: Sem check-in ───────────────────────────────
+            h += '<div>';
+            h += '<div style="font-size:9px;font-weight:800;color:#94a3b8;letter-spacing:.6px;margin-bottom:6px;padding:3px 6px;background:rgba(148,163,184,0.07);border-radius:5px;display:inline-block;">📋 SEM CHECK-IN (' + ausArr.length + ')</div>';
+            if (ausArr.length === 0) {
+                h += '<div style="font-size:10px;color:var(--adm-text-3);padding:4px 0;">Todos confirmados 🎉</div>';
+            } else {
+                ausArr.forEach(function(a) {
+                    var isKid = a.email && a.email.indexOf('@kids.ct') !== -1;
+                    var cbId  = 'cb_' + slotId + '_' + encodeURIComponent(a.email);
+                    h += '<label style="display:flex;align-items:center;gap:6px;padding:5px 6px;background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:6px;margin-bottom:3px;cursor:pointer;">';
+                    h += '<input type="checkbox" id="' + cbId + '" data-email="' + escapeHtml(a.email) + '"';
+                    h += ' style="width:15px;height:15px;flex-shrink:0;accent-color:var(--adm-primary);cursor:pointer;">';
+                    h += '<div style="font-size:11px;font-weight:600;color:var(--adm-text-2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">';
+                    h += escapeHtml(a.nome);
+                    if (isKid) h += '<span style="font-size:7px;background:#6c3ce0;color:#fff;padding:1px 3px;border-radius:3px;margin-left:3px;">KIDS</span>';
+                    h += '</div>';
+                    h += '</label>';
+                });
+                // Botão confirmar selecionados
+                h += '<button';
+                h += ' data-slot-id="' + slotId + '"';
+                h += ' data-ct="' + escapeHtml(meta.ct || '') + '"';
+                h += ' data-mod="' + escapeHtml(meta.modalidade || '') + '"';
+                h += ' data-hor="' + escapeHtml(hor || '') + '"';
+                h += ' data-date="' + escapeHtml(meta.data || '') + '"';
+                h += ' onclick="_confirmarSelecionados(this)"';
+                h += ' style="margin-top:6px;width:100%;padding:7px;background:rgba(201,162,58,0.1);color:var(--adm-primary);';
+                h += 'border:1px solid rgba(201,162,58,0.3);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">';
+                h += '✅ Confirmar presença</button>';
+            }
+            h += '</div>';
+
+            h += '</div></div>'; // fecha grid + container slot
             return h;
+        }
+
+        // ── Confirma presença dos alunos selecionados (checkboxes) ───
+        async function _confirmarSelecionados(btn) {
+            var slotId = btn.dataset.slotId;
+            var ct     = btn.dataset.ct;
+            var mod    = btn.dataset.mod;
+            var hor    = btn.dataset.hor;
+            var date   = btn.dataset.date;
+
+            var container = document.getElementById(slotId);
+            if (!container) return;
+            var cbs = container.querySelectorAll('input[type=checkbox][data-email]:checked');
+            if (!cbs.length) {
+                // Nenhum marcado: marca todos e confirma
+                var all = container.querySelectorAll('input[type=checkbox][data-email]');
+                if (!all.length) return;
+                all.forEach(function(c){ c.checked = true; });
+                cbs = all;
+            }
+
+            btn.disabled    = true;
+            btn.textContent = 'Confirmando...';
+
+            var ok = 0, erros = [];
+            for (var i = 0; i < cbs.length; i++) {
+                var email = cbs[i].dataset.email;
+                try {
+                    var res = await secureFetch('registrarPresencaManual', {
+                        targetEmail: email,
+                        ct:          ct,
+                        modalidade:  mod,
+                        horario:     hor,
+                        data:        date
+                    });
+                    if (res && res.success) { ok++; }
+                    else { erros.push((res && res.message) || 'Erro desconhecido'); }
+                } catch(e) { erros.push(e.message); }
+            }
+
+            if (erros.length) {
+                btn.disabled    = false;
+                btn.textContent = '✅ Confirmar presença';
+                alert(erros.join('\n'));
+            }
+            if (ok > 0) loadPresencaList(); // recarrega para refletir as novas presenças
         }
 
         function gerarRelatorioPresenca() {
