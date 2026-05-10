@@ -11669,7 +11669,7 @@
         var _ctmId = (function() {
             try { return localStorage.getItem('ctm_id') || 'matrix'; } catch(e) { return 'matrix'; }
         })();
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxkhTL6Bd5bRQha6MnnqRgQlR0qfm0myRbY2V0JZwi0mgBkC09iHxvlXYwKQc3QbKsY/exec'
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwCBN2HZw97JmY7PQAZp9PyQ9jmwc18XWaPXSJN0HIaUANgLLZJfelhTQy74XXt3T6B/exec'
                          + '?ctm=' + _ctmId;
 
         // ── Verifica se o cliente existe no registry ──────────────
@@ -33950,15 +33950,27 @@
                     // Atualiza cache local para refletir novo papel imediatamente
                     var _cached = adminStudentsCache.find(function(x){ return x.email === stuModalEmail; });
                     if (_cached) {
-                        _cached.admin            = isAdminStu;
-                        _cached.tipoPerfil       = isProfStu ? 'professor' : '';
-                        _cached.isProfessor      = isProfStu;
-                        _cached.ctsProfessor     = ctsdoprof;
-                        // FIX Bug 3: atualiza modalidades no cache local para que
-                        // reabrir o modal antes do loadStudentsList mostre o estado correto.
+                        _cached.admin               = isAdminStu;
+                        _cached.tipoPerfil          = isProfStu ? 'professor' : '';
+                        _cached.isProfessor         = isProfStu;
+                        _cached.ctsProfessor        = ctsdoprof;
                         _cached.modalidades         = modData.modalidades;
                         _cached.modalidadePrincipal = modData.modalidadePrincipal;
                         _cached.modalidadesGrad     = modData.modalidadesGrad;
+                        // Atualiza faixa/grau no cache para que reabrir o modal mostre dados corretos
+                        var _mpCache = modData.modalidadePrincipal || '';
+                        var _mgCache = modData.modalidadesGrad || {};
+                        var _gpCache = _mgCache[_mpCache];
+                        if (_gpCache) {
+                            _cached.faixa = _gpCache.nivel || _gpCache.faixa || _cached.faixa;
+                            _cached.grau  = String(_gpCache.grau  || 0);
+                        }
+                        // Atualiza campos básicos (nome, ct, etc)
+                        _cached.name      = payload.name || _cached.name;
+                        _cached.ct        = payload.ct   || _cached.ct;
+                        _cached.nascimento = payload.nascimento || _cached.nascimento;
+                        _cached.telefone  = payload.telefone   || _cached.telefone;
+                        _cached.genero    = payload.genero     || _cached.genero;
                     }
                     document.getElementById('stuHeroName').textContent = payload.name;
                     document.getElementById('stuHeroFaixa').textContent = payload.faixa;
