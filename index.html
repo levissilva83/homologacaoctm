@@ -11669,7 +11669,7 @@
         var _ctmId = (function() {
             try { return localStorage.getItem('ctm_id') || 'matrix'; } catch(e) { return 'matrix'; }
         })();
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwCBN2HZw97JmY7PQAZp9PyQ9jmwc18XWaPXSJN0HIaUANgLLZJfelhTQy74XXt3T6B/exec'
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxtS7z9cbNL0QZTwvrZ4jRInGFvf7EMQNufyuVf9CYNvDCoBuxZD0F7RTds_SoNAox1/exec'
                          + '?ctm=' + _ctmId;
 
         // ── Verifica se o cliente existe no registry ──────────────
@@ -19020,7 +19020,7 @@
             var btn = document.getElementById('pagarAgoraBtn');
             if (btn) { btn.style.display = 'block'; btn.textContent = metodo === 'pix' ? '🟢 Gerar PIX — R$ ' + (_pagData && _pagData.plano ? (_pagData.plano.valor || '...') : '...') : '💳 Confirmar pagamento'; }
             // Limpa container PIX se trocou de método
-            var pc = document.getElementById('pixContainer');
+            var pc = document.getElementById('pixDinamicoContainer') || document.getElementById('pixContainer');
             if (pc && metodo !== 'pix') pc.innerHTML = '';
         }
 
@@ -19170,21 +19170,25 @@
 
                 if (temCartao) {
                     // ── TEM CARTÃO: cobra imediatamente ──
+                    if (btn) { btn.textContent = '⏳ Cobrando cartão...'; }
                     var res = await secureFetch('cobrarAgoraAluno', { email: currentUser.email });
                     if (res && res.success) {
-                        if (res.metodo === 'PIX' || res.metodo === 'PIX_MANUAL') {
-                            // Cartão falhou, gerou PIX
-                            if (btn) { btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
-                            alert('⚠️ Não foi possível cobrar o cartão. Um PIX foi gerado — verifique a seção de pagamento.');
-                        } else {
-                            // Cartão aprovado
-                            if (btn) { btn.textContent = '✅ Pago!'; }
+                        if (res.metodo === 'Cartão') {
+                            // ✅ Cartão aprovado
+                            if (btn) { btn.textContent = '✅ Pago!'; btn.style.background = 'linear-gradient(135deg,#22c55e,#15803d)'; }
                             setTimeout(function() { loadPagamentos(); }, 1500);
+                            return;
+                        } else {
+                            // Cartão falhou (PIX gerado como fallback)
+                            if (btn) { btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
+                            alert('⚠️ Cartão recusado. Um PIX foi gerado — escaneie o código abaixo.');
+                            await gerarPixMensalidade();
                             return;
                         }
                     } else {
                         if (btn) { btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
-                        alert('❌ ' + ((res && res.message) || 'Erro ao processar pagamento'));
+                        var errMsg = (res && res.message) || 'Erro ao processar pagamento';
+                        alert('❌ ' + errMsg);
                         return;
                     }
                 } else {
@@ -19207,18 +19211,20 @@
                 var temCartao = ps && ps.temCartaoSalvo;
 
                 if (temCartao) {
+                    if (btn) { btn.textContent = '⏳ Cobrando cartão...'; }
                     var res = await secureFetch('cobrarAgoraAluno', { email: currentUser.email });
-                    if (res && res.success && res.metodo !== 'PIX' && res.metodo !== 'PIX_MANUAL') {
-                        if (btn) { btn.textContent = '✅ Pago!'; }
+                    if (res && res.success && res.metodo === 'Cartão') {
+                        if (btn) { btn.textContent = '✅ Pago!'; btn.style.background = 'linear-gradient(135deg,#22c55e,#15803d)'; }
                         setTimeout(function() { loadPagamentosTab(); }, 1500);
                         return;
-                    } else {
+                    } else if (!res || !res.success) {
                         if (btn) { btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
-                        if (res && res.metodo !== 'PIX') {
-                            alert('❌ ' + ((res && res.message) || 'Erro ao processar pagamento'));
-                            return;
-                        }
-                        // PIX fallback: continua e gera PIX
+                        alert('❌ ' + ((res && res.message) || 'Erro ao processar pagamento'));
+                        return;
+                    } else {
+                        // Cartão recusado — fallback PIX
+                        if (btn) { btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
+                        alert('⚠️ Cartão recusado. Gerando PIX...');
                     }
                 }
                 // Sem cartão ou PIX fallback: gera PIX dinâmico
@@ -19232,7 +19238,8 @@
 
                 async function gerarPixMensalidade() {
             var btn = document.getElementById('pagarAgoraBtn');
-            var container = document.getElementById('pixContainer');
+            // pixDinamicoContainer é o elemento renderizado pelo loadPagamentos
+            var container = document.getElementById('pixDinamicoContainer') || document.getElementById('pixContainer');
             if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando PIX...'; }
             try {
                 var data = await secureFetch('gerarPixMensalidade', { email: currentUser.email });
@@ -19367,7 +19374,7 @@
                 '<div style="margin-bottom:14px;"><label style="font-size:10px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">CPF do titular</label>' +
                 '<input type="tel" id="cartaoCPF" placeholder="000.000.000-00" maxlength="14" oninput="formatCPF(this)" style="width:100%;box-sizing:border-box;padding:12px;background:var(--bg-deep);color:var(--text-1);border:1px solid var(--border);border-radius:10px;font-size:15px;"></div>' +
                 '<div id="cartaoMsg" style="font-size:11px;margin-bottom:8px;text-align:center;min-height:16px;"></div>' +
-                '<button onclick="salvarCartao()" style="width:100%;padding:14px;background:linear-gradient(135deg,#009ee3,#0075bd);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;">💳 Cadastrar e ativar débito automático</button>' +
+                '<button onclick="salvarCartao()" style="width:100%;padding:14px;background:linear-gradient(135deg,#009ee3,#0075bd);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;">💳 Cadastrar e pagar agora</button>' +
                 '</div>';
             overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.style.display = 'none'; });
             document.body.appendChild(overlay);
