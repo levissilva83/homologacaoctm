@@ -7468,7 +7468,7 @@
         // ── Fingerprint da instância ──────────────────────────────
         var _CTM_OWNER    = 'IDE Systems Tecnologia';
         var _CTM_DOMAIN   = 'ctapp.online';
-        var _CTM_BUILD    = '2025-05-01-v2';
+        var _CTM_BUILD    = '2026-05-10-v5.3';
         var _CTM_CONTACT  = 'idesystemstecnologia@gmail.com';
         var _CTM_WA       = '5511984760689';
 
@@ -9924,17 +9924,6 @@
                     <div class="sis-subtab-panel active" id="sis-panel-sistema">
 
                     <!-- ABOUT / VERSÃO -->
-                    <!-- LOGO DO CT -->
-                    <div style="text-align:center;padding:14px 0;border-bottom:1px solid var(--adm-border);margin-bottom:16px;">
-                        <div style="font-size:10px;font-weight:700;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">🖼️ Logo do CT</div>
-                        <img id="adminLogoPreview" src="" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid rgba(201,162,58,0.3);margin-bottom:10px;display:none;">
-                        <div style="display:flex;gap:8px;justify-content:center;">
-                            <button onclick="adminAberturaLogo()" style="padding:7px 14px;background:rgba(201,162,58,0.1);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.25);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">📁 Trocar logo</button>
-                            <button onclick="resetarLogo();document.getElementById('adminLogoPreview').src=_CTM_DEFAULT_LOGO;" style="padding:7px 14px;background:transparent;color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">↺ Padrão</button>
-                        </div>
-                        <div style="font-size:9px;color:var(--adm-text-3);margin-top:6px;">Clique no logo no topo para trocar · PNG/JPG até 2MB</div>
-                    </div>
-
                     <!-- ABOUT -->
                     <div style="text-align:center;padding:16px 0 14px;border-bottom:1px solid var(--adm-border);margin-bottom:20px;">
                         <div style="font-size:13px;font-weight:800;color:var(--adm-text-1);letter-spacing:.4px;">CTM Manager</div>
@@ -11672,7 +11661,7 @@
         var _ctmId = (function() {
             try { return localStorage.getItem('ctm_id') || 'matrix'; } catch(e) { return 'matrix'; }
         })();
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwbVzupyFJoaJFinChGyKEL70PpnS_4MHjkwIOsBzag3SBUg-Z6kputF0bm15sBTXf2/exec'
+        const SCRIPT_URL = ''
                          + '?ctm=' + _ctmId;
 
         // ── Verifica se o cliente existe no registry ──────────────
@@ -27479,7 +27468,7 @@
                 // Fetch direto sem auth — getPlanos é público
                 var scriptUrl = typeof SCRIPT_URL !== 'undefined'
                     ? SCRIPT_URL.split('?')[0]
-                    : 'https://script.google.com/macros/s/AKfycbzzxQj8QoTZwIQ0X7BFGAJ4L35iD6_l8eecKwYS7iKd1Z_aDl-R0Mj8dQPzKEHWLsBTyA/exec';
+                    : 'https://script.google.com/macros/s/AKfycbwbVzupyFJoaJFinChGyKEL70PpnS_4MHjkwIOsBzag3SBUg-Z6kputF0bm15sBTXf2/exec';
                 var raw = await fetch(scriptUrl, {
                     method: 'POST',
                     body: JSON.stringify({ action: 'getPlanos' })
