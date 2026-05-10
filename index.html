@@ -19183,39 +19183,101 @@
             var existing = document.getElementById('cvvModal');
             if (existing) existing.remove();
 
-            var modal = document.createElement('div');
-            modal.id = 'cvvModal';
-            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:flex-end;justify-content:center;';
-            modal.innerHTML =
-                '<div style="width:100%;max-width:480px;background:var(--bg-elevated);border-radius:20px 20px 0 0;padding:24px;border-top:2px solid var(--border);">' +
-                '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">' +
-                '<div>' +
-                  '<div style="font-size:15px;font-weight:800;color:var(--text-1);">🔒 Confirmar pagamento</div>' +
-                  '<div style="font-size:11px;color:var(--text-3);margin-top:2px;">Digite o CVV do seu cartão para autorizar</div>' +
-                '</div>' +
-                '<button onclick="document.getElementById('cvvModal').remove()" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:var(--text-3);font-size:14px;cursor:pointer;">✕</button>' +
-                '</div>' +
-                '<div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">' +
-                  '<div style="font-size:20px;">💳</div>' +
-                  '<div>' +
-                    '<div style="font-size:13px;font-weight:700;color:var(--text-1);" id="cvvCardInfo">Carregando...</div>' +
-                    '<div style="font-size:11px;color:var(--text-3);">Cartão cadastrado</div>' +
-                  '</div>' +
-                '</div>' +
-                '<div style="margin-bottom:14px;">' +
-                  '<label style="font-size:10px;color:var(--text-3);font-weight:600;display:block;margin-bottom:6px;">CVV (3 ou 4 dígitos no verso do cartão)</label>' +
-                  '<input type="tel" id="cvvInput" maxlength="4" placeholder="•••" ' +
-                  'style="width:100%;box-sizing:border-box;padding:14px;background:var(--bg-deep);color:var(--text-1);border:1.5px solid var(--border);border-radius:12px;font-size:24px;font-weight:800;letter-spacing:8px;text-align:center;" />' +
-                '</div>' +
-                '<div id="cvvMsg" style="font-size:11px;text-align:center;min-height:16px;margin-bottom:10px;"></div>' +
-                '<button id="cvvConfirmBtn" onclick="window._cvvCallback && window._cvvCallback(document.getElementById('cvvInput').value)" ' +
-                'style="width:100%;padding:14px;background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;">💰 Pagar Agora</button>' +
-                '<div style="font-size:10px;color:var(--text-3);text-align:center;margin-top:10px;">🔒 CVV não é armazenado — usado apenas para esta cobrança</div>' +
-                '</div>';
+            // Cria overlay
+            var overlay = document.createElement('div');
+            overlay.id = 'cvvModal';
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:flex-end;justify-content:center;';
 
-            document.body.appendChild(modal);
+            // Sheet
+            var sheet = document.createElement('div');
+            sheet.style.cssText = 'width:100%;max-width:480px;background:var(--bg-elevated);border-radius:20px 20px 0 0;padding:24px;border-top:2px solid var(--border);';
 
-            // Preenche info do cartão
+            // Header
+            var hdr = document.createElement('div');
+            hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;';
+
+            var hdrLeft = document.createElement('div');
+            var hdrTitle = document.createElement('div');
+            hdrTitle.style.cssText = 'font-size:15px;font-weight:800;color:var(--text-1);';
+            hdrTitle.textContent = '🔒 Confirmar pagamento';
+            var hdrSub = document.createElement('div');
+            hdrSub.style.cssText = 'font-size:11px;color:var(--text-3);margin-top:2px;';
+            hdrSub.textContent = 'Digite o CVV do seu cartão para autorizar';
+            hdrLeft.appendChild(hdrTitle);
+            hdrLeft.appendChild(hdrSub);
+
+            var closeBtn = document.createElement('button');
+            closeBtn.style.cssText = 'width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:var(--text-3);font-size:14px;cursor:pointer;';
+            closeBtn.textContent = '✕';
+            closeBtn.onclick = function() { overlay.remove(); };
+
+            hdr.appendChild(hdrLeft);
+            hdr.appendChild(closeBtn);
+            sheet.appendChild(hdr);
+
+            // Card info box
+            var cardBox = document.createElement('div');
+            cardBox.style.cssText = 'background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;';
+            var cardIcon = document.createElement('div');
+            cardIcon.style.cssText = 'font-size:20px;';
+            cardIcon.textContent = '💳';
+            var cardTextBox = document.createElement('div');
+            var cardInfo = document.createElement('div');
+            cardInfo.id = 'cvvCardInfo';
+            cardInfo.style.cssText = 'font-size:13px;font-weight:700;color:var(--text-1);';
+            cardInfo.textContent = 'Carregando...';
+            var cardSub = document.createElement('div');
+            cardSub.style.cssText = 'font-size:11px;color:var(--text-3);';
+            cardSub.textContent = 'Cartão cadastrado';
+            cardTextBox.appendChild(cardInfo);
+            cardTextBox.appendChild(cardSub);
+            cardBox.appendChild(cardIcon);
+            cardBox.appendChild(cardTextBox);
+            sheet.appendChild(cardBox);
+
+            // CVV input
+            var inputWrap = document.createElement('div');
+            inputWrap.style.cssText = 'margin-bottom:14px;';
+            var inputLabel = document.createElement('label');
+            inputLabel.style.cssText = 'font-size:10px;color:var(--text-3);font-weight:600;display:block;margin-bottom:6px;';
+            inputLabel.textContent = 'CVV (3 ou 4 dígitos no verso do cartão)';
+            var cvvInp = document.createElement('input');
+            cvvInp.type = 'tel';
+            cvvInp.id = 'cvvInput';
+            cvvInp.maxLength = 4;
+            cvvInp.placeholder = '•••';
+            cvvInp.style.cssText = 'width:100%;box-sizing:border-box;padding:14px;background:var(--bg-deep);color:var(--text-1);border:1.5px solid var(--border);border-radius:12px;font-size:24px;font-weight:800;letter-spacing:8px;text-align:center;';
+            inputWrap.appendChild(inputLabel);
+            inputWrap.appendChild(cvvInp);
+            sheet.appendChild(inputWrap);
+
+            // Message
+            var msgDiv = document.createElement('div');
+            msgDiv.id = 'cvvMsg';
+            msgDiv.style.cssText = 'font-size:11px;text-align:center;min-height:16px;margin-bottom:10px;';
+            sheet.appendChild(msgDiv);
+
+            // Confirm button
+            var confirmBtn = document.createElement('button');
+            confirmBtn.id = 'cvvConfirmBtn';
+            confirmBtn.style.cssText = 'width:100%;padding:14px;background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;';
+            confirmBtn.textContent = '💰 Pagar Agora';
+            confirmBtn.onclick = function() {
+                var cvvVal = document.getElementById('cvvInput').value;
+                if (callback) callback(cvvVal);
+            };
+            sheet.appendChild(confirmBtn);
+
+            // Footer note
+            var note = document.createElement('div');
+            note.style.cssText = 'font-size:10px;color:var(--text-3);text-align:center;margin-top:10px;';
+            note.textContent = '🔒 CVV não é armazenado — usado apenas para esta cobrança';
+            sheet.appendChild(note);
+
+            overlay.appendChild(sheet);
+            document.body.appendChild(overlay);
+
+            // Carrega info do cartão
             secureFetch('getPagamentoStatus', { email: currentUser.email }).then(function(ps) {
                 var el = document.getElementById('cvvCardInfo');
                 if (el && ps && ps.cartao) {
@@ -19224,23 +19286,15 @@
             }).catch(function(){});
 
             // Foca no input
-            setTimeout(function() {
-                var inp = document.getElementById('cvvInput');
-                if (inp) inp.focus();
-            }, 300);
+            setTimeout(function() { cvvInp.focus(); }, 300);
 
-            window._cvvCallback = callback;
-
-            // Enter confirma
-            modal.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    var cvv = document.getElementById('cvvInput').value;
-                    if (window._cvvCallback) window._cvvCallback(cvv);
-                }
+            // Enter = confirmar
+            cvvInp.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && callback) callback(cvvInp.value);
             });
         }
 
-        async function pagarAgora(btnId) {
+                async function pagarAgora(btnId) {
             var btn = btnId ? document.getElementById(btnId) : null;
             if (btn) { btn.disabled = true; btn.textContent = '⏳ Processando...'; }
             try {
