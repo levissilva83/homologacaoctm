@@ -33519,72 +33519,200 @@
 
         // ══ CENÁRIO 1: Admin/Professor cadastra novo aluno ══════════
         function adminAbrirNovoAluno() {
-            // Abre um modal simples para criar novo aluno
             var existing = document.getElementById('novoAlunoModal');
-            if (existing) { existing.style.display = 'flex'; return; }
+            if (existing) { existing.style.display = 'flex'; existing.querySelector('#novoAlunoMsg').textContent=''; return; }
 
             var modal = document.createElement('div');
             modal.id = 'novoAlunoModal';
-            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9990;display:flex;align-items:center;justify-content:center;padding:16px;';
+            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9990;display:flex;align-items:flex-end;justify-content:center;overflow-y:auto;';
+
+            var inp = function(id, type, placeholder, required) {
+                var i = document.createElement('input');
+                i.id = id; i.type = type; i.placeholder = placeholder;
+                i.style.cssText = 'width:100%;box-sizing:border-box;padding:11px 12px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:9px;font-size:13px;';
+                if (required) i.required = true;
+                return i;
+            };
 
             var card = document.createElement('div');
-            card.style.cssText = 'background:var(--adm-bg-card);border:1px solid rgba(201,162,58,0.25);border-radius:16px;width:100%;max-width:400px;padding:20px;';
-            card.innerHTML =
-                '<div style="font-size:15px;font-weight:800;color:var(--adm-primary);margin-bottom:14px;">👤 Cadastrar Novo Aluno</div>' +
-                '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">' +
-                '<input id="novoAlunoNome" type="text" placeholder="Nome completo *" style="padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;">' +
-                '<input id="novoAlunoEmail" type="email" placeholder="E-mail *" style="padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;">' +
-                '<input id="novoAlunoTel" type="tel" placeholder="Telefone (opcional)" style="padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;">' +
-                '<input id="novoAlunoNasc" type="date" placeholder="Data de nascimento" style="padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;">' +
-                '<div style="font-size:10px;color:var(--adm-text-3);">A senha inicial será: <strong style="color:var(--adm-primary);">senha123</strong> — o aluno pode alterar depois.</div>' +
-                '</div>' +
-                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">' +
-                '<button id="novoAlunoCancelarBtn" style="padding:11px;background:transparent;color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:9px;font-size:13px;cursor:pointer;">Cancelar</button>' +
-                '<button id="novoAlunoSalvarBtn" style="padding:11px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;">✅ Cadastrar</button>' +
-                '</div>' +
-                '<div id="novoAlunoMsg" style="text-align:center;font-size:11px;margin-top:8px;min-height:14px;"></div>';
+            card.style.cssText = 'background:var(--adm-bg-card);border-radius:20px 20px 0 0;border-top:2px solid rgba(201,162,58,0.4);width:100%;max-width:480px;padding:20px 20px 32px;max-height:90vh;overflow-y:auto;';
 
+            // Título
+            var title = document.createElement('div');
+            title.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;';
+            title.innerHTML = '<div style="font-size:15px;font-weight:800;color:var(--adm-primary);">👤 Cadastrar Novo Aluno</div>';
+            var closeX = document.createElement('button');
+            closeX.textContent = '✕';
+            closeX.style.cssText = 'background:rgba(255,255,255,0.08);border:none;color:var(--adm-text-3);width:28px;height:28px;border-radius:50%;font-size:13px;cursor:pointer;';
+            closeX.onclick = function(){ modal.style.display='none'; };
+            title.appendChild(closeX);
+            card.appendChild(title);
+
+            var form = document.createElement('div');
+            form.style.cssText = 'display:flex;flex-direction:column;gap:10px;';
+
+            // Campos iguais ao formulário de nova conta
+            var nomeInp  = inp('novoAlunoNome',  'text',  'Nome completo *', true);
+            var nascInp  = inp('novoAlunoNasc',  'date',  '', true);
+            var telInp   = inp('novoAlunoTel',   'tel',   'Telefone * (ex: 21 99999-9999)', true);
+            var emailInp = inp('novoAlunoEmail', 'email', 'E-mail *', true);
+
+            // Senha
+            var senhaWrap = document.createElement('div');
+            senhaWrap.style.cssText = 'position:relative;';
+            var senhaInp = inp('novoAlunoSenha', 'password', 'Senha * (mínimo 6 caracteres)', true);
+            senhaInp.minLength = 6;
+            var toggleBtn = document.createElement('button');
+            toggleBtn.type = 'button'; toggleBtn.textContent = '👁';
+            toggleBtn.style.cssText = 'position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;';
+            toggleBtn.onclick = function(){ senhaInp.type = senhaInp.type==='password'?'text':'password'; };
+            senhaWrap.appendChild(senhaInp); senhaWrap.appendChild(toggleBtn);
+
+            // CT selector
+            var ctLabel = document.createElement('label');
+            ctLabel.style.cssText = 'font-size:10px;color:var(--adm-text-3);font-weight:600;';
+            ctLabel.textContent = 'CT Principal *';
+            var ctSel = document.createElement('select');
+            ctSel.id = 'novoAlunoCT';
+            ctSel.style.cssText = 'width:100%;box-sizing:border-box;padding:11px 12px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:9px;font-size:13px;';
+            var ctOpt0 = document.createElement('option'); ctOpt0.value=''; ctOpt0.textContent='— Selecione o CT —'; ctSel.appendChild(ctOpt0);
+            (allCTs || []).forEach(function(ct) {
+                var o = document.createElement('option');
+                o.value = ct.name || ct; o.textContent = ct.name || ct;
+                ctSel.appendChild(o);
+            });
+
+            // Modalidades
+            var modLabel = document.createElement('label');
+            modLabel.style.cssText = 'font-size:10px;color:var(--adm-text-3);font-weight:600;';
+            modLabel.textContent = 'Modalidades *';
+            var modGrid = document.createElement('div');
+            modGrid.id = 'novoAlunoMods';
+            modGrid.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:8px;';
+            (MODALIDADES_CATALOG || []).forEach(function(m) {
+                var lbl = document.createElement('label');
+                lbl.style.cssText = 'display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid var(--adm-border);border-radius:8px;font-size:12px;font-weight:600;color:var(--adm-text-2);cursor:pointer;background:var(--adm-bg-elevated);';
+                var chk = document.createElement('input');
+                chk.type='checkbox'; chk.value=m.id; chk.name='novoAlunoMod';
+                chk.style.cssText = 'width:14px;height:14px;accent-color:var(--adm-primary);';
+                chk.onchange = function() { lbl.style.borderColor = chk.checked ? 'var(--adm-primary)' : 'var(--adm-border)'; };
+                lbl.appendChild(chk);
+                lbl.appendChild(document.createTextNode(m.icon + ' ' + m.nome));
+                modGrid.appendChild(lbl);
+            });
+
+            var modErr = document.createElement('div');
+            modErr.id = 'novoAlunoModErr';
+            modErr.style.cssText = 'display:none;font-size:11px;color:#f87171;';
+            modErr.textContent = '⚠️ Selecione pelo menos uma modalidade';
+
+            // Faixa
+            var faixaLabel = document.createElement('label');
+            faixaLabel.style.cssText = 'font-size:10px;color:var(--adm-text-3);font-weight:600;';
+            faixaLabel.textContent = 'Faixa inicial';
+            var faixaSel = document.createElement('select');
+            faixaSel.id = 'novoAlunoFaixa';
+            faixaSel.style.cssText = ctSel.style.cssText;
+            ['Branca','Azul','Roxa','Marrom','Preta'].forEach(function(f){
+                var o = document.createElement('option'); o.value=f; o.textContent=f; faixaSel.appendChild(o);
+            });
+
+            // Nota senha
+            var nota = document.createElement('div');
+            nota.style.cssText = 'font-size:10px;color:var(--adm-text-3);padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:8px;line-height:1.5;';
+            nota.textContent = '💡 O aluno receberá a senha definida acima. Pode alterar no perfil depois.';
+
+            // Msg
+            var msgDiv = document.createElement('div');
+            msgDiv.id = 'novoAlunoMsg';
+            msgDiv.style.cssText = 'font-size:11px;text-align:center;min-height:14px;';
+
+            // Botões
+            var btns = document.createElement('div');
+            btns.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px;';
+            var cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancelar';
+            cancelBtn.style.cssText = 'padding:12px;background:transparent;color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:10px;font-size:13px;cursor:pointer;';
+            cancelBtn.onclick = function(){ modal.style.display='none'; };
+            var saveBtn = document.createElement('button');
+            saveBtn.id = 'novoAlunoSalvarBtn';
+            saveBtn.textContent = '✅ Cadastrar';
+            saveBtn.style.cssText = 'padding:12px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;';
+            saveBtn.onclick = adminSalvarNovoAluno;
+            btns.appendChild(cancelBtn); btns.appendChild(saveBtn);
+
+            var nascRow = document.createElement('div');
+            nascRow.style.cssText = 'display:flex;flex-direction:column;gap:3px;';
+            var nascLabel = document.createElement('label');
+            nascLabel.style.cssText = 'font-size:10px;color:var(--adm-text-3);font-weight:600;';
+            nascLabel.textContent = 'Data de nascimento *';
+            nascRow.appendChild(nascLabel);
+            nascRow.appendChild(nascInp);
+
+            [nomeInp, nascRow, telInp, emailInp, senhaWrap,
+             ctLabel, ctSel, modLabel, modGrid, modErr,
+             faixaLabel, faixaSel, nota, msgDiv, btns
+            ].forEach(function(el){ form.appendChild(el); });
+
+            card.appendChild(form);
             modal.appendChild(card);
             document.body.appendChild(modal);
-
-            document.getElementById('novoAlunoCancelarBtn').onclick = function(){ modal.style.display='none'; };
             modal.onclick = function(e){ if(e.target===modal) modal.style.display='none'; };
-            document.getElementById('novoAlunoSalvarBtn').onclick = adminSalvarNovoAluno;
         }
 
         async function adminSalvarNovoAluno() {
-            var nome  = (document.getElementById('novoAlunoNome').value || '').trim();
-            var email = (document.getElementById('novoAlunoEmail').value || '').trim().toLowerCase();
-            var tel   = (document.getElementById('novoAlunoTel').value || '').trim();
-            var nasc  = (document.getElementById('novoAlunoNasc').value || '').trim();
-            var msg   = document.getElementById('novoAlunoMsg');
-            var btn   = document.getElementById('novoAlunoSalvarBtn');
+            var nome   = (document.getElementById('novoAlunoNome').value  || '').trim();
+            var nasc   = (document.getElementById('novoAlunoNasc').value  || '').trim();
+            var tel    = (document.getElementById('novoAlunoTel').value   || '').trim();
+            var email  = (document.getElementById('novoAlunoEmail').value || '').trim().toLowerCase();
+            var senha  = (document.getElementById('novoAlunoSenha').value || '').trim();
+            var ct     = (document.getElementById('novoAlunoCT').value    || '').trim();
+            var faixa  = (document.getElementById('novoAlunoFaixa').value || 'Branca');
+            var msg    = document.getElementById('novoAlunoMsg');
+            var btn    = document.getElementById('novoAlunoSalvarBtn');
 
-            if (!nome) { msg.style.color='#f87171'; msg.textContent='Nome obrigatório'; return; }
+            // Modalidades
+            var mods = [];
+            document.querySelectorAll('#novoAlunoMods input[name="novoAlunoMod"]:checked').forEach(function(c){ mods.push(c.value); });
+
+            // Validações
+            if (!nome)  { msg.style.color='#f87171'; msg.textContent='Nome obrigatório'; return; }
+            if (!nasc)  { msg.style.color='#f87171'; msg.textContent='Data de nascimento obrigatória'; return; }
+            if (!tel || tel.length < 8) { msg.style.color='#f87171'; msg.textContent='Telefone obrigatório'; return; }
             if (!email || !email.includes('@')) { msg.style.color='#f87171'; msg.textContent='E-mail válido obrigatório'; return; }
+            if (!senha || senha.length < 6) { msg.style.color='#f87171'; msg.textContent='Senha mínimo 6 caracteres'; return; }
+            if (!ct)    { msg.style.color='#f87171'; msg.textContent='Selecione o CT'; return; }
+            if (mods.length === 0) {
+                document.getElementById('novoAlunoModErr').style.display = 'block';
+                msg.style.color='#f87171'; msg.textContent='Selecione pelo menos uma modalidade'; return;
+            }
+            document.getElementById('novoAlunoModErr').style.display = 'none';
 
             btn.disabled = true; btn.textContent = '⏳ Cadastrando...';
-            msg.style.color='var(--adm-text-3)'; msg.textContent='';
+            msg.style.color='var(--adm-text-3)'; msg.textContent='Criando conta...';
 
             try {
-                // Usa requestAccount para criar a conta
                 var res = await secureFetch('adminCreateStudent', {
                     nome: nome, email: email, telefone: tel,
-                    nascimento: nasc, ct: allCTs && allCTs[0] ? (allCTs[0].name || allCTs[0]) : '',
-                    senhaTemp: 'senha123'
+                    nascimento: nasc, ct: ct, faixa: faixa, grau: 0,
+                    modalidades: mods.join(','),
+                    senhaTemp: senha
                 });
                 if (res.success) {
-                    msg.style.color='#4ade80'; msg.textContent='✅ Aluno cadastrado! Senha: senha123';
-                    document.getElementById('novoAlunoNome').value = '';
-                    document.getElementById('novoAlunoEmail').value = '';
-                    document.getElementById('novoAlunoTel').value = '';
-                    document.getElementById('novoAlunoNasc').value = '';
-                    setTimeout(function(){ loadStudentsList(); document.getElementById('novoAlunoModal').style.display='none'; }, 1500);
+                    msg.style.color='#4ade80';
+                    msg.textContent='✅ Aluno cadastrado com sucesso!';
+                    setTimeout(function(){
+                        loadStudentsList();
+                        document.getElementById('novoAlunoModal').style.display='none';
+                    }, 1500);
                 } else {
                     msg.style.color='#f87171'; msg.textContent='❌ ' + (res.message||'Erro ao cadastrar');
+                    btn.disabled=false; btn.textContent='✅ Cadastrar';
                 }
-            } catch(e) { msg.style.color='#f87171'; msg.textContent='❌ ' + e.message; }
-            finally { btn.disabled=false; btn.textContent='✅ Cadastrar'; }
+            } catch(e) {
+                msg.style.color='#f87171'; msg.textContent='❌ ' + e.message;
+                btn.disabled=false; btn.textContent='✅ Cadastrar';
+            }
         }
 
         // ══ CENÁRIO 2: Admin confirma presença manual de aluno ═══
@@ -34186,9 +34314,17 @@
                     msg.textContent = data.message || 'Erro ao salvar';
                 }
             } catch (err) {
+                console.error('[saveStuModal] erro:', err);
                 var msg2 = document.getElementById('stuModalMsg');
-                msg2.className = 'stu-modal-msg error';
-                msg2.textContent = 'Erro de conexão';
+                if (msg2) {
+                    msg2.className = 'stu-modal-msg error';
+                    msg2.textContent = '❌ Erro: ' + (err.message || err);
+                }
+                // Tenta fazer novamente com secureFetch
+                if (err.message && err.message.indexOf('JSON') !== -1) {
+                    // Resposta não era JSON — GAS pode ter retornado erro HTML
+                    alert('Erro ao salvar: o servidor retornou resposta inválida. Verifique se o deploy do Codigo.gs está publicado corretamente (Implantar → Gerenciar → Nova versão).');
+                }
             }
 
             saveBtn.disabled = false;
