@@ -9476,10 +9476,23 @@
                                 <button onclick="CTM_Contratos.ui.fecharEditor()" style="padding:5px 12px;background:transparent;color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:7px;font-size:12px;cursor:pointer;">✕ Fechar</button>
                             </div>
 
-                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;border:1.5px solid rgba(201,162,58,0.2);border-top:none;border-radius:0 0 12px 12px;overflow:hidden;">
+                            <!-- Sub-abas do editor de contrato -->
+                            <div style="display:flex;gap:0;border:1.5px solid rgba(201,162,58,0.2);border-radius:0 0 0 0;border-bottom:none;overflow:hidden;">
+                                <button id="cmSubTab-form" onclick="switchCmSubTab('form')"
+                                    style="flex:1;padding:10px 8px;font-size:12px;font-weight:700;border:none;cursor:pointer;
+                                           background:var(--adm-primary);color:#000;transition:all .2s;">
+                                    📝 Formulário
+                                </button>
+                                <button id="cmSubTab-preview" onclick="switchCmSubTab('preview')"
+                                    style="flex:1;padding:10px 8px;font-size:12px;font-weight:700;border:none;cursor:pointer;
+                                           background:transparent;color:var(--adm-text-2);border-left:1px solid rgba(201,162,58,0.2);transition:all .2s;">
+                                    📄 Contrato Gerado
+                                </button>
+                            </div>
+                            <div style="border:1.5px solid rgba(201,162,58,0.2);border-top:none;border-radius:0 0 12px 12px;overflow:hidden;">
 
-                                <!-- COL 1: Formulário -->
-                                <div style="padding:16px;border-right:1px solid var(--adm-border);">
+                                <!-- ABA 1: Formulário -->
+                                <div id="cmSub-form" style="padding:16px;">
 
                                     <!-- Bloco 1: Identificação -->
                                     <div class="cm-bloco">
@@ -9578,10 +9591,10 @@
                                         <div id="cmModsContador" style="font-size:10px;color:var(--adm-text-3);margin-top:6px;padding-top:6px;border-top:1px solid var(--adm-border);"></div>
                                     </div>
 
-                                </div><!-- /col formulário -->
+                                </div><!-- /aba formulário -->
 
-                                <!-- COL 2: Preview + Ações -->
-                                <div style="padding:16px;background:rgba(0,0,0,0.08);display:flex;flex-direction:column;gap:10px;">
+                                <!-- ABA 2: Preview + Ações -->
+                                <div id="cmSub-preview" style="padding:16px;background:rgba(0,0,0,0.08);display:none;flex-direction:column;gap:10px;">
 
                                     <div class="cm-bloco-title">⑤ Contrato Gerado</div>
                                     <div id="cmPreviewContrato" style="background:rgba(201,162,58,0.03);border:1px solid rgba(201,162,58,0.12);border-radius:8px;padding:12px;font-size:10px;color:var(--adm-text-2);line-height:1.65;min-height:220px;white-space:pre-wrap;font-family:monospace;flex:1;overflow-y:auto;">
@@ -9614,8 +9627,8 @@
                                         style="width:100%;padding:13px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">
                                         💾 Salvar Contrato
                                     </button>
-                                </div><!-- /col preview -->
-                            </div><!-- /grid editor -->
+                                </div><!-- /aba preview -->
+                            </div><!-- /editor abas -->
                         </div><!-- /cmPainelEditor -->
                     </div><!-- /saPainel_licenciados -->
 
@@ -15494,6 +15507,7 @@
                 const data = await secureFetch('getCTsList', {});
                 if (data.success && data.cts) {
                     allCTs = data.cts;
+                    if (data.ctmId) window._ctmIdGlobal = data.ctmId;
                     // Armazenar schedules
                     ctSchedules = {};
                     data.cts.forEach(ct => {
@@ -19305,10 +19319,9 @@
                 } catch(e) { localStorage.removeItem('bjjProfile'); }
             }
             
-            // 3) Then fetch from backend to get latest data
+            // 3) Then fetch from backend (sets perfilHorario.value)
+            //    then load slots so they render with the correct saved state
             fetchProfileFromBackend();
-            // 4) Load dynamic horario slots from CT schedule
-            loadHorarioSlots();
             
             document.getElementById('perfilSenhaAtual').value = '';
             document.getElementById('perfilSenhaNova').value = '';
@@ -19324,6 +19337,13 @@
                 var val = p[f.key];
                 if (val === undefined || val === null) val = '';
                 val = val.toString();
+                // Não sobrescreve horário se o usuário já fez seleções pendentes
+                if (f.key === 'horario') {
+                    var pendingKeys = Object.keys(_horarioSlotsState || {}).filter(function(k){ return _horarioSlotsState[k]; });
+                    if (pendingKeys.length > 0) continue; // mantém seleção do usuário
+                    el.value = val;
+                    continue;
+                }
                 if (f.key === 'nascimento' && val.indexOf('T') > -1) {
                     val = val.substring(0, 10);
                 }
@@ -19389,6 +19409,9 @@
                     // Cache in localStorage
                     localStorage.setItem('bjjProfile', JSON.stringify(data.profile));
                     fillProfileFields(data.profile);
+                    // Carrega slots de horário APÓS preencher perfilHorario.value
+                    // (evita race condition que apaga seleção do usuário)
+                    loadHorarioSlots();
                     // Sync campos relevantes no currentUser
                     var changed = false;
                     if (data.profile.diasTreino !== undefined) {
@@ -25686,7 +25709,27 @@
         // ║  Camadas: DataLayer | State | ContractEngine | UI | Actions     ║
         // ╚══════════════════════════════════════════════════════════════════╝
         // Sub-tab switching for Super Admin
-        var _saCurrentTab = 'licenciados';
+        // ── Sub-abas do editor de contrato (Formulário / Contrato Gerado) ──
+        var _cmCurrentSubTab = 'form';
+        function switchCmSubTab(name) {
+            _cmCurrentSubTab = name;
+            var tabForm    = document.getElementById('cmSub-form');
+            var tabPreview = document.getElementById('cmSub-preview');
+            var btnForm    = document.getElementById('cmSubTab-form');
+            var btnPrev    = document.getElementById('cmSubTab-preview');
+            if (tabForm)    tabForm.style.display    = name === 'form'    ? 'block' : 'none';
+            if (tabPreview) { tabPreview.style.display = name === 'preview' ? 'flex'  : 'none'; }
+            if (btnForm) {
+                btnForm.style.background = name === 'form'    ? 'var(--adm-primary)' : 'transparent';
+                btnForm.style.color      = name === 'form'    ? '#000'               : 'var(--adm-text-2)';
+            }
+            if (btnPrev) {
+                btnPrev.style.background = name === 'preview' ? 'var(--adm-primary)' : 'transparent';
+                btnPrev.style.color      = name === 'preview' ? '#000'               : 'var(--adm-text-2)';
+            }
+        }
+
+                var _saCurrentTab = 'licenciados';
         function saSubTab(tab) {
             _saCurrentTab = tab;
             ['licenciados','contratos','novidades','trial'].forEach(function(t) {
@@ -25975,6 +26018,8 @@
                     ].filter(function(l){ return l !== null && l !== undefined; }).join('\n');
 
                     el.textContent = txt;
+                    // Navega para aba de preview ao gerar
+                    if (typeof switchCmSubTab === 'function') switchCmSubTab('preview');
                     return txt;
                 }
             };
@@ -28955,7 +29000,30 @@
                 });
                 h += '</div>';
                 res.innerHTML = h;
-                acts.style.display = 'block';
+
+                // Conta quantos ainda precisam de confirmação manual
+                var pendentes = allAlunos.filter(function(a) {
+                    return _chamadaAlunosState[a.email + '|' + a.modalidade + '|' + a.horario] && !a.presente;
+                }).length;
+                var totalMarcados = allAlunos.filter(function(a) {
+                    return _chamadaAlunosState[a.email + '|' + a.modalidade + '|' + a.horario];
+                }).length;
+                var jaConfirmados = allAlunos.filter(function(a){ return a.presente; }).length;
+
+                if (pendentes === 0 && jaConfirmados === allAlunos.length) {
+                    // Todos já confirmaram via check-in — sem necessidade de ação
+                    acts.style.display = 'block';
+                    acts.innerHTML = '<div style="padding:12px;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:10px;text-align:center;font-size:12px;font-weight:700;color:#4ade80;">🎉 Todos os alunos já confirmaram presença via check-in!</div>';
+                } else {
+                    acts.style.display = 'block';
+                    var nPendentes = allAlunos.filter(function(a){ return !a.presente; }).length;
+                    acts.innerHTML = '<div style="font-size:10px;color:var(--adm-text-3);margin-bottom:6px;text-align:center;">' +
+                        jaConfirmados + ' já confirmados via app · ' + nPendentes + ' aguardando confirmação manual</div>' +
+                        '<button onclick="confirmarChamadaTodos()" style="width:100%;padding:12px;' +
+                        'background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;' +
+                        'border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;letter-spacing:.3px;">' +
+                        '✅ Confirmar Chamada — Registrar Treino de Todos</button>';
+                }
 
             } catch(e) {
                 res.innerHTML = '<div class="admin-empty">Erro: ' + escapeHtml(e.message) + '</div>';
@@ -29039,10 +29107,13 @@
 
             if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar Chamada — Registrar Treino de Todos'; }
 
-            var msg = ok + ' presença(s) registrada(s)';
-            if (pulados) msg += ' · ' + pulados + ' já tinham presença';
-            if (erros.length) msg += '\nErros: ' + erros.join(', ');
-            alert(msg);
+            if (erros.length) {
+                alert('Erros ao registrar:\n' + erros.join('\n'));
+            } else if (ok > 0) {
+                alert('✅ ' + ok + ' presença(s) registrada(s)' + (pulados ? ' · ' + pulados + ' já confirmados via app (ignorados)' : ''));
+            } else if (pulados > 0) {
+                alert('ℹ️ Todos os alunos já tinham presença confirmada via check-in. Nenhuma ação necessária.');
+            }
             if (ok > 0) loadListaChamada(); // recarrega para refletir
         }
 
@@ -29546,6 +29617,28 @@
             var keys = Object.keys(_horarioSlotsState).filter(function(k){ return _horarioSlotsState[k]; });
             var inp  = document.getElementById('perfilHorario');
             if (inp) inp.value = keys.join(',');
+            // Feedback visual: mostra quantos horários selecionados
+            var counter = document.getElementById('horarioSlotsCounter');
+            if (!counter) {
+                // Cria o counter se não existe
+                var field = document.getElementById('perfilHorarioField');
+                if (field) {
+                    counter = document.createElement('div');
+                    counter.id = 'horarioSlotsCounter';
+                    counter.style.cssText = 'font-size:10px;margin-top:4px;font-weight:600;';
+                    field.appendChild(counter);
+                }
+            }
+            if (counter) {
+                if (keys.length === 0) {
+                    counter.textContent = '';
+                } else {
+                    counter.textContent = '✅ ' + keys.length + ' horário(s) selecionado(s): ' + keys.map(function(k){
+                        return k.replace(/^[^:]+:/, '');
+                    }).join(' · ');
+                    counter.style.color = 'var(--gold)';
+                }
+            }
         }
 
         // ══════════════════════════════════════════════════════
@@ -29589,6 +29682,13 @@
                 var totalConfirmados = confirmed.length;
                 var totalCadastrados = allRegistered.length;
                 var totalAusentes    = allRegistered.filter(function(a){ return !a.confirmado; }).length;
+                // ESPERADOS = max(cadastrados, confirmados)
+                // Se nenhum aluno tem horário salvo no perfil ainda,
+                // pelo menos os confirmados eram esperados
+                var totalEsperados = Math.max(totalCadastrados, totalConfirmados);
+                // AUSENTES só faz sentido se há cadastrados com horário
+                // Se não há cadastrados, não sabemos quem faltou — exibe traço
+                var ausDisplay = totalCadastrados > 0 ? totalAusentes : '—';
 
                 kpiContainer.style.display = 'grid';
                 kpiContainer.innerHTML =
@@ -29597,11 +29697,11 @@
                         '<div style="font-size:9px;color:var(--adm-text-3);font-weight:600;">✅ CONFIRMADOS</div>' +
                     '</div>' +
                     '<div style="padding:10px;border-radius:10px;text-align:center;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);">' +
-                        '<div style="font-size:22px;font-weight:900;color:#f87171;">' + totalAusentes + '</div>' +
+                        '<div style="font-size:22px;font-weight:900;color:#f87171;">' + ausDisplay + '</div>' +
                         '<div style="font-size:9px;color:var(--adm-text-3);font-weight:600;">❌ AUSENTES</div>' +
                     '</div>' +
                     '<div style="padding:10px;border-radius:10px;text-align:center;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);">' +
-                        '<div style="font-size:22px;font-weight:900;color:#6366f1;">' + totalCadastrados + '</div>' +
+                        '<div style="font-size:22px;font-weight:900;color:#6366f1;">' + totalEsperados + '</div>' +
                         '<div style="font-size:9px;color:var(--adm-text-3);font-weight:600;">👥 ESPERADOS</div>' +
                     '</div>';
 
@@ -31401,6 +31501,21 @@
         function loadAdminIBJJF() {  /* removido */ }
 
         // ===== QR CODE CHECK-IN =====
+        // Monta a URL de check-in correta para um CT
+        function _buildCheckinURL(ctName) {
+            var ctmId = window._ctmIdGlobal || '';
+            // URL de produção: https://ctapp.online/?ctm=ctmId&acao=checkin
+            // ctmId é o identificador curto do spreadsheet (ex: "levisbrazilianjiujitsu")
+            if (ctmId) {
+                return 'https://ctapp.online/?ctm=' + encodeURIComponent(ctmId) + '&acao=checkin';
+            }
+            // Fallback: tenta usar a URL atual se for ctapp.online
+            var base = window.location.hostname === 'ctapp.online'
+                ? 'https://ctapp.online/'
+                : 'https://ctapp.online/';
+            return base + '?ctm=SEU_CTM_ID&acao=checkin';
+        }
+
         function loadQRCodes() {
             var el = document.getElementById('qrCodesList');
             if (!el) return;
@@ -31409,36 +31524,87 @@
                 return;
             }
             el.innerHTML = '';
-            var baseURL = window.location.href.split('?')[0];
+
+            // Aviso se ctmId não disponível ainda
+            var ctmId = window._ctmIdGlobal || '';
+            if (!ctmId) {
+                el.innerHTML += '<div style="padding:10px 14px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:8px;font-size:11px;color:#fbbf24;margin-bottom:12px;">' +
+                    '⚠️ CTM ID não identificado automaticamente. Edite a URL abaixo inserindo seu CTM ID antes de gerar o QR Code.' +
+                    '</div>';
+            }
+
             allCTs.forEach(function(ct) {
-                var ctName = typeof ct === 'string' ? ct : (ct.name || ct.toString());
-                var checkinURL = baseURL + '?qr=' + encodeURIComponent(ctName) + '&acao=checkin';
+                var ctName  = typeof ct === 'string' ? ct : (ct.name || ct.toString());
+                var safeId  = btoa(unescape(encodeURIComponent(ctName))).replace(/[^a-zA-Z0-9]/g,'');
+                var defaultURL = _buildCheckinURL(ctName);
 
                 var card = document.createElement('div');
-                card.style.cssText = 'background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:14px;padding:16px;';
-
+                card.style.cssText = 'background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:14px;padding:16px;margin-bottom:12px;';
                 card.innerHTML =
+                    // Header
                     '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">' +
                         '<div>' +
                             '<div style="font-size:13px;font-weight:800;color:var(--adm-text-1);">📍 ' + escapeHtml(ctName) + '</div>' +
                             '<div style="font-size:10px;color:var(--adm-text-3);margin-top:2px;">Check-in via QR Code</div>' +
                         '</div>' +
                         '<div style="display:flex;gap:6px;">' +
-                            '<button onclick="downloadQRCard(\'' + escapeHtml(ctName) + '\')" style="padding:6px 12px;border-radius:8px;background:var(--adm-primary);color:#000;border:none;font-size:11px;font-weight:800;cursor:pointer;">⬇ Baixar</button>' +
-                            '<button onclick="printQRCard(\'' + escapeHtml(ctName) + '\')" style="padding:6px 12px;border-radius:8px;background:rgba(201,162,58,0.07);color:#C9A23A;border:1px solid rgba(201,162,58,0.25);font-size:11px;font-weight:700;cursor:pointer;">🖨 Imprimir</button>' +
+                            '<button data-ct="' + escapeHtml(ctName) + '" data-safe="' + safeId + '" onclick="_downloadQR(this)" style="padding:6px 12px;border-radius:8px;background:var(--adm-primary);color:#000;border:none;font-size:11px;font-weight:800;cursor:pointer;">⬇ Baixar</button>' +
+                            '<button data-ct="' + escapeHtml(ctName) + '" data-safe="' + safeId + '" onclick="_printQR(this)" style="padding:6px 12px;border-radius:8px;background:rgba(201,162,58,0.07);color:#C9A23A;border:1px solid rgba(201,162,58,0.25);font-size:11px;font-weight:700;cursor:pointer;">🖨 Imprimir</button>' +
                         '</div>' +
                     '</div>' +
-                    '<div style="display:flex;justify-content:center;padding:12px;background:#fff;border-radius:10px;">' +
-                        '<canvas id="qrCanvas_' + btoa(ctName).replace(/[^a-zA-Z0-9]/g,'') + '" width="160" height="160"></canvas>' +
+                    // URL editável
+                    '<div style="margin-bottom:10px;">' +
+                        '<div style="font-size:9px;font-weight:700;color:var(--adm-text-3);margin-bottom:4px;">🔗 URL DO QR CODE (editável)</div>' +
+                        '<div style="display:flex;gap:6px;">' +
+                            '<input id="qrUrl_' + safeId + '" value="' + escapeHtml(defaultURL) + '"' +
+                            ' style="flex:1;padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:10px;font-family:monospace;">' +
+                            '<button data-safe="' + safeId + '" onclick="_regenarQR(this)" style="padding:7px 10px;background:rgba(99,102,241,0.1);color:#818cf8;border:1px solid rgba(99,102,241,0.25);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">↻ Gerar</button>' +
+                        '</div>' +
                     '</div>' +
-                    '<div style="font-size:9px;color:var(--adm-text-3);text-align:center;margin-top:8px;word-break:break-all;">' + escapeHtml(checkinURL) + '</div>';
+                    // QR canvas
+                    '<div style="display:flex;justify-content:center;padding:12px;background:#fff;border-radius:10px;">' +
+                        '<canvas id="qrCanvas_' + safeId + '" width="180" height="180"></canvas>' +
+                    '</div>';
 
                 el.appendChild(card);
-
-                // Gera o QR code no canvas
-                var canvasId = 'qrCanvas_' + btoa(ctName).replace(/[^a-zA-Z0-9]/g,'');
-                generateQRCode(checkinURL, canvasId);
+                generateQRCode(defaultURL, 'qrCanvas_' + safeId);
             });
+        }
+
+        // Regenera QR com a URL editada pelo usuário
+        function _regenarQR(btn) {
+            var safeId = btn.dataset.safe;
+            var inp    = document.getElementById('qrUrl_' + safeId);
+            var url    = inp ? inp.value.trim() : '';
+            if (!url) { alert('Insira uma URL válida.'); return; }
+            generateQRCode(url, 'qrCanvas_' + safeId);
+        }
+
+        function _getQRUrlForCT(safeId) {
+            var inp = document.getElementById('qrUrl_' + safeId);
+            return inp ? inp.value.trim() : '';
+        }
+
+        function _downloadQR(btn) {
+            var ctName = btn.dataset.ct;
+            var safeId = btn.dataset.safe;
+            var url    = _getQRUrlForCT(safeId) || _buildCheckinURL(ctName);
+            var html   = buildQRPrintHTML(ctName, url);
+            var blob   = new Blob([html], { type: 'text/html' });
+            var a      = document.createElement('a');
+            a.href     = URL.createObjectURL(blob);
+            a.download = 'qr-checkin-' + ctName.replace(/\s+/g,'-').toLowerCase() + '.html';
+            a.click();
+            setTimeout(function(){ URL.revokeObjectURL(a.href); }, 2000);
+        }
+
+        function _printQR(btn) {
+            var ctName = btn.dataset.ct;
+            var safeId = btn.dataset.safe;
+            var url    = _getQRUrlForCT(safeId) || _buildCheckinURL(ctName);
+            var html   = buildQRPrintHTML(ctName, url);
+            var win    = window.open('', '_blank', 'width=500,height=700');
+            if (win) { win.document.write(html); win.document.close(); setTimeout(function(){ win.print(); }, 800); }
         }
 
         // Gerador de QR Code puro (sem biblioteca externa)
@@ -31476,9 +31642,8 @@
             img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&format=png&margin=4&data=' + encodeURIComponent(url);
         }
 
-        function buildQRPrintHTML(ctName) {
-            var baseURL = window.location.href.split('?')[0];
-            var checkinURL = baseURL + '?qr=' + encodeURIComponent(ctName) + '&acao=checkin';
+        function buildQRPrintHTML(ctName, checkinURL) {
+            checkinURL = checkinURL || _buildCheckinURL(ctName);
             var qrImgSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&format=png&margin=10&data=' + encodeURIComponent(checkinURL);
             return '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
                 '<style>' +
@@ -31510,26 +31675,7 @@
                 '</body></html>';
         }
 
-        function downloadQRCard(ctName) {
-            var html = buildQRPrintHTML(ctName);
-            var blob = new Blob([html], { type: 'text/html' });
-            var url  = URL.createObjectURL(blob);
-            var a    = document.createElement('a');
-            a.href   = url;
-            a.download = 'qr-checkin-' + ctName.replace(/\s+/g,'-').toLowerCase() + '.html';
-            a.click();
-            setTimeout(function() { URL.revokeObjectURL(url); }, 2000);
-        }
-
-        function printQRCard(ctName) {
-            var html = buildQRPrintHTML(ctName);
-            var win  = window.open('', '_blank', 'width=500,height=700');
-            if (win) {
-                win.document.write(html);
-                win.document.close();
-                setTimeout(function() { win.print(); }, 800);
-            }
-        }
+        // downloadQRCard / printQRCard replaced by _downloadQR / _printQR
 
         // ===== ADMIN: TREINOS CUSTOMIZADOS =====
         // Treinos pré-definidos padrão do sistema
