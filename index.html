@@ -11669,7 +11669,7 @@
         var _ctmId = (function() {
             try { return localStorage.getItem('ctm_id') || 'matrix'; } catch(e) { return 'matrix'; }
         })();
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwbVzupyFJoaJFinChGyKEL70PpnS_4MHjkwIOsBzag3SBUg-Z6kputF0bm15sBTXf2/exec'
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxkhTL6Bd5bRQha6MnnqRgQlR0qfm0myRbY2V0JZwi0mgBkC09iHxvlXYwKQc3QbKsY/exec'
                          + '?ctm=' + _ctmId;
 
         // ── Verifica se o cliente existe no registry ──────────────
@@ -18562,9 +18562,24 @@
                 h += '</div></div>';
             }
 
-            h += '<button onclick="abrirModalPlano()" style="width:100%;padding:11px;background:rgba(201,162,58,0.08);border:1.5px solid rgba(201,162,58,0.25);border-radius:12px;color:#C9A23A;font-size:13px;font-weight:700;cursor:pointer;">';
-            h += semPlano ? '📋 Escolher Plano' : '🔄 Trocar Plano';
-            h += '</button>';
+            // Status pendente/atrasado → destaque em "Pagar Agora"; em dia → "Trocar Plano"
+            var _devePagarBtn = (status === 'pendente' || status === 'atrasado' || status === 'vencendo') && !semPlano;
+            if (semPlano) {
+                h += '<button onclick="abrirModalPlano()" style="width:100%;padding:13px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#0D0B08;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;">';
+                h += '📋 Escolher Plano e Pagar';
+                h += '</button>';
+            } else if (_devePagarBtn) {
+                h += '<button id="pagarAgoraBtnTab" onclick="pagarAgoraTab(\'pagarAgoraBtnTab\')" style="width:100%;padding:13px;background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:6px;">';
+                h += '💰 Pagar Agora';
+                h += '</button>';
+                h += '<button onclick="abrirModalPlano()" style="width:100%;padding:10px;background:transparent;border:1px solid var(--border);border-radius:12px;color:var(--text-3);font-size:12px;cursor:pointer;">';
+                h += '🔄 Trocar plano';
+                h += '</button>';
+            } else {
+                h += '<button onclick="abrirModalPlano()" style="width:100%;padding:11px;background:rgba(201,162,58,0.08);border:1.5px solid rgba(201,162,58,0.25);border-radius:12px;color:#C9A23A;font-size:13px;font-weight:700;cursor:pointer;">';
+                h += '🔄 Trocar Plano';
+                h += '</button>';
+            }
             h += '</div>';
 
             // ── Alerta: cartão recusado + PIX como fallback ────────────────
@@ -18879,17 +18894,32 @@
                 h += '<div class="pag-badge ' + (statusClass[status]||'inativo') + '">' + (statusLabel[status]||status) + '</div>';
             }
             h += '</div>';
-            h += '<button onclick="abrirModalPlano()" class="pag-btn secondary" style="margin-top:10px;">';
-            h += semPlano ? '📋 Escolher Plano' : '🔄 Trocar plano';
-            h += '</button>';
+            // Botão principal: pagar agora se pendente/atrasado, trocar se em dia
+            var devePagar = (status === 'pendente' || status === 'atrasado' || status === 'vencendo' || status === 'inativo') && !semPlano;
+            if (semPlano) {
+                // Sem plano: escolher
+                h += '<button onclick="abrirModalPlano()" class="pag-btn" style="margin-top:10px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#0D0B08;font-weight:800;">';
+                h += '📋 Escolher Plano e Pagar';
+                h += '</button>';
+            } else if (devePagar) {
+                // Tem plano mas não pagou: botão de pagar em destaque
+                h += '<button id="pagarAgoraBtn" onclick="pagarAgora(\'pagarAgoraBtn\')" class="pag-btn" style="margin-top:10px;background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;font-weight:800;">';
+                h += '💰 Pagar Agora';
+                h += '</button>';
+                h += '<button onclick="abrirModalPlano()" class="pag-btn secondary" style="margin-top:6px;font-size:11px;opacity:0.6;">';
+                h += '🔄 Trocar plano';
+                h += '</button>';
+            } else {
+                // Em dia: só trocar
+                h += '<button onclick="abrirModalPlano()" class="pag-btn secondary" style="margin-top:10px;">';
+                h += '🔄 Trocar plano';
+                h += '</button>';
+            }
             h += '</div>';
 
             if (atrasado) {
                 h += '<div class="pag-atrasado-alert">⚠️ Sua mensalidade está em atraso. Regularize para evitar suspensão.</div>';
             }
-
-            // Bloco de pagamento (só se tiver plano e precisar pagar)
-            var devePagar = (status === 'pendente' || status === 'atrasado' || status === 'vencendo' || status === 'inativo') && !semPlano;
 
             // Alerta de fallback PIX (cartão recusado)
             if (pixFallback) {
@@ -19106,10 +19136,7 @@
                         if (!temCartao) {
                             // Sem cartão: gera o PIX automaticamente
                             setTimeout(function() {
-                                var pixBtn = document.getElementById('pagarAgoraBtn');
-                                if (pixBtn && !pixBtn.disabled) {
-                                    pixBtn.click();
-                                }
+                                pagarAgora('pagarAgoraBtn');
                             }, 600);
                         }
                         // Com cartão: a cobrança automática já está ativa pelo cron diário
@@ -19130,7 +19157,80 @@
         }
 
         // ── PIX ──────────────────────────────────────────────────
-        async function gerarPixMensalidade() {
+        // ── Pagar Agora — inteligente ──────────────────────────────────
+        // 1. Tem cartão → cobra no cartão imediatamente (cobrarAgoraAluno)
+        // 2. Sem cartão → gera PIX para o aluno pagar
+        async function pagarAgora(btnId) {
+            var btn = btnId ? document.getElementById(btnId) : null;
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Processando...'; }
+            try {
+                // Verifica se tem cartão
+                var ps = await secureFetch('getPagamentoStatus', { email: currentUser.email });
+                var temCartao = ps && ps.temCartaoSalvo;
+
+                if (temCartao) {
+                    // ── TEM CARTÃO: cobra imediatamente ──
+                    var res = await secureFetch('cobrarAgoraAluno', { email: currentUser.email });
+                    if (res && res.success) {
+                        if (res.metodo === 'PIX' || res.metodo === 'PIX_MANUAL') {
+                            // Cartão falhou, gerou PIX
+                            if (btn) { btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
+                            alert('⚠️ Não foi possível cobrar o cartão. Um PIX foi gerado — verifique a seção de pagamento.');
+                        } else {
+                            // Cartão aprovado
+                            if (btn) { btn.textContent = '✅ Pago!'; }
+                            setTimeout(function() { loadPagamentos(); }, 1500);
+                            return;
+                        }
+                    } else {
+                        if (btn) { btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
+                        alert('❌ ' + ((res && res.message) || 'Erro ao processar pagamento'));
+                        return;
+                    }
+                } else {
+                    // ── SEM CARTÃO: gera PIX ──
+                    if (btn) { btn.textContent = '⏳ Gerando PIX...'; }
+                    await gerarPixMensalidade();
+                    if (btn) { btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
+                }
+            } catch(e) {
+                if (btn) { btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
+                console.error('pagarAgora:', e);
+            }
+        }
+
+        async function pagarAgoraTab(btnId) {
+            var btn = btnId ? document.getElementById(btnId) : null;
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Processando...'; }
+            try {
+                var ps = await secureFetch('getPagamentoStatus', { email: currentUser.email });
+                var temCartao = ps && ps.temCartaoSalvo;
+
+                if (temCartao) {
+                    var res = await secureFetch('cobrarAgoraAluno', { email: currentUser.email });
+                    if (res && res.success && res.metodo !== 'PIX' && res.metodo !== 'PIX_MANUAL') {
+                        if (btn) { btn.textContent = '✅ Pago!'; }
+                        setTimeout(function() { loadPagamentosTab(); }, 1500);
+                        return;
+                    } else {
+                        if (btn) { btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
+                        if (res && res.metodo !== 'PIX') {
+                            alert('❌ ' + ((res && res.message) || 'Erro ao processar pagamento'));
+                            return;
+                        }
+                        // PIX fallback: continua e gera PIX
+                    }
+                }
+                // Sem cartão ou PIX fallback: gera PIX dinâmico
+                if (btn) { btn.textContent = '⏳ Gerando PIX...'; }
+                await gerarPixDinamicoTab();
+                if (btn) { btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
+            } catch(e) {
+                if (btn) { btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
+            }
+        }
+
+                async function gerarPixMensalidade() {
             var btn = document.getElementById('pagarAgoraBtn');
             var container = document.getElementById('pixContainer');
             if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando PIX...'; }
@@ -19203,18 +19303,38 @@
         function iniciarPollingPix(pagamentoId) {
             if (_pixPollingTimer) clearInterval(_pixPollingTimer);
             var tentativas = 0;
+            Logger && Logger.log && Logger.log('[PIX] Iniciando polling: ' + pagamentoId);
             _pixPollingTimer = setInterval(async function() {
                 tentativas++;
-                if (tentativas > 60) { clearInterval(_pixPollingTimer); return; }
+                // Para após 10 min (120 tentativas × 5s)
+                if (tentativas > 120) { clearInterval(_pixPollingTimer); return; }
                 try {
-                    var data = await secureFetch('verificarPagamento', { pagamentoId: pagamentoId });
-                    var msgEl = document.getElementById('pixStatusMsg');
-                    if (data.status === 'APROVADO') {
+                    var res = await secureFetch('verificarPagamento', { pagamentoId: pagamentoId });
+
+                    // Atualiza mensagem em qualquer tela que exiba pixStatusMsg
+                    var msgEls = document.querySelectorAll('#pixStatusMsg, #pixStatusMsgTab');
+                    if (res.status === 'APROVADO') {
                         clearInterval(_pixPollingTimer);
-                        if (msgEl) { msgEl.style.color = '#4ade80'; msgEl.textContent = '✅ Pagamento confirmado! Obrigado!'; }
-                        setTimeout(loadPagamentos, 2000);
-                    } else if (data.status === 'PENDENTE') {
-                        if (msgEl) { msgEl.style.color = 'var(--text-3)'; msgEl.textContent = '⏳ Aguardando confirmação do banco...'; }
+                        // ── PAGO: atualiza visual imediatamente ───────────────
+                        msgEls.forEach(function(el) {
+                            el.style.color    = '#4ade80';
+                            el.style.fontWeight = '700';
+                            el.textContent    = '✅ Pagamento confirmado!';
+                        });
+                        // Badge de status na tela (⏳ Aguardando → ✅ Em dia)
+                        var badges = document.querySelectorAll('.pag-badge.pendente, .pag-badge');
+                        badges.forEach(function(b) { b.textContent = '✅ Em dia'; b.className = 'pag-badge pago'; });
+                        // Recarrega ambas as telas após 2s
+                        setTimeout(function() {
+                            loadPagamentos();
+                            if (typeof loadPagamentosTab === 'function') loadPagamentosTab();
+                        }, 2000);
+                    } else {
+                        msgEls.forEach(function(el) {
+                            el.style.color   = 'var(--text-3)';
+                            el.style.fontWeight = '400';
+                            el.textContent   = '⏳ Aguardando confirmação... (' + tentativas + ')';
+                        });
                     }
                 } catch(e) {}
             }, 5000);
