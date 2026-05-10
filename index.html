@@ -9737,47 +9737,94 @@
 
             <!-- CTs moved to Sistema tab -->
 
-            <!-- TAB: LISTA DE PRESENÇA -->
+            <!-- TAB: LISTA DE PRESENÇA + CHAMADA -->
             <div id="adm-presenca" class="adm-tab">
                 <div class="admin-container">
-                    <div class="adm-page-title">
-                        <h2>📋 Lista de Presença</h2>
-                        <p>Alunos confirmados e ausentes por modalidade e horário</p>
+
+                    <!-- Sub-abas -->
+                    <div style="display:flex;gap:0;margin-bottom:16px;background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;overflow:hidden;">
+                        <button id="presSubTab-lista" onclick="switchPresSubTab('lista')"
+                            style="flex:1;padding:11px 8px;font-size:12px;font-weight:700;border:none;cursor:pointer;
+                                   background:var(--adm-primary);color:#000;border-radius:0;transition:all .2s;">
+                            📋 Lista de Presença
+                        </button>
+                        <button id="presSubTab-chamada" onclick="switchPresSubTab('chamada')"
+                            style="flex:1;padding:11px 8px;font-size:12px;font-weight:700;border:none;cursor:pointer;
+                                   background:transparent;color:var(--adm-text-2);border-radius:0;transition:all .2s;">
+                            📣 Lista de Chamada
+                        </button>
                     </div>
 
-                    <div class="admin-section">
-                        <!-- Filtros -->
-                        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-                            <select id="presListCT" onchange="onPresListCTChange()" style="flex:1;min-width:100px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
-                                <option value="">Todos os CTs</option>
-                            </select>
-                            <select id="presListMod" onchange="onPresListModChange()" style="flex:1;min-width:110px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
-                                <option value="">Todas as modalidades</option>
-                            </select>
-                            <input type="date" id="presListDate" onchange="loadPresencaList()" style="flex:1;min-width:120px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                    <!-- ══ SUB-ABA: LISTA DE PRESENÇA ═══════════════════════════ -->
+                    <div id="presSub-lista">
+                        <div class="adm-page-title" style="margin-bottom:12px;">
+                            <h2>📋 Lista de Presença</h2>
+                            <p>Histórico de quem treinou — por período, CT e modalidade</p>
                         </div>
-                        <!-- Filtro de horário específico (populado dinamicamente) -->
-                        <div id="presListHorarioFilter" style="display:none;margin-bottom:8px;">
-                            <select id="presListHorario" onchange="loadPresencaList()" style="width:100%;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
-                                <option value="">Todos os horários</option>
-                            </select>
+                        <div class="admin-section">
+                            <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                                <select id="presListCT" onchange="onPresListCTChange()" style="flex:1;min-width:100px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <option value="">Todos os CTs</option>
+                                </select>
+                                <select id="presListMod" onchange="onPresListModChange()" style="flex:1;min-width:110px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <option value="">Todas as modalidades</option>
+                                </select>
+                                <input type="date" id="presListDate" onchange="loadPresencaList()" style="flex:1;min-width:120px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                            </div>
+                            <div id="presListHorarioFilter" style="display:none;margin-bottom:8px;">
+                                <select id="presListHorario" onchange="loadPresencaList()" style="width:100%;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <option value="">Todos os horários</option>
+                                </select>
+                            </div>
+                            <div style="display:flex;gap:4px;margin-bottom:12px;">
+                                <button class="admin-filter-btn active" onclick="setPresListPeriod('dia',this)">Dia</button>
+                                <button class="admin-filter-btn" onclick="setPresListPeriod('semana',this)">Semana</button>
+                                <button class="admin-filter-btn" onclick="setPresListPeriod('mes',this)">Mês</button>
+                            </div>
+                            <div id="presListKPI" style="display:none;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;"></div>
+                            <div id="presListResults"><div class="admin-empty">Selecione CT e data</div></div>
+                            <div style="margin-top:12px;text-align:center;">
+                                <button onclick="gerarRelatorioPresenca()" style="padding:10px 24px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">📊 Gerar Relatório</button>
+                            </div>
+                            <div id="presRelatorio" style="display:none;margin-top:12px;"></div>
                         </div>
-                        <!-- Período -->
-                        <div style="display:flex;gap:4px;margin-bottom:12px;">
-                            <button class="admin-filter-btn active" onclick="setPresListPeriod('dia',this)">Dia</button>
-                            <button class="admin-filter-btn" onclick="setPresListPeriod('semana',this)">Semana</button>
-                            <button class="admin-filter-btn" onclick="setPresListPeriod('mes',this)">Mês</button>
-                        </div>
-                        <!-- KPI Cards -->
-                        <div id="presListKPI" style="display:none;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;"></div>
-                        <!-- Results -->
-                        <div id="presListResults"><div class="admin-empty">Selecione CT e data</div></div>
-                        <!-- Gerar Relatório -->
-                        <div style="margin-top:12px;text-align:center;">
-                            <button onclick="gerarRelatorioPresenca()" style="padding:10px 24px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">📊 Gerar Relatório</button>
-                        </div>
-                        <div id="presRelatorio" style="display:none;margin-top:12px;"></div>
                     </div>
+
+                    <!-- ══ SUB-ABA: LISTA DE CHAMADA ════════════════════════════ -->
+                    <div id="presSub-chamada" style="display:none;">
+                        <div class="adm-page-title" style="margin-bottom:12px;">
+                            <h2>📣 Lista de Chamada</h2>
+                            <p>Selecione o horário da aula — confirme quem está presente</p>
+                        </div>
+                        <div class="admin-section">
+                            <!-- Filtros obrigatórios: CT + modalidade + horário + data -->
+                            <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                                <select id="chamadaCT" onchange="onChamadaCTChange()" style="flex:1;min-width:120px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <option value="">Selecione o CT</option>
+                                </select>
+                                <input type="date" id="chamadaDate" onchange="loadListaChamada()" style="flex:1;min-width:120px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                            </div>
+                            <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+                                <select id="chamadaMod" onchange="onChamadaModChange()" style="flex:1;min-width:120px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <option value="">Todas as modalidades</option>
+                                </select>
+                                <select id="chamadaHorario" onchange="loadListaChamada()" style="flex:1;min-width:120px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <option value="">Todos os horários</option>
+                                </select>
+                            </div>
+                            <!-- KPI chamada -->
+                            <div id="chamadaKPI" style="display:none;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;"></div>
+                            <!-- Lista de chamada -->
+                            <div id="chamadaResults"><div class="admin-empty">Selecione o CT, data e horário da aula</div></div>
+                            <!-- Botão confirmar tudo -->
+                            <div id="chamadaActions" style="display:none;margin-top:12px;">
+                                <button onclick="confirmarChamadaTodos()" style="width:100%;padding:12px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;letter-spacing:.3px;">
+                                    ✅ Confirmar Chamada — Registrar Treino de Todos
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
@@ -28686,21 +28733,333 @@
         var _presListAllRegistered = []; // cadastrados — cached for report
         var _presListCTHorarios   = {};  // { modId: ['20:00','06:00'] } — cached por CT
 
-        async function initPresencaList() {
-            var sel = document.getElementById('presListCT');
-            if (sel && sel.options.length <= 1) {
+        // ══════════════════════════════════════════════════════════════
+        // SUB-ABAS DA PRESENÇA
+        // ══════════════════════════════════════════════════════════════
+        var _presCurrentSubTab = 'lista';
+
+        function switchPresSubTab(name) {
+            _presCurrentSubTab = name;
+            // Mostra/esconde painéis
+            document.getElementById('presSub-lista').style.display    = name === 'lista'   ? '' : 'none';
+            document.getElementById('presSub-chamada').style.display  = name === 'chamada' ? '' : 'none';
+            // Estilo botões
+            var btnLista   = document.getElementById('presSubTab-lista');
+            var btnChamada = document.getElementById('presSubTab-chamada');
+            btnLista.style.background   = name === 'lista'   ? 'var(--adm-primary)' : 'transparent';
+            btnLista.style.color        = name === 'lista'   ? '#000'               : 'var(--adm-text-2)';
+            btnChamada.style.background = name === 'chamada' ? 'var(--adm-primary)' : 'transparent';
+            btnChamada.style.color      = name === 'chamada' ? '#000'               : 'var(--adm-text-2)';
+            // Inicializa a sub-aba ao abrir
+            if (name === 'chamada') initListaChamada();
+        }
+
+        // ══════════════════════════════════════════════════════════════
+        // LISTA DE CHAMADA
+        // ══════════════════════════════════════════════════════════════
+        var _chamadaCTHorarios = {};  // { modId: ['07:30','21:00'] }
+        var _chamadaAlunosState = {}; // email|mod|hor → true/false (marcado pelo professor)
+
+        async function initListaChamada() {
+            // Popula CT select
+            var selCT = document.getElementById('chamadaCT');
+            if (selCT && selCT.options.length <= 1) {
                 try {
                     var data = await secureFetch('getCTsList', {});
                     if (data.success && data.cts) {
-                        var h = '<option value="">Todos os CTs</option>';
+                        var h = '<option value="">Selecione o CT</option>';
                         data.cts.forEach(function(ct) {
                             var nome = typeof ct === 'string' ? ct : ct.name;
                             h += '<option value="' + escapeHtml(nome) + '">' + escapeHtml(nome) + '</option>';
                         });
-                        sel.innerHTML = h;
+                        selCT.innerHTML = h;
+                        // Pré-seleciona CT do usuário logado
+                        if (currentUser && currentUser.ct) selCT.value = currentUser.ct;
                     }
                 } catch(e) {}
             }
+            // Data padrão = hoje
+            var dateEl = document.getElementById('chamadaDate');
+            if (dateEl && !dateEl.value) {
+                var t = new Date();
+                dateEl.value = t.getFullYear() + '-' + ('0'+(t.getMonth()+1)).slice(-2) + '-' + ('0'+t.getDate()).slice(-2);
+            }
+            // Popula modalidades
+            var selMod = document.getElementById('chamadaMod');
+            if (selMod && selMod.options.length <= 1 && typeof MODALIDADES_CATALOG !== 'undefined') {
+                var hm = '<option value="">Todas as modalidades</option>';
+                MODALIDADES_CATALOG.forEach(function(m) {
+                    hm += '<option value="' + escapeHtml(m.id) + '">' + m.icon + ' ' + escapeHtml(m.nome) + '</option>';
+                });
+                selMod.innerHTML = hm;
+            }
+            // Se já tem CT, carrega horários
+            if (selCT && selCT.value) onChamadaCTChange();
+        }
+
+        async function onChamadaCTChange() {
+            var ct  = document.getElementById('chamadaCT').value;
+            var mod = document.getElementById('chamadaMod').value;
+            _chamadaCTHorarios = {};
+            var selHor = document.getElementById('chamadaHorario');
+            selHor.innerHTML = '<option value="">Todos os horários</option>';
+            if (!ct) { loadListaChamada(); return; }
+            try {
+                var params = { ct: ct };
+                if (mod) params.modalidades = mod;
+                var res = await secureFetch('getHorariosCT', params);
+                if (res && res.success && res.slotsPorMod) {
+                    _chamadaCTHorarios = res.slotsPorMod;
+                    _populateChamadaHorarios(mod);
+                }
+            } catch(e) {}
+            loadListaChamada();
+        }
+
+        function onChamadaModChange() {
+            var mod = document.getElementById('chamadaMod').value;
+            _populateChamadaHorarios(mod);
+            loadListaChamada();
+        }
+
+        function _populateChamadaHorarios(modFilter) {
+            var selHor = document.getElementById('chamadaHorario');
+            if (!selHor) return;
+            var unique = {};
+            Object.keys(_chamadaCTHorarios).forEach(function(modId) {
+                if (modFilter && modId !== modFilter && modId !== '_global') return;
+                (_chamadaCTHorarios[modId] || []).forEach(function(t) { unique[t] = true; });
+            });
+            var times = Object.keys(unique).sort();
+            var h = '<option value="">Todos os horários</option>';
+            times.forEach(function(t) { h += '<option value="' + escapeHtml(t) + '">🕐 ' + escapeHtml(t) + '</option>'; });
+            selHor.innerHTML = h;
+        }
+
+        async function loadListaChamada() {
+            var ct    = document.getElementById('chamadaCT').value;
+            var mod   = document.getElementById('chamadaMod').value;
+            var hor   = document.getElementById('chamadaHorario').value;
+            var date  = document.getElementById('chamadaDate').value;
+            var res   = document.getElementById('chamadaResults');
+            var kpi   = document.getElementById('chamadaKPI');
+            var acts  = document.getElementById('chamadaActions');
+
+            if (!ct || !date) {
+                res.innerHTML = '<div class="admin-empty">Selecione o CT e a data da aula</div>';
+                kpi.style.display = 'none'; acts.style.display = 'none';
+                return;
+            }
+
+            res.innerHTML = '<div class="admin-empty">Carregando...</div>';
+            kpi.style.display = 'none'; acts.style.display = 'none';
+            _chamadaAlunosState = {};
+
+            try {
+                var params = { ct: ct, dataDe: date, dataAte: date };
+                if (mod) params.modalidade = mod;
+                if (hor) params.horario    = hor;
+                var data = await secureFetch('getPresencaList', params);
+                if (!data.success) { res.innerHTML = '<div class="admin-empty">' + (data.message||'Erro') + '</div>'; return; }
+
+                var registered = data.alunosCadastrados || [];
+                var confirmed  = data.presencas         || [];
+
+                // Índice de já confirmados
+                var jaConfirmados = {};
+                confirmed.forEach(function(p) {
+                    jaConfirmados[p.email + '|' + (p.modalidade||'') + '|' + (p.horario||'')] = true;
+                    jaConfirmados[p.email] = true; // fallback simples
+                });
+
+                if (registered.length === 0 && confirmed.length === 0) {
+                    res.innerHTML = '<div class="admin-empty">Nenhum aluno cadastrado neste horário</div>';
+                    return;
+                }
+
+                // Monta lista unificada: cadastrados + presentes sem slot
+                var allEmails = {};
+                var allAlunos = [];
+                registered.forEach(function(a) {
+                    var k = a.email + '|' + a.modalidade + '|' + a.horario;
+                    if (allEmails[k]) return;
+                    allEmails[k] = true;
+                    allAlunos.push({ email: a.email, nome: a.nome, modalidade: a.modalidade, horario: a.horario,
+                        presente: a.confirmado });
+                });
+                // Adiciona confirmados que não estavam em registered
+                confirmed.forEach(function(p) {
+                    var k = p.email + '|' + p.modalidade + '|' + p.horario;
+                    if (allEmails[k]) return;
+                    allEmails[k] = true;
+                    allAlunos.push({ email: p.email, nome: p.nome, modalidade: p.modalidade, horario: p.horario,
+                        presente: true });
+                });
+
+                allAlunos.sort(function(a,b){ return a.nome.localeCompare(b.nome); });
+
+                // Inicializa estado dos checkboxes
+                allAlunos.forEach(function(a) {
+                    var k = a.email + '|' + a.modalidade + '|' + a.horario;
+                    _chamadaAlunosState[k] = a.presente; // pre-marca confirmados
+                });
+
+                // KPI
+                var totalPresentes = allAlunos.filter(function(a){ return a.presente; }).length;
+                kpi.style.display = 'grid';
+                kpi.innerHTML =
+                    '<div style="padding:10px;border-radius:10px;text-align:center;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);">' +
+                        '<div style="font-size:22px;font-weight:900;color:#4ade80;">' + totalPresentes + '</div>' +
+                        '<div style="font-size:9px;color:var(--adm-text-3);font-weight:600;">✅ PRESENTES</div></div>' +
+                    '<div style="padding:10px;border-radius:10px;text-align:center;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);">' +
+                        '<div style="font-size:22px;font-weight:900;color:#f87171;">' + (allAlunos.length - totalPresentes) + '</div>' +
+                        '<div style="font-size:9px;color:var(--adm-text-3);font-weight:600;">⬜ AUSENTES</div></div>' +
+                    '<div style="padding:10px;border-radius:10px;text-align:center;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);">' +
+                        '<div style="font-size:22px;font-weight:900;color:#6366f1;">' + allAlunos.length + '</div>' +
+                        '<div style="font-size:9px;color:var(--adm-text-3);font-weight:600;">👥 ESPERADOS</div></div>';
+
+                // Renderiza lista de chamada
+                var h = '<div style="display:flex;flex-direction:column;gap:6px;">';
+                allAlunos.forEach(function(a) {
+                    var k       = a.email + '|' + a.modalidade + '|' + a.horario;
+                    var present = a.presente;
+                    var isKid   = a.email && a.email.indexOf('@kids.ct') !== -1;
+                    h += '<label data-chamada-key="' + escapeHtml(k) + '" data-email="' + escapeHtml(a.email) + '"';
+                    h += ' data-mod="' + escapeHtml(a.modalidade||'') + '" data-hor="' + escapeHtml(a.horario||'') + '"';
+                    h += ' onclick="_toggleChamada(this)"';
+                    h += ' style="display:flex;align-items:center;gap:12px;padding:12px 14px;';
+                    h += 'background:' + (present ? 'rgba(74,222,128,0.08)' : 'var(--adm-bg-elevated)') + ';';
+                    h += 'border:1.5px solid ' + (present ? 'rgba(74,222,128,0.3)' : 'var(--adm-border)') + ';';
+                    h += 'border-radius:10px;cursor:pointer;transition:all .15s;">';
+                    // Ícone de status
+                    h += '<div style="width:28px;height:28px;flex-shrink:0;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;';
+                    h += 'background:' + (present ? '#22c55e' : 'var(--adm-bg-card)') + ';';
+                    h += 'border:2px solid ' + (present ? '#22c55e' : 'var(--adm-border)') + ';">';
+                    h += present ? '✓' : '';
+                    h += '</div>';
+                    // Nome
+                    h += '<div style="flex:1;min-width:0;">';
+                    h += '<div style="font-size:13px;font-weight:700;color:' + (present ? 'var(--adm-text-1)' : 'var(--adm-text-2)') + ';">';
+                    h += escapeHtml(a.nome);
+                    if (isKid) h += ' <span style="font-size:8px;background:#6c3ce0;color:#fff;padding:1px 4px;border-radius:3px;margin-left:3px;">KIDS</span>';
+                    h += '</div>';
+                    if (a.horario) h += '<div style="font-size:10px;color:var(--adm-text-3);">🕐 ' + escapeHtml(a.horario) + '</div>';
+                    h += '</div>';
+                    // Badge de status
+                    h += '<div style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:12px;';
+                    h += 'background:' + (present ? 'rgba(74,222,128,0.15)' : 'rgba(148,163,184,0.1)') + ';';
+                    h += 'color:' + (present ? '#4ade80' : 'var(--adm-text-3)') + ';">';
+                    h += present ? '✅ Presente' : '⬜ Ausente';
+                    h += '</div>';
+                    h += '</label>';
+                });
+                h += '</div>';
+                res.innerHTML = h;
+                acts.style.display = 'block';
+
+            } catch(e) {
+                res.innerHTML = '<div class="admin-empty">Erro: ' + escapeHtml(e.message) + '</div>';
+            }
+        }
+
+        // Toggle presença de um aluno na chamada (clique no card)
+        function _toggleChamada(lbl) {
+            var k       = lbl.dataset.chamadaKey;
+            var current = !!_chamadaAlunosState[k];
+            var novo    = !current;
+            _chamadaAlunosState[k] = novo;
+
+            // Atualiza visual do card
+            lbl.style.background  = novo ? 'rgba(74,222,128,0.08)' : 'var(--adm-bg-elevated)';
+            lbl.style.borderColor = novo ? 'rgba(74,222,128,0.3)'  : 'var(--adm-border)';
+            var icon  = lbl.querySelector('div:first-child');
+            var nome  = lbl.querySelector('div:nth-child(2) > div:first-child');
+            var badge = lbl.querySelector('div:last-child');
+            if (icon) {
+                icon.style.background  = novo ? '#22c55e' : 'var(--adm-bg-card)';
+                icon.style.borderColor = novo ? '#22c55e' : 'var(--adm-border)';
+                icon.textContent       = novo ? '✓' : '';
+            }
+            if (nome)  nome.style.color = novo ? 'var(--adm-text-1)' : 'var(--adm-text-2)';
+            if (badge) {
+                badge.style.background = novo ? 'rgba(74,222,128,0.15)' : 'rgba(148,163,184,0.1)';
+                badge.style.color      = novo ? '#4ade80' : 'var(--adm-text-3)';
+                badge.textContent      = novo ? '✅ Presente' : '⬜ Ausente';
+            }
+
+            // Atualiza KPI
+            var kpi = document.getElementById('chamadaKPI');
+            if (kpi) {
+                var labels = document.querySelectorAll('#chamadaResults label[data-chamada-key]');
+                var tot = 0, pres = 0;
+                labels.forEach(function(l) { tot++; if (_chamadaAlunosState[l.dataset.chamadaKey]) pres++; });
+                var divs = kpi.querySelectorAll('div > div:first-child');
+                if (divs[0]) divs[0].textContent = pres;
+                if (divs[1]) divs[1].textContent = tot - pres;
+                if (divs[2]) divs[2].textContent = tot;
+            }
+        }
+
+        // Confirma chamada: registra presença de todos marcados como presente
+        async function confirmarChamadaTodos() {
+            var ct   = document.getElementById('chamadaCT').value;
+            var date = document.getElementById('chamadaDate').value;
+            if (!ct || !date) { alert('Selecione CT e data antes de confirmar.'); return; }
+
+            var labels = document.querySelectorAll('#chamadaResults label[data-chamada-key]');
+            if (!labels.length) return;
+
+            var btn = document.querySelector('#chamadaActions button');
+            if (btn) { btn.disabled = true; btn.textContent = 'Confirmando chamada...'; }
+
+            var ok = 0, pulados = 0, erros = [];
+            for (var i = 0; i < labels.length; i++) {
+                var lbl   = labels[i];
+                var k     = lbl.dataset.chamadaKey;
+                var presente = !!_chamadaAlunosState[k];
+                if (!presente) continue; // ausente — não registra
+
+                var email = lbl.dataset.email;
+                var mod   = lbl.dataset.mod;
+                var hor   = lbl.dataset.hor;
+
+                try {
+                    var res = await secureFetch('registrarPresencaManual', {
+                        targetEmail: email,
+                        ct:          ct,
+                        modalidade:  mod,
+                        horario:     hor,
+                        data:        date
+                    });
+                    if (res && res.success) ok++;
+                    else if (res && res.message && res.message.indexOf('já registrada') !== -1) pulados++;
+                    else erros.push((res && res.message) || 'Erro');
+                } catch(e) { erros.push(e.message); }
+            }
+
+            if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar Chamada — Registrar Treino de Todos'; }
+
+            var msg = ok + ' presença(s) registrada(s)';
+            if (pulados) msg += ' · ' + pulados + ' já tinham presença';
+            if (erros.length) msg += '\nErros: ' + erros.join(', ');
+            alert(msg);
+            if (ok > 0) loadListaChamada(); // recarrega para refletir
+        }
+
+                async function initPresencaList() {
+            // Popula CT de ambas as abas
+            var ctData = null;
+            try { ctData = await secureFetch('getCTsList', {}); } catch(e) {}
+            var ctHtml = '<option value="">Todos os CTs</option>';
+            if (ctData && ctData.success && ctData.cts) {
+                ctData.cts.forEach(function(ct) {
+                    var nome = typeof ct === 'string' ? ct : ct.name;
+                    ctHtml += '<option value="' + escapeHtml(nome) + '">' + escapeHtml(nome) + '</option>';
+                });
+            }
+            var selPres = document.getElementById('presListCT');
+            if (selPres && selPres.options.length <= 1) selPres.innerHTML = ctHtml;
+
             var dateEl = document.getElementById('presListDate');
             if (dateEl && !dateEl.value) {
                 var today = new Date();
