@@ -19011,7 +19011,7 @@
             document.getElementById('planoVencimentoBox').style.display = 'none';
             if (msg) msg.textContent = '';
             // Botão sempre visível, desabilitado até selecionar
-            if (btn) { btn.style.opacity = '0.35'; btn.style.cursor = 'not-allowed'; btn.disabled = true; btn.textContent = '✅ Confirmar Plano'; }
+            if (btn) { btn.style.opacity = '0.35'; btn.style.cursor = 'not-allowed'; btn.disabled = true; btn.textContent = '💰 Pagar Agora'; }
             var hint = document.getElementById('planoConfirmarHint');
             if (hint) hint.textContent = 'Selecione um plano acima para continuar';
             _pagPlanoSelecionado = null; _pagDiaSelecionado = null;
@@ -19085,22 +19085,42 @@
             if (!_pagPlanoSelecionado) return;
             var btn = document.getElementById('planoConfirmarBtn');
             var msg = document.getElementById('planoSelecionarMsg');
-            if (btn) { btn.disabled = true; btn.textContent = '⏳ Confirmando...'; }
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Processando pagamento...'; }
             try {
                 var data = await secureFetch('selecionarPlanoAluno', {
                     planoId:       _pagPlanoSelecionado.id,
                     diaVencimento: _pagDiaSelecionado || 10
                 });
                 if (data.success) {
-                    if (msg) { msg.style.color = '#4ade80'; msg.textContent = '✅ Plano selecionado! Vencimento: ' + (data.vencimento || ''); }
-                    setTimeout(function(){ fecharModalPlano(); loadPagamentos(); if(document.getElementById('pagamentos-tab').classList.contains('active')) loadPagamentosTab(); }, 1200);
+                    if (msg) { msg.style.color = '#4ade80'; msg.textContent = '✅ Plano selecionado! Gerando cobrança...'; }
+                    setTimeout(async function() {
+                        fecharModalPlano();
+                        await loadPagamentos();
+                        // Após confirmar plano: gera PIX automaticamente se não tem cartão
+                        // O aluno não precisa procurar o botão — a cobrança já inicia
+                        var temCartao = false;
+                        try {
+                            var ps = await secureFetch('getPagamentoStatus', { email: currentUser.email });
+                            temCartao = ps && ps.temCartaoSalvo;
+                        } catch(e) {}
+                        if (!temCartao) {
+                            // Sem cartão: gera o PIX automaticamente
+                            setTimeout(function() {
+                                var pixBtn = document.getElementById('pagarAgoraBtn');
+                                if (pixBtn && !pixBtn.disabled) {
+                                    pixBtn.click();
+                                }
+                            }, 600);
+                        }
+                        // Com cartão: a cobrança automática já está ativa pelo cron diário
+                    }, 1000);
                 } else {
                     if (msg) { msg.style.color = '#f87171'; msg.textContent = '❌ ' + (data.message || 'Erro'); }
-                    if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar plano'; }
+                    if (btn) { btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
                 }
             } catch(e) {
                 if (msg) { msg.style.color = '#f87171'; msg.textContent = '❌ Erro de conexão'; }
-                if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar plano'; }
+                if (btn) { btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
             }
         }
 
@@ -34580,8 +34600,8 @@
             <!-- Header -->
             <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px 12px;">
                 <div>
-                    <div style="font-size:16px;font-weight:800;color:var(--text-1);">📋 Escolher Plano</div>
-                    <div style="font-size:11px;color:var(--text-3);margin-top:2px;">Selecione o plano e toque em Confirmar</div>
+                    <div style="font-size:16px;font-weight:800;color:var(--text-1);">💳 Escolher Plano e Pagar</div>
+                    <div style="font-size:11px;color:var(--text-3);margin-top:2px;">Selecione o plano — o pagamento será feito na hora</div>
                 </div>
                 <button onclick="fecharModalPlano()" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.08);border:none;color:var(--text-2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
             </div>
@@ -34598,7 +34618,7 @@
                 <div id="planoSelecionarMsg" style="font-size:11px;text-align:center;min-height:14px;margin-bottom:10px;color:var(--text-3);"></div>
                 <button id="planoConfirmarBtn" onclick="confirmarSelecaoPlano()"
                     style="width:100%;padding:15px;background:linear-gradient(135deg,#C9A23A,#F8E7A1 55%,#8C6A0A);color:#0D0B08;border:none;border-radius:14px;font-size:15px;font-weight:800;cursor:not-allowed;opacity:0.35;transition:all 0.25s cubic-bezier(0.4,0,0.2,1);letter-spacing:0.3px;">
-                    ✅ Confirmar Plano
+                    💰 Pagar Agora
                 </button>
                 <div id="planoConfirmarHint" style="font-size:10px;color:var(--text-3);text-align:center;margin-top:8px;">Selecione um plano acima para continuar</div>
             </div>
