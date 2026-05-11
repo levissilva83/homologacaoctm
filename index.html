@@ -11289,276 +11289,7 @@
     </div>
 
     <!-- STUDENT EDITOR MODAL (ADMIN) -->
-    <div id="stuModal" class="stu-modal-overlay">
-        <div class="stu-modal">
-            <div class="stu-modal-header">
-                <div class="stu-modal-toprow">
-                    <button class="stu-modal-back" onclick="closeStuModal()">‹ Voltar</button>
-                    <div class="stu-modal-title">Editar Aluno</div>
-                    <button class="stu-modal-save" id="stuSaveBtn" onclick="saveStuModal()">Salvar</button>
-                </div>
-            </div>
-            <div class="stu-modal-body">
-                <div id="stuModalMsg" class="stu-modal-msg"></div>
-
-                <!-- Hero -->
-                <div class="stu-hero">
-                    <div class="stu-hero-avatar" id="stuAvatar">?</div>
-                    <div class="stu-hero-name" id="stuHeroName">—</div>
-                    <div class="stu-hero-email" id="stuHeroEmail">—</div>
-                    <div id="stuHeroCategoriaIBJJF" style="display:none;font-size:11px;font-weight:700;color:var(--adm-primary);margin:2px 0 6px;"></div>
-                    <div class="stu-hero-stats">
-                        <div class="stu-hero-stat">
-                            <div class="stu-hero-stat-num" id="stuHeroTreinos">0</div>
-                            <div class="stu-hero-stat-lbl">Treinos</div>
-                        </div>
-                        <div class="stu-hero-stat">
-                            <div class="stu-hero-stat-num" id="stuHeroModalidade" style="font-size:11px;">—</div>
-                            <div class="stu-hero-stat-lbl">Modalidade</div>
-                        </div>
-                        <div class="stu-hero-stat">
-                            <div class="stu-hero-stat-num" id="stuHeroCT">—</div>
-                            <div class="stu-hero-stat-lbl">CT</div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Core -->
-                <div class="stu-section">
-                    <div class="stu-section-title">👤 Dados do Aluno</div>
-                    <div class="stu-field">
-                        <label>Nome Completo</label>
-                        <input type="text" id="stuName">
-                    </div>
-
-                    <div class="stu-field">
-                        <label>CT Principal</label>
-                        <select id="stuCT" onchange="onStuCTChange()"></select>
-                    </div>
-                    <div class="stu-field">
-                        <label>📅 Dias de Treino</label>
-                        <div class="stu-days-row" id="stuDiasGrid">
-                            <button type="button" class="stu-day-btn" data-day="seg" onclick="this.classList.toggle('on')">S</button>
-                            <button type="button" class="stu-day-btn" data-day="ter" onclick="this.classList.toggle('on')">T</button>
-                            <button type="button" class="stu-day-btn" data-day="qua" onclick="this.classList.toggle('on')">Q</button>
-                            <button type="button" class="stu-day-btn" data-day="qui" onclick="this.classList.toggle('on')">Q</button>
-                            <button type="button" class="stu-day-btn" data-day="sex" onclick="this.classList.toggle('on')">S</button>
-                            <button type="button" class="stu-day-btn" data-day="sab" onclick="this.classList.toggle('on')">S</button>
-                            <button type="button" class="stu-day-btn" data-day="dom" onclick="this.classList.toggle('on')">D</button>
-                        </div>
-                        <div class="stu-days-hint" id="stuDiasHint"></div>
-                    </div>
-                    <!-- RBAC: dois toggles separados por papel -->
-                    <div id="stuAdminRow" style="display:none;">
-                        <div class="stu-toggle-row" style="margin-bottom:8px;">
-                            <div class="stu-toggle-label">
-                                🛡️ Administrador
-                                <div style="font-size:10px;color:var(--adm-text-3);font-weight:400;margin-top:2px;">Acesso total ao sistema</div>
-                            </div>
-                            <div class="stu-toggle" id="stuAdminToggle" onclick="onStuAdminToggle()"></div>
-                        </div>
-                        <div class="stu-toggle-row">
-                            <div class="stu-toggle-label">
-                                📚 Professor
-                                <div style="font-size:10px;color:var(--adm-text-3);font-weight:400;margin-top:2px;">Gerencia alunos e presenças</div>
-                            </div>
-                            <div class="stu-toggle" id="stuProfToggle" onclick="onStuProfToggle()"></div>
-                        </div>
-                    </div>
-
-                    <!-- CTs do Professor (visível só quando admin=true) -->
-                    <div class="stu-field" id="stuProfCTsSection" style="display:none;margin-top:14px;">
-                        <label style="display:flex;align-items:center;gap:6px;color:var(--text-1);">
-                            🏫 CTs onde este professor dá aula
-                        </label>
-                        <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;line-height:1.5;">
-                            Marque os CTs que este professor leciona. Somente esses CTs aparecerão na tela de check-in quando ele fizer login como administrador.
-                        </div>
-                        <div id="stuProfCTsGrid" class="stu-cts-lib-grid"></div>
-                    </div>
-
-                    <!-- PERMISSÕES DO PROFESSOR (só admin real vê) -->
-                    <div id="stuProfPermsSection" style="display:none;margin-top:14px;padding:12px;background:rgba(201,162,58,0.04);border:1px solid var(--border-accent);border-radius:10px;">
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                            <label style="font-size:12px;font-weight:700;color:var(--text-1);">🔑 Permissões do Professor</label>
-                            <span style="font-size:10px;color:var(--text-3);">Configurado pelo admin</span>
-                        </div>
-                        <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;line-height:1.5;">
-                            Defina quais ações este professor pode executar. O backend valida cada ação individualmente.
-                        </div>
-                        <div id="stuProfPermsGrid" style="display:flex;flex-direction:column;gap:6px;"></div>
-                        <div id="stuProfPermsMsg" style="margin-top:8px;font-size:11px;min-height:14px;"></div>
-                    </div>
-
-                    <!-- CTs Liberados para Cronograma (visível só quando admin=false) -->
-                    <div class="stu-field" id="stuCTsLiberadosSection" style="display:none;margin-top:14px;">
-                        <label style="display:flex;align-items:center;gap:6px;">
-                            📅 Acesso ao Cronograma de outros CTs
-                        </label>
-                        <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;line-height:1.5;">
-                            Marque os CTs que este aluno pode <strong>visualizar o cronograma</strong> de aulas, além do seu CT principal.
-                        </div>
-                        <div id="stuCTsLiberadosGrid" class="stu-cts-lib-grid"></div>
-                    </div>
-
-                    <!-- ══ MODALIDADES ══ -->
-                    <div class="stu-field" id="stuModalidadesSection" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
-                        <label style="display:flex;align-items:center;gap:6px;color:var(--text-1);font-weight:700;">
-                            🎯 Modalidades
-                        </label>
-                        <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;line-height:1.5;">
-                            Marque as modalidades que este aluno pratica no CT. Cada modalidade terá seu próprio perfil de graduação e check-in.
-                        </div>
-                        <div id="stuModalidadesGrid" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
-                        <div style="margin-top:12px;">
-                            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:5px;">⭐ Modalidade Principal (carregada no login)</label>
-                            <select id="stuModalidadePrincipal" style="width:100%;padding:8px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:12px;">
-                                <option value="">— Selecione a principal —</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Personal -->
-                <div class="stu-section">
-                    <div class="stu-section-title">👤 Informações Pessoais</div>
-                    <div class="stu-field-row">
-                        <div class="stu-field">
-                            <label>Data de Nascimento</label>
-                            <input type="date" id="stuNascimento">
-                        </div>
-                        <div class="stu-field">
-                            <label>Gênero</label>
-                            <select id="stuGenero">
-                                <option value="">—</option>
-                                <option value="Masculino">Masculino</option>
-                                <option value="Feminino">Feminino</option>
-                                <option value="Outro">Outro</option>
-                                <option value="Prefiro não informar">Prefiro não informar</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="stu-field">
-                        <label>Profissão</label>
-                        <input type="text" id="stuProfissao" placeholder="Ex: Engenheiro, Professor...">
-                    </div>
-                    <div class="stu-field">
-                        <label>Bairro / Cidade</label>
-                        <input type="text" id="stuBairro" placeholder="Ex: Tijuca - Rio de Janeiro">
-                    </div>
-                </div>
-
-                <!-- Contact -->
-                <div class="stu-section">
-                    <div class="stu-section-title">📱 Contato</div>
-                    <div class="stu-field-row">
-                        <div class="stu-field">
-                            <label>Telefone</label>
-                            <input type="tel" id="stuTelefone" placeholder="(21) 99999-9999">
-                        </div>
-                        <div class="stu-field">
-                            <label>Instagram</label>
-                            <input type="text" id="stuInstagram" placeholder="@usuario">
-                        </div>
-                    </div>
-                    <div class="stu-field">
-                        <label>Contato de Emergência</label>
-                        <input type="text" id="stuEmergencia" placeholder="Nome — (21) 99999-9999">
-                    </div>
-                </div>
-
-                <!-- Training -->
-                <div class="stu-section">
-                    <div class="stu-section-title">🎯 Treino</div>
-                    <div class="stu-field-row">
-                        <div class="stu-field">
-                            <label>Como conheceu</label>
-                            <select id="stuOrigem">
-                                <option value="">—</option>
-                                <option value="Instagram / Redes Sociais">Instagram / Redes Sociais</option>
-                                <option value="Indicação de amigo">Indicação de amigo</option>
-                                <option value="Google / Pesquisa">Google / Pesquisa</option>
-                                <option value="Passando pelo local">Passando pelo local</option>
-                                <option value="Evento / Competição">Evento / Competição</option>
-                                <option value="Outro">Outro</option>
-                            </select>
-                        </div>
-                        <div class="stu-field">
-                            <label>Objetivo</label>
-                            <select id="stuObjetivo">
-                                <option value="">—</option>
-                                <option value="Saúde e condicionamento">Saúde</option>
-                                <option value="Defesa pessoal">Defesa pessoal</option>
-                                <option value="Competição">Competição</option>
-                                <option value="Hobby / Lazer">Hobby / Lazer</option>
-                                <option value="Disciplina / Foco">Disciplina / Foco</option>
-                                <option value="Socializar">Socializar</option>
-                                <option value="Faixa preta">Faixa preta</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="stu-field-row">
-                        <div class="stu-field">
-                            <label>Horário preferido</label>
-                            <select id="stuHorario">
-                                <option value="Manhã">Manhã (6h-11:59h)</option>
-                                <option value="Noite">Noite (18h-23:59h)</option>
-                            </select>
-                        </div>
-                        <div class="stu-field">
-                            <label>Experiência</label>
-                            <select id="stuExperiencia">
-                                <option value="">—</option>
-                                <option value="Nunca treinei">Nunca treinei</option>
-                                <option value="Menos de 1 ano">Menos de 1 ano</option>
-                                <option value="1-2 anos">1-2 anos</option>
-                                <option value="3-5 anos">3-5 anos</option>
-                                <option value="5-10 anos">5-10 anos</option>
-                                <option value="10+ anos">10+ anos</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Health -->
-                <div class="stu-section">
-                    <div class="stu-section-title">🏥 Saúde</div>
-                    <div class="stu-field">
-                        <label>Lesão ou Condição Médica</label>
-                        <textarea id="stuSaude" placeholder="Ex: Lesão no joelho, hérnia de disco..."></textarea>
-                    </div>
-                </div>
-
-                <!-- Graduation Timeline -->
-                <div class="stu-section">
-                    <div class="stu-section-title">🏆 Linha do Tempo · Graduação</div>
-                    <div class="grad-add-form" id="gradAddForm">
-                        <!-- Form populated dynamically by buildGradAddForm() based on modality schema -->
-                        <select id="gradTipo" onchange="onGradTipoChange()">
-                            <option value="grau">🏅 Nível / Grau</option>
-                            <option value="faixa">🎖️ Graduação de Rank</option>
-                        </select>
-                        <select id="gradFaixa">
-                            <!-- populated by buildGradAddForm() -->
-                        </select>
-                        <select id="gradGrau" style="display:none;">
-                            <!-- populated by buildGradAddForm() -->
-                        </select>
-                        <input type="text" id="gradObs" placeholder="Obs (opcional)" style="min-width:100px;">
-                        <button class="grad-add-btn" onclick="addGraduacao()">✅ Aprovar</button>
-                    </div>
-                    <div id="gradTimeline" class="grad-timeline">
-                        <div class="grad-empty">Nenhum evento registrado</div>
-                    </div>
-                </div>
-
-                <!-- Danger Zone -->
-                <div class="stu-danger-zone">
-                    <button class="stu-delete-btn" id="stuDeleteBtn" onclick="deleteStuFromModal()">🗑️ Excluir Aluno</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- stuModal: segundo bloco removido (duplicata) -->
 
 
 
@@ -34192,11 +33923,12 @@
         async function saveStuModal() {
             if (!stuModalEmail) return;
             var saveBtn = document.getElementById('stuSaveBtn');
-            saveBtn.disabled = true;
-            saveBtn.textContent = 'Salvando...';
+            if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Salvando...'; }
 
-            var isAdminStu  = document.getElementById('stuAdminToggle').classList.contains('on');
-            var isProfStu   = document.getElementById('stuProfToggle').classList.contains('on');
+            var _toggleAdmin = document.getElementById('stuAdminToggle');
+            var _toggleProf  = document.getElementById('stuProfToggle');
+            var isAdminStu  = _toggleAdmin ? _toggleAdmin.classList.contains('on') : false;
+            var isProfStu   = _toggleProf  ? _toggleProf.classList.contains('on')  : false;
             var currentIsRealAdmin = isAdmin(); // RBAC: só admin real
 
             // CTs do professor (se prof ou admin) ou CTs liberados (se aluno)
@@ -34296,9 +34028,9 @@
                         _cached.telefone  = payload.telefone   || _cached.telefone;
                         _cached.genero    = payload.genero     || _cached.genero;
                     }
-                    document.getElementById('stuHeroName').textContent = payload.name;
-                    document.getElementById('stuHeroFaixa').textContent = payload.faixa;
-                    document.getElementById('stuHeroCT').textContent = payload.ct.replace('CT ','');
+                    var _hn = document.getElementById('stuHeroName');  if (_hn) _hn.textContent = payload.name;
+                    var _hf = document.getElementById('stuHeroFaixa'); if (_hf) _hf.textContent = payload.faixa || '';
+                    var _hc = document.getElementById('stuHeroCT');    if (_hc) _hc.textContent = (payload.ct||'').replace('CT ','');
                     // Atualiza modalidade no hero após salvar
                     (function() {
                         var _mp  = payload.modalidadePrincipal || '';
@@ -34327,8 +34059,7 @@
                 }
             }
 
-            saveBtn.disabled = false;
-            saveBtn.textContent = 'Salvar';
+            if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Salvar'; }
         }
 
         async function deleteStuFromModal() {
