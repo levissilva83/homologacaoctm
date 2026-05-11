@@ -20817,6 +20817,9 @@
             document.getElementById('admPerfilName').textContent  = currentUser.name;
             document.getElementById('admPerfilEmail').textContent = currentUser.email;
             document.getElementById('admPerfilInitial').textContent = currentUser.name.charAt(0).toUpperCase();
+            // Mostra aba Assinatura sempre que admin carrega
+            var btnAsn = document.getElementById('sisBtnAssinante');
+            if (btnAsn) btnAsn.style.display = isAdmin() ? '' : 'none';
             // Carrega badge de assinatura / trial em background
             _loadAdmTrialBadge();
         }
