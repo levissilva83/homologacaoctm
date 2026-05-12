@@ -10002,16 +10002,19 @@
                             <div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;padding:12px;margin-bottom:12px;">
                                 <div style="font-size:11px;font-weight:800;color:var(--adm-text-1);margin-bottom:10px;">+ Novo Gateway</div>
 
-                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">Gateway</label>
-                                <select id="gwGateway" style="width:100%;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:8px;">
-                                    <option value="mercadopago">🔵 Mercado Pago</option>
-                                    <option value="infinitypay">🟣 Infinity Pay</option>
-                                    <option value="pix_manual">🟢 PIX Manual (sem gateway)</option>
+                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">Gateway de Pagamento</label>
+                                <select id="gwGateway" onchange="atualizarInfoGateway()" style="width:100%;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:8px;">
+                                    <option value="mercadopago">🔵 Mercado Pago — Débito automático no cartão</option>
+                                    <option value="infinitepay">🟢 InfinitePay — Link de pagamento mensal</option>
+                                    <option value="pix_manual">📋 PIX Manual — Confirmação manual pelo admin</option>
                                 </select>
 
+                                <!-- Card informativo por gateway -->
+                                <div id="gwInfoCard" style="border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:11px;line-height:1.6;display:none;"></div>
+
                                 <div id="gwTokenRow">
-                                    <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">Access Token</label>
-                                    <input type="password" id="gwAccessToken" placeholder="APP_USR-... ou Bearer token" style="width:100%;box-sizing:border-box;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1.5px solid rgba(201,162,58,0.3);border-radius:8px;font-size:12px;margin-bottom:8px;">
+                                    <label id="gwTokenLabel" style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">Access Token</label>
+                                    <input type="text" id="gwAccessToken" placeholder="APP_USR-..." style="width:100%;box-sizing:border-box;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1.5px solid rgba(201,162,58,0.3);border-radius:8px;font-size:12px;margin-bottom:8px;">
                                 </div>
 
                                 <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">Label (identificação interna)</label>
@@ -18910,6 +18913,101 @@
         }
 
         // ── Modal CVV para cobrança com cartão salvo ─────────────────
+        // ── Checkout InfinitePay ──────────────────────────────────────
+        function abrirCheckoutInfinitePay(url, orderNsu, handle, valor, plano) {
+            var existing = document.getElementById('ipCheckoutModal');
+            if (existing) existing.remove();
+
+            var overlay = document.createElement('div');
+            overlay.id = 'ipCheckoutModal';
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:flex-end;justify-content:center;';
+
+            var sheet = document.createElement('div');
+            sheet.style.cssText = 'width:100%;max-width:480px;background:var(--bg-elevated);border-radius:20px 20px 0 0;padding:24px;border-top:2px solid rgba(0,200,100,0.4);';
+
+            // Header
+            var hdr = document.createElement('div');
+            hdr.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;';
+            var hdrLeft = document.createElement('div');
+            var hdrTitle = document.createElement('div');
+            hdrTitle.style.cssText = 'font-size:15px;font-weight:800;color:var(--text-1);';
+            hdrTitle.textContent = '💳 Pagar com InfinitePay';
+            var hdrSub = document.createElement('div');
+            hdrSub.style.cssText = 'font-size:11px;color:var(--text-3);margin-top:2px;';
+            hdrSub.textContent = 'PIX (grátis) · Cartão à vista · Mensalidade recorrente';
+            hdrLeft.appendChild(hdrTitle); hdrLeft.appendChild(hdrSub);
+            var closeX = document.createElement('button');
+            closeX.textContent = '✕';
+            closeX.style.cssText = 'background:rgba(255,255,255,0.1);border:none;color:var(--text-3);width:28px;height:28px;border-radius:50%;cursor:pointer;';
+            closeX.onclick = function() { overlay.remove(); clearInterval(window._ipPolling); };
+            hdr.appendChild(hdrLeft); hdr.appendChild(closeX);
+            sheet.appendChild(hdr);
+
+            // Valor
+            var valBox = document.createElement('div');
+            valBox.style.cssText = 'background:rgba(0,200,100,0.08);border:1px solid rgba(0,200,100,0.2);border-radius:12px;padding:14px 16px;margin-bottom:16px;text-align:center;';
+            valBox.innerHTML = '<div style="font-size:11px;color:var(--text-3);margin-bottom:4px;">' + (plano || 'Mensalidade') + '</div>' +
+                '<div style="font-size:28px;font-weight:900;color:#4ade80;">R$ ' + (valor || 0).toFixed(2).replace('.', ',') + '</div>';
+            sheet.appendChild(valBox);
+
+            // Botão principal
+            var payBtn = document.createElement('button');
+            payBtn.style.cssText = 'width:100%;padding:16px;background:linear-gradient(135deg,#00c864,#00a050);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;margin-bottom:10px;';
+            payBtn.textContent = '🔗 Abrir Checkout InfinitePay';
+            payBtn.onclick = function() { window.open(url, '_blank'); startIPPolling(); };
+            sheet.appendChild(payBtn);
+
+            // Status polling
+            var statusDiv = document.createElement('div');
+            statusDiv.id = 'ipPayStatus';
+            statusDiv.style.cssText = 'text-align:center;font-size:12px;color:var(--text-3);min-height:20px;margin-bottom:8px;';
+            statusDiv.textContent = '⏳ Aguardando pagamento...';
+            sheet.appendChild(statusDiv);
+
+            // Nota
+            var nota = document.createElement('div');
+            nota.style.cssText = 'font-size:10px;color:var(--text-3);text-align:center;line-height:1.5;';
+            nota.textContent = 'Após pagar no checkout, o sistema confirma automaticamente. Você pode fechar esta janela.';
+            sheet.appendChild(nota);
+
+            overlay.appendChild(sheet);
+            document.body.appendChild(overlay);
+
+            // Abre checkout automaticamente
+            setTimeout(function() { window.open(url, '_blank'); startIPPolling(); }, 500);
+
+            function startIPPolling() {
+                if (window._ipPolling) clearInterval(window._ipPolling);
+                var tentativas = 0;
+                window._ipPolling = setInterval(async function() {
+                    tentativas++;
+                    if (tentativas > 60) { // 5 min
+                        clearInterval(window._ipPolling);
+                        var s = document.getElementById('ipPayStatus');
+                        if (s) s.textContent = 'Tempo esgotado. Se pagou, atualize a tela.';
+                        return;
+                    }
+                    try {
+                        var check = await secureFetch('verificarPagamentoIP', {
+                            email: currentUser.email, orderNsu: orderNsu
+                        });
+                        if (check && check.pago) {
+                            clearInterval(window._ipPolling);
+                            var modal = document.getElementById('ipCheckoutModal');
+                            if (modal) modal.remove();
+                            // Atualiza badge
+                            var badges = document.querySelectorAll('.pag-badge');
+                            badges.forEach(function(b) { b.textContent = '✅ Em dia'; b.className = 'pag-badge pago'; });
+                            setTimeout(function() { loadPagamentos(); }, 1000);
+                        } else {
+                            var s = document.getElementById('ipPayStatus');
+                            if (s) s.textContent = '⏳ Aguardando pagamento... (' + tentativas + ')';
+                        }
+                    } catch(e) {}
+                }, 5000);
+            }
+        }
+
         function abrirModalCVV(callback) {
             var existing = document.getElementById('cvvModal');
             if (existing) existing.remove();
@@ -19033,8 +19131,30 @@
                 var ps = await secureFetch('getPagamentoStatus', { email: currentUser.email });
                 var temCartao = ps && ps.temCartaoSalvo;
 
+                // ── Verifica gateway do CT ──
+                var gatewayRes = await secureFetch('verificarConfigGateway', { email: currentUser.email });
+                var gateway = (gatewayRes && gatewayRes.gateway) || 'mercadopago';
+
+                if (gateway === 'infinitepay') {
+                    // ── INFINITEPAY: gera link de checkout ──
+                    if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando link...'; }
+                    try {
+                        var ipRes = await secureFetch('gerarLinkInfinitePay', { email: currentUser.email });
+                        if (btn) { btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
+                        if (ipRes && ipRes.success && ipRes.url) {
+                            abrirCheckoutInfinitePay(ipRes.url, ipRes.orderNsu, ipRes.handle, ipRes.valor, ipRes.plano);
+                        } else {
+                            alert('❌ ' + ((ipRes && ipRes.message) || 'Erro ao gerar link InfinitePay'));
+                        }
+                    } catch(e) {
+                        if (btn) { btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
+                        alert('Erro: ' + e.message);
+                    }
+                    return;
+                }
+
                 if (temCartao) {
-                    // ── TEM CARTÃO: pede CVV antes de cobrar ──
+                    // ── MERCADO PAGO: pede CVV antes de cobrar ──
                     if (btn) { btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
                     abrirModalCVV(async function(cvv) {
                         if (!cvv || cvv.length < 3) {
@@ -30729,6 +30849,69 @@
                 alert('Erro: ' + e.message);
             }
             if (btn) { btn.disabled = false; btn.textContent = '🔍 Verificar token salvo no sistema'; }
+        }
+
+        function atualizarGatewayUI() { atualizarInfoGateway(); }
+
+        function atualizarInfoGateway() {
+            var sel = (document.getElementById('gwGateway') || {}).value || 'mercadopago';
+            var info = document.getElementById('gwInfoCard');
+            var lbl  = document.getElementById('gwTokenLabel');
+            var inp  = document.getElementById('gwAccessToken');
+
+            var configs = {
+                mercadopago: {
+                    bg:   'rgba(59,130,246,0.08)',
+                    border: 'rgba(59,130,246,0.25)',
+                    icon: '🔵',
+                    titulo: 'Mercado Pago — Débito automático',
+                    descricao: 'O aluno cadastra o cartão uma vez. O sistema cobra automaticamente todo mês sem o aluno precisar fazer nada.',
+                    aviso: '⚠️ Alguns cartões exigem CVV a cada cobrança.',
+                    campo: 'Access Token (começa com APP_USR-)',
+                    placeholder: 'APP_USR-...',
+                    tipo: 'text'
+                },
+                infinitepay: {
+                    bg:   'rgba(0,200,100,0.08)',
+                    border: 'rgba(0,200,100,0.25)',
+                    icon: '🟢',
+                    titulo: 'InfinitePay — Link de pagamento',
+                    descricao: 'Todo mês o sistema gera um link de cobrança. O aluno paga via PIX (grátis) ou cartão à vista — sem parcelamento. O aluno precisa acessar o link e pagar todo mês.',
+                    aviso: '📌 Sem débito automático. Pagamento sempre à vista (1x) — mensalidade recorrente.',
+                    campo: 'InfiniteTag (sem o $ — ex: academia_serginho)',
+                    placeholder: 'academia_serginho',
+                    tipo: 'text'
+                },
+                pix_manual: {
+                    bg:   'rgba(201,162,58,0.08)',
+                    border: 'rgba(201,162,58,0.25)',
+                    icon: '📋',
+                    titulo: 'PIX Manual',
+                    descricao: 'O admin confirma os pagamentos manualmente. Ideal para academias que preferem controle total.',
+                    aviso: '📌 Sem cobrança automática — confirmação manual pelo admin.',
+                    campo: null,
+                    placeholder: '',
+                    tipo: 'text'
+                }
+            };
+
+            var c = configs[sel] || configs['mercadopago'];
+            if (info) {
+                info.style.display = '';
+                info.style.background = c.bg;
+                info.style.border = '1px solid ' + c.border;
+                info.innerHTML =
+                    '<div style="font-weight:800;color:var(--text-1);margin-bottom:4px;">' + c.icon + ' ' + c.titulo + '</div>' +
+                    '<div style="color:var(--text-2);">' + c.descricao + '</div>' +
+                    '<div style="color:var(--text-3);margin-top:4px;">' + c.aviso + '</div>';
+            }
+            if (lbl) lbl.textContent = c.campo || 'Access Token';
+            if (inp) {
+                inp.placeholder = c.placeholder;
+                inp.type = c.tipo;
+                inp.style.display = c.campo ? '' : 'none';
+                if (lbl) lbl.style.display = c.campo ? '' : 'none';
+            }
         }
 
         async function salvarGatewayToken() {
