@@ -9426,10 +9426,7 @@
                             style="padding:9px 16px;background:transparent;color:var(--adm-text-3);border:none;border-bottom:2px solid transparent;font-size:12px;font-weight:700;cursor:pointer;border-radius:8px 8px 0 0;">
                             📑 Contratos
                         </button>
-                        <button id="saTab_novidades" onclick="saSubTab('novidades')"
-                            style="padding:9px 16px;background:transparent;color:var(--adm-text-3);border:none;border-bottom:2px solid transparent;font-size:12px;font-weight:700;cursor:pointer;border-radius:8px 8px 0 0;">
-                            📣 Novidades
-                        </button>
+
                         <button id="saTab_trial" onclick="saSubTab('trial')"
                             style="padding:9px 16px;background:transparent;color:var(--adm-text-3);border:none;border-bottom:2px solid transparent;font-size:12px;font-weight:700;cursor:pointer;border-radius:8px 8px 0 0;">
                             ⏳ Trial
@@ -9439,7 +9436,7 @@
                     <!-- ══ PAINEL: LICENCIADOS ═══════════════════════════ -->
                     <div id="saPainel_licenciados">
                         <!-- Stats -->
-                        <div id="cmStatsBar" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;"></div>
+                        <div id="cmStatsBar" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:16px;"></div>
 
                         <!-- Toolbar -->
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
@@ -9461,12 +9458,13 @@
 
                         <!-- Tabela -->
                         <div class="admin-section" style="padding:0;overflow:hidden;margin-bottom:16px;">
-                            <div style="display:grid;grid-template-columns:2fr 1fr 1.2fr 1fr 1fr 88px;padding:8px 14px;background:rgba(0,0,0,0.25);border-bottom:1px solid var(--adm-border);">
+                            <div style="display:grid;grid-template-columns:1.8fr .9fr 1fr .9fr .9fr .8fr 80px;padding:8px 14px;background:rgba(0,0,0,0.25);border-bottom:1px solid var(--adm-border);">
                                 <div style="font-size:9px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.4px;">Cliente</div>
                                 <div style="font-size:9px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.4px;">Plano</div>
                                 <div style="font-size:9px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.4px;">Modalidades</div>
                                 <div style="font-size:9px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.4px;">Status</div>
-                                <div style="font-size:9px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.4px;">Vencimento</div>
+                                <div style="font-size:9px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.4px;">Início</div>
+                                <div style="font-size:9px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.4px;">Fim / Cob.</div>
                                 <div></div>
                             </div>
                             <div id="cmTabelaBody">
@@ -9640,11 +9638,21 @@
                         </div><!-- /cmPainelEditor -->
                     </div><!-- /saPainel_licenciados -->
 
-                    <!-- ══ PAINEL: CONTRATOS (ex Clientes & Contratos) ═══ -->
+                    <!-- ══ PAINEL: CONTRATOS ═══════════════════════════════ -->
                     <div id="saPainel_contratos" style="display:none;">
-                        <div style="text-align:center;padding:32px;color:var(--adm-text-3);font-size:12px;">
-                            Use a aba Licenciados para gerenciar contratos.<br>
-                            Aqui ficará o histórico de contratos em versões futuras.
+                        <!-- Header + Filtro -->
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+                            <div>
+                                <div style="font-size:13px;font-weight:800;color:var(--adm-text-1);">📑 Contratos Assinados</div>
+                                <div style="font-size:10px;color:var(--adm-text-3);">Clientes com subscription_id ativo (MP, cartão ou manual)</div>
+                            </div>
+                            <button onclick="renderContratosTab()" style="padding:7px 12px;background:transparent;color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:8px;font-size:11px;cursor:pointer;">↻ Atualizar</button>
+                        </div>
+                        <input id="contratosFiltro" placeholder="Filtrar por email ou subscription_id..."
+                            oninput="renderContratosTab()"
+                            style="width:100%;box-sizing:border-box;padding:8px 12px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:10px;">
+                        <div id="contratosTabBody">
+                            <div style="text-align:center;padding:24px;color:var(--adm-text-3);font-size:12px;">Carregando contratos...</div>
                         </div>
                         <!-- Compat: elementos ocultos para funções legadas -->
                         <div style="display:none;">
@@ -9673,8 +9681,8 @@
                         </div>
                     </div>
 
-                    <!-- ══ PAINEL: NOVIDADES ══════════════════════════════ -->
-                    <div id="saPainel_novidades" style="display:none;">
+                    <!-- ══ PAINEL: NOVIDADES (desativado) ═══════════════════ -->
+                    <div id="saPainel_novidades" style="display:none;visibility:hidden;pointer-events:none;">
                         <div class="admin-section">
                             <div class="admin-section-header">
                                 <div class="admin-section-title">📣 Novidades do Sistema</div>
@@ -9728,6 +9736,30 @@
                     </div>
 
                 </div><!-- /admin-container -->
+
+                <!-- ══════════════════════════════════════════════════════ -->
+                <!-- PAINEL INADIMPLENTES (CTs / LICENCIADOS)              -->
+                <!-- ══════════════════════════════════════════════════════ -->
+                <div style="margin-top:18px;background:var(--adm-bg-card);border:1.5px solid rgba(248,113,113,0.25);border-radius:14px;padding:16px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                        <div>
+                            <div style="font-size:13px;font-weight:800;color:#f87171;">🚨 Inadimplentes — CTs Licenciados</div>
+                            <div style="font-size:10px;color:var(--adm-text-3);margin-top:2px;">Clientes com pagamento reprovado, Trial vencido ou PIX pendente</div>
+                        </div>
+                        <button onclick="loadInadimplentes()" style="padding:7px 12px;background:rgba(248,113,113,0.1);color:#f87171;border:1.5px solid rgba(248,113,113,0.3);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">↻ Atualizar</button>
+                    </div>
+
+                    <!-- Template de mensagem editável -->
+                    <div style="margin-bottom:10px;">
+                        <div style="font-size:10px;color:var(--adm-text-3);margin-bottom:4px;">✏️ Template da mensagem WhatsApp (editável)</div>
+                        <textarea id="inadMsgTemplate" rows="3" style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:11px;resize:vertical;">Olá {nome}! 👋 Identificamos que o pagamento do seu plano *{plano}* no CTM Matrix está em atraso desde {vencimento}. Por favor, regularize para manter seu acesso ativo. Qualquer dúvida estamos à disposição!</textarea>
+                    </div>
+
+                    <div id="inadListContainer" style="font-size:11px;color:var(--adm-text-3);text-align:center;padding:16px;">
+                        Clique em <strong>Atualizar</strong> para carregar.
+                    </div>
+                </div>
+
             </div><!-- /adm-superadmin -->
 
             <!-- TAB: ALUNOS -->
@@ -18641,11 +18673,8 @@
                 h += '<button id="pagarAgoraBtn" onclick="pagarAgora(\'pagarAgoraBtn\')" class="pag-btn" style="margin-top:10px;background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;font-weight:800;">';
                 h += '💰 Pagar Agora';
                 h += '</button>';
-                h += '<button onclick="sincronizarPagamentoMP()" class="pag-btn secondary" style="margin-top:6px;font-size:11px;opacity:0.7;">';
-                h += '🔄 Já paguei — sincronizar';
-                h += '</button>';
-                h += '<button onclick="abrirModalPlano()" class="pag-btn secondary" style="margin-top:4px;font-size:10px;opacity:0.5;">';
-                h += '↕️ Trocar plano';
+                h += '<button onclick="abrirModalPlano()" class="pag-btn secondary" style="margin-top:6px;font-size:11px;opacity:0.6;">';
+                h += '🔄 Trocar plano';
                 h += '</button>';
             } else {
                 // Em dia: só trocar
@@ -19126,50 +19155,7 @@
             });
         }
 
-                async function sincronizarPagamento(btn) {
-            if (btn) { btn.disabled = true; btn.textContent = '⏳ Verificando no MP...'; }
-            try {
-                var res = await secureFetch('sincronizarPagamentosMP', { email: currentUser.email });
-                if (res && res.atualizados > 0) {
-                    if (btn) { btn.textContent = '✅ Sincronizado!'; btn.style.color = '#4ade80'; }
-                    setTimeout(function() { loadPagamentos(); }, 1000);
-                } else {
-                    if (btn) {
-                        btn.disabled = false;
-                        btn.textContent = '🔄 Já paguei — sincronizar';
-                        btn.style.color = '';
-                    }
-                    alert('⚠️ Nenhum pagamento aprovado encontrado no Mercado Pago.\n\nSe você pagou há menos de 1 minuto, aguarde alguns segundos e tente novamente.');
-                }
-            } catch(e) {
-                if (btn) { btn.disabled = false; btn.textContent = '🔄 Já paguei — sincronizar'; }
-                alert('Erro: ' + e.message);
-            }
-        }
-
-        async function sincronizarPagamentoMP() {
-            var btn = event && event.target;
-            if (btn) { btn.disabled = true; btn.textContent = '⏳ Verificando no MP...'; }
-            try {
-                var res = await secureFetch('sincronizarStatusMP', { email: currentUser.email });
-                if (res && res.success) {
-                    if (btn) { btn.textContent = '✅ Sincronizado!'; }
-                    // Atualiza badge imediatamente
-                    var badges = document.querySelectorAll('.pag-badge');
-                    badges.forEach(function(b) { b.textContent = '✅ Em dia'; b.className = 'pag-badge pago'; });
-                    setTimeout(function() { loadPagamentos(); }, 1200);
-                } else {
-                    var msg = (res && res.message) || 'Nenhum pagamento aprovado encontrado no MP.';
-                    alert('ℹ️ ' + msg + '\n\nSe pagou recentemente, aguarde alguns minutos e tente novamente. Ou peça ao admin para confirmar manualmente.');
-                    if (btn) { btn.disabled = false; btn.textContent = '🔄 Já paguei — sincronizar'; }
-                }
-            } catch(e) {
-                alert('Erro: ' + e.message);
-                if (btn) { btn.disabled = false; btn.textContent = '🔄 Já paguei — sincronizar'; }
-            }
-        }
-
-        async function pagarAgora(btnId) {
+                async function pagarAgora(btnId) {
             var btn = btnId ? document.getElementById(btnId) : null;
             if (btn) { btn.disabled = true; btn.textContent = '⏳ Processando...'; }
             try {
@@ -19366,44 +19352,142 @@
         }
 
         var _pixPollingTimer = null;
-        function iniciarPollingPix(pagamentoId) {
-            if (_pixPollingTimer) clearInterval(_pixPollingTimer);
-            var tentativas = 0;
-            Logger && Logger.log && Logger.log('[PIX] Iniciando polling: ' + pagamentoId);
-            _pixPollingTimer = setInterval(async function() {
-                tentativas++;
-                // Para após 10 min (120 tentativas × 5s)
-                if (tentativas > 120) { clearInterval(_pixPollingTimer); return; }
-                try {
-                    var res = await secureFetch('verificarPagamento', { pagamentoId: pagamentoId });
+        // ── STATUS ENUM (compartilhado front/back) ───────────────────────
+        var PAYMENT_STATUS_FE = {
+            PENDING: 'PENDENTE', PAID: 'PAGO', APPROVED: 'APROVADO',
+            REJECTED: 'REJEITADO', CANCELLED: 'CANCELADO',
+            IN_PROCESS: 'EM_PROCESSO', EXPIRED: 'EXPIRADO'
+        };
 
-                    // Atualiza mensagem em qualquer tela que exiba pixStatusMsg
-                    var msgEls = document.querySelectorAll('#pixStatusMsg, #pixStatusMsgTab');
-                    if (res.status === 'APROVADO') {
-                        clearInterval(_pixPollingTimer);
-                        // ── PAGO: atualiza visual imediatamente ───────────────
-                        msgEls.forEach(function(el) {
-                            el.style.color    = '#4ade80';
-                            el.style.fontWeight = '700';
-                            el.textContent    = '✅ Pagamento confirmado!';
-                        });
-                        // Badge de status na tela (⏳ Aguardando → ✅ Em dia)
-                        var badges = document.querySelectorAll('.pag-badge.pendente, .pag-badge');
-                        badges.forEach(function(b) { b.textContent = '✅ Em dia'; b.className = 'pag-badge pago'; });
-                        // Recarrega ambas as telas após 2s
+        var MP_ERROR_MESSAGES_FE = {
+            'cc_rejected_bad_filled_card_number': 'Número do cartão incorreto. Verifique e tente novamente.',
+            'cc_rejected_bad_filled_date':        'Data de validade incorreta. Verifique mês/ano.',
+            'cc_rejected_bad_filled_security_code':'CVV incorreto. Verifique o código de segurança.',
+            'cc_rejected_blacklist':              'Cartão com restrição. Use outro cartão.',
+            'cc_rejected_call_for_authorize':     'Pagamento bloqueado pelo banco. Ligue e tente novamente.',
+            'cc_rejected_card_disabled':          'Cartão desabilitado. Contate seu banco.',
+            'cc_rejected_duplicated_payment':     'Pagamento duplicado. Aguarde alguns minutos.',
+            'cc_rejected_high_risk':              'Recusado por segurança. Use outro cartão ou PIX.',
+            'cc_rejected_insufficient_amount':    'Saldo insuficiente. Verifique o limite.',
+            'cc_rejected_max_attempts':           'Muitas tentativas. Aguarde 24h e tente novamente.',
+            'cc_rejected_other_reason':           'Cartão recusado. Tente outro cartão ou pague via PIX.',
+            'pending_contingency':                'Pagamento em análise. Aguarde até 1h.',
+            'pending_review_manual':              'Em análise manual. Aguarde até 2 dias úteis.'
+        };
+
+        function _traduzirErroMPfe(statusDetail) {
+            if (!statusDetail) return 'Pagamento recusado. Tente via PIX ou outro cartão.';
+            var key = (statusDetail || '').toLowerCase().trim();
+            return MP_ERROR_MESSAGES_FE[key] || ('Recusado: ' + statusDetail + '. Tente via PIX ou fale com seu banco.');
+        }
+
+        function _statusPagoFE(status) {
+            var s = (status || '').toUpperCase().trim();
+            return s === 'PAGO' || s === 'APROVADO' || s === 'APPROVED';
+        }
+
+        function _atualizarStatusMsg(texto, cor, negrito) {
+            document.querySelectorAll('#pixStatusMsg, #pixStatusMsgTab').forEach(function(el) {
+                el.style.color      = cor || 'inherit';
+                el.style.fontWeight = negrito ? '700' : '400';
+                el.textContent      = texto;
+            });
+        }
+
+        function _atualizarBadgesPagamento(status) {
+            var pago = _statusPagoFE(status);
+            document.querySelectorAll('.pag-badge').forEach(function(b) {
+                b.textContent = pago ? '✅ Em dia' : '⏳ Aguardando';
+                b.className   = 'pag-badge ' + (pago ? 'pago' : 'pendente');
+                b.style.color = pago ? '#4ade80' : '#fbbf24';
+            });
+        }
+
+        // ── POLLING PIX — v2.0 (diferencia todos os status, cache-bust) ──
+        function iniciarPollingPix(pagamentoId) {
+            if (!pagamentoId) return;
+            if (window._pixPollingTimer) clearInterval(window._pixPollingTimer);
+
+            var tentativas = 0;
+            var MAX_RAPIDAS = 24;   // 2 min × 5s
+            var MAX_TOTAL   = 120;  // 10 min total
+            var INTERVALO_RAPIDO = 5000;
+            var INTERVALO_LENTO  = 10000;
+
+            var verificar = async function() {
+                tentativas++;
+                if (tentativas > MAX_TOTAL) {
+                    clearInterval(window._pixPollingTimer);
+                    _atualizarStatusMsg('⏳ Aguardando pagamento... (expira em breve)', '#fbbf24');
+                    return;
+                }
+                if (tentativas === MAX_RAPIDAS + 1) {
+                    clearInterval(window._pixPollingTimer);
+                    window._pixPollingTimer = setInterval(verificar, INTERVALO_LENTO);
+                }
+                try {
+                    // cache-bust: evita resposta cacheada pelo browser
+                    var res = await secureFetch('verificarPagamento', { pagamentoId: pagamentoId, _t: Date.now() });
+                    if (!res) return;
+
+                    var status = (res.status || '').toUpperCase();
+
+                    if (_statusPagoFE(status)) {
+                        clearInterval(window._pixPollingTimer);
+                        _atualizarStatusMsg('✅ Pagamento confirmado!', '#4ade80', true);
+                        _atualizarBadgesPagamento('PAGO');
                         setTimeout(function() {
-                            loadPagamentos();
+                            if (typeof loadPagamentos === 'function') loadPagamentos();
                             if (typeof loadPagamentosTab === 'function') loadPagamentosTab();
                         }, 2000);
+                    } else if (status === 'REJEITADO' || status === 'REJECTED' || status === 'NEGADO') {
+                        clearInterval(window._pixPollingTimer);
+                        var msgReal = res.mensagemErro || _traduzirErroMPfe(res.statusDetail) || 'Pagamento recusado.';
+                        _atualizarStatusMsg('❌ ' + msgReal, '#f87171');
+                    } else if (status === 'EXPIRADO' || status === 'EXPIRED') {
+                        clearInterval(window._pixPollingTimer);
+                        _atualizarStatusMsg('⏰ PIX expirado. Gere um novo código.', '#9ca3af');
+                    } else if (status === 'EM_PROCESSO' || status === 'IN_PROCESS') {
+                        _atualizarStatusMsg('🔄 Processando... aguarde mais alguns instantes.', '#60a5fa');
                     } else {
-                        msgEls.forEach(function(el) {
-                            el.style.color   = 'var(--text-3)';
-                            el.style.fontWeight = '400';
-                            el.textContent   = '⏳ Aguardando confirmação... (' + tentativas + ')';
-                        });
+                        _atualizarStatusMsg('⏳ Aguardando confirmação... (' + tentativas + ')', 'var(--text-3)');
                     }
-                } catch(e) {}
-            }, 5000);
+                } catch(e) {
+                    console.warn('[polling PIX] erro:', e);
+                }
+            };
+
+            window._pixPollingTimer = setInterval(verificar, INTERVALO_RAPIDO);
+        }
+
+        // ── SYNC ATIVO (chamado ao abrir tela financeira) ────────────────
+        async function syncPaymentStatusAtivo(externalId) {
+            if (!externalId) return;
+            var extId = (externalId || '').toString().trim();
+            if (!extId || extId.indexOf('manual') !== -1 || extId.indexOf('pix_manual') !== -1) return;
+            try {
+                var res = await secureFetch('syncPaymentStatus', { paymentId: extId, _t: Date.now() });
+                if (res && res.success && _statusPagoFE(res.status)) {
+                    console.log('[syncAtivo] Divergência corrigida:', extId, '→', res.status);
+                    if (typeof loadPagamentos === 'function') setTimeout(loadPagamentos, 600);
+                }
+            } catch(e) { console.warn('[syncAtivo] erro:', e); }
+        }
+
+        // ── EXIBE ERRO DE CARTÃO COM MENSAGEM REAL ───────────────────────
+        function exibirErroCartao(responseData, containerEl) {
+            if (!containerEl) return;
+            var mensagem = responseData.mensagemErro
+                || _traduzirErroMPfe(responseData.statusDetail)
+                || (responseData.message && !responseData.success ? responseData.message : '')
+                || 'Pagamento recusado. Tente outro cartão ou pague via PIX.';
+            containerEl.innerHTML =
+                '<div style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);' +
+                'border-radius:10px;padding:12px 14px;margin-top:10px;">' +
+                '<div style="font-size:13px;font-weight:700;color:#f87171;margin-bottom:4px;">❌ Pagamento recusado</div>' +
+                '<div style="font-size:12px;color:var(--text-2);">' + (mensagem).replace(/</g,'&lt;') + '</div>' +
+                '<div style="font-size:11px;color:var(--text-3);margin-top:8px;">💡 Pagamentos via PIX têm aprovação imediata e sem taxas.</div>' +
+                '</div>';
         }
 
         // ── CARTÃO ───────────────────────────────────────────────
@@ -25959,6 +26043,7 @@
                 }
                 if (pan) pan.style.display = active ? 'block' : 'none';
             });
+            if (tab === 'contratos') { setTimeout(renderContratosTab, 100); }
             if (tab === 'licenciados' && !CTM_Contratos.state.clientes.length) {
                 CTM_Contratos.data.carregar();
             }
@@ -26257,19 +26342,44 @@
                     var el = document.getElementById('cmStatsBar');
                     if (!el) return;
                     var counts = { ATIVO:0, TRIAL:0, CANCELADO:0, INATIVO:0, INADIMPLENTE:0 };
+                    var contratosAtivos = 0;
+                    var trialDatas = []; // coleta datas dos trials para mostrar range
                     state.clientes.forEach(function(c){
                         var s = c.status||'SEM CONTRATO';
                         if (counts[s]!==undefined) counts[s]++;
+                        // Contrato ativo = subscription_id real (nao pix_ temporario)
+                        var sub = c.subscriptionId || '';
+                        if (sub && sub.indexOf('pix_') !== 0 && sub.indexOf('manual_') !== 0) contratosAtivos++;
+                        // Coleta datas dos trials
+                        if (s === 'TRIAL' && c.proximoVencimento) trialDatas.push(c.proximoVencimento);
                     });
-                    el.innerHTML = [
-                        ['Total', state.clientes.length, '#C9A23A'],
-                        ['Ativos', counts.ATIVO, '#4ade80'],
-                        ['Trial', counts.TRIAL, '#fbbf24'],
-                        ['Inativos', counts.CANCELADO+counts.INATIVO, '#f87171']
-                    ].map(function(s){
-                        return '<div class="cm-stat-card" style="border-color:'+s[2]+'22;">' +
-                            '<div class="cm-stat-num" style="color:'+s[2]+'">'+s[1]+'</div>' +
-                            '<div class="cm-stat-lbl">'+s[0]+'</div></div>';
+
+                    // Calcula range de vencimento dos trials
+                    var trialSub = '';
+                    if (trialDatas.length) {
+                        // Ordena datas dd/MM/yyyy
+                        trialDatas.sort(function(a,b){
+                            var pa=a.split('/'), pb=b.split('/');
+                            return new Date(pa[2],pa[1]-1,pa[0]) - new Date(pb[2],pb[1]-1,pb[0]);
+                        });
+                        trialSub = trialDatas[0] + (trialDatas.length>1 && trialDatas[0]!==trialDatas[trialDatas.length-1]
+                            ? ' a ' + trialDatas[trialDatas.length-1] : '');
+                    }
+
+                    var cards = [
+                        { lbl:'Total',        val: state.clientes.length,              clr:'#C9A23A', sub:'' },
+                        { lbl:'Ativos',       val: counts.ATIVO,                       clr:'#4ade80', sub:'' },
+                        { lbl:'Contratos',    val: contratosAtivos,                    clr:'#60a5fa', sub:'assinados' },
+                        { lbl:'Trial',        val: counts.TRIAL,                       clr:'#fbbf24', sub: trialSub },
+                        { lbl:'Inativo/Canc', val: counts.CANCELADO+counts.INATIVO+counts.INADIMPLENTE, clr:'#f87171', sub:'' }
+                    ];
+
+                    el.innerHTML = cards.map(function(s){
+                        return '<div class="cm-stat-card" style="border-color:'+s.clr+'22;padding:8px 6px;">' +
+                            '<div class="cm-stat-num" style="color:'+s.clr+';font-size:20px;">'+s.val+'</div>' +
+                            '<div class="cm-stat-lbl" style="font-size:9px;">'+s.lbl+'</div>' +
+                            (s.sub ? '<div style="font-size:8px;color:var(--adm-text-3);margin-top:2px;line-height:1.3;">'+s.sub+'</div>' : '') +
+                        '</div>';
                     }).join('');
                 },
 
@@ -26304,20 +26414,34 @@
 
                         var badge = '<span class="cm-badge" style="color:'+cfg.clr+';background:'+cfg.bg+';border:1px solid '+cfg.clr+'33;">'+cfg.icon+' '+s+'</span>';
 
-                        // Próximo vencimento
-                        var proxVenc = c.proximoVencimento || '—';
+                        // Datas: trial mostra Início + Fim; outros mostram vencimento + início cobrança
+                        var proxVenc       = c.proximoVencimento   || '—';
+                        var inicioCobranca = c.dataInicioCobranca  || '';
+                        var isTrial = (c.status || '') === 'TRIAL';
 
-                        // Início cobrança + dias restantes
-                        var inicioCobranca = c.dataInicioCobranca || '';
-                        var diasRestantes  = '';
-                        if (inicioCobranca) {
-                            var pts = inicioCobranca.split('/');
+                        // Coluna 5: para trial = "Início", para outros = "Próx. Vencimento"
+                        var col5Label = isTrial ? inicioCobranca || '—' : proxVenc;
+                        var col5Sub   = '';
+                        // Coluna 6: para trial = "Fim (vencimento)", para outros = início cobrança + dias
+                        var col6Label = isTrial ? proxVenc : (inicioCobranca || '—');
+                        var diasRestantes = '';
+                        if (isTrial && c.proximoVencimento) {
+                            var pts = c.proximoVencimento.split('/');
                             if (pts.length===3) {
                                 var dt   = new Date(parseInt(pts[2]),parseInt(pts[1])-1,parseInt(pts[0]));
                                 var diff = Math.ceil((dt-new Date())/86400000);
                                 diasRestantes = diff > 0
                                     ? '<div style="font-size:8px;color:#fbbf24;">'+diff+'d restantes</div>'
-                                    : diff < 0 ? '<div style="font-size:8px;color:#f87171;">Exp. há '+Math.abs(diff)+'d</div>' : '';
+                                    : '<div style="font-size:8px;color:#f87171;">Exp. há '+Math.abs(diff)+'d</div>';
+                            }
+                        } else if (!isTrial && inicioCobranca) {
+                            var pts2 = inicioCobranca.split('/');
+                            if (pts2.length===3) {
+                                var dt2  = new Date(parseInt(pts2[2]),parseInt(pts2[1])-1,parseInt(pts2[0]));
+                                var diff2 = Math.ceil((dt2-new Date())/86400000);
+                                diasRestantes = diff2 > 0
+                                    ? '<div style="font-size:8px;color:#fbbf24;">'+diff2+'d restantes</div>'
+                                    : diff2 < 0 ? '<div style="font-size:8px;color:#f87171;">Exp. há '+Math.abs(diff2)+'d</div>' : '';
                             }
                         }
 
@@ -26329,7 +26453,7 @@
                         var isSelected = state.clienteAtivo && state.clienteAtivo.email === c.email;
                         var row = document.createElement('div');
                         row.className = 'cm-row' + (isSelected ? ' selected' : '');
-                        row.style.cssText = 'display:grid;grid-template-columns:1.8fr .9fr 1fr .9fr .9fr .8fr 72px;';
+                        row.style.cssText = 'display:grid;grid-template-columns:1.8fr .9fr 1fr .9fr .9fr .8fr 80px;';
                         row.setAttribute('data-email', c.email);
 
                         row.innerHTML =
@@ -26345,14 +26469,22 @@
                             '<div class="cm-row-cell"><div style="font-size:10px;">' + mods + '</div></div>' +
                             // Col 4: Status badge
                             '<div class="cm-row-cell">' + badge + '</div>' +
-                            // Col 5: Próximo vencimento
-                            '<div class="cm-row-cell"><div style="font-size:10px;color:var(--adm-text-2);">' + escapeHtml(proxVenc) + '</div></div>' +
-                            // Col 6: Início cobrança
-                            '<div class="cm-row-cell"><div><div style="font-size:10px;color:var(--adm-text-2);">' + escapeHtml(inicioCobranca||'—') + '</div>' + diasRestantes + '</div></div>' +
-                            // Col 7: Ações
-                            '<div class="cm-row-cell" style="justify-content:flex-end;gap:4px;">' +
-                                '<button data-edit="'+escapeHtml(c.email)+'" title="Editar contrato" style="padding:5px 8px;background:rgba(201,162,58,0.08);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.2);border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;">✏️</button>' +
-                                '<button data-charge="'+escapeHtml(c.email)+'" title="Cobrar agora" style="padding:5px 8px;background:rgba(74,222,128,0.08);color:#4ade80;border:1px solid rgba(74,222,128,0.2);border-radius:6px;font-size:10px;cursor:pointer;">💸</button>' +
+                            // Col 5: Início (trial) ou Venc. (outros)
+                            '<div class="cm-row-cell"><div>' +
+                                '<div style="font-size:10px;color:var(--adm-text-2);">' + escapeHtml(col5Label) + '</div>' +
+                                (isTrial ? '<div style="font-size:8px;color:#fbbf24;">início</div>' : '') +
+                            '</div></div>' +
+                            // Col 6: Fim/vencimento (trial) ou Início cobrança (outros)
+                            '<div class="cm-row-cell"><div>' +
+                                '<div style="font-size:10px;color:'+(isTrial?'#fbbf24':'var(--adm-text-2)')+';font-weight:'+(isTrial?'700':'400')+';">' + escapeHtml(col6Label) + '</div>' +
+                                diasRestantes +
+                                (isTrial ? '<div style="font-size:8px;color:var(--adm-text-3);">fim trial</div>' : '') +
+                            '</div></div>' +
+                            // Col 7: Ações (✏️ editar, 💸 cobrar, 🗑️ excluir)
+                            '<div class="cm-row-cell" style="justify-content:flex-end;gap:3px;">' +
+                                '<button data-edit="'+escapeHtml(c.email)+'" title="Editar" style="padding:4px 7px;background:rgba(201,162,58,0.08);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.2);border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;">✏️</button>' +
+                                '<button data-charge="'+escapeHtml(c.email)+'" title="Cobrar" style="padding:4px 7px;background:rgba(74,222,128,0.08);color:#4ade80;border:1px solid rgba(74,222,128,0.2);border-radius:6px;font-size:10px;cursor:pointer;">💸</button>' +
+                                '<button data-delete="'+escapeHtml(c.email)+'" title="Excluir cliente" style="padding:4px 7px;background:rgba(248,113,113,0.08);color:#f87171;border:1px solid rgba(248,113,113,0.2);border-radius:6px;font-size:10px;cursor:pointer;">🗑️</button>' +
                             '</div>';
                         tbody.appendChild(row);
                     });
@@ -26363,10 +26495,16 @@
                         if (editBtn)   { CTM_Contratos.ui.abrirEditor(editBtn.getAttribute('data-edit')); return; }
                         var chargeBtn = e.target.closest('[data-charge]');
                         if (chargeBtn) {
-                            // Seleciona o cliente e dispara cobrar agora
                             var emailC = chargeBtn.getAttribute('data-charge');
                             state.clienteAtivo = state.clientes.find(function(x){ return x.email===emailC; }) || null;
                             CTM_Contratos.actions.cobrarAgora();
+                            return;
+                        }
+                        var delBtn = e.target.closest('[data-delete]');
+                        if (delBtn) {
+                            var emailD = delBtn.getAttribute('data-delete');
+                            state.clienteAtivo = state.clientes.find(function(x){ return x.email===emailD; }) || null;
+                            if (state.clienteAtivo) CTM_Contratos.actions.excluir();
                             return;
                         }
                         var row2 = e.target.closest('[data-email]');
@@ -28524,6 +28662,245 @@
             el.style.borderRadius = '8px';
             el.style.fontSize = '12px';
             el.textContent = msg;
+        }
+
+        // ════════════════════════════════════════════════════════
+        // CONTRATOS TAB — lista contratos assinados
+        // ════════════════════════════════════════════════════════
+        function renderContratosTab() {
+            var body   = document.getElementById('contratosTabBody');
+            var filtro = ((document.getElementById('contratosFiltro')||{}).value||'').toLowerCase();
+            if (!body) return;
+
+            // Usa os dados já carregados pelo CTM_Contratos
+            var todos  = (window.CTM_Contratos && CTM_Contratos.state
+                ? CTM_Contratos.state.clientes : []);
+
+            // Filtra: subscription_id real OU status ATIVO
+            var contratos = todos.filter(function(c) {
+                var sub = (c.subscriptionId||'').trim();
+                var hasRealSub = sub && sub.indexOf('pix_') !== 0 && sub.indexOf('manual_') !== 0;
+                return hasRealSub || (c.status||'') === 'ATIVO';
+            });
+
+            if (filtro) {
+                contratos = contratos.filter(function(c){
+                    return (c.email||'').toLowerCase().includes(filtro) ||
+                           (c.subscriptionId||'').toLowerCase().includes(filtro) ||
+                           (c.ctNome||'').toLowerCase().includes(filtro);
+                });
+            }
+
+            if (!contratos.length) {
+                body.innerHTML = '<div style="text-align:center;padding:32px;color:var(--adm-text-3);font-size:12px;">' +
+                    (todos.length ? 'Nenhum contrato assinado encontrado.' : 'Carregue os dados na aba Licenciados primeiro.') + '</div>';
+                return;
+            }
+
+            var STATUS = {
+                ATIVO:        { clr:'#4ade80', icon:'✅' },
+                TRIAL:        { clr:'#fbbf24', icon:'⏳' },
+                INADIMPLENTE: { clr:'#f87171', icon:'🔴' },
+                CANCELADO:    { clr:'#9ca3af', icon:'❌' },
+                INATIVO:      { clr:'#9ca3af', icon:'⏸' }
+            };
+
+            var rows = contratos.map(function(ct) {
+                var s   = ct.status || '—';
+                var cfg = STATUS[s] || { clr:'var(--adm-text-3)', icon:'📋' };
+                var sub = ct.subscriptionId || '—';
+                var subShort = sub.length > 16 ? sub.substring(0,16)+'...' : sub;
+                var tipoSub = sub.startsWith('pix_') ? '🏦 PIX'
+                    : sub.startsWith('manual_') ? '✍️ Manual'
+                    : sub !== '—' ? '📱 MP Recorrente' : '—';
+                return '<div style="display:grid;grid-template-columns:1.6fr .8fr 1.4fr .8fr .9fr;gap:4px;padding:10px 14px;border-bottom:1px solid var(--adm-border);align-items:center;">' +
+                    '<div>' +
+                        '<div style="font-size:11px;font-weight:700;color:var(--adm-text-1);">' + escapeHtml(ct.ctNome||ct.ctmId||ct.email) + '</div>' +
+                        '<div style="font-size:9px;color:var(--adm-text-3);">' + escapeHtml(ct.email) + '</div>' +
+                    '</div>' +
+                    '<div style="font-size:11px;color:var(--adm-text-2);">' + escapeHtml(ct.plano||'—') + '</div>' +
+                    '<div>' +
+                        '<div style="font-size:10px;color:#60a5fa;font-family:monospace;" title="' + escapeHtml(sub) + '">' + escapeHtml(subShort) + '</div>' +
+                        '<div style="font-size:8px;color:var(--adm-text-3);">' + tipoSub + '</div>' +
+                    '</div>' +
+                    '<div style="font-size:11px;font-weight:700;color:' + cfg.clr + ';">' + cfg.icon + ' ' + s + '</div>' +
+                    '<div style="font-size:10px;color:var(--adm-text-2);">' + escapeHtml(ct.proximoVencimento||'—') + '</div>' +
+                    '</div>';
+            }).join('');
+
+            var header = '<div style="display:grid;grid-template-columns:1.6fr .8fr 1.4fr .8fr .9fr;gap:4px;padding:7px 14px;background:rgba(0,0,0,0.25);border-bottom:1px solid var(--adm-border);">' +
+                ['Cliente','Plano','Subscription ID','Status','Vencimento'].map(function(h){
+                    return '<div style="font-size:9px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.4px;">' + h + '</div>';
+                }).join('') + '</div>';
+
+            body.innerHTML = '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:10px;overflow:hidden;">' +
+                header + rows +
+                '<div style="padding:8px 14px;font-size:10px;color:var(--adm-text-3);">' + contratos.length + ' contrato(s)</div>' +
+                '</div>';
+        }
+
+        // ════════════════════════════════════════════════════════
+        // PAINEL INADIMPLENTES — CTs / LICENCIADOS
+        // ════════════════════════════════════════════════════════
+        async function loadInadimplentes() {
+            var container = document.getElementById('inadListContainer');
+            if (!container) return;
+            container.innerHTML = '<div style="color:var(--adm-text-3);padding:20px;text-align:center;">⏳ Carregando...</div>';
+
+            try {
+                var res = await secureFetch('getInadimplentes', {});
+                if (!res || !res.success) {
+                    container.innerHTML = '<div style="color:#f87171;padding:16px;text-align:center;">❌ Erro ao carregar: ' + ((res && res.message) || 'sem resposta') + '</div>';
+                    return;
+                }
+
+                var lista = res.inadimplentes || [];
+                if (!lista.length) {
+                    container.innerHTML = '<div style="color:#4ade80;padding:20px;text-align:center;font-weight:700;">✅ Nenhum inadimplente encontrado!</div>';
+                    return;
+                }
+
+                // KPI bar
+                var nInad  = lista.filter(function(x){ return x.status === 'INADIMPLENTE'; }).length;
+                var nTrial = lista.filter(function(x){ return x.status === 'TRIAL'; }).length;
+                var nPix   = lista.filter(function(x){ return x.status === 'PENDENTE_PIX'; }).length;
+                var nSemTel = lista.filter(function(x){ return !x.telefone; }).length;
+
+                var kpi = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px;">' +
+                    '<div style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.25);border-radius:8px;padding:8px;text-align:center;"><div style="font-size:18px;font-weight:800;color:#f87171;">' + nInad + '</div><div style="font-size:9px;color:var(--adm-text-3);">INADIMPLENTE</div></div>' +
+                    '<div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.25);border-radius:8px;padding:8px;text-align:center;"><div style="font-size:18px;font-weight:800;color:#fbbf24;">' + nTrial + '</div><div style="font-size:9px;color:var(--adm-text-3);">TRIAL VENCIDO</div></div>' +
+                    '<div style="background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.25);border-radius:8px;padding:8px;text-align:center;"><div style="font-size:18px;font-weight:800;color:#60a5fa;">' + nPix + '</div><div style="font-size:9px;color:var(--adm-text-3);">PIX PENDENTE</div></div>' +
+                    '<div style="background:rgba(255,255,255,0.04);border:1px solid var(--adm-border);border-radius:8px;padding:8px;text-align:center;"><div style="font-size:18px;font-weight:800;color:var(--adm-text-2);">' + nSemTel + '</div><div style="font-size:9px;color:var(--adm-text-3);">SEM TELEFONE</div></div>' +
+                    '</div>';
+
+                // Tabela
+                var rows = lista.map(function(c, idx) {
+                    var statusColor = c.status === 'INADIMPLENTE' ? '#f87171'
+                        : c.status === 'PENDENTE_PIX'            ? '#60a5fa'
+                        : c.status === 'TRIAL'                   ? '#fbbf24'
+                        : '#9ca3af';
+
+                    var diasLabel = c.diasAtraso === null ? '—'
+                        : c.diasAtraso === 0 ? 'Vence hoje'
+                        : c.diasAtraso > 0   ? c.diasAtraso + ' dias em atraso'
+                        : Math.abs(c.diasAtraso) + ' dias p/ vencer';
+
+                    var diasColor = c.diasAtraso === null ? 'var(--adm-text-3)'
+                        : c.diasAtraso >= 15  ? '#f87171'
+                        : c.diasAtraso >= 1   ? '#fbbf24'
+                        : 'var(--adm-text-3)';
+
+                    var telBtn = c.telefone
+                        ? '<button onclick="abrirWAInad(' + idx + ')" style="display:flex;align-items:center;gap:4px;padding:6px 10px;background:#25d366;color:#fff;border:none;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap;">📲 WhatsApp</button>'
+                        : '<button onclick="cadastrarTelInad(' + idx + ')" style="padding:5px 8px;background:rgba(255,255,255,0.04);color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:7px;font-size:10px;cursor:pointer;">📞 Sem tel.</button>';
+
+                    return '<div style="display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;padding:10px 12px;border-radius:10px;border:1px solid var(--adm-border);background:var(--adm-bg-elevated);margin-bottom:6px;" data-idx="' + idx + '">' +
+                        '<div>' +
+                            '<div style="font-size:11px;font-weight:700;color:var(--adm-text-1);">' + escapeHtml(c.email) + '</div>' +
+                            '<div style="font-size:10px;color:var(--adm-text-3);margin-top:2px;">' +
+                                escapeHtml(c.plano) + ' &nbsp;|&nbsp; Venc: ' + (c.vencimento || '—') +
+                                (c.telefone ? ' &nbsp;|&nbsp; 📞 ' + escapeHtml(c.telefone) : '') +
+                            '</div>' +
+                        '</div>' +
+                        '<div style="text-align:right;">' +
+                            '<div style="font-size:10px;font-weight:800;color:' + statusColor + ';">' + c.status + '</div>' +
+                            '<div style="font-size:9px;color:' + diasColor + ';margin-top:2px;">' + diasLabel + '</div>' +
+                        '</div>' +
+                        telBtn +
+                        '<button onclick="inadAbrirContrato(' + idx + ')" style="padding:5px 8px;background:rgba(255,255,255,0.04);color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:7px;font-size:10px;cursor:pointer;" title="Editar contrato">✏️</button>' +
+                    '</div>';
+                }).join('');
+
+                // Guarda dados para uso no WA
+                window._inadLista = lista;
+
+                container.innerHTML = kpi + rows;
+
+            } catch(e) {
+                container.innerHTML = '<div style="color:#f87171;padding:16px;text-align:center;">Erro: ' + e.message + '</div>';
+            }
+        }
+
+        function abrirWAInad(idx) {
+            var lista = window._inadLista || [];
+            var c = lista[idx];
+            if (!c || !c.telefone) return;
+
+            var template = (document.getElementById('inadMsgTemplate') || {}).value || '';
+            var msg = template
+                .replace(/{nome}/g,      c.email.split('@')[0])
+                .replace(/{plano}/g,     c.plano)
+                .replace(/{vencimento}/g, c.vencimento || 'data não informada')
+                .replace(/{status}/g,    c.status)
+                .replace(/{email}/g,     c.email);
+
+            var tel = c.telefone.replace(/\D/g, '');
+            if (tel.length === 11 || tel.length === 10) tel = '55' + tel;
+
+            // Abre modal de preview antes de enviar
+            _inadShowPreview(c, msg, tel);
+        }
+
+        function _inadShowPreview(c, msg, tel) {
+            var existing = document.getElementById('inadPreviewModal');
+            if (existing) existing.remove();
+
+            var overlay = document.createElement('div');
+            overlay.id = 'inadPreviewModal';
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;';
+
+            // Usa template literal — sem conflito de aspas simples/duplas
+            var waHref = 'https://wa.me/' + tel + '?text=' + encodeURIComponent(msg);
+            overlay.innerHTML = `
+                <div style="background:var(--adm-bg-card);border:1.5px solid rgba(37,211,102,0.3);border-radius:16px;padding:20px;width:90%;max-width:420px;max-height:80vh;overflow-y:auto;">
+                    <div style="font-size:13px;font-weight:800;color:#25d366;margin-bottom:12px;">&#128242; Enviar WhatsApp</div>
+                    <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:6px;">
+                        Para: <strong style="color:var(--adm-text-1);">${escapeHtml(c.email)}</strong> &mdash; ${escapeHtml(c.telefone)}
+                    </div>
+                    <div style="font-size:10px;color:var(--adm-text-3);margin-bottom:4px;">Mensagem:</div>
+                    <textarea id="inadPreviewMsg" rows="5" style="width:100%;box-sizing:border-box;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;resize:vertical;">${escapeHtml(msg)}</textarea>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;">
+                        <button id="inadBtnCancelar" style="padding:10px;background:rgba(255,255,255,0.06);color:var(--adm-text-2);border:1px solid var(--adm-border);border-radius:8px;font-weight:700;cursor:pointer;">&#10005; Cancelar</button>
+                        <a id="inadWABtn" href="${waHref}" target="_blank" style="padding:10px;background:#25d366;color:#fff;border:none;border-radius:8px;font-weight:800;font-size:12px;cursor:pointer;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;">&#128242; Abrir WhatsApp</a>
+                    </div>
+                </div>`;
+
+            document.body.appendChild(overlay);
+
+            // Eventos via JS — sem onclick inline
+            document.getElementById('inadBtnCancelar').onclick = function() { overlay.remove(); };
+            document.getElementById('inadPreviewMsg').oninput  = function() { _inadUpdateWALink(document.getElementById('inadWABtn'), tel); };
+            overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+        }
+
+        function _inadUpdateWALink(aEl, tel) {
+            if (!aEl) return;
+            var msg  = (document.getElementById('inadPreviewMsg') || {}).value || '';
+            aEl.href = 'https://wa.me/' + tel + '?text=' + encodeURIComponent(msg);
+        }
+
+        function inadAbrirContrato(idx) {
+            var lista = window._inadLista || [];
+            var c = lista[idx];
+            if (c && c.email && typeof abrirContrato === 'function') abrirContrato(c.email);
+        }
+
+        function cadastrarTelInad(idx) {
+            var lista = window._inadLista || [];
+            var c = lista[idx];
+            if (!c) return;
+            var tel = prompt('Cadastrar telefone para ' + c.email + ' (apenas numeros, com DDD. Ex: 11999990000):', '');
+            if (!tel) return;
+            // Salva via atualizarContratoCliente — no backend é col J
+            secureFetch('updateLicenciadoTelefone', { email: c.email, telefone: tel.trim() })
+                .then(function(r){
+                    if (r && r.success) {
+                        lista[idx].telefone = tel.trim();
+                        loadInadimplentes();
+                    } else {
+                        alert('Erro: ' + ((r && r.message) || 'falha ao salvar'));
+                    }
+                }).catch(function(e){ alert('Erro: ' + e.message); });
         }
 
         async function loadSuperAdminTrialConfig() {
