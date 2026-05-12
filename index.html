@@ -7652,10 +7652,6 @@
         }, { passive: true });
     })();
     </script>
-    <!-- Mercado Pago SDK v2 — tokenização segura PCI-compliant -->
-    <script src="https://sdk.mercadopago.com/js/v2"></script>
-    <!-- Device Fingerprint — reduz antifraude, melhora taxa de aprovação -->
-    <script src="https://www.mercadopago.com/v2/security.js" view="checkout"></script>
 </head>
 <body>
     <div class="app">
@@ -19495,292 +19491,73 @@
         }
 
         // ── CARTÃO ───────────────────────────────────────────────
-        // ════════════════════════════════════════════════════════════════
-        // MODAL DE CARTÃO v3.0 — Tokenização PCI-compliant no browser
-        //
-        // FLUXO:
-        // 1. Usuário digita dados do cartão (campos masked)
-        // 2. Frontend chama MP API diretamente com Public Key → token único
-        // 3. Detecta payment_method_id e issuer_id via bin search
-        // 4. Envia apenas token + metadata (NUNCA dados brutos) ao backend
-        // 5. Backend cria customer + card_id + preapproval + cobrança imediata
-        // ════════════════════════════════════════════════════════════════
-        var _MP_PUBLIC_KEY = 'APP_USR-5fa8f1a2-119c-4c7f-bf26-08501f358b87'; // Produção CT_Manager
-
-        // Mapa de erros de tokenização do MP
-        var _MP_TOKEN_ERRORS = {
-            '205': 'Número do cartão obrigatório.',
-            '110': 'Número do cartão inválido — verifique os dígitos.',
-            'E301': 'Número do cartão inválido.',
-            '208': 'Mês de validade inválido.',
-            '209': 'Ano de validade inválido.',
-            '212': 'CPF inválido.',
-            '213': 'CPF inválido.',
-            '214': 'CPF inválido.',
-            '220': 'Bandeira do cartão não suportada.',
-            '221': 'Nome do titular obrigatório.',
-            '224': 'CVV obrigatório.',
-            'E302': 'CVV inválido.',
-            'E303': 'Data de validade inválida.',
-            '316': 'Nome do titular inválido.',
-            '322': 'CPF inválido.',
-            '323': 'CPF inválido.',
-            '324': 'CPF inválido.',
-            '325': 'Validade inválida.',
-            '326': 'Validade inválida.'
-        };
-
-        // Mapa de status_detail do MP → mensagem amigável
-        var _MP_CHARGE_ERRORS = {
-            'cc_rejected_bad_filled_card_number': 'Número do cartão incorreto. Verifique os dígitos.',
-            'cc_rejected_bad_filled_date':        'Data de validade incorreta. Verifique mês e ano.',
-            'cc_rejected_bad_filled_security_code':'CVV incorreto. Verifique os 3 dígitos.',
-            'cc_rejected_blacklist':              'Cartão com restrição. Use outro cartão.',
-            'cc_rejected_call_for_authorize':     'Banco bloqueou a transação. Ligue para o banco e solicite autorização.',
-            'cc_rejected_card_disabled':          'Cartão desabilitado. Entre em contato com seu banco.',
-            'cc_rejected_duplicated_payment':     'Pagamento duplicado. Aguarde alguns minutos.',
-            'cc_rejected_high_risk':              'Recusado por análise de risco. Tente outro cartão ou pague via PIX.',
-            'cc_rejected_insufficient_amount':    'Saldo ou limite insuficiente.',
-            'cc_rejected_max_attempts':           'Muitas tentativas. Aguarde 24h ou use PIX.',
-            'cc_rejected_other_reason':           'Recusado pelo banco. Tente outro cartão ou pague via PIX.'
-        };
-
-        function _traduzirErroCartao(statusDetail) {
-            if (!statusDetail) return 'Recusado. Tente outro cartão ou use PIX.';
-            return _MP_CHARGE_ERRORS[statusDetail.toLowerCase()] || 'Recusado: ' + statusDetail + '. Tente outro cartão ou use PIX.';
-        }
-
-        function _getBandeira(num) {
-            if (/^4/.test(num))          return { bandeira: 'Visa',       emoji: '💳', pmId: 'visa'       };
-            if (/^5[1-5]/.test(num))     return { bandeira: 'Mastercard', emoji: '💳', pmId: 'master'     };
-            if (/^3[47]/.test(num))      return { bandeira: 'Amex',       emoji: '💳', pmId: 'amex'       };
-            if (/^6(?:011|5)/.test(num)) return { bandeira: 'Discover',   emoji: '💳', pmId: 'discover'   };
-            if (/^636368/.test(num))     return { bandeira: 'Hipercard',   emoji: '💳', pmId: 'hipercard'  };
-            if (/^4011|^431274|^438935|^451416|^457393|^4576|^457631|^457632|^504175|^627780|^636297|^636368|^6504|^6505|^6507|^6509|^6516|^6550/.test(num))
-                                          return { bandeira: 'Elo',         emoji: '💳', pmId: 'elo'        };
-            return { bandeira: 'Outro', emoji: '💳', pmId: '' };
-        }
-
-        // Detecta payment_method_id e issuer_id via bin do cartão
-        async function _detectarBin(bin6) {
-            if (!bin6 || bin6.length < 6) return { pmId: '', issuerId: '' };
-            try {
-                var r = await fetch(
-                    'https://api.mercadopago.com/v1/payment_methods/search?public_key=' + _MP_PUBLIC_KEY +
-                    '&payment_type_id=credit_card&bin=' + bin6,
-                    { headers: { 'X-Idempotency-Key': 'bin-' + bin6 } }
-                );
-                if (!r.ok) return { pmId: '', issuerId: '' };
-                var body = await r.json();
-                var results = body.results || body;
-                if (Array.isArray(results) && results.length > 0) {
-                    var pm = results[0];
-                    return {
-                        pmId:     pm.id            || '',
-                        issuerId: pm.issuer && pm.issuer.id ? String(pm.issuer.id) : ''
-                    };
-                }
-            } catch(e) { console.warn('[detectarBin] erro:', e.message); }
-            return { pmId: '', issuerId: '' };
-        }
-
-        // Obtém device fingerprint gerado pelo security.js do MP
-        function _getDeviceId() {
-            try {
-                return window.MP_DEVICE_SESSION_ID || '';
-            } catch(e) { return ''; }
-        }
-
         function abrirModalCartao() {
             var overlay = document.getElementById('cartaoModal');
             if (overlay) { overlay.style.display = 'flex'; return; }
             overlay = document.createElement('div');
             overlay.id = 'cartaoModal';
-            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.82);z-index:9999;display:flex;align-items:flex-end;justify-content:center;';
+            overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:flex-end;justify-content:center;';
             overlay.innerHTML =
-                '<div style="width:100%;max-width:480px;background:var(--bg-elevated);border-radius:20px 20px 0 0;padding:20px 20px 28px;border-top:2px solid rgba(0,158,227,0.4);box-shadow:0 -8px 40px rgba(0,0,0,0.5);">' +
-                  '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">' +
-                    '<div style="font-size:15px;font-weight:800;color:var(--text-1);">💳 Cadastrar Cartão</div>' +
-                    '<button onclick="fecharModalCartao()" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:var(--text-3);font-size:14px;cursor:pointer;">✕</button>' +
-                  '</div>' +
-                  '<div style="font-size:11px;color:var(--text-3);margin-bottom:14px;padding:8px 10px;background:rgba(0,158,227,0.06);border:1px solid rgba(0,158,227,0.15);border-radius:8px;">🔒 Seus dados são tokenizados diretamente pelo Mercado Pago antes de chegar ao servidor. Não armazenamos número, CVV ou dados sensíveis.</div>' +
-
-                  '<div style="margin-bottom:10px;">' +
-                    '<label style="font-size:10px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Número do cartão <span id="cartaoBandeiraTag" style="font-size:11px;font-weight:700;color:#009ee3;margin-left:4px;"></span></label>' +
-                    '<input type="tel" id="cartaoNum" placeholder="0000 0000 0000 0000" maxlength="19" autocomplete="cc-number" oninput="formatCartaoNum(this)" style="width:100%;box-sizing:border-box;padding:12px;background:var(--bg-deep);color:var(--text-1);border:1px solid var(--border);border-radius:10px;font-size:16px;letter-spacing:2px;">' +
-                  '</div>' +
-
-                  '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">' +
-                    '<div><label style="font-size:10px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Validade</label>' +
-                      '<input type="tel" id="cartaoVal" placeholder="MM/AA" maxlength="5" autocomplete="cc-exp" oninput="formatCartaoVal(this)" style="width:100%;box-sizing:border-box;padding:12px;background:var(--bg-deep);color:var(--text-1);border:1px solid var(--border);border-radius:10px;font-size:15px;"></div>' +
-                    '<div><label style="font-size:10px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">CVV</label>' +
-                      '<input type="tel" id="cartaoCVV" placeholder="123" maxlength="4" autocomplete="cc-csc" style="width:100%;box-sizing:border-box;padding:12px;background:var(--bg-deep);color:var(--text-1);border:1px solid var(--border);border-radius:10px;font-size:15px;"></div>' +
-                  '</div>' +
-
-                  '<div style="margin-bottom:10px;">' +
-                    '<label style="font-size:10px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Nome no cartão</label>' +
-                    '<input type="text" id="cartaoNome" placeholder="NOME SOBRENOME" autocomplete="cc-name" oninput="this.value=this.value.toUpperCase()" style="width:100%;box-sizing:border-box;padding:12px;background:var(--bg-deep);color:var(--text-1);border:1px solid var(--border);border-radius:10px;font-size:14px;text-transform:uppercase;">' +
-                  '</div>' +
-
-                  '<div style="margin-bottom:14px;">' +
-                    '<label style="font-size:10px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">CPF do titular</label>' +
-                    '<input type="tel" id="cartaoCPF" placeholder="000.000.000-00" maxlength="14" autocomplete="off" oninput="formatCPF(this)" style="width:100%;box-sizing:border-box;padding:12px;background:var(--bg-deep);color:var(--text-1);border:1px solid var(--border);border-radius:10px;font-size:15px;">' +
-                  '</div>' +
-
-                  '<div id="cartaoMsg" style="font-size:12px;margin-bottom:10px;text-align:center;min-height:18px;padding:6px;border-radius:8px;"></div>' +
-                  '<button id="diagCartaoBtn" onclick="diagnosticarCartao()" style="width:100%;padding:10px;background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.2);border-radius:10px;color:var(--text-3);font-size:11px;cursor:pointer;margin-bottom:8px;">🔍 Testar configuração do cartão antes de salvar</button>' +
-                  '<button id="btnSalvarCartao" onclick="salvarCartao()" style="width:100%;padding:14px;background:linear-gradient(135deg,#009ee3,#0075bd);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;">💳 Cadastrar e pagar agora</button>' +
+                '<div style="width:100%;max-width:480px;background:var(--bg-elevated);border-radius:20px 20px 0 0;padding:20px;border-top:2px solid var(--border);box-shadow:0 -8px 40px rgba(0,0,0,0.5);">' +
+                '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">' +
+                '<div style="font-size:15px;font-weight:800;color:var(--text-1);">💳 Cadastrar Cartão</div>' +
+                '<button onclick="document.getElementById(\'cartaoModal\').style.display=\'none\'" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:var(--text-3);font-size:14px;cursor:pointer;">✕</button>' +
+                '</div>' +
+                '<div style="font-size:11px;color:var(--text-3);margin-bottom:14px;padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:8px;">🔒 Seus dados são tokenizados pelo gateway de pagamento. Não armazenamos o número completo.</div>' +
+                '<div style="margin-bottom:10px;"><label style="font-size:10px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Número do cartão</label>' +
+                '<input type="tel" id="cartaoNum" placeholder="0000 0000 0000 0000" maxlength="19" oninput="formatCartaoNum(this)" style="width:100%;box-sizing:border-box;padding:12px;background:var(--bg-deep);color:var(--text-1);border:1px solid var(--border);border-radius:10px;font-size:16px;letter-spacing:2px;"></div>' +
+                '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">' +
+                '<div><label style="font-size:10px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Validade</label>' +
+                '<input type="tel" id="cartaoVal" placeholder="MM/AA" maxlength="5" oninput="formatCartaoVal(this)" style="width:100%;box-sizing:border-box;padding:12px;background:var(--bg-deep);color:var(--text-1);border:1px solid var(--border);border-radius:10px;font-size:15px;"></div>' +
+                '<div><label style="font-size:10px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">CVV</label>' +
+                '<input type="tel" id="cartaoCVV" placeholder="123" maxlength="4" style="width:100%;box-sizing:border-box;padding:12px;background:var(--bg-deep);color:var(--text-1);border:1px solid var(--border);border-radius:10px;font-size:15px;"></div>' +
+                '</div>' +
+                '<div style="margin-bottom:10px;"><label style="font-size:10px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">Nome no cartão</label>' +
+                '<input type="text" id="cartaoNome" placeholder="NOME SOBRENOME" style="width:100%;box-sizing:border-box;padding:12px;background:var(--bg-deep);color:var(--text-1);border:1px solid var(--border);border-radius:10px;font-size:14px;text-transform:uppercase;"></div>' +
+                '<div style="margin-bottom:14px;"><label style="font-size:10px;color:var(--text-3);font-weight:600;display:block;margin-bottom:4px;">CPF do titular</label>' +
+                '<input type="tel" id="cartaoCPF" placeholder="000.000.000-00" maxlength="14" oninput="formatCPF(this)" style="width:100%;box-sizing:border-box;padding:12px;background:var(--bg-deep);color:var(--text-1);border:1px solid var(--border);border-radius:10px;font-size:15px;"></div>' +
+                '<div id="cartaoMsg" style="font-size:11px;margin-bottom:8px;text-align:center;min-height:16px;"></div>' +
+                '<button id="diagCartaoBtn" onclick="diagnosticarCartao()" style="width:100%;padding:10px;background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.2);border-radius:10px;color:var(--text-3);font-size:11px;cursor:pointer;margin-bottom:8px;">🔍 Testar configuração do cartão antes de salvar</button>' +
+                '<button onclick="salvarCartao()" style="width:100%;padding:14px;background:linear-gradient(135deg,#009ee3,#0075bd);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;">💳 Cadastrar e pagar agora</button>' +
                 '</div>';
             overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.style.display = 'none'; });
             document.body.appendChild(overlay);
         }
 
-        function fecharModalCartao() {
-            var m = document.getElementById('cartaoModal');
-            if (m) m.style.display = 'none';
-        }
-
-        function formatCartaoNum(el) {
-            var v = el.value.replace(/\D/g,'').substring(0,16);
-            el.value = v.replace(/(.{4})/g,'$1 ').trim();
-            // Detecta bandeira em tempo real
-            var bin = v.substring(0,6);
-            var info = _getBandeira(v);
-            var tag = document.getElementById('cartaoBandeiraTag');
-            if (tag) tag.textContent = v.length >= 4 ? info.emoji + ' ' + info.bandeira : '';
-        }
+        function formatCartaoNum(el) { var v = el.value.replace(/\D/g,'').substring(0,16); el.value = v.replace(/(.{4})/g,'$1 ').trim(); }
         function formatCartaoVal(el) { var v = el.value.replace(/\D/g,'').substring(0,4); if (v.length > 2) v = v.substring(0,2) + '/' + v.substring(2); el.value = v; }
-        function formatCPF(el) { var v = el.value.replace(/\D/g,'').substring(0,11); v = v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2'); el.value = v; }
-
-        function _setCartaoMsg(msg, tipo) {
-            var el = document.getElementById('cartaoMsg');
-            if (!el) return;
-            el.textContent = msg;
-            var styles = {
-                ok:      'color:#4ade80;background:rgba(74,222,128,0.08);',
-                danger:  'color:#f87171;background:rgba(248,113,113,0.08);',
-                info:    'color:var(--text-3);background:rgba(255,255,255,0.04);',
-                warning: 'color:#fbbf24;background:rgba(251,191,36,0.08);'
-            };
-            el.style.cssText = (styles[tipo] || styles.info) + 'padding:6px;border-radius:8px;font-size:12px;text-align:center;min-height:18px;';
-        }
+        function formatCPF(el) { var v = el.value.replace(/\D/g,'').substring(0,11); v = v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2'); el.value = v; }
 
         async function salvarCartao() {
-            var num   = (document.getElementById('cartaoNum').value  || '').replace(/\s/g,'');
-            var val   = (document.getElementById('cartaoVal').value  || '');
-            var cvv   = (document.getElementById('cartaoCVV').value  || '').trim();
+            var num   = (document.getElementById('cartaoNum').value || '').replace(/\s/g,'');
+            var val   = document.getElementById('cartaoVal').value || '';
+            var cvv   = document.getElementById('cartaoCVV').value || '';
             var nome  = (document.getElementById('cartaoNome').value || '').trim().toUpperCase();
-            var cpf   = (document.getElementById('cartaoCPF').value  || '').replace(/\D/g,'');
-            var btn   = document.getElementById('btnSalvarCartao');
-
-            // Validação local antes de chamar MP
-            if (num.length < 14) return _setCartaoMsg('⚠️ Número do cartão inválido — verifique os dígitos', 'danger');
-            if (val.length < 5)  return _setCartaoMsg('⚠️ Validade inválida — use MM/AA', 'danger');
-            if (cvv.length < 3)  return _setCartaoMsg('⚠️ CVV inválido', 'danger');
-            if (nome.length < 3) return _setCartaoMsg('⚠️ Nome completo obrigatório (como no cartão)', 'danger');
-            if (cpf.length !== 11) return _setCartaoMsg('⚠️ CPF inválido — 11 dígitos necessários', 'danger');
-
-            // Valida validade
+            var cpf   = (document.getElementById('cartaoCPF').value || '').replace(/\D/g,'');
+            var msg   = document.getElementById('cartaoMsg');
+            if (num.length < 15) { msg.style.color='#f87171'; msg.textContent='⚠️ Número do cartão inválido'; return; }
+            if (val.length < 5)  { msg.style.color='#f87171'; msg.textContent='⚠️ Validade inválida'; return; }
+            if (cvv.length < 3)  { msg.style.color='#f87171'; msg.textContent='⚠️ CVV inválido'; return; }
+            if (!nome)           { msg.style.color='#f87171'; msg.textContent='⚠️ Nome obrigatório'; return; }
+            if (cpf.length !== 11){ msg.style.color='#f87171'; msg.textContent='⚠️ CPF inválido'; return; }
+            msg.style.color='var(--text-3)'; msg.textContent='🔒 Tokenizando com segurança...';
             var valParts = val.split('/');
-            var mes = parseInt(valParts[0]);
-            var ano = parseInt('20' + (valParts[1] || '0'));
-            if (mes < 1 || mes > 12) return _setCartaoMsg('⚠️ Mês inválido (01–12)', 'danger');
-            var agora = new Date();
-            if (ano < agora.getFullYear() || (ano === agora.getFullYear() && mes < agora.getMonth()+1))
-                return _setCartaoMsg('⚠️ Cartão vencido', 'danger');
-
-            // Bloqueia duplo clique
-            if (btn) { btn.disabled = true; btn.textContent = '🔒 Tokenizando...'; }
-            _setCartaoMsg('🔒 Verificando cartão com segurança...', 'info');
-
             try {
-                // ── STEP 1: Detecta payment_method_id e issuer_id via BIN ──
-                var bin6    = num.substring(0,6);
-                var binInfo = await _detectarBin(bin6);
-                var bandInfo = _getBandeira(num);
-                var pmId    = binInfo.pmId     || bandInfo.pmId     || '';
-                var issuerId= binInfo.issuerId || '';
-                var deviceId= _getDeviceId();
-
-                // ── STEP 2: Tokeniza cartão diretamente no MP (PCI-compliant) ──
-                var tokenResp = await fetch(
-                    'https://api.mercadopago.com/v1/card_tokens?public_key=' + _MP_PUBLIC_KEY,
-                    {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            card_number:      num,
-                            security_code:    cvv,
-                            expiration_month: mes,
-                            expiration_year:  ano,
-                            cardholder: {
-                                name: nome,
-                                identification: { type: 'CPF', number: cpf }
-                            }
-                        })
-                    }
-                );
-                var tokenData = await tokenResp.json();
-
-                if (!tokenResp.ok || !tokenData.id) {
-                    var mpErr = 'Cartão recusado pelo Mercado Pago';
-                    if (tokenData.cause && tokenData.cause.length > 0) {
-                        var cause = tokenData.cause[0];
-                        mpErr = _MP_TOKEN_ERRORS[String(cause.code)] || cause.description || mpErr;
-                    } else if (tokenData.message) {
-                        mpErr = tokenData.message;
-                    }
-                    _setCartaoMsg('❌ ' + mpErr, 'danger');
-                    if (btn) { btn.disabled = false; btn.textContent = '💳 Cadastrar e pagar agora'; }
-                    return;
-                }
-
-                // Token obtido com sucesso — dados brutos não vão ao backend
-                var cardToken = tokenData.id;
-                // payment_method_id mais preciso retornado pelo token
-                if (tokenData.payment_method_id) pmId = tokenData.payment_method_id;
-
-                if (btn) btn.textContent = '💳 Cadastrando...';
-                _setCartaoMsg('✅ Cartão verificado! Cadastrando e realizando cobrança...', 'info');
-
-                // ── STEP 3: Envia APENAS token + metadata ao backend ──
-                var res = await secureFetch('salvarCartaoMP', {
-                    email:           currentUser.email,
-                    // Dados brutos NUNCA enviados — apenas token e metadata
-                    cardToken:       cardToken,        // token único, já consumido pelo backend
-                    paymentMethodId: pmId,             // detectado via BIN
-                    issuerId:        issuerId,         // banco emissor
-                    deviceId:        deviceId,         // device fingerprint do MP security.js
-                    bandeira:        bandInfo.bandeira,
-                    ultimos4:        num.slice(-4),
-                    validade:        valParts[0].padStart(2,'0') + '/' + (valParts[1] || ''),
-                });
-
-                if (res && res.success) {
-                    var st = (res.statusCobranca || 'PAGO').toUpperCase();
-                    if (st === 'PAGO') {
-                        _setCartaoMsg('✅ Cartão cadastrado e mensalidade cobrada!', 'ok');
+                msg.style.color='var(--text-3)'; msg.textContent='💳 Cadastrando e realizando primeira cobrança...';
+                var data = await secureFetch('salvarCartaoMP', { email: currentUser.email, cardNumber: num, expiryMonth: valParts[0] || '', expiryYear: '20' + (valParts[1] || ''), cvv: cvv, cardHolder: nome, cpf: cpf });
+                if (data.success) {
+                    var statusCob = data.statusCobranca || 'PAGO';
+                    if (statusCob === 'PAGO') {
+                        msg.style.color='#4ade80';
+                        msg.textContent='✅ Cartão cadastrado e primeira mensalidade cobrada!';
                     } else {
-                        // Exibe erro REAL do MP — nunca genérico
-                        var errMsg = res.message || 'Cartão salvo, mas cobrança pendente.';
-                        _setCartaoMsg('⚠️ ' + errMsg + ' Pague via PIX para regularizar.', 'warning');
+                        // Cartão salvo mas cobrança recusada — mostra aviso de PIX
+                        msg.style.color='#fbbf24';
+                        msg.textContent='⚠️ ' + (data.message || 'Cartão salvo, mas cobrança recusada. Use PIX para regularizar.');
                     }
-                    setTimeout(function() {
-                        var m = document.getElementById('cartaoModal');
-                        if (m) m.style.display = 'none';
-                        if (typeof loadPagamentos === 'function') loadPagamentos();
-                    }, 2500);
-                } else {
-                    var errFinal = (res && res.message) ? res.message : 'Erro ao cadastrar cartão.';
-                    _setCartaoMsg('❌ ' + errFinal, 'danger');
-                    if (btn) { btn.disabled = false; btn.textContent = '💳 Cadastrar e pagar agora'; }
-                }
-
-            } catch(e) {
-                console.error('[salvarCartao]', e);
-                _setCartaoMsg('❌ Erro de conexão: ' + e.message, 'danger');
-                if (btn) { btn.disabled = false; btn.textContent = '💳 Cadastrar e pagar agora'; }
-            }
+                    setTimeout(function() { var m = document.getElementById('cartaoModal'); if (m) m.style.display='none'; loadPagamentos(); }, 2000);
+                } else { msg.style.color='#f87171'; msg.textContent='❌ ' + (data.message || 'Erro ao cadastrar'); }
+            } catch(e) { msg.style.color='#f87171'; msg.textContent='❌ Erro de conexão'; }
         }
 
         async function removerCartao() {
@@ -35616,7 +35393,164 @@
         function copiarChavePix(el) { copiarChavePixEl(el, 'pixCopiadoMsg'); }
 
 
-        </script>
+        
+
+        // ════════════════════════════════════════════════════════════════════
+        // MULTI-GATEWAY ADMIN PANEL v3.0
+        // Painel de configuração e monitoramento de gateways
+        // ════════════════════════════════════════════════════════════════════
+
+        // Carrega o painel multi-gateway dentro da tela de admin de pagamentos
+        async function loadMultiGatewayPanel(containerId) {
+            var container = document.getElementById(containerId || 'multiGwContainer');
+            if (!container) return;
+            container.innerHTML = '<div style="text-align:center;color:var(--text-3);padding:20px;">⏳ Carregando...</div>';
+            try {
+                var data = await secureFetch('gwGetStatus', {});
+                if (!data || !data.success) throw new Error(data && data.message ? data.message : 'Erro ao carregar');
+                container.innerHTML = _renderMultiGwPanel(data);
+            } catch(e) {
+                container.innerHTML = '<div style="color:#f87171;padding:12px;font-size:12px;">❌ ' + e.message + '</div>';
+            }
+        }
+
+        function _renderMultiGwPanel(d) {
+            var gwIcons = { mercadopago:'🔵', infinitepay:'🟣', pix_manual:'🟢', stripe:'🔶', asaas:'🟠', pagseguro:'🔴' };
+            var h = '';
+
+            // Header
+            h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">';
+            h += '<div style="font-size:13px;font-weight:800;color:var(--text-1);">🌐 Multi-Gateway v3.0</div>';
+            h += '<div style="display:flex;gap:6px;">';
+            h += '<button onclick="gwReconcileNow()" style="padding:6px 10px;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.3);border-radius:8px;color:#818cf8;font-size:11px;font-weight:700;cursor:pointer;">🔄 Reconciliar</button>';
+            h += '<button onclick="gwSetupTriggers()" style="padding:6px 10px;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.25);border-radius:8px;color:#4ade80;font-size:11px;font-weight:700;cursor:pointer;">⚙️ Instalar Triggers</button>';
+            h += '<button onclick="gwCriarAbas()" style="padding:6px 10px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.25);border-radius:8px;color:#fbbf24;font-size:11px;font-weight:700;cursor:pointer;">📋 Criar Abas</button>';
+            h += '</div></div>';
+
+            // Safe Mode badge
+            h += '<div style="display:inline-flex;align-items:center;gap:6px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);border-radius:20px;padding:4px 10px;font-size:10px;color:#4ade80;font-weight:700;margin-bottom:12px;">✅ SAFE MODE ATIVO — operação existente preservada</div>';
+
+            // Adapters disponíveis
+            if (d.adapters && d.adapters.length) {
+                h += '<div style="font-size:10px;color:var(--text-3);margin-bottom:10px;">Adapters: ';
+                h += d.adapters.map(function(a){ return (gwIcons[a]||'⚪') + ' ' + a; }).join(' · ');
+                h += '</div>';
+            }
+
+            // Triggers
+            var trigOk = d.triggers && d.triggers.length >= 2;
+            h += '<div style="display:flex;gap:8px;margin-bottom:14px;">';
+            h += '<div style="flex:1;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">';
+            h += '<div style="font-size:18px;">' + (trigOk ? '✅' : '⚠️') + '</div>';
+            h += '<div style="font-size:10px;color:var(--text-3);margin-top:3px;">Triggers ' + (trigOk ? 'ativos' : 'não instalados') + '</div>';
+            h += '</div>';
+            h += '<div style="flex:1;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">';
+            h += '<div style="font-size:18px;">' + (d.cts ? d.cts.length : 0) + '</div>';
+            h += '<div style="font-size:10px;color:var(--text-3);margin-top:3px;">CTs configurados</div>';
+            h += '</div>';
+            h += '<div style="flex:1;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center;">';
+            h += '<div style="font-size:18px;">' + (d.adapters ? d.adapters.length : 0) + '</div>';
+            h += '<div style="font-size:10px;color:var(--text-3);margin-top:3px;">Adapters</div>';
+            h += '</div>';
+            h += '</div>';
+
+            // Lista de CTs com gateway
+            if (d.cts && d.cts.length) {
+                h += '<div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:8px;">CTs e Gateways</div>';
+                d.cts.forEach(function(ct) {
+                    var icon = gwIcons[ct.gateway] || '⚪';
+                    var statusColor = ct.ativo && ct.tokAtivo ? '#4ade80' : '#f87171';
+                    h += '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;margin-bottom:6px;">';
+                    h += '<div style="font-size:16px;">' + icon + '</div>';
+                    h += '<div style="flex:1;">';
+                    h += '<div style="font-size:12px;font-weight:700;color:var(--text-1);">' + escapeHtml(ct.ct) + '</div>';
+                    h += '<div style="font-size:10px;color:var(--text-3);">' + escapeHtml(ct.gateway) + ' · dia ' + ct.diaVenc + '</div>';
+                    h += '</div>';
+                    h += '<div style="display:flex;gap:6px;align-items:center;">';
+                    h += '<span style="font-size:10px;color:' + statusColor + ';font-weight:700;">' + (ct.ativo && ct.tokAtivo ? 'ATIVO' : 'INATIVO') + '</span>';
+                    h += '<button onclick="gwTestarConexao(' + JSON.stringify(ct.ct) + ', this)" style="padding:4px 8px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);border-radius:6px;color:#818cf8;font-size:10px;cursor:pointer;">Testar</button>';
+                    h += '</div>';
+                    h += '</div>';
+                });
+            }
+
+            // Botão de logs
+            h += '<button onclick="gwVerLogs()" style="width:100%;margin-top:10px;padding:10px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;color:var(--text-3);font-size:11px;cursor:pointer;">📊 Ver Payment Logs (últimos 50)</button>';
+
+            return h;
+        }
+
+        async function gwTestarConexao(ct, btn) {
+            if (btn) { btn.disabled = true; btn.textContent = '...'; }
+            try {
+                var r = await secureFetch('gwTestarConexao', { ct: ct });
+                if (btn) { btn.disabled = false; btn.textContent = r.success ? '✅' : '❌'; }
+                setTimeout(function(){ if(btn){btn.textContent='Testar';} }, 3000);
+                showToast(r.success ? '✅ ' + ct + ': conexão OK' : '❌ ' + ct + ': ' + r.message, r.success ? 'success' : 'error');
+            } catch(e) {
+                if (btn) { btn.disabled = false; btn.textContent = '❌'; }
+                showToast('Erro: ' + e.message, 'error');
+            }
+        }
+
+        async function gwReconcileNow() {
+            try {
+                var r = await secureFetch('gwReconcileNow', {});
+                showToast(r.success ? '🔄 Reconciliação executada! Veja os logs GAS.' : r.message, r.success ? 'success' : 'error');
+            } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+        }
+
+        async function gwSetupTriggers() {
+            try {
+                var r = await secureFetch('gwSetupTriggers', {});
+                showToast(r.success ? '⚙️ Triggers instalados!' : r.message, r.success ? 'success' : 'error');
+                if (r.success) loadMultiGatewayPanel();
+            } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+        }
+
+        async function gwCriarAbas() {
+            try {
+                var r = await secureFetch('gwCriarAbas', {});
+                showToast(r.success ? '📋 ' + (r.message || 'Abas criadas!') : r.message, r.success ? 'success' : 'error');
+            } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+        }
+
+        async function gwVerLogs() {
+            try {
+                var r = await secureFetch('gwGetPaymentLogs', { limit: 50 });
+                if (!r.success || !r.logs) { showToast(r.message || 'Sem logs', 'error'); return; }
+                var overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;';
+                var panel = document.createElement('div');
+                panel.style.cssText = 'width:100%;max-width:800px;max-height:80vh;background:var(--bg-elevated);border-radius:16px;display:flex;flex-direction:column;overflow:hidden;';
+                var header = '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border);">';
+                header += '<div style="font-size:13px;font-weight:800;color:var(--text-1);">📊 Payment Logs (' + r.total + ' total)</div>';
+                header += '<button id="gwLogsCloseBtn" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1);border:none;color:var(--text-3);font-size:14px;cursor:pointer;">✕</button>';
+                header += '</div>';
+                var rows_html = r.logs.map(function(l) {
+                    var color = l.depois === 'PAGO' || l.depois === 'APROVADO' ? '#4ade80' : l.erro ? '#f87171' : 'var(--text-3)';
+                    return '<tr><td style="padding:6px 8px;font-size:10px;color:var(--text-3);">' + escapeHtml(l.ts.substring(0,16)) + '</td>' +
+                           '<td style="padding:6px 8px;font-size:10px;color:var(--text-1);">' + escapeHtml(l.email) + '</td>' +
+                           '<td style="padding:6px 8px;font-size:10px;color:var(--text-2);">' + escapeHtml(l.gateway) + '</td>' +
+                           '<td style="padding:6px 8px;font-size:10px;color:var(--text-2);">' + escapeHtml(l.action) + '</td>' +
+                           '<td style="padding:6px 8px;font-size:10px;color:' + color + ';font-weight:700;">' + escapeHtml(l.depois || l.antes || '—') + '</td>' +
+                           '<td style="padding:6px 8px;font-size:10px;color:#f87171;">' + escapeHtml(l.erro || '') + '</td></tr>';
+                }).join('');
+                var body = '<div style="overflow-y:auto;flex:1;"><table style="width:100%;border-collapse:collapse;">';
+                body += '<thead><tr style="background:rgba(255,255,255,0.04);">';
+                ['Data','Email','Gateway','Ação','Status','Erro'].forEach(function(h) {
+                    body += '<th style="padding:8px;font-size:10px;text-align:left;color:var(--text-3);">' + h + '</th>';
+                });
+                body += '</tr></thead><tbody>' + rows_html + '</tbody></table></div>';
+                panel.innerHTML = header + body;
+                overlay.appendChild(panel);
+                document.body.appendChild(overlay);
+                document.getElementById('gwLogsCloseBtn').onclick = function() { overlay.remove(); };
+                overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.remove(); });
+            } catch(e) { showToast('Erro: ' + e.message, 'error'); }
+        }
+
+    </script>
     <!-- Modal seleção de plano — fora do .main para position:fixed funcionar corretamente -->
     <div id="planoSelecionarModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:99990;flex-direction:column;align-items:center;justify-content:flex-end;">
         <div style="width:100%;max-width:480px;background:rgba(14,13,16,0.97);border-radius:22px 22px 0 0;border-top:2px solid rgba(201,162,58,0.25);display:flex;flex-direction:column;max-height:85vh;padding-bottom:env(safe-area-inset-bottom,0px);backdrop-filter:blur(24px) saturate(140%);-webkit-backdrop-filter:blur(24px) saturate(140%);box-shadow:0 -8px 40px rgba(0,0,0,0.6),0 -1px 0 rgba(201,162,58,0.08);">
@@ -37142,21 +37076,12 @@
                 btn.textContent = 'Criando assinatura...';
                 _fmsg('Cartão verificado! Ativando assinatura...', 'info');
 
-                // ── STEP 2: Detecta payment_method_id e issuer_id via BIN ──
-                var _asnBin = numero.replace(/\s/g,'').substring(0,6);
-                var _asnBinInfo = { pmId: '', issuerId: '' };
-                try { _asnBinInfo = await _detectarBin(_asnBin); } catch(eBin){}
-                if (tokenData.payment_method_id) _asnBinInfo.pmId = tokenData.payment_method_id;
-
-                // ── STEP 3: Enviar token + metadata ao backend (nunca dados brutos) ──
+                // ── STEP 2: Enviar token ao backend para criar assinatura ──
                 var res = await secureFetch('criarAssinatura', {
-                    email:           currentUser.email,
-                    nomeAluno:       currentUser.name || '',
-                    planoId:         _planoSel.id_plano,
-                    cardToken:       cardToken,
-                    paymentMethodId: _asnBinInfo.pmId     || '',
-                    issuerId:        _asnBinInfo.issuerId || '',
-                    deviceId:        _getDeviceId()
+                    email:     currentUser.email,
+                    nomeAluno: currentUser.name || '',
+                    planoId:   _planoSel.id_plano,
+                    cardToken: cardToken
                 });
 
                 if (res && res.success) {
