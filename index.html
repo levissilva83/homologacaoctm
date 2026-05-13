@@ -10967,19 +10967,14 @@
         <div class="profile-force-card">
             <div style="text-align:center;font-size:36px;margin-bottom:8px;">📋</div>
             <div class="profile-force-title">Complete seu perfil</div>
-            <div class="profile-force-desc">Precisamos de <strong>data de nascimento, telefone e CPF</strong> para sua segurança e para processar pagamentos.</div>
+            <div class="profile-force-desc">Precisamos de algumas informações obrigatórias para continuar.</div>
             <div class="form-group" style="margin-bottom:12px;">
                 <label class="form-label">Data de Nascimento *</label>
                 <input type="date" id="forceNascimento" style="width:100%;padding:10px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:13px;">
             </div>
             <div class="form-group" style="margin-bottom:12px;">
                 <label class="form-label">Telefone / WhatsApp *</label>
-                <input type="tel" id="forceTelefone" placeholder="(21) 99999-9999" maxlength="15" oninput="formatForceTelefone(this)" style="width:100%;padding:10px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:13px;">
-            </div>
-            <div class="form-group" style="margin-bottom:14px;">
-                <label class="form-label">CPF *</label>
-                <input type="tel" id="forceCPF" placeholder="000.000.000-00" maxlength="14" oninput="formatForceCPF(this)" style="width:100%;padding:10px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:13px;">
-                <div id="forceCPFStatus" style="font-size:10px;margin-top:4px;min-height:14px;"></div>
+                <input type="tel" id="forceTelefone" placeholder="(21) 99999-9999" style="width:100%;padding:10px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:13px;">
             </div>
             <div id="forceProfileMsg" style="margin-bottom:8px;"></div>
             <button onclick="saveForceProfile()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--accent),var(--accent-bright,#f5c542));color:#000;border:none;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;">✅ Salvar e Continuar</button>
@@ -11297,19 +11292,14 @@
         <div class="profile-force-card">
             <div style="text-align:center;font-size:36px;margin-bottom:8px;">📋</div>
             <div class="profile-force-title">Complete seu perfil</div>
-            <div class="profile-force-desc">Precisamos de <strong>data de nascimento, telefone e CPF</strong> para sua segurança e para processar pagamentos.</div>
+            <div class="profile-force-desc">Precisamos de algumas informações obrigatórias para continuar.</div>
             <div class="form-group" style="margin-bottom:12px;">
                 <label class="form-label">Data de Nascimento *</label>
                 <input type="date" id="forceNascimento" style="width:100%;padding:10px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:13px;">
             </div>
             <div class="form-group" style="margin-bottom:12px;">
                 <label class="form-label">Telefone / WhatsApp *</label>
-                <input type="tel" id="forceTelefone" placeholder="(21) 99999-9999" maxlength="15" oninput="formatForceTelefone(this)" style="width:100%;padding:10px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:13px;">
-            </div>
-            <div class="form-group" style="margin-bottom:14px;">
-                <label class="form-label">CPF *</label>
-                <input type="tel" id="forceCPF" placeholder="000.000.000-00" maxlength="14" oninput="formatForceCPF(this)" style="width:100%;padding:10px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:13px;">
-                <div id="forceCPFStatus" style="font-size:10px;margin-top:4px;min-height:14px;"></div>
+                <input type="tel" id="forceTelefone" placeholder="(21) 99999-9999" style="width:100%;padding:10px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:13px;">
             </div>
             <div id="forceProfileMsg" style="margin-bottom:8px;"></div>
             <button onclick="saveForceProfile()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--accent),var(--accent-bright,#f5c542));color:#000;border:none;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;">✅ Salvar e Continuar</button>
@@ -14066,6 +14056,10 @@
             try {
                 const r = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'login', email: email, password: password }) });
                 const data = await r.json();
+                if (data.acesso_encerrado === true) {
+                    showAcessoEncerrado(data.ctmId || '', data.motivo || '');
+                    return;
+                }
                 if (data.authenticated === true) {
                     // Verificar trial/bloqueio com dados já presentes na resposta do login
                     if (data.trial && data.trial.bloqueado) {
@@ -14870,9 +14864,7 @@
                 if (data.success && data.profile) {
                     var p = data.profile;
                     var nascOk = p.nascimento && p.nascimento.length > 4;
-                    var telOk  = p.telefone  && p.telefone.replace(/\D/g,'').length >= 10;
-                    var cpfRaw = (p.cpf || '').replace(/\D/g,'');
-                    var cpfOk  = cpfRaw.length === 11 && _validarCPF(cpfRaw);
+                    var telOk = p.telefone && p.telefone.length >= 8;
 
                     // Apply kids mode
                     if (nascOk) {
@@ -14880,115 +14872,35 @@
                         detectAndApplyKidsMode(p.nascimento);
                     }
 
-                    // Persiste CPF no currentUser para uso em pagamentos
-                    if (cpfOk) currentUser.cpf = cpfRaw;
-
-                    // Exibe overlay se qualquer campo obrigatório faltar
-                    if (!nascOk || !telOk || !cpfOk) {
+                    // Show force overlay if missing mandatory fields
+                    if (!nascOk || !telOk) {
                         if (nascOk) document.getElementById('forceNascimento').value = p.nascimento.substring(0,10);
-                        if (telOk)  document.getElementById('forceTelefone').value = _formatarTelExibicao(p.telefone);
-                        if (cpfOk)  document.getElementById('forceCPF').value = _formatarCPFExibicao(cpfRaw);
+                        if (telOk) document.getElementById('forceTelefone').value = p.telefone;
                         document.getElementById('profileForceOverlay').style.display = 'flex';
                     }
                 }
             } catch(e) { console.error('checkMandatoryProfile:', e); }
         }
 
-        // ── Helpers de formatação e validação ──────────────────────────
-        function _validarCPF(n) {
-            n = n.replace(/\D/g,'');
-            if (n.length !== 11 || /^(\d)\1{10}$/.test(n)) return false;
-            var s = 0;
-            for (var i = 0; i < 9; i++) s += parseInt(n[i]) * (10 - i);
-            var r1 = (s * 10) % 11; if (r1 >= 10) r1 = 0;
-            if (r1 !== parseInt(n[9])) return false;
-            s = 0;
-            for (var j = 0; j < 10; j++) s += parseInt(n[j]) * (11 - j);
-            var r2 = (s * 10) % 11; if (r2 >= 10) r2 = 0;
-            return r2 === parseInt(n[10]);
-        }
-
-        function formatForceCPF(el) {
-            var v = el.value.replace(/\D/g,'').substring(0,11);
-            v = v.replace(/(\d{3})(\d)/, '$1.$2')
-                 .replace(/(\d{3})(\d)/, '$1.$2')
-                 .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-            el.value = v;
-            var digits = v.replace(/\D/g,'');
-            var statusEl = document.getElementById('forceCPFStatus');
-            if (statusEl) {
-                if (digits.length < 11) {
-                    statusEl.style.color = 'var(--text-3)';
-                    statusEl.textContent = digits.length > 0 ? digits.length + '/11 dígitos' : '';
-                } else if (_validarCPF(digits)) {
-                    statusEl.style.color = '#4ade80';
-                    statusEl.textContent = '✅ CPF válido';
-                } else {
-                    statusEl.style.color = '#f87171';
-                    statusEl.textContent = '❌ CPF inválido — verifique os dígitos';
-                }
-            }
-        }
-
-        function formatForceTelefone(el) {
-            var v = el.value.replace(/\D/g,'').substring(0,11);
-            if (v.length > 10) v = '(' + v.substring(0,2) + ') ' + v.substring(2,7) + '-' + v.substring(7);
-            else if (v.length > 6) v = '(' + v.substring(0,2) + ') ' + v.substring(2,6) + '-' + v.substring(6);
-            else if (v.length > 2) v = '(' + v.substring(0,2) + ') ' + v.substring(2);
-            el.value = v;
-        }
-
-        function _formatarTelExibicao(raw) {
-            var v = (raw || '').replace(/\D/g,'').substring(0,11);
-            if (v.length > 10) return '(' + v.substring(0,2) + ') ' + v.substring(2,7) + '-' + v.substring(7);
-            if (v.length > 6)  return '(' + v.substring(0,2) + ') ' + v.substring(2,6) + '-' + v.substring(6);
-            return v;
-        }
-
-        function _formatarCPFExibicao(raw) {
-            var n = (raw || '').replace(/\D/g,'').substring(0,11);
-            return n.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
-        }
-
         async function saveForceProfile() {
-            var nasc    = document.getElementById('forceNascimento').value;
-            var tel     = document.getElementById('forceTelefone').value;
-            var cpfRaw  = (document.getElementById('forceCPF').value || '').replace(/\D/g,'');
-            var cpfFmt  = document.getElementById('forceCPF').value;
-
-            // Validações
-            if (!nasc) {
-                showMessage('forceProfileMsg', '⚠️ Data de nascimento obrigatória', 'danger'); return;
-            }
-            var telDigits = tel.replace(/\D/g,'');
-            if (!tel || telDigits.length < 10) {
-                showMessage('forceProfileMsg', '⚠️ Telefone obrigatório (incluindo DDD)', 'danger'); return;
-            }
-            if (!cpfRaw || cpfRaw.length !== 11) {
-                showMessage('forceProfileMsg', '⚠️ CPF obrigatório (11 dígitos)', 'danger'); return;
-            }
-            if (!_validarCPF(cpfRaw)) {
-                showMessage('forceProfileMsg', '❌ CPF inválido — verifique os dígitos', 'danger'); return;
-            }
-
-            showMessage('forceProfileMsg', '💾 Salvando...', 'info');
+            var nasc = document.getElementById('forceNascimento').value;
+            var tel = document.getElementById('forceTelefone').value;
+            if (!nasc) { showMessage('forceProfileMsg', '⚠️ Data de nascimento obrigatória', 'danger'); return; }
+            if (!tel || tel.length < 8) { showMessage('forceProfileMsg', '⚠️ Telefone obrigatório', 'danger'); return; }
+            showMessage('forceProfileMsg', 'Salvando...', 'info');
             try {
+                // Fetch current profile first
                 var current = await secureFetch('getProfile', { email: currentUser.email });
                 var profile = (current.success && current.profile) ? current.profile : {};
                 profile.nascimento = nasc;
-                profile.telefone   = tel;
-                profile.cpf        = cpfRaw; // salva apenas dígitos na planilha
+                profile.telefone = tel;
                 var result = await secureFetch('saveProfile', { email: currentUser.email, profile: profile });
                 if (result.success) {
                     currentUser.nascimento = nasc;
-                    currentUser.telefone   = tel;
-                    currentUser.cpf        = cpfRaw;
                     detectAndApplyKidsMode(nasc);
                     document.getElementById('profileForceOverlay').style.display = 'none';
-                    // Toast de boas-vindas após completar perfil
-                    if (typeof showToast === 'function') showToast('✅ Perfil atualizado com sucesso!', 'success');
                 } else {
-                    showMessage('forceProfileMsg', result.message || 'Erro ao salvar', 'danger');
+                    showMessage('forceProfileMsg', result.message || 'Erro', 'danger');
                 }
             } catch(e) {
                 showMessage('forceProfileMsg', 'Erro: ' + e.message, 'danger');
@@ -15085,6 +14997,49 @@
                 // A home screen vai esconder o treino-tab se necessário
                 initModalidades();
             }
+        }
+
+        // ── Tela de acesso encerrado (cliente inativo) ──────────────
+        function showAcessoEncerrado(ctmId, motivo) {
+            var overlay = document.getElementById('acessoEncerradoOverlay');
+            var isInadimplente = motivo === 'inadimplente';
+            var isCancelado    = motivo === 'cancelado';
+            var icon    = isInadimplente ? '💳' : '🔒';
+            var titulo  = isInadimplente ? 'Pagamento em Atraso'
+                        : isCancelado    ? 'Contrato Cancelado'
+                        :                  'Acesso Encerrado';
+            var subtit  = isInadimplente
+                ? 'Identificamos um pagamento em aberto.<br>Regularize para retomar o acesso.'
+                : isCancelado
+                ? 'O contrato foi cancelado.<br>Entre em contato para reativar.'
+                : 'O contrato deste cliente foi encerrado.<br>Os dados estão preservados.';
+            var bgColor = isInadimplente ? 'rgba(220,38,38,0.1)'  : 'rgba(99,102,241,0.06)';
+            var bdColor = isInadimplente ? 'rgba(220,38,38,0.25)' : '#1e293b';
+            if (!overlay) {
+                overlay = document.createElement('div');
+                overlay.id = 'acessoEncerradoOverlay';
+                overlay.style.cssText = 'position:fixed;inset:0;background:#070d1a;z-index:99999;'
+                    + 'display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;';
+                document.body.appendChild(overlay);
+            }
+            overlay.innerHTML = '<div style="max-width:340px;width:100%;">'
+                + '<div style="font-size:56px;margin-bottom:16px;">' + icon + '</div>'
+                + '<div style="font-size:22px;font-weight:900;color:#f1f5f9;margin-bottom:8px;letter-spacing:-.5px;">' + titulo + '</div>'
+                + '<div style="font-size:14px;color:#94a3b8;margin-bottom:24px;line-height:1.6;">' + subtit + '</div>'
+                + '<div style="background:' + bgColor + ';border:1px solid ' + bdColor + ';border-radius:14px;padding:16px 18px;margin-bottom:20px;">'
+                +   '<div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">Entre em contato</div>'
+                +   '<a href="https://wa.me/5511984760689" target="_blank"'
+                +      ' style="display:flex;align-items:center;gap:10px;padding:12px 14px;'
+                +      'background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.25);'
+                +      'border-radius:10px;text-decoration:none;">'
+                +     '<span style="font-size:20px;">💬</span>'
+                +     '<div style="text-align:left;">'
+                +       '<div style="font-size:13px;font-weight:700;color:#4ade80;">WhatsApp IDE Systems</div>'
+                +       '<div style="font-size:11px;color:#64748b;">(11) 98476-0689</div>'
+                +     '</div></a></div>'
+                + '<div style="font-size:11px;color:#334155;">IDE Systems Tecnologia &nbsp;·&nbsp; CTM Manager</div>'
+                + '</div>';
+            overlay.style.display = 'flex';
         }
 
         function showLogin() {
