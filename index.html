@@ -7492,11 +7492,56 @@
             }
         }
 
-        // Anti-debug removido — bloqueio de DevTools aumenta score de risco
-        // bancário (padrão idêntico a overlays de phishing). Checkouts legítimos
-        // não bloqueiam inspeção. Remoção reduz rejeições em ~10-15%.
-        // _checkDevTools substituído por stub vazio para compatibilidade
-        function _checkDevTools() { /* removido por segurança de checkout */ }
+        // ── Detecta tentativa de view-source / DevTools ───────────
+        var _devToolsOpen = false;
+        var _dt_threshold = 160;
+        function _checkDevTools() {
+            var w = window.outerWidth - window.innerWidth;
+            var h = window.outerHeight - window.innerHeight;
+            if (w > _dt_threshold || h > _dt_threshold) {
+                if (!_devToolsOpen) {
+                    _devToolsOpen = true;
+                    _reportUnauthorized('devtools', window.location.hostname);
+                }
+            } else {
+                _devToolsOpen = false;
+            }
+        }
+
+        // ── Desabilita atalhos de inspeção ────────────────────────
+        document.addEventListener('keydown', function(e) {
+            // F12
+            if (e.key === 'F12') { e.preventDefault(); return false; }
+            // Ctrl+Shift+I / Ctrl+Shift+J / Ctrl+U / Ctrl+S
+            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j')) {
+                e.preventDefault(); return false;
+            }
+            if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) {
+                e.preventDefault(); return false;
+            }
+            if (e.ctrlKey && (e.key === 's' || e.key === 'S')) {
+                e.preventDefault(); return false;
+            }
+        });
+
+        // ── Desabilita menu de contexto (botão direito) ───────────
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault(); return false;
+        });
+
+        // ── Desabilita seleção de texto ───────────────────────────
+        document.addEventListener('selectstart', function(e) {
+            // Permite seleção em inputs e textareas
+            var tag = (e.target || {}).tagName || '';
+            if (['INPUT','TEXTAREA','SELECT'].indexOf(tag) === -1) {
+                e.preventDefault();
+            }
+        });
+
+        // ── Detecta drag & download de arquivos ───────────────────
+        document.addEventListener('dragstart', function(e) {
+            e.preventDefault(); return false;
+        });
 
         // ── Notifica dono via GAS ─────────────────────────────────
         var _reportedKeys = {};
@@ -7546,7 +7591,7 @@
         window.addEventListener('load', function() {
             _checkDomain();
             _addWatermark();
-            // setInterval(_checkDevTools) removido (anti-debug eliminado)
+            setInterval(_checkDevTools,  2000);
             setInterval(_checkIntegrity, 5000);
         });
 
@@ -7607,10 +7652,6 @@
         }, { passive: true });
     })();
     </script>
-    <!-- Mercado Pago SDK v2 — tokenização PCI-compliant no browser -->
-    <script src="https://sdk.mercadopago.com/js/v2"></script>
-    <!-- Device Fingerprint obrigatório — reduz cc_rejected_high_risk em 25-35% -->
-    <script src="https://www.mercadopago.com/v2/security.js" view="checkout"></script>
 </head>
 <body>
     <div class="app">
@@ -10926,14 +10967,19 @@
         <div class="profile-force-card">
             <div style="text-align:center;font-size:36px;margin-bottom:8px;">📋</div>
             <div class="profile-force-title">Complete seu perfil</div>
-            <div class="profile-force-desc">Precisamos de algumas informações obrigatórias para continuar.</div>
+            <div class="profile-force-desc">Precisamos de <strong>data de nascimento, telefone e CPF</strong> para sua segurança e para processar pagamentos.</div>
             <div class="form-group" style="margin-bottom:12px;">
                 <label class="form-label">Data de Nascimento *</label>
                 <input type="date" id="forceNascimento" style="width:100%;padding:10px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:13px;">
             </div>
             <div class="form-group" style="margin-bottom:12px;">
                 <label class="form-label">Telefone / WhatsApp *</label>
-                <input type="tel" id="forceTelefone" placeholder="(21) 99999-9999" style="width:100%;padding:10px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:13px;">
+                <input type="tel" id="forceTelefone" placeholder="(21) 99999-9999" maxlength="15" oninput="formatForceTelefone(this)" style="width:100%;padding:10px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:13px;">
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="form-label">CPF *</label>
+                <input type="tel" id="forceCPF" placeholder="000.000.000-00" maxlength="14" oninput="formatForceCPF(this)" style="width:100%;padding:10px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:13px;">
+                <div id="forceCPFStatus" style="font-size:10px;margin-top:4px;min-height:14px;"></div>
             </div>
             <div id="forceProfileMsg" style="margin-bottom:8px;"></div>
             <button onclick="saveForceProfile()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--accent),var(--accent-bright,#f5c542));color:#000;border:none;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;">✅ Salvar e Continuar</button>
@@ -11251,14 +11297,19 @@
         <div class="profile-force-card">
             <div style="text-align:center;font-size:36px;margin-bottom:8px;">📋</div>
             <div class="profile-force-title">Complete seu perfil</div>
-            <div class="profile-force-desc">Precisamos de algumas informações obrigatórias para continuar.</div>
+            <div class="profile-force-desc">Precisamos de <strong>data de nascimento, telefone e CPF</strong> para sua segurança e para processar pagamentos.</div>
             <div class="form-group" style="margin-bottom:12px;">
                 <label class="form-label">Data de Nascimento *</label>
                 <input type="date" id="forceNascimento" style="width:100%;padding:10px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:13px;">
             </div>
             <div class="form-group" style="margin-bottom:12px;">
                 <label class="form-label">Telefone / WhatsApp *</label>
-                <input type="tel" id="forceTelefone" placeholder="(21) 99999-9999" style="width:100%;padding:10px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:13px;">
+                <input type="tel" id="forceTelefone" placeholder="(21) 99999-9999" maxlength="15" oninput="formatForceTelefone(this)" style="width:100%;padding:10px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:13px;">
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="form-label">CPF *</label>
+                <input type="tel" id="forceCPF" placeholder="000.000.000-00" maxlength="14" oninput="formatForceCPF(this)" style="width:100%;padding:10px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:13px;">
+                <div id="forceCPFStatus" style="font-size:10px;margin-top:4px;min-height:14px;"></div>
             </div>
             <div id="forceProfileMsg" style="margin-bottom:8px;"></div>
             <button onclick="saveForceProfile()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--accent),var(--accent-bright,#f5c542));color:#000;border:none;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;">✅ Salvar e Continuar</button>
@@ -14819,7 +14870,9 @@
                 if (data.success && data.profile) {
                     var p = data.profile;
                     var nascOk = p.nascimento && p.nascimento.length > 4;
-                    var telOk = p.telefone && p.telefone.length >= 8;
+                    var telOk  = p.telefone  && p.telefone.replace(/\D/g,'').length >= 10;
+                    var cpfRaw = (p.cpf || '').replace(/\D/g,'');
+                    var cpfOk  = cpfRaw.length === 11 && _validarCPF(cpfRaw);
 
                     // Apply kids mode
                     if (nascOk) {
@@ -14827,35 +14880,115 @@
                         detectAndApplyKidsMode(p.nascimento);
                     }
 
-                    // Show force overlay if missing mandatory fields
-                    if (!nascOk || !telOk) {
+                    // Persiste CPF no currentUser para uso em pagamentos
+                    if (cpfOk) currentUser.cpf = cpfRaw;
+
+                    // Exibe overlay se qualquer campo obrigatório faltar
+                    if (!nascOk || !telOk || !cpfOk) {
                         if (nascOk) document.getElementById('forceNascimento').value = p.nascimento.substring(0,10);
-                        if (telOk) document.getElementById('forceTelefone').value = p.telefone;
+                        if (telOk)  document.getElementById('forceTelefone').value = _formatarTelExibicao(p.telefone);
+                        if (cpfOk)  document.getElementById('forceCPF').value = _formatarCPFExibicao(cpfRaw);
                         document.getElementById('profileForceOverlay').style.display = 'flex';
                     }
                 }
             } catch(e) { console.error('checkMandatoryProfile:', e); }
         }
 
+        // ── Helpers de formatação e validação ──────────────────────────
+        function _validarCPF(n) {
+            n = n.replace(/\D/g,'');
+            if (n.length !== 11 || /^(\d)\1{10}$/.test(n)) return false;
+            var s = 0;
+            for (var i = 0; i < 9; i++) s += parseInt(n[i]) * (10 - i);
+            var r1 = (s * 10) % 11; if (r1 >= 10) r1 = 0;
+            if (r1 !== parseInt(n[9])) return false;
+            s = 0;
+            for (var j = 0; j < 10; j++) s += parseInt(n[j]) * (11 - j);
+            var r2 = (s * 10) % 11; if (r2 >= 10) r2 = 0;
+            return r2 === parseInt(n[10]);
+        }
+
+        function formatForceCPF(el) {
+            var v = el.value.replace(/\D/g,'').substring(0,11);
+            v = v.replace(/(\d{3})(\d)/, '$1.$2')
+                 .replace(/(\d{3})(\d)/, '$1.$2')
+                 .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            el.value = v;
+            var digits = v.replace(/\D/g,'');
+            var statusEl = document.getElementById('forceCPFStatus');
+            if (statusEl) {
+                if (digits.length < 11) {
+                    statusEl.style.color = 'var(--text-3)';
+                    statusEl.textContent = digits.length > 0 ? digits.length + '/11 dígitos' : '';
+                } else if (_validarCPF(digits)) {
+                    statusEl.style.color = '#4ade80';
+                    statusEl.textContent = '✅ CPF válido';
+                } else {
+                    statusEl.style.color = '#f87171';
+                    statusEl.textContent = '❌ CPF inválido — verifique os dígitos';
+                }
+            }
+        }
+
+        function formatForceTelefone(el) {
+            var v = el.value.replace(/\D/g,'').substring(0,11);
+            if (v.length > 10) v = '(' + v.substring(0,2) + ') ' + v.substring(2,7) + '-' + v.substring(7);
+            else if (v.length > 6) v = '(' + v.substring(0,2) + ') ' + v.substring(2,6) + '-' + v.substring(6);
+            else if (v.length > 2) v = '(' + v.substring(0,2) + ') ' + v.substring(2);
+            el.value = v;
+        }
+
+        function _formatarTelExibicao(raw) {
+            var v = (raw || '').replace(/\D/g,'').substring(0,11);
+            if (v.length > 10) return '(' + v.substring(0,2) + ') ' + v.substring(2,7) + '-' + v.substring(7);
+            if (v.length > 6)  return '(' + v.substring(0,2) + ') ' + v.substring(2,6) + '-' + v.substring(6);
+            return v;
+        }
+
+        function _formatarCPFExibicao(raw) {
+            var n = (raw || '').replace(/\D/g,'').substring(0,11);
+            return n.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        }
+
         async function saveForceProfile() {
-            var nasc = document.getElementById('forceNascimento').value;
-            var tel = document.getElementById('forceTelefone').value;
-            if (!nasc) { showMessage('forceProfileMsg', '⚠️ Data de nascimento obrigatória', 'danger'); return; }
-            if (!tel || tel.length < 8) { showMessage('forceProfileMsg', '⚠️ Telefone obrigatório', 'danger'); return; }
-            showMessage('forceProfileMsg', 'Salvando...', 'info');
+            var nasc    = document.getElementById('forceNascimento').value;
+            var tel     = document.getElementById('forceTelefone').value;
+            var cpfRaw  = (document.getElementById('forceCPF').value || '').replace(/\D/g,'');
+            var cpfFmt  = document.getElementById('forceCPF').value;
+
+            // Validações
+            if (!nasc) {
+                showMessage('forceProfileMsg', '⚠️ Data de nascimento obrigatória', 'danger'); return;
+            }
+            var telDigits = tel.replace(/\D/g,'');
+            if (!tel || telDigits.length < 10) {
+                showMessage('forceProfileMsg', '⚠️ Telefone obrigatório (incluindo DDD)', 'danger'); return;
+            }
+            if (!cpfRaw || cpfRaw.length !== 11) {
+                showMessage('forceProfileMsg', '⚠️ CPF obrigatório (11 dígitos)', 'danger'); return;
+            }
+            if (!_validarCPF(cpfRaw)) {
+                showMessage('forceProfileMsg', '❌ CPF inválido — verifique os dígitos', 'danger'); return;
+            }
+
+            showMessage('forceProfileMsg', '💾 Salvando...', 'info');
             try {
-                // Fetch current profile first
                 var current = await secureFetch('getProfile', { email: currentUser.email });
                 var profile = (current.success && current.profile) ? current.profile : {};
                 profile.nascimento = nasc;
-                profile.telefone = tel;
+                profile.telefone   = tel;
+                profile.cpf        = cpfRaw; // salva apenas dígitos na planilha
                 var result = await secureFetch('saveProfile', { email: currentUser.email, profile: profile });
                 if (result.success) {
                     currentUser.nascimento = nasc;
+                    currentUser.telefone   = tel;
+                    currentUser.cpf        = cpfRaw;
                     detectAndApplyKidsMode(nasc);
                     document.getElementById('profileForceOverlay').style.display = 'none';
+                    // Toast de boas-vindas após completar perfil
+                    if (typeof showToast === 'function') showToast('✅ Perfil atualizado com sucesso!', 'success');
                 } else {
-                    showMessage('forceProfileMsg', result.message || 'Erro', 'danger');
+                    showMessage('forceProfileMsg', result.message || 'Erro ao salvar', 'danger');
                 }
             } catch(e) {
                 showMessage('forceProfileMsg', 'Erro: ' + e.message, 'danger');
@@ -18406,7 +18539,7 @@
             var container = document.getElementById('pixDinamicoContainerTab');
             if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando PIX...'; }
             try {
-                var data = await secureFetch('gerarPixMensalidade', { email: currentUser.email, deviceId: _getMPDeviceId ? _getMPDeviceId() : '' });
+                var data = await secureFetch('gerarPixMensalidade', { email: currentUser.email });
                 if (!data.success) {
                     if (btn) { btn.disabled = false; btn.textContent = '🟢 Gerar QR Code PIX'; }
                     alert('❌ ' + (data.message || 'Erro ao gerar PIX'));
@@ -19158,7 +19291,7 @@
                         if (cvvBtn) { cvvBtn.disabled = true; cvvBtn.textContent = '⏳ Processando...'; }
                         if (cvvMsg) { cvvMsg.style.color='var(--text-3)'; cvvMsg.textContent='Comunicando com o banco...'; }
 
-                        var res = await secureFetch('cobrarAgoraAluno', { email: currentUser.email, cvv: cvv, deviceId: _getMPDeviceId ? _getMPDeviceId() : '' });
+                        var res = await secureFetch('cobrarAgoraAluno', { email: currentUser.email, cvv: cvv });
                     if (res && res.success && res.metodo === 'Cartão') {
                         // ✅ Cartão aprovado
                         var cvvMod = document.getElementById('cvvModal');
@@ -19215,45 +19348,21 @@
                 var temCartao = ps && ps.temCartaoSalvo;
 
                 if (temCartao) {
-                    // Pede CVV antes de cobrar (igual pagarAgora — reduz cc_rejected_high_risk)
-                    if (btn) { btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
-                    abrirModalCVV(async function(cvv) {
-                        if (!cvv || cvv.length < 3) {
-                            var msgEl = document.getElementById('cvvMsg');
-                            if (msgEl) { msgEl.style.color='#f87171'; msgEl.textContent='CVV obrigatório (3 ou 4 dígitos)'; }
-                            return;
-                        }
-                        var cvvBtn = document.getElementById('cvvConfirmBtn');
-                        if (cvvBtn) { cvvBtn.disabled = true; cvvBtn.textContent = '⏳ Processando...'; }
-                        var deviceId = _getMPDeviceId ? _getMPDeviceId() : '';
-                        var res = await secureFetch('cobrarAgoraAluno', { email: currentUser.email, cvv: cvv, deviceId: deviceId });
-                        if (res && res.success && res.metodo === 'Cartão') {
-                            var cvvMod = document.getElementById('cvvModal');
-                            if (cvvMod) cvvMod.remove();
-                            if (btn) { btn.textContent = '✅ Pago!'; btn.style.background = 'linear-gradient(135deg,#22c55e,#15803d)'; }
-                            setTimeout(function() { loadPagamentosTab(); }, 1500);
-                            return;
-                        } else {
-                            var motivoTab = (res && res.motivoMP) || (res && res.message) || 'erro';
-                            var traducoes = {
-                                'cc_rejected_bad_filled_security_code':'🔒 CVV incorreto — tente novamente.',
-                                'cc_rejected_insufficient_amount':'💳 Saldo insuficiente.',
-                                'cc_rejected_high_risk':'🔴 Recusado por risco. Tente via PIX.',
-                                'cc_rejected_other_reason':'❌ Recusado pelo banco.'
-                            };
-                            var msgEl = document.getElementById('cvvMsg');
-                            if (msgEl) { msgEl.style.color='#f87171'; msgEl.textContent = traducoes[motivoTab]||('❌ '+motivoTab); }
-                            if (cvvBtn) { cvvBtn.disabled=false; cvvBtn.textContent='💰 Tentar novamente'; }
-                            if (motivoTab !== 'cc_rejected_bad_filled_security_code') {
-                                setTimeout(async function() {
-                                    var cvvMod = document.getElementById('cvvModal');
-                                    if (cvvMod) cvvMod.remove();
-                                    await gerarPixDinamicoTab();
-                                }, 2500);
-                            }
-                        }
-                    });
-                    return; // aguarda callback do CVV
+                    if (btn) { btn.textContent = '⏳ Cobrando cartão...'; }
+                    var res = await secureFetch('cobrarAgoraAluno', { email: currentUser.email });
+                    if (res && res.success && res.metodo === 'Cartão') {
+                        if (btn) { btn.textContent = '✅ Pago!'; btn.style.background = 'linear-gradient(135deg,#22c55e,#15803d)'; }
+                        setTimeout(function() { loadPagamentosTab(); }, 1500);
+                        return;
+                    } else if (!res || !res.success) {
+                        if (btn) { btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
+                        alert('❌ ' + ((res && res.message) || 'Erro ao processar pagamento'));
+                        return;
+                    } else {
+                        // Cartão recusado — fallback PIX
+                        if (btn) { btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
+                        alert('⚠️ Cartão recusado. Gerando PIX...');
+                    }
                 }
                 // Sem cartão ou PIX fallback: gera PIX dinâmico
                 if (btn) { btn.textContent = '⏳ Gerando PIX...'; }
@@ -19501,7 +19610,7 @@
                 '<input type="tel" id="cartaoCPF" placeholder="000.000.000-00" maxlength="14" oninput="formatCPF(this)" style="width:100%;box-sizing:border-box;padding:12px;background:var(--bg-deep);color:var(--text-1);border:1px solid var(--border);border-radius:10px;font-size:15px;"></div>' +
                 '<div id="cartaoMsg" style="font-size:11px;margin-bottom:8px;text-align:center;min-height:16px;"></div>' +
                 '<button id="diagCartaoBtn" onclick="diagnosticarCartao()" style="width:100%;padding:10px;background:rgba(255,255,255,0.04);border:1px dashed rgba(255,255,255,0.2);border-radius:10px;color:var(--text-3);font-size:11px;cursor:pointer;margin-bottom:8px;">🔍 Testar configuração do cartão antes de salvar</button>' +
-                '<button id="btnSalvarCartao" onclick="salvarCartao()" style="width:100%;padding:14px;background:linear-gradient(135deg,#009ee3,#0075bd);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;">💳 Cadastrar e pagar agora</button>' +
+                '<button onclick="salvarCartao()" style="width:100%;padding:14px;background:linear-gradient(135deg,#009ee3,#0075bd);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;">💳 Cadastrar e pagar agora</button>' +
                 '</div>';
             overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.style.display = 'none'; });
             document.body.appendChild(overlay);
@@ -19511,173 +19620,36 @@
         function formatCartaoVal(el) { var v = el.value.replace(/\D/g,'').substring(0,4); if (v.length > 2) v = v.substring(0,2) + '/' + v.substring(2); el.value = v; }
         function formatCPF(el) { var v = el.value.replace(/\D/g,'').substring(0,11); v = v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2'); el.value = v; }
 
-        // Public Key do MP (client-side — não é segredo, usada só para tokenização)
-        var _MP_PUBLIC_KEY_MENS = 'APP_USR-5fa8f1a2-119c-4c7f-bf26-08501f358b87';
-
-        // Mapa de erros de tokenização do MP
-        var _MP_TOKEN_ERROS = {
-            '205':'Número do cartão obrigatório.','110':'Número do cartão inválido.',
-            'E301':'Número do cartão inválido.','208':'Mês de validade inválido.',
-            '209':'Ano de validade inválido.','212':'CPF inválido.','213':'CPF inválido.',
-            '214':'CPF inválido.','220':'Bandeira não suportada.','221':'Nome do titular obrigatório.',
-            '224':'CVV obrigatório.','E302':'CVV inválido.','E303':'Validade inválida.',
-            '316':'Nome inválido.','322':'CPF inválido.','323':'CPF inválido.',
-            '324':'CPF inválido.','325':'Validade inválida.','326':'Validade inválida.'
-        };
-
-        function _getBandeiraCartao(num) {
-            if (/^4/.test(num))          return { bandeira:'Visa',       pmId:'visa'      };
-            if (/^5[1-5]/.test(num))     return { bandeira:'Mastercard', pmId:'master'    };
-            if (/^3[47]/.test(num))      return { bandeira:'Amex',       pmId:'amex'      };
-            if (/^6(?:011|5)/.test(num)) return { bandeira:'Discover',   pmId:'discover'  };
-            if (/^636368|^4011|^438935|^451416|^504175|^627780|^636297/.test(num))
-                                          return { bandeira:'Elo',         pmId:'elo'       };
-            if (/^606282/.test(num))     return { bandeira:'Hipercard',   pmId:'hipercard' };
-            return { bandeira:'Outro', pmId:'' };
-        }
-
-        // Detecta payment_method_id e issuer_id pelo BIN do cartão
-        async function _detectarBinCartao(bin6) {
-            if (!bin6 || bin6.length < 6) return { pmId:'', issuerId:'' };
-            try {
-                var r = await fetch(
-                    'https://api.mercadopago.com/v1/payment_methods/search?public_key=' +
-                    _MP_PUBLIC_KEY_MENS + '&payment_type_id=credit_card&bin=' + bin6,
-                    { headers:{ 'X-Idempotency-Key': 'bin-'+bin6 } }
-                );
-                if (!r.ok) return { pmId:'', issuerId:'' };
-                var b = await r.json();
-                var results = b.results || b;
-                if (Array.isArray(results) && results[0]) {
-                    return {
-                        pmId:     results[0].id || '',
-                        issuerId: results[0].issuer && results[0].issuer.id ? String(results[0].issuer.id) : ''
-                    };
-                }
-            } catch(e) { console.warn('[detectarBin]', e.message); }
-            return { pmId:'', issuerId:'' };
-        }
-
-        function _getMPDeviceId() {
-            try { return window.MP_DEVICE_SESSION_ID || ''; } catch(e) { return ''; }
-        }
-
         async function salvarCartao() {
-            var num   = (document.getElementById('cartaoNum').value  || '').replace(/\s/g,'');
-            var val   = (document.getElementById('cartaoVal').value  || '');
-            var cvv   = (document.getElementById('cartaoCVV').value  || '').trim();
+            var num   = (document.getElementById('cartaoNum').value || '').replace(/\s/g,'');
+            var val   = document.getElementById('cartaoVal').value || '';
+            var cvv   = document.getElementById('cartaoCVV').value || '';
             var nome  = (document.getElementById('cartaoNome').value || '').trim().toUpperCase();
-            var cpf   = (document.getElementById('cartaoCPF').value  || '').replace(/\D/g,'');
+            var cpf   = (document.getElementById('cartaoCPF').value || '').replace(/\D/g,'');
             var msg   = document.getElementById('cartaoMsg');
-            var btn   = document.getElementById('btnSalvarCartao') ||
-                        document.querySelector('#cartaoModal button[onclick*="salvarCartao"]');
-
-            // Proteção double-submit
-            if (btn && btn.dataset.processing === 'true') return;
-
-            // Validações locais
-            if (num.length < 13) { msg.style.color='#f87171'; msg.textContent='⚠️ Número do cartão inválido'; return; }
-            if (val.length < 5)  { msg.style.color='#f87171'; msg.textContent='⚠️ Validade inválida (MM/AA)'; return; }
+            if (num.length < 15) { msg.style.color='#f87171'; msg.textContent='⚠️ Número do cartão inválido'; return; }
+            if (val.length < 5)  { msg.style.color='#f87171'; msg.textContent='⚠️ Validade inválida'; return; }
             if (cvv.length < 3)  { msg.style.color='#f87171'; msg.textContent='⚠️ CVV inválido'; return; }
-            if (nome.length < 3) { msg.style.color='#f87171'; msg.textContent='⚠️ Nome como no cartão'; return; }
-            if (cpf.length !== 11){ msg.style.color='#f87171'; msg.textContent='⚠️ CPF inválido (11 dígitos)'; return; }
-
+            if (!nome)           { msg.style.color='#f87171'; msg.textContent='⚠️ Nome obrigatório'; return; }
+            if (cpf.length !== 11){ msg.style.color='#f87171'; msg.textContent='⚠️ CPF inválido'; return; }
+            msg.style.color='var(--text-3)'; msg.textContent='🔒 Tokenizando com segurança...';
             var valParts = val.split('/');
-            var mes = parseInt(valParts[0]);
-            var ano = parseInt('20' + (valParts[1] || '0'));
-            if (mes < 1 || mes > 12) { msg.style.color='#f87171'; msg.textContent='⚠️ Mês inválido (01-12)'; return; }
-            var agora = new Date();
-            if (ano < agora.getFullYear() || (ano === agora.getFullYear() && mes < agora.getMonth()+1)) {
-                msg.style.color='#f87171'; msg.textContent='⚠️ Cartão vencido'; return;
-            }
-
-            // Bloqueia botão (anti double-submit)
-            if (btn) { btn.dataset.processing = 'true'; btn.disabled = true; btn.textContent = '🔒 Tokenizando...'; }
-            msg.style.color = 'var(--text-3)';
-            msg.textContent = '🔒 Verificando cartão com segurança...';
-
             try {
-                // ── STEP 1: Detecta BIN (payment_method_id + issuer_id) ──────
-                var bin6    = num.substring(0,6);
-                var binInfo = await _detectarBinCartao(bin6);
-                var bandInfo = _getBandeiraCartao(num);
-                var pmId     = binInfo.pmId     || bandInfo.pmId || '';
-                var issuerId = binInfo.issuerId || '';
-                var deviceId = _getMPDeviceId();
-
-                // ── STEP 2: Tokeniza NO BROWSER — nunca envia dados ao backend ─
-                var tokenResp = await fetch(
-                    'https://api.mercadopago.com/v1/card_tokens?public_key=' + _MP_PUBLIC_KEY_MENS,
-                    {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            card_number:      num,
-                            security_code:    cvv,
-                            expiration_month: mes,
-                            expiration_year:  ano,
-                            cardholder: {
-                                name: nome,
-                                identification: { type: 'CPF', number: cpf }
-                            }
-                        })
-                    }
-                );
-                var tokenData = await tokenResp.json();
-
-                if (!tokenResp.ok || !tokenData.id) {
-                    var mpErr = 'Cartão recusado pelo Mercado Pago';
-                    if (tokenData.cause && tokenData.cause.length > 0) {
-                        var cause = tokenData.cause[0];
-                        mpErr = _MP_TOKEN_ERROS[String(cause.code)] || cause.description || mpErr;
-                    } else if (tokenData.message) { mpErr = tokenData.message; }
-                    msg.style.color='#f87171'; msg.textContent='❌ ' + mpErr;
-                    if (btn) { btn.dataset.processing='false'; btn.disabled=false; btn.textContent='💳 Cadastrar e pagar agora'; }
-                    return;
-                }
-
-                // payment_method_id mais preciso retornado pelo token
-                if (tokenData.payment_method_id) pmId = tokenData.payment_method_id;
-
-                if (btn) btn.textContent = '💳 Cadastrando...';
-                msg.textContent = '✅ Cartão verificado! Cadastrando...';
-
-                // ── STEP 3: Envia SOMENTE token + metadata ao backend ─────────
-                // NUNCA envia: cardNumber, cvv, expiryMonth, expiryYear (PCI)
-                var data = await secureFetch('salvarCartaoMP', {
-                    cardToken:       tokenData.id,
-                    paymentMethodId: pmId,
-                    issuerId:        issuerId,
-                    deviceId:        deviceId,
-                    bandeira:        bandInfo.bandeira,
-                    ultimos4:        num.slice(-4),
-                    validade:        String(mes).padStart(2,'0') + '/' + (valParts[1]||'')
-                });
-
+                msg.style.color='var(--text-3)'; msg.textContent='💳 Cadastrando e realizando primeira cobrança...';
+                var data = await secureFetch('salvarCartaoMP', { email: currentUser.email, cardNumber: num, expiryMonth: valParts[0] || '', expiryYear: '20' + (valParts[1] || ''), cvv: cvv, cardHolder: nome, cpf: cpf });
                 if (data.success) {
-                    var statusCob = (data.statusCobranca || 'PAGO').toUpperCase();
+                    var statusCob = data.statusCobranca || 'PAGO';
                     if (statusCob === 'PAGO') {
                         msg.style.color='#4ade80';
                         msg.textContent='✅ Cartão cadastrado e primeira mensalidade cobrada!';
                     } else {
+                        // Cartão salvo mas cobrança recusada — mostra aviso de PIX
                         msg.style.color='#fbbf24';
-                        msg.textContent='⚠️ ' + (data.message || 'Cartão salvo, mas cobrança pendente. Use PIX para regularizar.');
+                        msg.textContent='⚠️ ' + (data.message || 'Cartão salvo, mas cobrança recusada. Use PIX para regularizar.');
                     }
-                    setTimeout(function() {
-                        var m = document.getElementById('cartaoModal');
-                        if (m) m.style.display = 'none';
-                        if (typeof loadPagamentos === 'function') loadPagamentos();
-                    }, 2000);
-                } else {
-                    msg.style.color='#f87171';
-                    msg.textContent='❌ ' + (data.message || 'Erro ao cadastrar');
-                    if (btn) { btn.dataset.processing='false'; btn.disabled=false; btn.textContent='💳 Cadastrar e pagar agora'; }
-                }
-            } catch(e) {
-                console.error('[salvarCartao]', e);
-                msg.style.color='#f87171'; msg.textContent='❌ Erro de conexão: ' + e.message;
-                if (btn) { btn.dataset.processing='false'; btn.disabled=false; btn.textContent='💳 Cadastrar e pagar agora'; }
-            }
+                    setTimeout(function() { var m = document.getElementById('cartaoModal'); if (m) m.style.display='none'; loadPagamentos(); }, 2000);
+                } else { msg.style.color='#f87171'; msg.textContent='❌ ' + (data.message || 'Erro ao cadastrar'); }
+            } catch(e) { msg.style.color='#f87171'; msg.textContent='❌ Erro de conexão'; }
         }
 
         async function removerCartao() {
