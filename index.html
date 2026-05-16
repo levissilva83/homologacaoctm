@@ -10139,7 +10139,6 @@
                             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
                                 <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;">Filtrar por CT</label>
                                 <select id="cobCTFiltro" onchange="loadPagamentosAdmin()" style="padding:6px 10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:11px;"></select>
-                    <input id="cobNomeFiltro" type="text" placeholder="🔍 Buscar aluno..." oninput="filtrarCobracasPorNome(this.value)" style="flex:1;padding:7px 10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:11px;outline:none;">
                             </div>
 
                             <!-- KPIs -->
@@ -18552,9 +18551,45 @@
                 var data = await secureFetch('getPagamentoStatus', { email: currentUser.email });
                 _pagData = data;
                 renderPagamentos(data);
+
+                // Retoma polling automaticamente se PIX ainda pendente
+                var extId = data.externalId || data.pagamentoId || '';
+                var st    = (data.status || '').toUpperCase();
+                if (st === 'PENDENTE' && extId &&
+                    extId.indexOf('manual') === -1 &&
+                    extId.indexOf('pix_manual') === -1 &&
+                    !extId.startsWith('EXPIRADO_')) {
+                    // Polling ativo: verifica status a cada 10s enquanto tela aberta
+                    if (!window._pixPollingTimer) {
+                        iniciarPollingPix(extId);
+                    }
+                } else if (st === 'PENDENTE' && (!extId || extId.indexOf('manual') !== -1)) {
+                    // PIX manual — polling leve via syncPixStatus a cada 30s
+                    _iniciarSyncManual();
+                }
             } catch(e) {
                 el.innerHTML = '<div style="text-align:center;color:var(--text-3);font-size:11px;">Erro ao carregar. Tente novamente.</div>';
             }
+        }
+
+        // Polling leve para PIX manual — só atualiza o badge se admin confirmar
+        function _iniciarSyncManual() {
+            if (window._syncManualTimer) return; // já rodando
+            var tentativas = 0;
+            window._syncManualTimer = setInterval(async function() {
+                tentativas++;
+                if (tentativas > 20) { clearInterval(window._syncManualTimer); window._syncManualTimer = null; return; }
+                try {
+                    var res = await secureFetch('syncPixStatus', { _t: Date.now() });
+                    if (!res) return;
+                    var st = (res.status || '').toUpperCase();
+                    if (_statusPagoFE(st)) {
+                        clearInterval(window._syncManualTimer); window._syncManualTimer = null;
+                        _atualizarBadgesPagamento('PAGO');
+                        if (typeof loadPagamentos === 'function') setTimeout(loadPagamentos, 1000);
+                    }
+                } catch(e) {}
+            }, 30000); // a cada 30s
         }
 
         // ── Verifica forma de pagamento e exibe banner discreto se não cadastrada ──
@@ -18815,22 +18850,33 @@
             _pagPlanoSelecionado = null; _pagDiaSelecionado = null;
             try {
                 var data = await secureFetch('getAlunoPlanos', {});
-                if (!data.success || !data.planos || data.planos.length === 0) {
-                    lista.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-3);font-size:12px;">Nenhum plano disponível no momento.</div>';
+                var pl = data.planoAtribuido;
+                if (!data.success || !pl) {
+                    lista.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-3);font-size:12px;">📋 ' + (data.mensagem || 'Nenhum plano atribuído. Contate o professor.') + '</div>';
+                    if (btn) { btn.style.opacity = '0.35'; btn.style.cursor = 'not-allowed'; btn.disabled = true; }
                     return;
                 }
-                var h = '';
                 var freqLabel = { mensal:'Mensal', trimestral:'Trimestral', semestral:'Semestral', anual:'Anual' };
-                data.planos.forEach(function(pl) {
-                    h += '<div class="pag-plano-card" onclick="selecionarPlano(\'' + escapeHtml(pl.id) + '\', ' + JSON.stringify(pl).replace(/</g,'\\u003c').replace(/"/g,'&quot;') + ', this)">';
-                    h += '<div style="display:flex;align-items:center;justify-content:space-between;">';
-                    h += '<div style="font-size:14px;font-weight:700;color:var(--text-1);">' + escapeHtml(pl.nome) + '</div>';
-                    h += '<div style="font-size:15px;font-weight:800;color:#C9A23A;">R$ ' + pl.valor + '</div></div>';
-                    if (pl.descricao) h += '<div style="font-size:11px;color:var(--text-3);margin-top:3px;">' + escapeHtml(pl.descricao) + '</div>';
-                    h += '<div style="font-size:11px;color:var(--text-3);margin-top:4px;">🔄 ' + (freqLabel[pl.frequencia] || pl.frequencia || 'Mensal') + '</div>';
-                    h += '</div>';
-                });
-                lista.innerHTML = h;
+                var statusColor = { PAGO:'#4ade80', PENDENTE:'#f59e0b', ATRASADO:'#f87171' };
+                var sc = statusColor[data.status] || '#94a3b8';
+                lista.innerHTML =
+                    '<div style="border:1.5px solid var(--accent);border-radius:12px;padding:14px 16px;background:rgba(201,162,58,0.04);">' +
+                        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
+                            '<div style="font-size:14px;font-weight:800;color:var(--text-1);">📋 ' + escapeHtml(pl.nome) + '</div>' +
+                            '<div style="font-size:16px;font-weight:800;color:#C9A23A;">R$ ' + pl.valor + '</div>' +
+                        '</div>' +
+                        (pl.descricao ? '<div style="font-size:11px;color:var(--text-3);margin-bottom:4px;">' + escapeHtml(pl.descricao) + '</div>' : '') +
+                        '<div style="display:flex;align-items:center;gap:10px;font-size:11px;color:var(--text-3);">' +
+                            '<span>🔄 ' + (freqLabel[pl.frequencia] || 'Mensal') + '</span>' +
+                            (data.vencimento ? '<span>📅 Vence ' + data.vencimento + '</span>' : '') +
+                            '<span style="color:' + sc + ';font-weight:700;">' + (data.status || 'PENDENTE') + '</span>' +
+                        '</div>' +
+                        '<div style="margin-top:10px;font-size:10px;color:var(--text-3);opacity:0.7;">Plano atribuído com base nas suas modalidades. Para alterar, contate o professor.</div>' +
+                    '</div>';
+                _pagPlanoSelecionado = { id: pl.id, obj: pl };
+                _pagDiaSelecionado   = 10;
+                if (btn)  { btn.style.opacity = '1'; btn.style.cursor = 'pointer'; btn.disabled = false; btn.textContent = '💰 Pagar Agora'; }
+                if (hint) hint.textContent = '';
             } catch(e) {
                 lista.innerHTML = '<div style="text-align:center;color:var(--text-3);font-size:12px;">❌ Erro ao carregar planos.</div>';
             }
@@ -29118,14 +29164,48 @@
 
         // ─── Inicializa ao entrar no painel ──────────────────
         function initAdminPlano() {
-            // Planos removidos — todos os módulos liberados
             var licSec = document.getElementById('sysAdminLicSection');
             if (licSec) licSec.style.display = 'none';
+            renderAdminPlanBadge();
         }
 
         function renderAdminPlanBadge() {
             var el = document.getElementById('adminPlanBadge');
-            if (el) el.innerHTML = ''; // planos removidos
+            if (!el) return;
+
+            // Pega planoId do currentUser (vem do login via backend)
+            var planoId  = (currentUser && currentUser.planoId) ? currentUser.planoId.toLowerCase().trim() : '';
+            var limites  = (currentUser && currentUser.planoLimites) ? currentUser.planoLimites : null;
+
+            if (!planoId) { el.innerHTML = ''; return; }
+
+            // Config visual por plano
+            var cfg = {
+                basico:       { label: 'Básico',       icon: '🔵', cor: '#3b82f6', bg: 'rgba(59,130,246,0.12)',  border: 'rgba(59,130,246,0.35)' },
+                profissional: { label: 'Profissional', icon: '🟡', cor: '#f59e0b', bg: 'rgba(245,158,11,0.12)',  border: 'rgba(245,158,11,0.35)' },
+                premium:      { label: 'Premium',      icon: '💎', cor: '#a855f7', bg: 'rgba(168,85,247,0.12)',  border: 'rgba(168,85,247,0.35)' },
+                trial:        { label: 'Trial',        icon: '⏳', cor: '#6b7280', bg: 'rgba(107,114,128,0.12)', border: 'rgba(107,114,128,0.35)' }
+            };
+            var c = cfg[planoId] || { label: planoId, icon: '📋', cor: '#94a3b8', bg: 'rgba(148,163,184,0.1)', border: 'rgba(148,163,184,0.3)' };
+
+            // Resumo de limites
+            var limStr = '';
+            if (limites) {
+                limStr = '<span style="font-size:10px;color:' + c.cor + ';opacity:0.8;margin-left:6px;">' +
+                    limites.alunos + ' alunos · ' + limites.modalidades + ' mod · ' + limites.filiais + ' filial' +
+                    '</span>';
+            }
+
+            el.innerHTML =
+                '<span style="' +
+                    'display:inline-flex;align-items:center;gap:5px;' +
+                    'padding:3px 10px 3px 7px;border-radius:20px;' +
+                    'background:' + c.bg + ';border:1px solid ' + c.border + ';' +
+                    'font-size:11px;font-weight:700;color:' + c.cor + ';' +
+                    'letter-spacing:0.3px;' +
+                '">' +
+                    c.icon + ' Plano ' + c.label +
+                '</span>' + limStr;
         }
 
         // ─── Carrega config de módulos do backend ─────────────
@@ -31473,60 +31553,25 @@
 
                 var gwIcon = { mercadopago: '🔵', infinitypay: '🟣', pix_manual: '🟢' };
                 var h = '';
-                _gwVinculos.forEach(function(v, _vIdx) {
-                    var icon    = gwIcon[v.gateway] || '⚪';
-                    var gwBadgeMap = {
-                        mercadopago: '<span style="background:rgba(0,158,227,0.15);color:#38bdf8;border:1px solid rgba(0,158,227,0.3);border-radius:4px;font-size:8px;font-weight:700;padding:1px 5px;margin-left:4px;">MERCADO PAGO</span>',
-                        infinitypay: '<span style="background:rgba(139,92,246,0.15);color:#a78bfa;border:1px solid rgba(139,92,246,0.3);border-radius:4px;font-size:8px;font-weight:700;padding:1px 5px;margin-left:4px;">INFINITYPAY</span>',
-                        pix_manual:  '<span style="background:rgba(34,197,94,0.12);color:#4ade80;border:1px solid rgba(34,197,94,0.25);border-radius:4px;font-size:8px;font-weight:700;padding:1px 5px;margin-left:4px;">PIX MANUAL</span>'
-                    };
-                    var badge  = gwBadgeMap[v.gateway] || '';
+                _gwVinculos.forEach(function(v) {
+                    var icon   = gwIcon[v.gateway] || '⚪';
                     var status = v.ativo ? '<span style="color:#4ade80;font-size:9px;font-weight:700;">● Ativo</span>' : '<span style="color:#f87171;font-size:9px;">● Inativo</span>';
-                    h += '<div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:9px;margin-bottom:5px;padding:9px 11px;">';
-                    h += '<div style="display:flex;align-items:center;justify-content:space-between;">';
+                    h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 11px;background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:9px;margin-bottom:5px;">';
                     h += '<div style="flex:1;min-width:0;">';
-                    h += '<div style="font-size:11px;font-weight:800;color:var(--adm-text-1);">📍 ' + escapeHtml(v.ct) + ' ' + status + badge + '</div>';
-                    h += '<div style="font-size:9px;color:var(--adm-text-3);margin-top:3px;">' + icon + ' ' + escapeHtml(v.gatewayLabel || v.gateway);
+                    h += '<div style="font-size:11px;font-weight:800;color:var(--adm-text-1);">📍 ' + escapeHtml(v.ct) + ' ' + status + '</div>';
+                    h += '<div style="font-size:9px;color:var(--adm-text-3);margin-top:2px;">' + icon + ' ' + escapeHtml(v.gatewayLabel || v.gateway);
                     if (v.chavePix) h += ' · 🔑 ' + escapeHtml(v.chavePix);
                     h += ' · Venc. dia ' + (v.diaVencimento || '10') + '</div>';
                     h += '</div>';
-                    h += '<div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px;">';
-                    h += '<button onclick="_editarVinculoIdx(' + _vIdx + ')" style="padding:3px 8px;border-radius:5px;background:rgba(99,102,241,0.1);color:#818cf8;border:1px solid rgba(99,102,241,0.25);font-size:9px;cursor:pointer;">✏️ Editar</button>';
-                    h += '<button onclick="removerVinculoCT(\'' + escapeHtml(v.ct) + '\')" style="padding:3px 8px;border-radius:5px;background:rgba(248,113,113,0.08);color:#f87171;border:1px solid rgba(248,113,113,0.2);font-size:9px;cursor:pointer;">✕</button>';
-                    h += '</div></div></div>';
+                    h += '<button onclick="removerVinculoCT(\'' + escapeHtml(v.ct) + '\')" style="flex-shrink:0;margin-left:8px;padding:3px 8px;border-radius:5px;background:rgba(248,113,113,0.08);color:#f87171;border:1px solid rgba(248,113,113,0.2);font-size:9px;cursor:pointer;">✕</button>';
+                    h += '</div>';
                 });
-                                el.innerHTML = h;
+                el.innerHTML = h;
 
                 // Atualiza selects da aba 3
                 _populateCTComGatewaySelect();
             } catch(e) {
                 el.innerHTML = '<div class="admin-empty" style="font-size:10px;">❌ Erro de conexão</div>';
-            }
-        }
-
-        function _editarVinculoIdx(idx) {
-            var v = _gwVinculos && _gwVinculos[idx];
-            if (!v) return;
-            editarVinculoCT(v);
-        }
-
-        function editarVinculoCT(v) {
-            var ctInp  = document.getElementById('vinCT');
-            var gwSel  = document.getElementById('vinGateway');
-            var pixInp = document.getElementById('vinChavePix');
-            var diaInp = document.getElementById('vinDiaVenc');
-            if (ctInp)  { ctInp.value = v.ct || ''; }
-            if (gwSel)  { gwSel.value = v.gatewayId || ''; }
-            if (pixInp) { pixInp.value = v.chavePix || ''; }
-            if (diaInp) { diaInp.value = v.diaVencimento || 10; }
-            // Scroll para o topo do formulário
-            var form = document.getElementById('vinculoForm') || ctInp;
-            if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            // Destaque visual no botão vincular
-            var btn = document.querySelector('#vinculoForm button, button[onclick*="vincularCTGateway"]');
-            if (btn) {
-                btn.textContent = '💾 Salvar alterações';
-                setTimeout(function(){ btn.textContent = '🔗 Vincular'; }, 5000);
             }
         }
 
@@ -31603,18 +31648,14 @@
                 _mpPlanos.forEach(function(p) {
                     var vin   = _gwVinculos.find(function(v){ return v.ct === p.ct; });
                     var icon  = vin ? (gwIcon[vin.gateway] || '⚪') : '⚪';
-                    h += '<div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:9px;margin-bottom:5px;padding:9px 11px;">';
-                    h += '<div style="display:flex;align-items:center;justify-content:space-between;">';
-                    var _pIdx = _mpPlanos.indexOf(p);
-                    h += '<div style="flex:1;min-width:0;cursor:pointer;" onclick="_editarPlanoIdx(' + _pIdx + ')">';
+                    h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 11px;background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:9px;margin-bottom:5px;">';
+                    h += '<div style="flex:1;min-width:0;">';
                     h += '<div style="font-size:11px;font-weight:700;color:var(--adm-text-1);">' + escapeHtml(p.nome) + '</div>';
                     h += '<div style="font-size:9px;color:var(--adm-text-3);margin-top:2px;">' + icon + ' ' + escapeHtml(p.ct || '—') + ' · R$ ' + parseFloat(p.valor||0).toFixed(2) + ' · ' + (freqLabel[p.frequencia] || p.frequencia || 'Mensal');
                     if (p.descricao) h += ' · ' + escapeHtml(p.descricao);
                     h += '</div></div>';
-                    h += '<div style="display:flex;gap:4px;flex-shrink:0;margin-left:8px;">';
-                    h += '<button onclick="_editarPlanoIdx(' + _pIdx + ')" style="padding:3px 8px;border-radius:5px;background:rgba(99,102,241,0.1);color:#818cf8;border:1px solid rgba(99,102,241,0.25);font-size:9px;cursor:pointer;">✏️</button>';
-                    h += '<button onclick="deletarPlano(\'' + escapeHtml(p.id) + '\')" style="padding:3px 8px;border-radius:5px;background:rgba(248,113,113,0.08);color:#f87171;border:1px solid rgba(248,113,113,0.2);font-size:9px;cursor:pointer;">✕</button>';
-                    h += '</div></div></div>';
+                    h += '<button onclick="deletarPlano(\'' + escapeHtml(p.id) + '\')" style="flex-shrink:0;margin-left:8px;padding:3px 8px;border-radius:5px;background:rgba(248,113,113,0.08);color:#f87171;border:1px solid rgba(248,113,113,0.2);font-size:9px;cursor:pointer;">✕</button>';
+                    h += '</div>';
                 });
                 el.innerHTML = h;
             } catch(e) {
@@ -31645,58 +31686,6 @@
             } catch(e) { alert('Erro de conexão'); }
         }
 
-        var _planoEditandoId = null;
-
-        function _editarPlanoIdx(idx) {
-            var p = _mpPlanos && _mpPlanos[idx];
-            if (!p) return;
-            editarPlano(p);
-        }
-
-        function editarPlano(p) {
-            _planoEditandoId = p.id;
-            var nomeInp  = document.getElementById('mpPlanoNome');
-            var valorInp = document.getElementById('mpPlanoValor');
-            var ctSel    = document.getElementById('mpPlanoCT');
-            var freqSel  = document.getElementById('mpPlanoFreq');
-            var descInp  = document.getElementById('mpPlanoDesc');
-            var btn      = document.querySelector('button[onclick*="criarPlanoMP"]');
-            if (nomeInp)  nomeInp.value  = p.nome  || '';
-            if (valorInp) valorInp.value = p.valor  || '';
-            if (ctSel)    ctSel.value    = p.ct     || '';
-            if (freqSel)  freqSel.value  = p.frequencia || 'mensal';
-            if (descInp)  descInp.value  = p.descricao  || '';
-            if (btn) { btn.textContent = '💾 Salvar alterações'; btn.style.background = 'rgba(99,102,241,0.3)'; }
-            if (nomeInp) nomeInp.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-
-        async function criarPlanoMP() {
-            var ct    = (document.getElementById('mpPlanoCT').value || '').trim();
-            var nome  = (document.getElementById('mpPlanoNome').value || '').trim();
-            var valor = (document.getElementById('mpPlanoValor').value || '').trim();
-            var freq  = document.getElementById('mpPlanoFreq').value || 'mensal';
-            var desc  = (document.getElementById('mpPlanoDesc') ? document.getElementById('mpPlanoDesc').value : '').trim();
-
-            if (!ct)   { alert('Selecione o CT do plano'); return; }
-            if (!nome) { alert('Nome do plano obrigatório'); return; }
-            if (!valor || parseFloat(valor) <= 0) { alert('Valor obrigatório e maior que zero'); return; }
-
-            try {
-                var payload = { ct: ct, nome: nome, valor: valor, frequencia: freq, descricao: desc };
-                if (_planoEditandoId) payload.id = _planoEditandoId;
-                var data = await secureFetch('salvarPlano', payload);
-                if (data.success) {
-                    _planoEditandoId = null;
-                    document.getElementById('mpPlanoNome').value  = '';
-                    document.getElementById('mpPlanoValor').value = '';
-                    if (document.getElementById('mpPlanoDesc')) document.getElementById('mpPlanoDesc').value = '';
-                    var btn = document.querySelector('button[onclick*="criarPlanoMP"]');
-                    if (btn) { btn.textContent = '✅ Criar plano'; btn.style.background = ''; }
-                    loadPlanosList();
-                } else { alert('❌ ' + data.message); }
-            } catch(e) { alert('Erro de conexão'); }
-        }
-
         async function deletarPlano(id) {
             if (!confirm('Remover este plano?')) return;
             try {
@@ -31708,17 +31697,10 @@
 
         // ── ABA 4: Cobranças ──────────────────────────────────────
 
-        var _cobNomeFiltro = '';
-
         function filtrarCobrancas(filtro, el) {
             _cobFiltroAtual = filtro;
             document.querySelectorAll('.cob-filter-btn').forEach(function(b){ b.classList.remove('active'); });
             if (el) el.classList.add('active');
-            loadPagamentosAdmin();
-        }
-
-        function filtrarCobracasPorNome(val) {
-            _cobNomeFiltro = (val || '').toLowerCase().trim();
             loadPagamentosAdmin();
         }
 
@@ -31919,13 +31901,6 @@
                 // Aplica filtro de status local
                 if (_cobFiltroAtual) {
                     pags = pags.filter(function(p){ return (p.status||'').toUpperCase() === _cobFiltroAtual.toUpperCase(); });
-                }
-                // Aplica filtro por nome do aluno
-                if (_cobNomeFiltro) {
-                    pags = pags.filter(function(p){
-                        return (p.nome||'').toLowerCase().indexOf(_cobNomeFiltro) !== -1 ||
-                               (p.email||'').toLowerCase().indexOf(_cobNomeFiltro) !== -1;
-                    });
                 }
 
                 // KPIs
