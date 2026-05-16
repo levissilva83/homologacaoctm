@@ -10136,9 +10136,14 @@
 
                         <!-- ═══ ABA 4: COBRANÇAS ═══ -->
                         <div id="pagTab4" class="pag-tab-panel" style="display:none;">
-                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
                                 <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;">Filtrar por CT</label>
                                 <select id="cobCTFiltro" onchange="loadPagamentosAdmin()" style="padding:6px 10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:11px;"></select>
+                            </div>
+                            <div style="position:relative;margin-bottom:10px;">
+                                <input id="cobNomeFiltro" type="text" placeholder="🔍 Buscar por nome..." oninput="filtrarCobrancasPorNome()"
+                                    style="width:100%;padding:8px 32px 8px 10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;box-sizing:border-box;outline:none;">
+                                <span id="cobNomeFiltroLimpar" onclick="limparFiltroCobNome()" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--adm-text-3);font-size:14px;">✕</span>
                             </div>
 
                             <!-- KPIs -->
@@ -18287,10 +18292,7 @@
             var plano     = data.plano || {};
             var historico = data.historico || [];
             // Formata data de vencimento — remove string longa de Date JS
-            var proxVenc  = (data.proximoVencimento || '').toString();
-            if (proxVenc.length > 20) {
-                try { var dv = new Date(proxVenc); if (!isNaN(dv.getTime())) proxVenc = dv.toLocaleDateString('pt-BR'); } catch(e){}
-            }
+            var proxVenc  = _formatVencBR(data.proximoVencimento || '');
             var atrasado  = (status === 'atrasado');
             var semPlano  = (!plano.nome);
             var temGateway = !!data.temGateway;
@@ -18668,10 +18670,7 @@
             var status    = (data.status || 'inativo').toLowerCase();
             var plano     = data.plano || {};
             var historico = data.historico || [];
-            var proxVenc  = (data.proximoVencimento || '').toString();
-            if (proxVenc.length > 20) {
-                try { var dv2 = new Date(proxVenc); if (!isNaN(dv2.getTime())) proxVenc = dv2.toLocaleDateString('pt-BR'); } catch(e){}
-            }
+            var proxVenc  = _formatVencBR(data.proximoVencimento || '');
             var atrasado   = (status === 'atrasado');
             var semPlano   = (!plano.nome);
             var temGateway = !!data.temGateway;
@@ -21656,6 +21655,30 @@
 
         function fmtDateISO(d) {
             return d.getFullYear() + '-' + ('0'+(d.getMonth()+1)).slice(-2) + '-' + ('0'+d.getDate()).slice(-2);
+        }
+
+        // Converte QUALQUER formato de data para dd/MM/yyyy pt-BR
+        // Aceita: "Wed Jun 10 2026 00:00:00 GMT-0300...", "2026-06-10", "10/06/2026", Date objects
+        function _formatVencBR(val) {
+            if (!val) return '';
+            try {
+                var s = val.toString().trim();
+                // Já está em dd/MM/yyyy
+                if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
+                // ISO: yyyy-MM-dd
+                if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+                    var p = s.substring(0,10).split('-');
+                    return p[2] + '/' + p[1] + '/' + p[0];
+                }
+                // Qualquer outro formato (Date.toString, GMT, etc)
+                var d = new Date(s);
+                if (!isNaN(d.getTime())) {
+                    return ('0'+d.getDate()).slice(-2) + '/' +
+                           ('0'+(d.getMonth()+1)).slice(-2) + '/' +
+                           d.getFullYear();
+                }
+            } catch(e) {}
+            return val.toString();
         }
 
         function fmtDateBR(isoStr) {
@@ -31704,6 +31727,28 @@
             loadPagamentosAdmin();
         }
 
+        function _toggleReceitaDetalhes(el) {
+            var d = el.querySelector('.rec-detalhes');
+            if (d) d.style.display = d.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function filtrarCobrancasPorNome() {
+            var inp  = document.getElementById('cobNomeFiltro');
+            var limpar = document.getElementById('cobNomeFiltroLimpar');
+            if (limpar) limpar.style.display = (inp && inp.value) ? 'inline' : 'none';
+            // Debounce: espera 300ms após digitar
+            if (window._cobNomeTimer) clearTimeout(window._cobNomeTimer);
+            window._cobNomeTimer = setTimeout(function() { loadPagamentosAdmin(); }, 300);
+        }
+
+        function limparFiltroCobNome() {
+            var inp = document.getElementById('cobNomeFiltro');
+            var limpar = document.getElementById('cobNomeFiltroLimpar');
+            if (inp) inp.value = '';
+            if (limpar) limpar.style.display = 'none';
+            loadPagamentosAdmin();
+        }
+
         // ── Config WhatsApp para cobranças ────────────────────────
         var _cobWANumero = localStorage.getItem('cobWANumero') || '';
 
@@ -31903,6 +31948,16 @@
                     pags = pags.filter(function(p){ return (p.status||'').toUpperCase() === _cobFiltroAtual.toUpperCase(); });
                 }
 
+                // Aplica filtro por nome
+                var _nomeFiltro = (document.getElementById('cobNomeFiltro') ? document.getElementById('cobNomeFiltro').value : '').toLowerCase().trim();
+                if (_nomeFiltro) {
+                    pags = pags.filter(function(p){
+                        var nome  = (p.nome  || '').toLowerCase();
+                        var email = (p.email || '').toLowerCase();
+                        return nome.indexOf(_nomeFiltro) !== -1 || email.indexOf(_nomeFiltro) !== -1;
+                    });
+                }
+
                 // KPIs
                 var kpiEl = document.getElementById('cobKPIs');
                 if (kpiEl) {
@@ -31910,17 +31965,43 @@
                     var kTotal    = allPags.length;
                     var kPago     = allPags.filter(function(p){ return (p.status||'').toUpperCase() === 'PAGO'; }).length;
                     var kAtrasado = allPags.filter(function(p){ return (p.status||'').toUpperCase() === 'ATRASADO'; }).length;
-                    var kPendente = allPags.filter(function(p){ return ['PENDENTE','VENCENDO'].indexOf((p.status||'').toUpperCase()) !== -1; }).length;
                     var kSemPlano = allPags.filter(function(p){ return (p.status||'').toUpperCase() === 'SEM_PLANO' || !p.planoId; }).length;
-                    var receitaMes = allPags.filter(function(p){ return (p.status||'').toUpperCase() === 'PAGO'; })
+
+                    // Receita total dos pagamentos PAGO
+                    var pagosFiltro = allPags.filter(function(p){ return (p.status||'').toUpperCase() === 'PAGO'; });
+                    var receitaTotal = pagosFiltro.reduce(function(acc, p){ return acc + parseFloat(p.planoValor||0); }, 0);
+
+                    // Separa PIX manual vs Gateway (MP, InfinityPay etc)
+                    var isManual = function(p) {
+                        var m = (p.metodo || '').toLowerCase();
+                        var g = (p.gateway || '').toLowerCase();
+                        return m === 'manual' || m === 'pix_manual' || g === 'pix_manual' ||
+                               (p.externalId || '').indexOf('manual') !== -1;
+                    };
+                    var receitaGateway = pagosFiltro.filter(function(p){ return !isManual(p); })
                         .reduce(function(acc, p){ return acc + parseFloat(p.planoValor||0); }, 0);
+                    var receitaManual  = pagosFiltro.filter(function(p){ return isManual(p); })
+                        .reduce(function(acc, p){ return acc + parseFloat(p.planoValor||0); }, 0);
+
+                    // Card de receita expandido ao clicar
+                    var receitaDetalhes =
+                        '<div style="font-size:9px;color:var(--adm-text-3);margin-top:4px;line-height:1.6;">' +
+                            '<div>🔵 Gateway: <strong style="color:#60a5fa;">R$' + receitaGateway.toFixed(0) + '</strong></div>' +
+                            '<div>🟢 Manual: <strong style="color:#4ade80;">R$' + receitaManual.toFixed(0) + '</strong></div>' +
+                        '</div>';
+
                     kpiEl.innerHTML =
                         '<div class="cob-kpi"><span class="cob-kpi-num">' + kTotal + '</span><span class="cob-kpi-lbl">Alunos</span></div>' +
                         '<div class="cob-kpi cob-kpi-green"><span class="cob-kpi-num">' + kPago + '</span><span class="cob-kpi-lbl">Em dia</span></div>' +
                         '<div class="cob-kpi cob-kpi-red"><span class="cob-kpi-num">' + kAtrasado + '</span><span class="cob-kpi-lbl">Atrasados</span></div>' +
                         '<div class="cob-kpi cob-kpi-yellow"><span class="cob-kpi-num">' + kSemPlano + '</span><span class="cob-kpi-lbl">Sem plano</span></div>' +
-                        '<div class="cob-kpi"><span class="cob-kpi-num" style="font-size:11px;">R$' + receitaMes.toFixed(0) + '</span><span class="cob-kpi-lbl">Receita</span></div>';
-                    // Ajusta grid para 5 colunas
+                        '<div class="cob-kpi" style="cursor:pointer;" onclick="_toggleReceitaDetalhes(this)">' +
+                            '<span class="cob-kpi-num" style="font-size:11px;">R$' + receitaTotal.toFixed(0) + '</span>' +
+                            '<span class="cob-kpi-lbl">Receita ▾</span>' +
+                            '<div class="rec-detalhes" style="display:none;">' + receitaDetalhes + '</div>' +
+                        '</div>' +
+                        '</div>';
+
                     kpiEl.style.gridTemplateColumns = 'repeat(5,1fr)';
                 }
 
@@ -31967,7 +32048,7 @@
                     h += '<div style="font-size:10px;color:var(--adm-text-3);">' + icon + ' ' + escapeHtml(p.ct||'—');
                     if (p.planoNome) h += ' · <strong style="color:var(--adm-text-2);">' + escapeHtml(p.planoNome) + '</strong> — R$ ' + parseFloat(p.planoValor||0).toFixed(2);
                     else h += ' · <span style="color:#f87171;">sem plano</span>';
-                    if (p.vencimento) h += ' · 📅 ' + escapeHtml(p.vencimento);
+                    if (p.vencimento) h += ' · 📅 ' + escapeHtml(_formatVencBR(p.vencimento));
                     h += '</div></div>';
                     h += '<span style="flex-shrink:0;padding:3px 9px;border-radius:20px;font-size:9px;font-weight:700;background:' + bg + ';color:' + cor + ';border:1px solid ' + cor + '33;">' + lbl + '</span>';
                     h += '</div>';
