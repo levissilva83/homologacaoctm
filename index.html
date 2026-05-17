@@ -10157,6 +10157,7 @@
                                 <button class="cob-filter-btn" onclick="filtrarCobrancas('ATRASADO',this)">🔴 Atrasado</button>
                                 <button class="cob-filter-btn" onclick="filtrarCobrancas('VENCENDO',this)">🟡 Vencendo</button>
                                 <button class="cob-filter-btn" onclick="filtrarCobrancas('SEM_PLANO',this)">📋 Sem plano</button>
+                                <button class="cob-filter-btn" onclick="filtrarCobrancas('NUNCA_PAGOU',this)">❗ Nunca pagou</button>
                             </div>
 
                             <div id="mpPagamentosAdmin"><div class="admin-empty" style="font-size:11px;">Carregando...</div></div>
@@ -31732,6 +31733,12 @@
             if (d) d.style.display = d.style.display === 'none' ? 'block' : 'none';
         }
 
+        function _filtrarNuncaPagou() {
+            document.querySelectorAll('.cob-filter-btn').forEach(function(b){ b.classList.remove('active'); });
+            _cobFiltroAtual = 'NUNCA_PAGOU';
+            loadPagamentosAdmin();
+        }
+
         function filtrarCobrancasPorNome() {
             var inp  = document.getElementById('cobNomeFiltro');
             var limpar = document.getElementById('cobNomeFiltroLimpar');
@@ -31965,7 +31972,8 @@
                     var kTotal    = allPags.length;
                     var kPago     = allPags.filter(function(p){ return (p.status||'').toUpperCase() === 'PAGO'; }).length;
                     var kAtrasado = allPags.filter(function(p){ return (p.status||'').toUpperCase() === 'ATRASADO'; }).length;
-                    var kSemPlano = allPags.filter(function(p){ return (p.status||'').toUpperCase() === 'SEM_PLANO' || !p.planoId; }).length;
+                    var kSemPlano   = allPags.filter(function(p){ return (p.status||'').toUpperCase() === 'SEM_PLANO' || !p.planoId; }).length;
+                    var kNuncaPagou = allPags.filter(function(p){ return (p.status||'').toUpperCase() === 'NUNCA_PAGOU'; }).length;
 
                     // Receita total dos pagamentos PAGO
                     var pagosFiltro = allPags.filter(function(p){ return (p.status||'').toUpperCase() === 'PAGO'; });
@@ -31995,6 +32003,7 @@
                         '<div class="cob-kpi cob-kpi-green"><span class="cob-kpi-num">' + kPago + '</span><span class="cob-kpi-lbl">Em dia</span></div>' +
                         '<div class="cob-kpi cob-kpi-red"><span class="cob-kpi-num">' + kAtrasado + '</span><span class="cob-kpi-lbl">Atrasados</span></div>' +
                         '<div class="cob-kpi cob-kpi-yellow"><span class="cob-kpi-num">' + kSemPlano + '</span><span class="cob-kpi-lbl">Sem plano</span></div>' +
+                        '<div class="cob-kpi cob-kpi-red" style="cursor:pointer;" onclick="_filtrarNuncaPagou()"><span class="cob-kpi-num">' + kNuncaPagou + '</span><span class="cob-kpi-lbl">Nunca pagou</span></div>' +
                         '<div class="cob-kpi" style="cursor:pointer;" onclick="_toggleReceitaDetalhes(this)">' +
                             '<span class="cob-kpi-num" style="font-size:11px;">R$' + receitaTotal.toFixed(0) + '</span>' +
                             '<span class="cob-kpi-lbl">Receita ▾</span>' +
@@ -32002,7 +32011,7 @@
                         '</div>' +
                         '</div>';
 
-                    kpiEl.style.gridTemplateColumns = 'repeat(5,1fr)';
+                    kpiEl.style.gridTemplateColumns = 'repeat(3,1fr)';
                 }
 
                 if (!pags.length) {
@@ -32011,17 +32020,20 @@
                 }
 
                 var statusLabel = {
-                    PAGO:'✅ Em dia', PENDENTE:'⏳ Pendente',
+                    PAGO:'✅ Em dia', PENDENTE:'⏳ Aguardando',
+                    NUNCA_PAGOU:'❗ Nunca pagou',
                     ATRASADO:'🔴 Atrasado', VENCENDO:'🟡 Vencendo',
                     SEM_PLANO:'📋 Sem plano', CANCELADO:'⛔ Cancelado'
                 };
                 var statusColor = {
                     PAGO:'#4ade80', PENDENTE:'#fbbf24',
+                    NUNCA_PAGOU:'#f87171',
                     ATRASADO:'#f87171', VENCENDO:'#fb923c',
                     SEM_PLANO:'#94a3b8', CANCELADO:'#64748b'
                 };
                 var statusBg = {
                     PAGO:'rgba(74,222,128,0.08)', PENDENTE:'rgba(251,191,36,0.08)',
+                    NUNCA_PAGOU:'rgba(248,113,113,0.10)',
                     ATRASADO:'rgba(248,113,113,0.08)', VENCENDO:'rgba(251,146,60,0.08)',
                     SEM_PLANO:'rgba(148,163,184,0.06)', CANCELADO:'rgba(100,116,139,0.06)'
                 };
@@ -36672,10 +36684,17 @@
             } catch(eTrialBox) {}
             var badge = _el('asnStatusBadge');
             if (badge) { badge.textContent = a.status || '-'; }
-            _txt('asnNomePlano',       a.nomePlano || a.plano || '-');
-            _txt('asnValorPlano',      a.valor ? 'R$ ' + parseFloat(a.valor).toFixed(2).replace('.', ',') + '/mes' : '-');
-            _txt('asnProximaCobranca', a.proximoVencimento || '-');
-            _txt('asnSubId',           a.subscriptionId ? 'ID: ' + a.subscriptionId : '');
+            _txt('asnNomePlano',  a.nomePlano || a.plano || '-');
+            _txt('asnValorPlano', a.valor ? 'R$ ' + parseFloat(a.valor).toFixed(2).replace('.', ',') + '/mes' : '-');
+
+            // Formata próxima cobrança em pt-BR
+            var _vencAsn = _formatVencBR(a.proximoVencimento || '');
+            _txt('asnProximaCobranca', _vencAsn || '-');
+
+            // Oculta ID de PIX (pix_... / manual_...) — não é útil para o usuário
+            var _subId = a.subscriptionId || '';
+            var _subIdEhPix = _subId.indexOf('pix_') === 0 || _subId.indexOf('manual_') === 0;
+            _txt('asnSubId', (!_subIdEhPix && _subId) ? 'Assinatura: ' + _subId.substring(0, 20) + '...' : '');
             _renderHistorico();
             _renderProximasDatas();
         }
@@ -36684,7 +36703,12 @@
             var el = _el('asnHistoricoLista'); if (!el) return;
             var hist = window._asnHistorico || [];
             if (!hist.length) {
-                el.innerHTML = '<div style="font-size:12px;color:var(--text-3);text-align:center;padding:16px;background:rgba(255,255,255,0.02);border-radius:10px;border:1px dashed var(--border);">Nenhum pagamento registrado ainda.</div>';
+                // Para PIX/manual: histórico não é buscado automaticamente no MP
+                var _subIdH = (window._assinatura && window._assinatura.subscriptionId) || '';
+                var _isPix  = _subIdH.indexOf('pix_') === 0 || _subIdH.indexOf('manual_') === 0;
+                el.innerHTML = '<div style="font-size:12px;color:var(--text-3);text-align:center;padding:16px;background:rgba(255,255,255,0.02);border-radius:10px;border:1px dashed var(--border);">' +
+                    (_isPix ? '🟢 Pagamento via PIX confirmado. Histórico detalhado disponível no próximo ciclo.' : 'Nenhum pagamento registrado ainda.') +
+                    '</div>';
                 return;
             }
             el.innerHTML = hist.map(function(p) {
