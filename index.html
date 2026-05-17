@@ -34082,6 +34082,16 @@
             toggleBtn.onclick = function(){ senhaInp.type = senhaInp.type==='password'?'text':'password'; };
             senhaWrap.appendChild(senhaInp); senhaWrap.appendChild(toggleBtn);
 
+            // Confirmar Senha
+            var confWrap = document.createElement('div');
+            confWrap.style.cssText = 'position:relative;';
+            var confInp = inp('novoAlunoConf', 'password', 'Confirmar senha *', true);
+            var toggleConf = document.createElement('button');
+            toggleConf.type = 'button'; toggleConf.textContent = '👁';
+            toggleConf.style.cssText = 'position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;';
+            toggleConf.onclick = function(){ confInp.type = confInp.type==='password'?'text':'password'; };
+            confWrap.appendChild(confInp); confWrap.appendChild(toggleConf);
+
             // CT selector
             var ctLabel = document.createElement('label');
             ctLabel.style.cssText = 'font-size:10px;color:var(--adm-text-3);font-weight:600;';
@@ -34120,16 +34130,8 @@
             modErr.style.cssText = 'display:none;font-size:11px;color:#f87171;';
             modErr.textContent = '⚠️ Selecione pelo menos uma modalidade';
 
-            // Faixa
-            var faixaLabel = document.createElement('label');
-            faixaLabel.style.cssText = 'font-size:10px;color:var(--adm-text-3);font-weight:600;';
-            faixaLabel.textContent = 'Faixa inicial';
-            var faixaSel = document.createElement('select');
-            faixaSel.id = 'novoAlunoFaixa';
-            faixaSel.style.cssText = ctSel.style.cssText;
-            ['Branca','Azul','Roxa','Marrom','Preta'].forEach(function(f){
-                var o = document.createElement('option'); o.value=f; o.textContent=f; faixaSel.appendChild(o);
-            });
+            // Faixa — removida (igual ao formulário de nova conta, professor define ao aprovar)
+            var faixaSel = { value: 'Branca' }; // default Branca
 
             // Nota senha
             var nota = document.createElement('div');
@@ -34163,9 +34165,9 @@
             nascRow.appendChild(nascLabel);
             nascRow.appendChild(nascInp);
 
-            [nomeInp, nascRow, telInp, emailInp, senhaWrap,
+            [nomeInp, nascRow, telInp, emailInp, senhaWrap, confWrap,
              ctLabel, ctSel, modLabel, modGrid, modErr,
-             faixaLabel, faixaSel, nota, msgDiv, btns
+             nota, msgDiv, btns
             ].forEach(function(el){ form.appendChild(el); });
 
             card.appendChild(form);
@@ -34181,7 +34183,7 @@
             var email  = (document.getElementById('novoAlunoEmail').value || '').trim().toLowerCase();
             var senha  = (document.getElementById('novoAlunoSenha').value || '').trim();
             var ct     = (document.getElementById('novoAlunoCT').value    || '').trim();
-            var faixa  = (document.getElementById('novoAlunoFaixa').value || 'Branca');
+            var faixa  = ''; // faixa definida pelo professor ao aprovar
             var msg    = document.getElementById('novoAlunoMsg');
             var btn    = document.getElementById('novoAlunoSalvarBtn');
 
@@ -34195,6 +34197,8 @@
             if (!tel || tel.length < 8) { msg.style.color='#f87171'; msg.textContent='Telefone obrigatório'; return; }
             if (!email || !email.includes('@')) { msg.style.color='#f87171'; msg.textContent='E-mail válido obrigatório'; return; }
             if (!senha || senha.length < 6) { msg.style.color='#f87171'; msg.textContent='Senha mínimo 6 caracteres'; return; }
+            var conf = (document.getElementById('novoAlunoConf').value || '').trim();
+            if (senha !== conf) { msg.style.color='#f87171'; msg.textContent='As senhas não coincidem'; return; }
             if (!ct)    { msg.style.color='#f87171'; msg.textContent='Selecione o CT'; return; }
             if (mods.length === 0) {
                 document.getElementById('novoAlunoModErr').style.display = 'block';
