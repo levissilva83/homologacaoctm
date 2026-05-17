@@ -11445,26 +11445,56 @@
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyWwOSEW2dw2EioooNWWd62VMDCmBl9A271jejNJTXeTfSt94_eyIttNJseDQvTW10u/exec'
                          + '?ctm=' + _ctmId;
 
-        // ── Verifica se o cliente existe no registry ──────────────
-        // Só verifica se veio ?ctm= explícito na URL (não matrix/default)
+        // ── Carrega nome do CT e exibe na tela de login ────────────
         (function() {
             var urlParam = new URLSearchParams(window.location.search).get('ctm');
             if (!urlParam || urlParam.trim().toLowerCase() === 'matrix') return;
             var ctmToCheck = urlParam.trim().toLowerCase();
-            // Faz verificação assim que o DOM estiver pronto
-            function _checkClientExists() {
+
+            function _carregarInfoCT() {
                 fetch(SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify({ action: 'checkClient', ctmId: ctmToCheck })
+                    body: JSON.stringify({ action: 'getCTPublicInfo', ctmId: ctmToCheck })
                 })
                 .then(function(r){ return r.json(); })
                 .then(function(d) {
-                    if (d && d.success && d.exists === false) {
-                        _showClientNotFound(ctmToCheck);
+                    if (!d || !d.success) { _showClientNotFound(ctmToCheck); return; }
+                    if (d.exists === false) { _showClientNotFound(ctmToCheck); return; }
+
+                    // Atualiza título da tela de login com nome do CT
+                    var titleEl = document.getElementById('loginTitle');
+                    var subEl   = document.querySelector('.login-sub');
+                    if (titleEl) titleEl.textContent = d.nome || ctmToCheck;
+                    if (subEl)   subEl.textContent   = 'Bem-vindo ao ' + (d.nome || ctmToCheck);
+
+                    // Atualiza header e título da página
+                    var hdr = document.getElementById('hdrTitle');
+                    if (hdr) hdr.textContent = d.nome;
+                    document.title = (d.nome || 'CT Manager') + ' · CTM App';
+
+                    // Badge abaixo do título
+                    var badge = document.getElementById('loginCTBadge');
+                    if (!badge) {
+                        badge = document.createElement('div');
+                        badge.id = 'loginCTBadge';
+                        badge.style.cssText = 'display:inline-flex;align-items:center;gap:6px;' +
+                            'background:rgba(201,162,58,0.1);border:1px solid rgba(201,162,58,0.3);' +
+                            'border-radius:20px;padding:4px 14px;font-size:11px;color:#c9a23a;' +
+                            'font-weight:700;letter-spacing:0.5px;margin-top:4px;margin-bottom:4px;';
+                        var loginTitle = document.getElementById('loginTitle');
+                        if (loginTitle && loginTitle.parentNode) {
+                            loginTitle.parentNode.insertBefore(badge, loginTitle.nextSibling);
+                        }
                     }
+                    badge.textContent = '🥋 ' + (d.nome || ctmToCheck).toUpperCase();
                 })
-                .catch(function(e){ console.warn('[checkClient]', e); });
+                .catch(function(e){ console.warn('[getCTPublicInfo]', e); });
             }
+
+            function _checkClientExists() {
+                _carregarInfoCT(); // carrega info + verifica existência
+            }
+
             if (document.readyState === 'loading') {
                 document.addEventListener('DOMContentLoaded', _checkClientExists);
             } else {
@@ -34100,11 +34130,34 @@
             ctSel.id = 'novoAlunoCT';
             ctSel.style.cssText = 'width:100%;box-sizing:border-box;padding:11px 12px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:9px;font-size:13px;';
             var ctOpt0 = document.createElement('option'); ctOpt0.value=''; ctOpt0.textContent='— Selecione o CT —'; ctSel.appendChild(ctOpt0);
-            (allCTs || []).forEach(function(ct) {
-                var o = document.createElement('option');
-                o.value = ct.name || ct; o.textContent = ct.name || ct;
-                ctSel.appendChild(o);
-            });
+
+            // Popula CTs — usa allCTs se já carregado, senão busca agora
+            function _popularCTsNovoAluno() {
+                var lista = allCTs && allCTs.length > 0 ? allCTs : [];
+                ctSel.innerHTML = '<option value="">— Selecione o CT —</option>';
+                lista.forEach(function(ct) {
+                    var nome = (typeof ct === 'string') ? ct : (ct.name || ct.toString());
+                    var o = document.createElement('option');
+                    o.value = nome; o.textContent = nome;
+                    ctSel.appendChild(o);
+                });
+                if (lista.length === 0) {
+                    // Tenta carregar do servidor
+                    secureFetch('getCTsList', {}).then(function(data) {
+                        if (data.success && data.cts) {
+                            allCTs = data.cts;
+                            ctSel.innerHTML = '<option value="">— Selecione o CT —</option>';
+                            data.cts.forEach(function(ct) {
+                                var nome = (typeof ct === 'string') ? ct : (ct.name || ct.toString());
+                                var o = document.createElement('option');
+                                o.value = nome; o.textContent = nome;
+                                ctSel.appendChild(o);
+                            });
+                        }
+                    }).catch(function(){});
+                }
+            }
+            _popularCTsNovoAluno();
 
             // Modalidades
             var modLabel = document.createElement('label');
