@@ -18479,33 +18479,16 @@
                 h += '<div style="height:14px;"></div>';
             }
 
-            // ── Card: Histórico completo ───────────────────────────
+            // ── Fechar Tab 1 ──────────────────────────────────────────
+            h += '</div>'; // fecha pagStuTab1
+
+            // ── TAB 2: Histórico de Pagamentos ────────────────────────────
+            h += '<div id="pagStuTab2" style="display:none;">';
             h += '<div style="background:var(--bg-card);border-radius:16px;border:1px solid var(--border);padding:16px;">';
             h += '<div style="font-size:11px;font-weight:700;color:var(--text-3);letter-spacing:.6px;margin-bottom:14px;">HISTÓRICO DE PAGAMENTOS</div>';
-
-            if (historico.length === 0) {
-                h += '<div style="text-align:center;padding:24px 0;color:var(--text-3);font-size:12px;">';
-                h += '<div style="font-size:28px;margin-bottom:8px;">📭</div>';
-                h += 'Nenhum pagamento registrado ainda.</div>';
-            } else {
-                historico.forEach(function(p, idx) {
-                    var pStatus = (p.status || '').toUpperCase();
-                    var pColor = pStatus === 'APROVADO' || pStatus === 'PAGO' ? '#4ade80' : pStatus === 'PENDENTE' ? '#fbbf24' : '#f87171';
-                    var pBg    = pStatus === 'APROVADO' || pStatus === 'PAGO' ? 'rgba(74,222,128,0.07)' : pStatus === 'PENDENTE' ? 'rgba(251,191,36,0.07)' : 'rgba(248,113,113,0.07)';
-                    var pIcon  = pStatus === 'APROVADO' || pStatus === 'PAGO' ? '✅' : pStatus === 'PENDENTE' ? '⏳' : '❌';
-                    h += '<div style="display:flex;align-items:center;gap:12px;padding:12px;background:' + pBg + ';border-radius:10px;border:1px solid rgba(255,255,255,0.04);' + (idx < historico.length-1 ? 'margin-bottom:8px;' : '') + '">';
-                    h += '<div style="font-size:20px;">' + pIcon + '</div>';
-                    h += '<div style="flex:1;">';
-                    h += '<div style="font-size:13px;font-weight:700;color:var(--text-1);">' + escapeHtml(p.referencia || p.data || '—') + '</div>';
-                    h += '<div style="font-size:11px;color:var(--text-3);margin-top:1px;">' + escapeHtml(p.metodo || 'PIX') + '</div>';
-                    h += '</div>';
-                    h += '<div style="text-align:right;">';
-                    h += '<div style="font-size:14px;font-weight:800;color:var(--text-1);">R$ ' + escapeHtml(String(p.valor || '—')) + '</div>';
-                    h += '<div style="font-size:10px;font-weight:700;color:' + pColor + ';margin-top:2px;">' + pStatus + '</div>';
-                    h += '</div></div>';
-                });
-            }
+            h += renderHistoricoPagStu(historico);
             h += '</div>';
+            h += '</div>'; // fecha pagStuTab2
 
             el.innerHTML = h;
         }
@@ -18720,9 +18703,51 @@
             }
         }
 
+        var _pagDataGlobal = null; // guarda data para uso nas tabs
+
+        function switchPagStuTab(n) {
+            [1,2].forEach(function(i) {
+                var p = document.getElementById('pagStuTab' + i);
+                var b = document.getElementById('pagStuTabBtn' + i);
+                if (p) p.style.display = (i === n) ? 'block' : 'none';
+                if (b) {
+                    b.style.background  = (i === n) ? 'rgba(201,162,58,0.15)' : 'transparent';
+                    b.style.color       = (i === n) ? 'var(--accent)' : 'var(--text-3)';
+                    b.style.fontWeight  = (i === n) ? '800' : '600';
+                    b.style.borderBottom= (i === n) ? '2px solid var(--accent)' : '2px solid transparent';
+                }
+            });
+        }
+
+        function renderHistoricoPagStu(historico) {
+            var h = '';
+            if (!historico || historico.length === 0) {
+                h += '<div style="text-align:center;padding:32px 0;color:var(--text-3);font-size:12px;">';
+                h += '<div style="font-size:28px;margin-bottom:8px;">📭</div>';
+                h += 'Nenhum pagamento registrado ainda.</div>';
+            } else {
+                historico.forEach(function(p, idx) {
+                    var pStatus = (p.status || '').toUpperCase();
+                    var pColor  = pStatus === 'PAGO' || pStatus === 'APROVADO' ? '#4ade80' : pStatus === 'PENDENTE' ? '#fbbf24' : '#f87171';
+                    var pBg     = pStatus === 'PAGO' || pStatus === 'APROVADO' ? 'rgba(74,222,128,0.07)' : pStatus === 'PENDENTE' ? 'rgba(251,191,36,0.07)' : 'rgba(248,113,113,0.07)';
+                    var pIcon   = pStatus === 'PAGO' || pStatus === 'APROVADO' ? '✅' : pStatus === 'PENDENTE' ? '⏳' : '❌';
+                    h += '<div style="display:flex;align-items:center;gap:12px;padding:12px;background:' + pBg + ';border-radius:10px;margin-bottom:8px;">';
+                    h += '<div style="font-size:20px;">' + pIcon + '</div>';
+                    h += '<div style="flex:1;">';
+                    h += '<div style="font-size:13px;font-weight:700;color:var(--text-1);">' + escapeHtml(p.referencia || p.data || '—') + '</div>';
+                    h += '<div style="font-size:11px;color:var(--text-3);">' + escapeHtml(p.metodo || '—') + '</div>';
+                    h += '</div>';
+                    h += '<div style="font-size:13px;font-weight:800;color:' + pColor + ';">R$ ' + parseFloat(p.valor||0).toFixed(2).replace('.',',') + '</div>';
+                    h += '</div>';
+                });
+            }
+            return h;
+        }
+
         function renderPagamentos(data) {
             var el = document.getElementById('pagamentosContainer');
             if (!el) return;
+            _pagDataGlobal = data;
             if (!data.success || !data.configurado) {
                 el.innerHTML =
                     '<div style="padding:8px 0;">' +
@@ -18748,6 +18773,15 @@
             var statusClass = { pago:'pago', emdia:'pago', pendente:'pendente', atrasado:'atrasado', vencendo:'vencendo', inativo:'inativo' };
 
             var h = '';
+
+            // ── Tabs: Minha Mensalidade | Histórico ──────────────────────
+            h += '<div style="display:flex;gap:0;background:rgba(255,255,255,0.03);border-radius:12px;padding:4px;margin-bottom:16px;">';
+            h += '<button id="pagStuTabBtn1" onclick="switchPagStuTab(1)" style="flex:1;padding:9px 4px;border:none;border-radius:8px;background:rgba(201,162,58,0.15);color:var(--accent);font-size:12px;font-weight:800;cursor:pointer;border-bottom:2px solid var(--accent);transition:all 0.15s;">💳 Minha Mensalidade</button>';
+            h += '<button id="pagStuTabBtn2" onclick="switchPagStuTab(2)" style="flex:1;padding:9px 4px;border:none;border-radius:8px;background:transparent;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;">🕐 Histórico</button>';
+            h += '</div>';
+
+            // ── TAB 1: Minha Mensalidade ──────────────────────────────────
+            h += '<div id="pagStuTab1">';
 
             // Card de status
             h += '<div class="pag-card">';
