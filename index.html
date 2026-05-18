@@ -11587,7 +11587,7 @@
                     'background:#16a34a;color:#fff;border-radius:10px;font-size:13px;font-weight:700;text-decoration:none;">' +
                     '💬 Falar com o suporte' +
                 '</a>' +
-                '<div style="margin-top:32px;font-size:10px;color:#374151;">CTM Manager · IDE Systems Tecnologia</div>';
+                '<div style="margin-top:32px;font-size:10px;color:#374151;">CTM Manager · IDE Systems Tecnologia <span id="gasVersionBadge" style="display:inline-block;margin-left:8px;font-size:9px;color:rgba(255,255,255,0.2);font-family:monospace;"></span>            </div>';
             document.body.appendChild(overlay);
         }
 
@@ -27638,6 +27638,24 @@
                 }, 3600000);
             }
         }
+
+
+        // Exibe versão do GAS no rodapé para confirmar deploy
+        (function() {
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: JSON.stringify({ action: 'getVersion' })
+            })
+            .then(function(r){ return r.json(); })
+            .then(function(d) {
+                if (!d || !d.success) return;
+                var badge = document.getElementById('gasVersionBadge');
+                if (badge) badge.textContent = 'v' + d.version;
+                // Também expõe no console para debug
+                console.log('[CTM] Versão GAS:', d.version, '|', d.notes);
+            })
+            .catch(function(){});
+        })();
 
         function _fecharTrialBanner() {
             var b = document.getElementById('trialBanner');
