@@ -18462,7 +18462,13 @@
                         h += '<div id="pixChaveTabEl" data-chave="' + escapeHtml(data.chavePix) + '" onclick="copiarChavePixEl(this,\'pixCopiadoMsgTab\')" style="background:var(--bg-elevated);border:1.5px dashed rgba(201,162,58,0.55);border-radius:12px;padding:14px 16px;font-size:14px;font-weight:800;color:#C9A23A;cursor:pointer;word-break:break-all;text-align:center;margin-bottom:6px;">' + escapeHtml(data.chavePix) + '</div>';
                         h += '<div id="pixCopiadoMsgTab" style="font-size:11px;color:#4ade80;text-align:center;opacity:0;transition:opacity .3s;margin-bottom:10px;">✅ Chave copiada!</div>';
                         h += '<button onclick="copiarChavePixEl(document.getElementById(\'pixChaveTabEl\'),\'pixCopiadoMsgTab\')" style="width:100%;padding:13px;background:linear-gradient(135deg,#C9A23A,#F8E7A1 55%,#8C6A0A);color:#0D0B08;font-weight:800;border:none;border-radius:12px;font-size:14px;cursor:pointer;margin-bottom:10px;">📋 Copiar chave PIX</button>';
-                        h += '<div style="font-size:10px;color:var(--text-3);text-align:center;line-height:1.5;">Após pagar, envie o comprovante ao seu professor.<br>O pagamento será confirmado manualmente.</div>';
+                        h += '<div style="font-size:10px;color:var(--text-3);text-align:center;line-height:1.5;margin-bottom:10px;">Após pagar, envie o comprovante ao seu professor.</div>';
+                    // Botão WhatsApp com mensagem pré-preenchida
+                    var _tel = data.telAdmin || '';
+                    var _msg = encodeURIComponent('Olá professor! Acabei de realizar o pagamento da mensalidade via PIX. Segue o comprovante em anexo. Aguardo confirmação. 🙏');
+                    var _wa  = _tel ? 'https://wa.me/55' + _tel.replace(/\D/g,'') + '?text=' + _msg : 'https://wa.me/?text=' + _msg;
+                    h += '<a href="' + _wa + '" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:#25d366;border-radius:10px;color:#fff;font-size:13px;font-weight:700;text-decoration:none;margin-top:4px;">';
+                    h += '<span style="font-size:18px;">📲</span> Enviar comprovante ao professor</a>';
                     } else {
                         h += '<div style="background:rgba(255,193,7,0.08);border:1px solid rgba(255,193,7,0.25);border-radius:10px;padding:14px;text-align:center;font-size:12px;color:#fbbf24;">';
                         h += '⚠️ Chave PIX ainda não configurada pelo seu professor.<br><span style="font-size:10px;color:var(--text-3);margin-top:4px;display:block;">Entre em contato para realizar o pagamento.</span>';
@@ -18728,16 +18734,33 @@
             } else {
                 historico.forEach(function(p, idx) {
                     var pStatus = (p.status || '').toUpperCase();
-                    var pColor  = pStatus === 'PAGO' || pStatus === 'APROVADO' ? '#4ade80' : pStatus === 'PENDENTE' ? '#fbbf24' : '#f87171';
-                    var pBg     = pStatus === 'PAGO' || pStatus === 'APROVADO' ? 'rgba(74,222,128,0.07)' : pStatus === 'PENDENTE' ? 'rgba(251,191,36,0.07)' : 'rgba(248,113,113,0.07)';
-                    var pIcon   = pStatus === 'PAGO' || pStatus === 'APROVADO' ? '✅' : pStatus === 'PENDENTE' ? '⏳' : '❌';
-                    h += '<div style="display:flex;align-items:center;gap:12px;padding:12px;background:' + pBg + ';border-radius:10px;margin-bottom:8px;">';
-                    h += '<div style="font-size:20px;">' + pIcon + '</div>';
-                    h += '<div style="flex:1;">';
-                    h += '<div style="font-size:13px;font-weight:700;color:var(--text-1);">' + escapeHtml(p.referencia || p.data || '—') + '</div>';
-                    h += '<div style="font-size:11px;color:var(--text-3);">' + escapeHtml(p.metodo || '—') + '</div>';
+                    var pago    = pStatus === 'PAGO' || pStatus === 'APROVADO' || pStatus === 'APPROVED';
+                    var pend    = pStatus === 'PENDENTE' || pStatus === 'PENDING';
+                    var pColor  = pago ? '#4ade80' : pend ? '#fbbf24' : '#f87171';
+                    var pBg     = pago ? 'rgba(74,222,128,0.07)' : pend ? 'rgba(251,191,36,0.07)' : 'rgba(248,113,113,0.07)';
+                    var pIcon   = pago ? '✅' : pend ? '⏳' : '❌';
+                    var metodo  = p.metodo || '';
+                    var metIcon = metodo.indexOf('Cartão') !== -1 || metodo.indexOf('cartao') !== -1 ? '💳' :
+                                  metodo.indexOf('PIX Manual') !== -1 ? '🟢' :
+                                  metodo.indexOf('PIX') !== -1 ? '🔵' : '💰';
+                    var statusLabel = pago ? 'Pago' : pend ? 'Pendente' : 'Negado';
+
+                    h += '<div style="border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:14px;margin-bottom:8px;background:' + pBg + ';">';
+                    // Linha superior: ícone + data + valor
+                    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
+                    h += '<div style="display:flex;align-items:center;gap:8px;">';
+                    h += '<span style="font-size:18px;">' + pIcon + '</span>';
+                    h += '<div>';
+                    h += '<div style="font-size:12px;font-weight:700;color:var(--text-1);">' + escapeHtml(p.referencia || p.data || 'Pagamento') + '</div>';
+                    h += '<div style="font-size:10px;color:var(--text-3);margin-top:1px;">' + statusLabel + '</div>';
+                    h += '</div></div>';
+                    h += '<div style="font-size:15px;font-weight:800;color:' + pColor + ';">R$ ' + parseFloat(p.valor||0).toFixed(2).replace('.',',') + '</div>';
                     h += '</div>';
-                    h += '<div style="font-size:13px;font-weight:800;color:' + pColor + ';">R$ ' + parseFloat(p.valor||0).toFixed(2).replace('.',',') + '</div>';
+                    // Linha inferior: método de pagamento
+                    h += '<div style="display:flex;align-items:center;gap:4px;padding:5px 8px;background:rgba(255,255,255,0.04);border-radius:6px;width:fit-content;">';
+                    h += '<span style="font-size:12px;">' + metIcon + '</span>';
+                    h += '<span style="font-size:11px;color:var(--text-2);">' + escapeHtml(metodo || 'Pagamento') + '</span>';
+                    h += '</div>';
                     h += '</div>';
                 });
             }
@@ -18850,7 +18873,13 @@
                     h += '<div id="pixChaveEl" data-chave="' + escapeHtml(data.chavePix||'') + '" onclick="copiarChavePixEl(this,\'pixCopiadoMsg\')" style="background:var(--bg-elevated);border:1.5px dashed rgba(201,162,58,0.55);border-radius:12px;padding:14px 16px;font-size:14px;font-weight:800;color:#C9A23A;cursor:pointer;word-break:break-all;text-align:center;margin-bottom:6px;">' + escapeHtml(data.chavePix||'—') + '</div>';
                     h += '<div id="pixCopiadoMsg" style="font-size:10px;color:#4ade80;opacity:0;transition:opacity .3s;margin-bottom:8px;text-align:center;">✅ Chave copiada!</div>';
                     h += '<button onclick="copiarChavePixEl(document.getElementById(\'pixChaveEl\'),\'pixCopiadoMsg\')" style="width:100%;padding:12px;background:linear-gradient(135deg,#C9A23A,#F8E7A1 55%,#8C6A0A);color:#0D0B08;font-weight:800;border:none;border-radius:12px;font-size:13px;cursor:pointer;margin-bottom:10px;">📋 Copiar chave PIX</button>';
-                    h += '<div style="font-size:10px;color:var(--text-3);text-align:center;line-height:1.5;">Após pagar, envie o comprovante ao seu professor.<br>O pagamento será confirmado manualmente.</div>';
+                    h += '<div style="font-size:10px;color:var(--text-3);text-align:center;line-height:1.5;margin-bottom:10px;">Após pagar, envie o comprovante ao seu professor.</div>';
+                    // Botão WhatsApp com mensagem pré-preenchida
+                    var _tel = data.telAdmin || '';
+                    var _msg = encodeURIComponent('Olá professor! Acabei de realizar o pagamento da mensalidade via PIX. Segue o comprovante em anexo. Aguardo confirmação. 🙏');
+                    var _wa  = _tel ? 'https://wa.me/55' + _tel.replace(/\D/g,'') + '?text=' + _msg : 'https://wa.me/?text=' + _msg;
+                    h += '<a href="' + _wa + '" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:12px;background:#25d366;border-radius:10px;color:#fff;font-size:13px;font-weight:700;text-decoration:none;margin-top:4px;">';
+                    h += '<span style="font-size:18px;">📲</span> Enviar comprovante ao professor</a>';
                 } else {
                     h += '<div style="background:rgba(255,193,7,0.08);border:1px solid rgba(255,193,7,0.2);border-radius:10px;padding:14px;text-align:center;font-size:12px;color:#fbbf24;">';
                     h += '⚠️ Chave PIX ainda não configurada pelo seu professor.<br><span style="font-size:10px;color:var(--text-3);margin-top:4px;display:block;">Entre em contato para realizar o pagamento.</span>';
