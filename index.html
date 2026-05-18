@@ -18479,7 +18479,7 @@
                     h += '<div style="font-size:13px;color:var(--text-2);">Valor a pagar:</div>';
                     h += '<div style="font-size:22px;font-weight:800;color:#C9A23A;">R$ ' + parseFloat(plano.valor||0).toFixed(2) + '</div>';
                     h += '</div>';
-                    h += '<button id="btnGerarPixTab" onclick="gerarPixDinamicoTab()" style="width:100%;padding:14px;background:linear-gradient(135deg,#C9A23A,#F8E7A1 55%,#8C6A0A);color:#0D0B08;font-weight:800;border:none;border-radius:12px;font-size:14px;cursor:pointer;margin-bottom:10px;">🟢 Gerar QR Code PIX</button>';
+                    if (status !== 'pago' && status !== 'emdia') h += '<button id="btnGerarPixTab" onclick="gerarPixDinamicoTab()" style="width:100%;padding:14px;background:linear-gradient(135deg,#C9A23A,#F8E7A1 55%,#8C6A0A);color:#0D0B08;font-weight:800;border:none;border-radius:12px;font-size:14px;cursor:pointer;margin-bottom:10px;">🟢 Gerar QR Code PIX</button>';
                     h += '<div id="pixDinamicoContainerTab" style="margin-top:4px;"></div>';
                     h += '<div style="font-size:10px;color:var(--text-3);text-align:center;line-height:1.5;margin-top:8px;">' + (gwLabel[data.gateway] || data.gateway) + ' · Pagamento confirmado automaticamente</div>';
                 } else {
@@ -18758,6 +18758,14 @@
         }
 
         function renderHistoricoPagStu(historico) {
+            // Deduplicar por externalId
+            var seen = {};
+            historico = (historico || []).filter(function(p) {
+                var key = p.externalId || (p.data + '_' + p.valor);
+                if (seen[key]) return false;
+                seen[key] = true;
+                return true;
+            });
             var h = '';
             if (!historico || historico.length === 0) {
                 h += '<div style="text-align:center;padding:32px 0;color:var(--text-3);font-size:12px;">';
@@ -18776,6 +18784,16 @@
                                   metodo.indexOf('PIX Manual') !== -1 ? '🟢' :
                                   metodo.indexOf('PIX') !== -1 ? '🔵' : '💰';
                     var statusLabel = pago ? 'Pago' : pend ? 'Pendente' : 'Negado';
+                    // Formatar data em pt-BR
+                    var dataFormatada = _formatVencBR(p.referencia || p.data || '');
+                    if (!dataFormatada || dataFormatada.length > 15) {
+                        try {
+                            var _d = new Date(p.referencia || p.data);
+                            if (!isNaN(_d.getTime())) {
+                                dataFormatada = ('0'+_d.getDate()).slice(-2)+'/'+('0'+(_d.getMonth()+1)).slice(-2)+'/'+_d.getFullYear();
+                            }
+                        } catch(_) {}
+                    }
 
                     h += '<div style="border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:14px;margin-bottom:8px;background:' + pBg + ';">';
                     // Linha superior: ícone + data + valor
@@ -18925,21 +18943,7 @@
                 h += _renderCartaoSection(data);
             }
 
-            // Histórico
-            if (historico.length > 0) {
-                h += '<div class="pag-card">';
-                h += '<div class="pag-card-title" style="margin-bottom:10px;">📋 Histórico</div>';
-                historico.slice(0, 6).forEach(function(p) {
-                    var cor = p.status === 'APROVADO' || p.status === 'PAGO' ? '#4ade80' : p.status === 'PENDENTE' ? '#fbbf24' : '#f87171';
-                    h += '<div class="pag-hist-item">';
-                    h += '<div><div style="font-size:12px;font-weight:600;color:var(--text-1);">' + escapeHtml(p.referencia || p.data || '—') + '</div>';
-                    h += '<div style="font-size:10px;color:var(--text-3);">' + escapeHtml(p.metodo || '—') + '</div></div>';
-                    h += '<div style="text-align:right;"><div style="font-size:12px;font-weight:700;color:var(--text-1);">R$ ' + escapeHtml(String(p.valor || '—')) + '</div>';
-                    h += '<div style="font-size:10px;font-weight:700;color:' + cor + ';">' + escapeHtml(p.status || '—') + '</div></div>';
-                    h += '</div>';
-                });
-                h += '</div>';
-            }
+            // Histórico movido para Tab 2
 
             el.innerHTML = h;
 
@@ -35741,14 +35745,43 @@
                     var borderColor = desativado ? 'rgba(248,113,113,0.22)' : 'rgba(245,158,11,0.2)';
                     var primeiroNome = (a.nome || '').split(' ')[0];
 
-                    // Templates de mensagem por situação
+                    // Busca horários de hoje e amanhã para o CT do aluno
+                    var _diasSemana = ['dom','seg','ter','qua','qui','sex','sab'];
+                    var _hoje       = new Date();
+                    var _diaHoje    = _diasSemana[_hoje.getDay()];
+                    var _amanha     = new Date(_hoje); _amanha.setDate(_amanha.getDate()+1);
+                    var _diaAmanha  = _diasSemana[_amanha.getDay()];
+                    var _diaNomeHoje   = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'][_hoje.getDay()];
+                    var _diaNomeAmanha = ['domingo','segunda','terça','quarta','quinta','sexta','sábado'][_amanha.getDay()];
+                    var _ctSched    = ctSchedules && a.ct ? ctSchedules[a.ct] : null;
+                    var _horHoje    = '';
+                    var _horAmanha  = '';
+                    if (_ctSched) {
+                        if (_ctSched[_diaHoje])   _horHoje   = typeof _ctSched[_diaHoje]   === 'string' ? _ctSched[_diaHoje]   : 'sim';
+                        if (_ctSched[_diaAmanha]) _horAmanha = typeof _ctSched[_diaAmanha] === 'string' ? _ctSched[_diaAmanha] : 'sim';
+                    }
+                    // Monta bloco de horários
+                    var _blocoHor = '';
+                    if (_horHoje && _horHoje !== 'false' && _horHoje !== false) {
+                        _blocoHor = 'Hoje (' + _diaNomeHoje + ') temos treino' + (_horHoje !== 'sim' ? ' às ' + _horHoje : '') + '!';
+                    } else if (_horAmanha && _horAmanha !== 'false' && _horAmanha !== false) {
+                        _blocoHor = 'Amanhã (' + _diaNomeAmanha + ') temos treino' + (_horAmanha !== 'sim' ? ' às ' + _horAmanha : '') + '!';
+                    }
+
+                    // Templates melhorados por situação
                     var msgWA = '';
                     if (nuncaTreinou) {
-                        msgWA = 'Olá ' + primeiroNome + '! 👋 Aqui é o professor do ' + (a.ct||'CT') + '. Vi que você se cadastrou mas ainda não veio treinar. Estamos te esperando! Quando você consegue aparecer? 🥋';
+                        msgWA = 'Olá ' + primeiroNome + '! Aqui é seu professor do nosso CT ' + (a.ct||'') + '. Vi que voce se cadastrou no sistema mas ainda nao veio treinar. Sua vaga esta esperando por voce!' +
+                                (_blocoHor ? ' ' + _blocoHor + ' Aparece!' : ' Quando consegue vir? Estaremos esperando!') +
+                                ' Qualquer duvida me chama aqui mesmo. Bora treinar! Abraco';
                     } else if (desativado) {
-                        msgWA = 'Olá ' + primeiroNome + '! 👋 Sua conta no ' + (a.ct||'CT') + ' foi desativada por ausência. Sentimos sua falta! Quer retomar os treinos? Me chama que te reativo! 💪';
+                        msgWA = 'Olá ' + primeiroNome + '! Seu professor do ' + (a.ct||'nosso CT') + ' aqui. Sua conta foi desativada por ausencia, mas queremos muito voce de volta!' +
+                                (_blocoHor ? ' ' + _blocoHor + ' E um otimo momento para retomar!' : ' Me fala quando da pra voce aparecer que a gente se organiza.') +
+                                ' E so me chamar aqui que eu reativo sua conta na hora. Sentimos sua falta! Abraco';
                     } else {
-                        msgWA = 'Olá ' + primeiroNome + '! 👋 Aqui é o professor do ' + (a.ct||'CT') + '. Faz ' + (a.diasSemTreinamento||'alguns') + ' aulas que você não aparece. Tudo bem? Estamos te esperando! 🥋💪';
+                        msgWA = 'Olá ' + primeiroNome + '! Faz ' + (a.diasSemTreinamento||'algumas') + ' aulas que voce nao aparece no ' + (a.ct||'CT') + '. Tudo bem?' +
+                                (_blocoHor ? ' ' + _blocoHor + ' Bora aparecer!' : ' Estamos sentindo sua falta na tatame!') +
+                                ' Se precisar de alguma coisa pode me chamar. Abraco';
                     }
 
                     var telNum  = (a.telefone || '').replace(/\D/g,'');
