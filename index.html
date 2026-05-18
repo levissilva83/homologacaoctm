@@ -9195,16 +9195,8 @@
                                 </div>
                             </div>
                             <div style="padding:0 12px 8px;">
-                                <!-- Criar CT — RECURSO PREMIUM (bloqueado) -->
-                                <div id="addCTSection" style="border:1.5px dashed rgba(201,162,58,0.35);border-radius:10px;padding:14px;background:rgba(201,162,58,0.04);margin-bottom:10px;">
-                                    <div style="display:flex;align-items:center;gap:10px;">
-                                        <span style="font-size:22px;flex-shrink:0;">🔒</span>
-                                        <div style="flex:1;">
-                                            <div style="font-size:12px;font-weight:800;color:var(--adm-primary);margin-bottom:2px;">Criar Filial / CT — Recurso Premium</div>
-                                            <div style="font-size:11px;color:var(--adm-text-3);line-height:1.5;">Disponível nos planos pagos. Entre em contato para habilitar múltiplos centros de treinamento.</div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <!-- Criar CT — renderizado dinamicamente pelo JS conforme plano -->
+                                <div id="addCTSection" style="margin-bottom:10px;"></div>
                                 <!-- Abas de CTs -->
                                 <div id="adminCTTabs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>
                                 <!-- Conteúdo da aba ativa -->
@@ -11080,6 +11072,23 @@
                         </div>
                         <div class="stu-days-hint" id="stuDiasHint"></div>
                     </div>
+
+                    <!-- HORÁRIOS DE TREINO POR MODALIDADE -->
+                    <div class="stu-field" id="stuHorariosSection" style="display:none;">
+                        <label>🕐 Meus Horários de Treino</label>
+                        <div style="font-size:10px;color:var(--adm-text-3);margin-bottom:8px;">Selecione os horários que você vai treinar. Isso facilita o registro de presença.</div>
+                        <div id="stuHorariosContainer">
+                            <div style="text-align:center;padding:12px;color:var(--adm-text-3);font-size:12px;">Carregando horários...</div>
+                        </div>
+                    </div>
+
+                    <!-- AVISO ADMIN SEM HORÁRIO -->
+                    <div id="stuAvisoSemHorario" style="display:none;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:10px;padding:12px;margin-bottom:8px;">
+                        <div style="font-size:12px;font-weight:700;color:#fbbf24;margin-bottom:4px;">⚠️ Nenhum horário cadastrado</div>
+                        <div style="font-size:11px;color:var(--adm-text-3);">Adicione os horários de treino de cada modalidade para que seus alunos possam selecionar seus horários.</div>
+                        <div style="font-size:11px;color:#fbbf24;margin-top:6px;cursor:pointer;" onclick="sisSwitchTab('schedule')">→ Ir para configuração de horários</div>
+                    </div>
+
                     <!-- RBAC: dois toggles separados por papel -->
                     <div id="stuAdminRow" style="display:none;">
                         <div class="stu-toggle-row" style="margin-bottom:8px;">
@@ -15338,6 +15347,29 @@
         }
 
         // ===== CHECK-IN =====
+        function _renderAddCTSection() {
+            var el      = document.getElementById('addCTSection');
+            if (!el) return;
+            var limites = currentUser && currentUser.planoLimites ? currentUser.planoLimites : null;
+            var planoId = currentUser && currentUser.planoId ? currentUser.planoId : '';
+            var maxFil  = limites ? (limites.filiais || 1) : 1;
+            var ctTabs  = document.querySelectorAll('#adminCTTabs [data-ct]');
+            var qtdCTs  = ctTabs ? ctTabs.length : 0;
+            var podecriar = !limites || qtdCTs < maxFil;
+
+            if (podecriar) {
+                el.innerHTML =
+                    '<button onclick="saCriarCT()" style="width:100%;padding:12px;background:rgba(74,222,128,0.1);border:1.5px dashed rgba(74,222,128,0.35);border-radius:10px;color:#4ade80;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">' +
+                    '<span style="font-size:18px;">+</span> Criar Filial / CT</button>';
+            } else {
+                el.innerHTML =
+                    '<div style="border:1.5px dashed rgba(201,162,58,0.35);border-radius:10px;padding:12px;background:rgba(201,162,58,0.04);display:flex;align-items:center;gap:10px;">' +
+                    '<span style="font-size:20px;">🔒</span>' +
+                    '<div><div style="font-size:12px;font-weight:800;color:var(--adm-primary);">Criar Filial / CT — Limite atingido</div>' +
+                    '<div style="font-size:11px;color:var(--adm-text-3);margin-top:2px;">Limite: ' + maxFil + ' CT(s) no plano ' + (planoId||'atual') + '. Upgrade para mais.</div></div></div>';
+            }
+        }
+
         async function loadCTs() {
             try {
                 const data = await secureFetch('getCTsList', {});
@@ -27122,11 +27154,33 @@
                 h += '</div>';
             });
             el.innerHTML = h;
+            _renderAddCTSection();
         }
 
         async function saCriarCT() {
-            // 🔒 RECURSO PREMIUM — criação de filiais bloqueada
-            alert('🔒 Criar Filial / CT é um recurso dos planos pagos.\n\nEntre em contato para habilitar múltiplos centros de treinamento.');
+            // Verifica limite de filiais pelo plano (vem do login via planoLimites)
+            var limites  = currentUser && currentUser.planoLimites ? currentUser.planoLimites : null;
+            var planoId  = currentUser && currentUser.planoId ? currentUser.planoId : '';
+            var maxFil   = limites ? (limites.filiais || 1) : 1;
+
+            // Conta CTs ativos atuais
+            var ctTabs = document.querySelectorAll('#adminCTTabs [data-ct]');
+            var qtdCTs = ctTabs ? ctTabs.length : 0;
+
+            if (limites && qtdCTs >= maxFil) {
+                var _pn = planoId || 'atual';
+                alert('Limite de ' + maxFil + ' CT(s) para o plano ' + _pn + '. Faca upgrade para o Premium.');
+                return;
+            }
+
+            // Liberado — abre formulário de criação
+            var nome = prompt('Nome do novo CT / Filial:');
+            if (!nome || !nome.trim()) return;
+            try {
+                var res = await secureFetch('createCT', { nome: nome.trim() });
+                if (res.success) { loadCTs(); showAdminToast('✅ CT criado: ' + nome.trim(), 'success'); }
+                else alert(res.message || 'Erro ao criar CT');
+            } catch(e) { alert('Erro: ' + e.message); }
         }
 
         async function saExcluirCT(nome) {
@@ -27517,14 +27571,62 @@
             if (typeof getRole === 'function' && getRole() !== 'admin') return;
             var existing = document.getElementById('trialBanner');
             if (existing) existing.remove();
-            var cor = diasRestantes <= 3 ? '#f87171' : diasRestantes <= 7 ? '#fbbf24' : '#C9A23A';
+
+            var urgente  = diasRestantes <= 3;
+            var atencao  = diasRestantes <= 7;
+            var corBg    = urgente ? 'linear-gradient(90deg,#7f1d1d,#991b1b)' : atencao ? 'linear-gradient(90deg,#78350f,#92400e)' : 'linear-gradient(90deg,#1a1200,#2d1f00)';
+            var corBorda = urgente ? '#f87171' : atencao ? '#fbbf24' : '#C9A23A';
+            var corTexto = urgente ? '#fca5a5' : atencao ? '#fde68a' : '#fef3c7';
+            var emoji    = urgente ? '🚨' : atencao ? '⚠️' : '⏳';
+            var txtDias  = diasRestantes === 0 ? 'último dia!'
+                         : diasRestantes === 1 ? '1 dia restante'
+                         : diasRestantes + ' dias restantes';
+
             var banner = document.createElement('div');
             banner.id  = 'trialBanner';
-            // Usa variável CSS do header se disponível, fallback 56px
             var headerH = (document.querySelector('.app-header') || {}).offsetHeight || 56;
-            banner.style.cssText = 'position:fixed;top:' + headerH + 'px;left:0;right:0;z-index:900;background:' + cor + ';color:#000;text-align:center;padding:5px 12px;font-size:11px;font-weight:800;';
-            banner.textContent = '⏳ Período de teste: ' + diasRestantes + ' dia' + (diasRestantes !== 1 ? 's' : '') + ' restante' + (diasRestantes !== 1 ? 's' : '');
+            banner.style.cssText = [
+                'position:fixed;top:' + headerH + 'px;left:0;right:0;z-index:900;',
+                'background:' + corBg + ';',
+                'border-bottom:2px solid ' + corBorda + ';',
+                'padding:8px 16px;display:flex;align-items:center;justify-content:space-between;gap:8px;'
+            ].join('');
+
+            banner.innerHTML =
+                '<div style="display:flex;align-items:center;gap:8px;flex:1;">' +
+                    '<span style="font-size:16px;">' + emoji + '</span>' +
+                    '<div>' +
+                        '<div style="font-size:11px;font-weight:800;color:' + corTexto + ';">Período Trial Premium — ' + txtDias + '</div>' +
+                        '<div style="font-size:9px;color:rgba(255,255,255,0.5);margin-top:1px;">Você tem acesso completo. Ao expirar, escolha o plano ideal.</div>' +
+                    '</div>' +
+                '</div>' +
+                '<button onclick="_abrirSelecaoPlano()" style="padding:5px 12px;background:' + corBorda + ';border:none;border-radius:6px;color:#000;font-size:10px;font-weight:800;cursor:pointer;white-space:nowrap;">Escolher plano →</button>' +
+                '<button onclick="_fecharTrialBanner()" style="background:none;border:none;color:rgba(255,255,255,0.4);font-size:16px;cursor:pointer;padding:0 4px;">×</button>';
+
             document.body.prepend(banner);
+
+            // Countdown em tempo real (atualiza a cada hora)
+            if (!window._trialCountdownTimer) {
+                window._trialCountdownTimer = setInterval(function() {
+                    var el = document.getElementById('trialBanner');
+                    if (!el) { clearInterval(window._trialCountdownTimer); window._trialCountdownTimer = null; }
+                }, 3600000);
+            }
+        }
+
+        function _fecharTrialBanner() {
+            var b = document.getElementById('trialBanner');
+            if (b) b.style.display = 'none';
+        }
+
+        function _abrirSelecaoPlano() {
+            // Redireciona para tela de assinatura/planos
+            if (typeof sisSwitchTab === 'function') {
+                sisSwitchTab('assinante');
+            } else {
+                var el = document.getElementById('asnSemAssinatura') || document.getElementById('pagamentos-tab');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }
         }
 
         // ═══════════════════════════════════════════════════
@@ -31904,6 +32006,135 @@
             }
         }
 
+
+        // ─── Horários de Treino do Aluno ─────────────────────────────────
+        var _stuHorariosSelecionados = {};
+
+        async function loadHorariosAluno() {
+            var section   = document.getElementById('stuHorariosSection');
+            var aviso     = document.getElementById('stuAvisoSemHorario');
+            var container = document.getElementById('stuHorariosContainer');
+            if (!section || !container) return;
+
+            try {
+                var data = await secureFetch('getHorariosDisponiveis', {});
+                if (!data.success) return;
+
+                // Aviso admin sem horário
+                if (data.avisoAdmin) {
+                    if (aviso) aviso.style.display = 'block';
+                    return;
+                }
+                if (aviso) aviso.style.display = 'none';
+
+                // Sem horários cadastrados — oculta seção
+                if (!data.disponivel || !data.modalidades || !data.modalidades.length) {
+                    section.style.display = 'none';
+                    return;
+                }
+
+                section.style.display = 'block';
+                _stuHorariosSelecionados = data.horarioSalvo || {};
+
+                var h = '';
+                var MOD_LABELS = { bjj:'BJJ', muay_thai:'Muay Thai', judo:'Judô', karate:'Karatê', boxing:'Boxe', mma:'MMA', funcional:'Funcional', wrestling:'Wrestling', kickboxing:'Kickboxing' };
+                var DAY_LABELS = { seg:'Seg', ter:'Ter', qua:'Qua', qui:'Qui', sex:'Sex', sab:'Sáb', dom:'Dom' };
+
+                data.modalidades.forEach(function(mod) {
+                    h += '<div style="margin-bottom:12px;">';
+                    h += '<div style="font-size:11px;font-weight:700;color:var(--adm-text-2);margin-bottom:6px;">' + (MOD_LABELS[mod.modId] || mod.modId).toUpperCase() + ' · ' + mod.ctNome + '</div>';
+
+                    // Agrupa slots por dia
+                    var porDia = {};
+                    mod.slots.forEach(function(s) {
+                        if (!porDia[s.dia]) porDia[s.dia] = { label: s.diaLabel, horarios: [] };
+                        porDia[s.dia].horarios.push(s.horario);
+                    });
+
+                    var salvo = _stuHorariosSelecionados[mod.modId] || {};
+
+                    Object.keys(porDia).forEach(function(dia) {
+                        h += '<div style="margin-bottom:6px;">';
+                        h += '<div style="font-size:10px;color:var(--adm-text-3);margin-bottom:3px;">' + (DAY_LABELS[dia] || dia) + '</div>';
+                        h += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+                        porDia[dia].horarios.forEach(function(hr) {
+                            var ativo = salvo[dia] && (salvo[dia] === hr || (salvo[dia] && salvo[dia].indexOf(hr) !== -1));
+                            var id = 'hr_' + mod.modId + '_' + dia + '_' + hr.replace(':','');
+                            h += '<button type="button" id="' + id + '" data-mod="' + mod.modId + '" data-dia="' + dia + '" data-hr="' + hr + '"' +
+                                 ' onclick="toggleHorario(this)"' +
+                                 ' style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid ' +
+                                 (ativo ? 'var(--adm-primary);background:rgba(201,162,58,0.15);color:var(--adm-primary)' : 'var(--adm-border);background:var(--adm-bg-elevated);color:var(--adm-text-3)') + ';">' +
+                                 hr + '</button>';
+                        });
+                        h += '</div></div>';
+                    });
+                    h += '</div>';
+                });
+
+                h += '<button onclick="salvarHorariosAluno()" style="width:100%;padding:10px;background:var(--adm-primary);border:none;border-radius:10px;color:#000;font-size:13px;font-weight:800;cursor:pointer;margin-top:4px;">💾 Salvar horários</button>';
+                h += '<div id="stuHorarioMsg" style="font-size:11px;text-align:center;margin-top:6px;"></div>';
+
+                container.innerHTML = h;
+
+                // Restaura seleção salva
+                Object.keys(_stuHorariosSelecionados).forEach(function(modId) {
+                    var salvo = _stuHorariosSelecionados[modId];
+                    Object.keys(salvo).forEach(function(dia) {
+                        var hrs = salvo[dia].toString().split(',');
+                        hrs.forEach(function(hr) {
+                            var id = 'hr_' + modId + '_' + dia + '_' + hr.trim().replace(':','');
+                            var btn = document.getElementById(id);
+                            if (btn) {
+                                btn.style.borderColor = 'var(--adm-primary)';
+                                btn.style.background  = 'rgba(201,162,58,0.15)';
+                                btn.style.color       = 'var(--adm-primary)';
+                            }
+                        });
+                    });
+                });
+
+            } catch(e) {
+                if (section) section.style.display = 'none';
+            }
+        }
+
+        function toggleHorario(btn) {
+            var modId = btn.getAttribute('data-mod');
+            var dia   = btn.getAttribute('data-dia');
+            var hr    = btn.getAttribute('data-hr');
+            var ativo = btn.style.color === 'var(--adm-primary)' || btn.style.borderColor === 'var(--adm-primary)';
+
+            if (!_stuHorariosSelecionados[modId]) _stuHorariosSelecionados[modId] = {};
+
+            if (ativo) {
+                // Desseleciona
+                delete _stuHorariosSelecionados[modId][dia];
+                btn.style.borderColor = 'var(--adm-border)';
+                btn.style.background  = 'var(--adm-bg-elevated)';
+                btn.style.color       = 'var(--adm-text-3)';
+            } else {
+                // Seleciona
+                _stuHorariosSelecionados[modId][dia] = hr;
+                btn.style.borderColor = 'var(--adm-primary)';
+                btn.style.background  = 'rgba(201,162,58,0.15)';
+                btn.style.color       = 'var(--adm-primary)';
+            }
+        }
+
+        async function salvarHorariosAluno() {
+            var msg = document.getElementById('stuHorarioMsg');
+            try {
+                var res = await secureFetch('saveHorarioAluno', { horarios: _stuHorariosSelecionados });
+                if (res.success) {
+                    if (msg) { msg.style.color = 'var(--green)'; msg.textContent = '✅ Horários salvos!'; }
+                } else {
+                    if (msg) { msg.style.color = 'var(--red)'; msg.textContent = '❌ ' + (res.message || 'Erro'); }
+                }
+            } catch(e) {
+                if (msg) { msg.style.color = 'var(--red)'; msg.textContent = '❌ Erro ao salvar'; }
+            }
+        }
+
         function filtrarCobrancas(filtro, el) {
             _cobFiltroAtual = filtro;
             document.querySelectorAll('.cob-filter-btn').forEach(function(b){ b.classList.remove('active'); });
@@ -34588,6 +34819,8 @@
             // Dias de treino
             var diasStr = s.diasTreino || '';
             var diasArr = diasStr ? diasStr.split(',') : [];
+            // Carrega horários disponíveis por modalidade
+            if (typeof loadHorariosAluno === 'function') loadHorariosAluno();
             document.querySelectorAll('#stuDiasGrid .stu-day-btn').forEach(function(btn) {
                 var d = btn.getAttribute('data-day');
                 if (diasArr.indexOf(d) !== -1) btn.classList.add('on');
@@ -35500,28 +35733,58 @@
                 }
                 var html = '';
                 inativos.forEach(function(a, idx) {
-                    var desativado = a.status === 'DESATIVADO';
-                    var diasLabel  = a.diasSemTreinamento === null ? 'Nunca treinou' : a.diasSemTreinamento + ' dias sem treinar';
+                    var desativado  = a.status === 'DESATIVADO';
+                    var nuncaTreinou = a.diasSemTreinamento === null;
+                    var diasLabel   = nuncaTreinou ? 'Nunca treinou' : a.diasSemTreinamento + ' aulas sem treinar';
                     var ultimoLabel = a.ultimoCheckin ? 'Último: ' + a.ultimoCheckin : 'Sem check-in';
-                    var bgColor = desativado ? 'rgba(248,113,113,0.07)' : 'rgba(245,158,11,0.07)';
+                    var bgColor     = desativado ? 'rgba(248,113,113,0.07)' : 'rgba(245,158,11,0.07)';
                     var borderColor = desativado ? 'rgba(248,113,113,0.22)' : 'rgba(245,158,11,0.2)';
-                    html += '<div id="inativoCard' + idx + '" style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:' + bgColor + ';border:1px solid ' + borderColor + ';border-radius:10px;margin-bottom:7px;">';
-                    // Avatar
+                    var primeiroNome = (a.nome || '').split(' ')[0];
+
+                    // Templates de mensagem por situação
+                    var msgWA = '';
+                    if (nuncaTreinou) {
+                        msgWA = 'Olá ' + primeiroNome + '! 👋 Aqui é o professor do ' + (a.ct||'CT') + '. Vi que você se cadastrou mas ainda não veio treinar. Estamos te esperando! Quando você consegue aparecer? 🥋';
+                    } else if (desativado) {
+                        msgWA = 'Olá ' + primeiroNome + '! 👋 Sua conta no ' + (a.ct||'CT') + ' foi desativada por ausência. Sentimos sua falta! Quer retomar os treinos? Me chama que te reativo! 💪';
+                    } else {
+                        msgWA = 'Olá ' + primeiroNome + '! 👋 Aqui é o professor do ' + (a.ct||'CT') + '. Faz ' + (a.diasSemTreinamento||'alguns') + ' aulas que você não aparece. Tudo bem? Estamos te esperando! 🥋💪';
+                    }
+
+                    var telNum  = (a.telefone || '').replace(/\D/g,'');
+                    var waUrl   = telNum ? 'https://wa.me/55' + telNum + '?text=' + encodeURIComponent(msgWA)
+                                         : 'https://wa.me/?text=' + encodeURIComponent(msgWA);
+                    var temTel  = !!telNum;
+
+                    html += '<div id="inativoCard' + idx + '" style="background:' + bgColor + ';border:1px solid ' + borderColor + ';border-radius:12px;padding:12px;margin-bottom:8px;">';
+
+                    // Linha 1: avatar + nome + botão ação
+                    html += '<div style="display:flex;align-items:center;gap:10px;">';
                     html += '<div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;">' + (a.nome ? a.nome.charAt(0).toUpperCase() : '?') + '</div>';
-                    // Info
                     html += '<div style="flex:1;min-width:0;">';
                     html += '<div style="font-size:13px;font-weight:700;color:var(--adm-text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(a.nome) + '</div>';
-                    html += '<div style="font-size:10px;color:var(--adm-text-3);margin-top:1px;">' + escapeHtml(a.ct || '—') + ' · ' + escapeHtml(a.faixa || '—') + '</div>';
+                    html += '<div style="font-size:10px;color:var(--adm-text-3);margin-top:1px;">' + escapeHtml(a.ct||'—') + ' · ' + escapeHtml(a.faixa||'—') + '</div>';
                     html += '<div style="font-size:10px;margin-top:3px;font-weight:600;color:' + (desativado ? '#f87171' : '#fbbf24') + ';">';
-                    html += desativado ? '🔴 DESATIVADO · ' : '🟡 ';
-                    html += diasLabel + ' · ' + ultimoLabel;
+                    html += (desativado ? '🔴 DESATIVADO · ' : '🟡 ') + diasLabel + ' · ' + ultimoLabel;
                     html += '</div></div>';
-                    // Botão
+                    // Botão reativar/desativar
                     if (desativado) {
-                        html += '<button onclick="reativarAluno(\'' + escapeHtml(a.email) + '\',' + idx + ')" style="padding:6px 12px;border-radius:8px;background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.3);color:#4ade80;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">✅ Reativar</button>';
+                        html += '<button onclick="reativarAluno(\'' + escapeHtml(a.email) + '\',' + idx + ')" style="padding:6px 10px;border-radius:8px;background:rgba(74,222,128,0.15);border:1px solid rgba(74,222,128,0.3);color:#4ade80;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">✅ Reativar</button>';
                     } else {
-                        html += '<button onclick="desativarAluno(\'' + escapeHtml(a.email) + '\',' + idx + ')" style="padding:6px 12px;border-radius:8px;background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.28);color:#f87171;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🔴 Desativar</button>';
+                        html += '<button onclick="desativarAluno(\'' + escapeHtml(a.email) + '\',' + idx + ')" style="padding:6px 10px;border-radius:8px;background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.28);color:#f87171;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🔴 Desativar</button>';
                     }
+                    html += '</div>';
+
+                    // Linha 2: plano de ação WhatsApp
+                    html += '<div style="display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.05);">';
+                    if (temTel) {
+                        html += '<a href="' + waUrl + '" target="_blank" style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:#25d366;border-radius:8px;color:#fff;font-size:11px;font-weight:700;text-decoration:none;flex:1;justify-content:center;">';
+                        html += '<span style="font-size:14px;">📲</span> Acionar via WhatsApp</a>';
+                    } else {
+                        html += '<div style="flex:1;font-size:10px;color:var(--adm-text-3);display:flex;align-items:center;gap:4px;">📵 Sem telefone cadastrado</div>';
+                        html += '<a href="' + waUrl + '" target="_blank" style="padding:6px 10px;background:rgba(37,211,102,0.12);border:1px solid rgba(37,211,102,0.25);border-radius:8px;color:#25d366;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap;">📲 Mensagem</a>';
+                    }
+                    html += '</div>';
                     html += '</div>';
                 });
                 if (listEl) listEl.innerHTML = html;
