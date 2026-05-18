@@ -5950,7 +5950,7 @@
             border-width: 16px 16px 0 0;
             border-color: rgba(0,0,0,0.4) transparent transparent transparent;
         }
-        .checkin-tema-hero::after { content: var(--mod-hero-icon,'🏋️'); position: absolute; right: 14px; bottom: 10px; font-size: 38px; opacity: 0.07; line-height: 1; pointer-events:none; }
+        .checkin-tema-hero::after { content: var(--mod-hero-icon,'🥋'); position: absolute; right: 14px; bottom: 10px; font-size: 38px; opacity: 0.07; line-height: 1; pointer-events:none; }
         .checkin-tema-hero-label { display: inline-flex; align-items: center; gap: 5px; font-size: 9px; font-weight: 800; color: var(--accent); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 6px; }
         .checkin-tema-hero-label span { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: crono-pulse 2s infinite; }
         .checkin-tema-hero-horario { font-size: 11px; color: rgba(148,163,184,0.7); font-weight: 700; margin-bottom: 3px; }
@@ -7665,7 +7665,7 @@
                 </div>
             </div>
             <div class="mode-switch" id="modeSwitcher">
-                <button class="mode-switch-opt" id="modeOptAluno" onclick="switchViewMode('aluno')">🏋️ Aluno</button>
+                <button class="mode-switch-opt" id="modeOptAluno" onclick="switchViewMode('aluno')">🥋 Aluno</button>
                 <button class="mode-switch-opt active admin-active" id="modeOptAdmin" onclick="switchViewMode('admin')">⚙️ Admin</button>
             </div>
             <div class="hdr-user" id="headerUser" onclick="handleLogout()">
@@ -7909,7 +7909,7 @@
                     </div>
 
                     <button id="btnConfirmarPresenca" onclick="confirmAttendance()">
-                        <span class="btn-conf-icon" id="btnConfIcon">🏋️</span>
+                        <span class="btn-conf-icon" id="btnConfIcon">🥋</span>
                         <span class="btn-conf-label" id="btnConfLabel">✓ Confirmar Presença</span>
                         <span class="btn-conf-mod" id="btnConfMod">BJJ</span>
                     </button>
@@ -8228,14 +8228,14 @@
                 <div id="prepfisica-tab" class="tab-content">
                     <!-- Subtabs -->
                     <div class="subtab-bar">
-                        <button class="subtab-btn active" data-module="treinos" onclick="switchSubTab('prepfisica-tab','sub-treinos',event)">🏋️<br><span>Treinos</span></button>
+                        <button class="subtab-btn active" data-module="treinos" onclick="switchSubTab('prepfisica-tab','sub-treinos',event)">💪<br><span>Treinos</span></button>
 
                     </div>
 
                     <!-- SUB: TREINOS -->
                     <div id="sub-treinos" class="subtab-content active">
                         <div style="padding:12px 16px 0;">
-                            <div style="font-family: 'Inter', sans-serif;font-size:18px;font-weight:900;color:var(--text-1);margin-bottom:2px;">🏋️ Preparação Física</div>
+                            <div style="font-family: 'Inter', sans-serif;font-size:18px;font-weight:900;color:var(--text-1);margin-bottom:2px;">💪 Preparação Física</div>
                             <div style="font-size:11px;color:var(--text-3);margin-bottom:14px;">Módulos personalizados pelo professor</div>
                         </div>
                         <div style="padding:0 16px 12px;" id="muscContainer">
@@ -8851,7 +8851,7 @@
                     </div>
 
                     <div class="admin-welcome">
-                        <div class="admin-welcome-icon" id="adminWelcomeIcon">🏋️</div>
+                        <div class="admin-welcome-icon" id="adminWelcomeIcon">🥋</div>
                         <div class="admin-welcome-text">
                             <div class="admin-welcome-title" id="adminWelcomeName">Professor</div>
                             <div class="admin-welcome-sub">Bem-vindo ao painel</div>
@@ -10000,7 +10000,7 @@
                     <!-- REDES DE BENEFÍCIO: Wellhub & TotalPass -->
                     <div id="redesBeneficioSection" class="admin-section" style="text-align:center;padding:32px 20px;">
                         <div style="font-size:36px;margin-bottom:14px;">🏗️</div>
-                        <div style="font-size:16px;font-weight:800;color:var(--adm-primary);margin-bottom:8px;">🏋️ Redes de Benefício</div>
+                        <div style="font-size:16px;font-weight:800;color:var(--adm-primary);margin-bottom:8px;">💪 Redes de Benefício</div>
                         <div style="font-size:13px;color:var(--adm-text-2);margin-bottom:6px;">Em construção</div>
                         <div style="font-size:12px;color:var(--adm-text-3);line-height:1.7;max-width:320px;margin:0 auto;">
                             Em breve iremos integrar com<br>
@@ -10343,7 +10343,7 @@
                     <!-- Treinos Customizados -->
                     <div class="admin-section">
                         <div class="admin-section-header">
-                            <div class="admin-section-title">🏋️ Módulos de Treino <span style="font-size:10px;font-weight:400;color:var(--adm-text-3);">personalizáveis</span></div>
+                            <div class="admin-section-title">💪 Módulos de Treino <span style="font-size:10px;font-weight:400;color:var(--adm-text-3);">personalizáveis</span></div>
                             <button class="admin-refresh-btn" onclick="loadAdminTreinos()">↻</button>
                         </div>
                         <div id="adminTreinosList" style="margin-bottom:12px;"><div class="admin-empty">Carregando...</div></div>
@@ -10818,11 +10818,11 @@
         <div class="bnav" id="bottomNav">
             <div class="bnav-inner">
                 <button class="bnav-btn active" id="bnavTreinoBtn" data-modtab="treino" onclick="switchTab('treino-tab', event)">
-                    <span class="bnav-icon" id="bnavTreinoIcon">🏋️</span>
+                    <span class="bnav-icon" id="bnavTreinoIcon">🥋</span>
                     <span class="bnav-label" id="bnavTreinoLabel">Treino</span>
                 </button>
                 <button class="bnav-btn" data-modtab="prepfisica" data-module="musculacao" onclick="switchTab('prepfisica-tab', event)">
-                    <span class="bnav-icon">🏋️</span>
+                    <span class="bnav-icon">💪</span>
                     <span class="bnav-label">Prep. Física</span>
                 </button>
                 <button class="bnav-btn" data-modtab="ranking" onclick="switchTab('ranking-tab', event)">
@@ -11377,7 +11377,7 @@
     <!-- MOTIVATION MODAL (Retorno) -->
     <div id="motivOverlay" class="motiv-overlay" style="display:none;">
         <div class="motiv-card">
-            <div class="motiv-emoji" id="motivEmoji">🏋️</div>
+            <div class="motiv-emoji" id="motivEmoji">🥋</div>
             <div class="motiv-title" id="motivTitle">Sentimos sua falta!</div>
             <div class="motiv-days" id="motivDays"></div>
             <div class="motiv-msg" id="motivMsg"></div>
@@ -11836,7 +11836,7 @@
             }
             // Redes de Benefício (Básico não tem)
             if (_planLimits.redesBeneficio === false) {
-                _lockByPlan('redesBeneficioSection', '🏋️ Redes de Benefício', 'profissional');
+                _lockByPlan('redesBeneficioSection', '🏪 Redes de Benefício', 'profissional');
             }
             // QR Code (Básico não tem)
             if (_planLimits.qrCode === false) {
@@ -12866,7 +12866,7 @@
                 var mod = MODALIDADES_CATALOG
                     ? MODALIDADES_CATALOG.find(function(m){ return m.id === normalizarModId(activeModality); })
                     : null;
-                return mod ? mod.icon : '🏋️';
+                return mod ? mod.icon : '🥋';
             },
 
             /** Texto de nomenclatura (null-safe — retorna '' se não existir) */
@@ -12993,7 +12993,7 @@
                 var ico = document.getElementById('btnConfIcon');
                 var tag = document.getElementById('btnConfMod');
                 if (lbl) lbl.textContent = ModalidadeUI.confirmarBtn();
-                if (ico) ico.textContent = mod ? mod.icon : '🏋️';
+                if (ico) ico.textContent = mod ? mod.icon : '🥋';
                 if (tag && mod) tag.textContent = mod.tag || mod.nome || '';
                 // Seals title
                 var sealsTitle = document.querySelector('#evoSealsSection .evo-seals-title');
@@ -13122,7 +13122,7 @@
             root.style.setProperty('--gold-light',     mod.corLight);
             root.style.setProperty('--gold-deep',      mod.corDark);
             root.style.setProperty('--border-accent',  'rgba(' + (mod.corRGB || '201,162,58') + ',0.25)');
-            root.style.setProperty('--mod-hero-icon', '"' + (mod.icon || '🏋️') + '"');
+            root.style.setProperty('--mod-hero-icon', '"' + (mod.icon || '🥋') + '"');
         }
 
         /**
@@ -16747,7 +16747,7 @@
 
             } else {
                 // Sem graduação (MMA, Wrestling, No-Gi)
-                if (beltEl)  { beltEl.textContent = schema.ui.iconeEvo || '🏋️'; beltEl.className = 'evo-hero-belt sem-faixa'; }
+                if (beltEl)  { beltEl.textContent = schema.ui.iconeEvo || '🥋'; beltEl.className = 'evo-hero-belt sem-faixa'; }
                 if (titleEl) titleEl.textContent = schema.nomenclatura.evolucaoTitulo || 'Meu Desenvolvimento';
                 if (subEl)   subEl.textContent   = totalTreinos + ' treinos registrados';
                 // Status apto/não-apto não faz sentido sem graduação
@@ -20158,7 +20158,7 @@
 
             // 60+ dias: Identidade + pertencimento — "você ainda é um de nós"
             tier4: {
-                emoji: ['❤️', '🌟', '🏅'],
+                emoji: ['🥋', '🌟', '🏅'],
                 titles: ['Sua história nas artes marciais não acabou.', 'Você ainda é um de nós.', 'A academia lembra de você.'],
                 titleClass: 'tier4',
                 messages: [
@@ -20174,7 +20174,7 @@
                     '"A maior luta é contra a voz que diz pra não ir. Vença essa, e o treino é bônus."',
                     '"Enquanto houver vontade, haverá caminho."'
                 ],
-                cta: 'Meu Treino Me Espera ❤️'
+                cta: 'Meu Treino Me Espera 🥋'
             }
         };
 
@@ -24201,7 +24201,7 @@
                     h += '<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;margin-bottom:5px;">';
                     var iconBg  = t.cor ? t.cor + '33' : 'rgba(201,162,58,0.10)';
                     var iconBdr = t.cor ? t.cor + '55' : 'transparent';
-                    h += '<div style="width:36px;height:36px;border-radius:8px;background:' + iconBg + ';border:1px solid ' + iconBdr + ';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🏋️</div>';
+                    h += '<div style="width:36px;height:36px;border-radius:8px;background:' + iconBg + ';border:1px solid ' + iconBdr + ';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">💪</div>';
                     h += '<div style="flex:1;min-width:0;">';
                     h += '<div style="font-size:12px;font-weight:700;color:var(--text-1);">' + escapeHtml(t.treinoNome || 'Treino') + '</div>';
                     h += '<div style="font-size:10px;color:var(--text-3);">' + dLabel + (t.duracao ? ' · ⏱ ' + t.duracao : '') + (t.pct && t.pct < 100 ? ' · ' + t.pct + '%' : '') + '</div>';
@@ -25691,7 +25691,7 @@
         function renderForca() {
           var g=_game,h='';
           // Lives
-          h+='<div class="forca-lives">';for(var i=0;i<g.maxLives;i++)h+=i<g.lives?'❤️':'🖤';h+='</div>';
+          h+='<div class="forca-lives">';for(var i=0;i<g.maxLives;i++)h+=i<g.lives?'🥋':'⬜';h+='</div>';
           // Word
           h+='<div class="forca-word">';
           for(var i=0;i<g.word.length;i++){
@@ -29427,7 +29427,7 @@
             { id: 'campeonato',  icon: '🏅',  nome: 'Campeonato',          desc: 'Inscrição e placar do campeonato interno',    plano: 'academia'  },
             { id: 'exame',       icon: '🎓',  nome: 'Exame de Faixa',      desc: 'Solicitação e avaliação de promoção',         plano: 'academia'  },
             // ADD-ONS — compra separada
-            { id: 'musculacao',  icon: '🏋️',  nome: 'Preparação Física',   desc: 'Fichas de musculação complementar',           plano: 'completo'  },
+            { id: 'musculacao',  icon: '💪',  nome: 'Preparação Física',   desc: 'Fichas de musculação complementar',           plano: 'completo'  },
             { id: 'jogos',       icon: '🎮',  nome: 'Jogos CT',           desc: 'Quiz, memória, forca e jogos educativos',     plano: 'completo'  }
         ];
 
@@ -32242,7 +32242,7 @@
                 { id:'karate',      icon:'🥋', nome:'Karatê' },
                 { id:'boxing',      icon:'🥊', nome:'Boxe' },
                 { id:'mma',         icon:'⚔️',  nome:'MMA' },
-                { id:'kickboxing',  icon:'🦵', nome:'Kickboxing' },
+                { id:'kickboxing',  icon:'🥊', nome:'Kickboxing' },
                 { id:'wrestling',   icon:'🤼', nome:'Wrestling' },
                 { id:'funcional',   icon:'💪', nome:'Funcional' },
                 { id:'taekwondo',   icon:'🦵', nome:'Taekwondo' }
@@ -36404,7 +36404,7 @@
         'fb.sub':'Elogie, sugira melhorias ou reporte um problema. Seu feedback é anônimo para outros alunos.',
         'fb.elogio':'😊 Elogio','fb.sugestao':'💡 Sugestão','fb.problema':'😤 Problema',
         'fb.placeholder':'Escreva sua mensagem aqui...','fb.send':'Enviar →',
-        'prep.title':'🏋️ Preparação Física','prep.sub':'Módulos personalizados pelo professor',
+        'prep.title':'💪 Preparação Física','prep.sub':'Módulos personalizados pelo professor',
         'prep.loading':'Carregando...','prep.history':'📅 Meus Treinos Realizados',
         'rank.ranking':'Ranking','rank.loading':'Carregando ranking...','rank.camp_title':'🏆 Ranking do Campeonato',
         'rank.semester':'📅 Semestre','rank.ct':'📍 CT','rank.select_sem':'Carregando...',
@@ -36498,7 +36498,7 @@
         'fb.sub':'Praise, suggest improvements, or report an issue. Your feedback is anonymous to other students.',
         'fb.elogio':'😊 Praise','fb.sugestao':'💡 Suggestion','fb.problema':'😤 Issue',
         'fb.placeholder':'Write your message here...','fb.send':'Send →',
-        'prep.title':'🏋️ Physical Preparation','prep.sub':'Modules personalized by the instructor',
+        'prep.title':'💪 Physical Preparation','prep.sub':'Modules personalized by the instructor',
         'prep.loading':'Loading...','prep.history':'📅 My Completed Workouts',
         'rank.ranking':'Ranking','rank.loading':'Loading ranking...','rank.camp_title':'🏆 Championship Ranking',
         'rank.semester':'📅 Semester','rank.ct':'📍 CT','rank.select_sem':'Loading...',
@@ -36591,7 +36591,7 @@
         'fb.sub':'Elogia, sugiere mejoras o reporta un problema. Tu feedback es anónimo para otros alumnos.',
         'fb.elogio':'😊 Elogio','fb.sugestao':'💡 Sugerencia','fb.problema':'😤 Problema',
         'fb.placeholder':'Escribe tu mensaje aquí...','fb.send':'Enviar →',
-        'prep.title':'🏋️ Preparación Física','prep.sub':'Módulos personalizados por el profesor',
+        'prep.title':'💪 Preparación Física','prep.sub':'Módulos personalizados por el profesor',
         'prep.loading':'Cargando...','prep.history':'📅 Mis Entrenos Realizados',
         'rank.ranking':'Ranking','rank.loading':'Cargando ranking...','rank.camp_title':'🏆 Ranking del Campeonato',
         'rank.semester':'📅 Semestre','rank.ct':'📍 CT','rank.select_sem':'Cargando...',
