@@ -11737,7 +11737,7 @@
 
         // Catálogo de modalidades disponíveis — pode ser expandido pelo admin
         // ── Plano e limites globais (carregado via getAssinatura) ──
-        var _planLimits = { alunos: 9999, modalidades: 99, filiais: 99, cobranca: true, redesBeneficio: true, fotoCheckin: true, qrCode: true, pixWhatsapp: true };
+        var _planLimits = { alunos: 9999, modalidades: 99, filiais: 99, cobranca: true, pagamentos: true, redesBeneficio: true, fotoCheckin: true, qrCode: true, pixWhatsapp: true };
         var _planId     = '';
         var _planNomes  = {
             'basico':       'CT Manager Básico',
@@ -11828,7 +11828,7 @@
 
             // Atualiza ícone de cadeado no nav
             var navLock = document.getElementById('bnavPagLock');
-            if (navLock) navLock.style.display = _planLimits.cobranca ? 'none' : 'inline';
+            if (navLock) navLock.style.display = (_planLimits.cobranca && _planLimits.pagamentos !== false) ? 'none' : 'inline';
             // Cobrança (Básico não tem)
             if (!_planLimits.cobranca) {
                 _lockByPlan('pagamentosAdminSection',  '💳 Sistema de Cobrança', 'profissional');
@@ -14177,7 +14177,15 @@
                     }
                     currentUser = userData;
                     localStorage.setItem('bjjUser', JSON.stringify(currentUser));
-                    
+
+                    // Aplica limites do plano imediatamente após login
+                    if (currentUser.planoLimites) {
+                        _planLimits = currentUser.planoLimites;
+                    }
+                    if (currentUser.planoId || currentUser.plano) {
+                        _planId = currentUser.planoId || currentUser.plano || '';
+                    }
+
                     showAppScreen();
                     loadAttendanceInfo();
                     loadCTs();
@@ -15231,7 +15239,18 @@
                     }).catch(function() {});
                 }
             }
-            if (tabName === 'pagamentos-tab') loadPagamentosTab();
+            if (tabName === 'pagamentos-tab') {
+                if (!_planLimits.cobranca || _planLimits.pagamentos === false) {
+                    var _el = document.getElementById('pagamentos-tab');
+                    if (_el) _el.innerHTML =
+                        '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:16px;padding:40px;text-align:center;">' +
+                        '<div style="font-size:42px;">🔒</div>' +
+                        '<div style="font-size:16px;font-weight:800;color:var(--adm-text-1);">Módulo não disponível</div>' +
+                        '<div style="font-size:13px;color:var(--adm-text-3);max-width:300px;line-height:1.7;">O módulo de <b>Pagamentos</b> está disponível a partir do <span style="color:var(--adm-primary);font-weight:700">Plano Profissional</span>.</div>' +
+                        '<button onclick="showUpgradeModal && showUpgradeModal()" style="padding:12px 28px;background:var(--adm-primary);border:none;border-radius:10px;color:#000;font-size:13px;font-weight:800;cursor:pointer;">Fazer Upgrade de Plano</button>' +
+                        '</div>';
+                } else { loadPagamentosTab(); }
+            }
             if (tabName === 'quiz-tab') {
                 if (!ModalidadeUI.gamesAvailable()) {
                     // Block non-BJJ modalities from seeing BJJ-specific games
@@ -18378,6 +18397,19 @@
         // ─────────────────────────────────────────────────────────────────────
 
         async function loadPagamentosTab() {
+            // Bloqueia se plano básico não tem acesso a pagamentos
+            if (_planLimits.pagamentos === false || !_planLimits.cobranca) {
+                var el = document.getElementById('pagamentos-tab');
+                if (el) el.innerHTML =
+                    '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;gap:16px;padding:40px;text-align:center;">' +
+                    '<div style="font-size:48px;">🔒</div>' +
+                    '<div style="font-size:16px;font-weight:800;color:var(--adm-text-1);">Módulo de Pagamentos</div>' +
+                    '<div style="font-size:13px;color:var(--adm-text-3);max-width:320px;line-height:1.7;">Disponível a partir do <span style="color:var(--adm-primary);font-weight:700">Plano Profissional</span>.<br>Faça upgrade para habilitar cobranças, planos e relatórios financeiros.</div>' +
+                    '<button onclick="showUpgradeModal && showUpgradeModal()" style="padding:12px 28px;background:var(--adm-primary);border:none;border-radius:10px;color:#000;font-size:13px;font-weight:800;cursor:pointer;">Fazer Upgrade →</button>' +
+                    '</div>';
+                return;
+            }
+
             var el = document.getElementById('pagTabContainer');
             if (!el) return;
             el.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text-3);font-size:13px;"><div style="font-size:28px;margin-bottom:10px;">⏳</div>Carregando...</div>';
