@@ -32845,7 +32845,7 @@
                     // Linha 2: ações
                     h += '<div style="display:flex;gap:5px;flex-wrap:wrap;">';
                     if (st !== 'PAGO') {
-                        h += '<button onclick="confirmarPagtoManual(\'' + escapeHtml(p.email) + '\')" style="padding:4px 10px;border-radius:7px;background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.25);font-size:9px;font-weight:700;cursor:pointer;">✅ Confirmar pago</button>';
+                        h += '<button onclick="confirmarPagtoManual(\'' + escapeHtml(p.email) + '\',\'' + escapeHtml(p.planoId||'') + '\',\'' + escapeHtml(p.planoNome||'') + '\',' + parseFloat(p.planoValor||0) + ')" style="padding:4px 10px;border-radius:7px;background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.25);font-size:9px;font-weight:700;cursor:pointer;">✅ Confirmar pago</button>';
                     }
                     if (st === 'PENDENTE' || st === 'ATRASADO' || st === 'SEM_PLANO') {
                         h += '<button onclick="cobrarAgoraAlunoPainel(\'' + escapeHtml(p.email) + '\',this)" style="padding:4px 10px;border-radius:7px;background:rgba(201,162,58,0.15);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.35);font-size:9px;font-weight:700;cursor:pointer;">⚡ Cobrar agora</button>';
@@ -32863,12 +32863,28 @@
             }
         }
 
-        async function confirmarPagtoManual(email) {
-            if (!confirm('Confirmar pagamento de ' + email + '?')) return;
+        async function confirmarPagtoManual(email, planoId, planoNome, planoValor) {
+            // Se aluno não tem plano, abre seletor antes de marcar pago
+            if (!planoId) {
+                var ir = confirm('⚠️ Este aluno não tem plano atribuído.\n\nDeseja atribuir um plano agora?');
+                if (ir) atribuirPlanoModal(email);
+                return;
+            }
+            var valorFmt = planoValor ? ' (R$ ' + parseFloat(planoValor).toFixed(2) + ')' : '';
+            if (!confirm('Confirmar pagamento de:\n' + email + '\nPlano: ' + (planoNome||planoId) + valorFmt + '\n\nIsso registrará no histórico de pagamentos.')) return;
             try {
-                var data = await secureFetch('marcarPago', { email: email, status: 'PAGO' });
-                if (data.success) { loadPagamentosAdmin(); }
-                else alert('❌ ' + data.message);
+                var data = await secureFetch('marcarPago', { email: email, status: 'PAGO', planoId: planoId });
+                if (data.success) {
+                    loadPagamentosAdmin();
+                } else {
+                    // Backend retornou erro de plano — oferecer atribuição
+                    if ((data.message||'').indexOf('sem plano') !== -1) {
+                        var ir2 = confirm('⚠️ ' + data.message + '\n\nAbrir seletor de plano?');
+                        if (ir2) atribuirPlanoModal(email);
+                    } else {
+                        alert('❌ ' + data.message);
+                    }
+                }
             } catch(e) { alert('Erro de conexão'); }
         }
 
