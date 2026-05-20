@@ -1902,7 +1902,7 @@
         .game-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
         .gc-quiz::before { background: linear-gradient(90deg,#818CF8,#6366F1); }
         .gc-words::before { background: linear-gradient(90deg,#34D399,#10B981); }
-        .gc-memory::before { background: linear-gradient(90deg,#F472B6,#EC4899); }
+        .gc-memory::before { background: linear-gradient(90deg,#22D3EE,#06B6D4); }
         .gc-forca::before { background: linear-gradient(90deg,#FB923C,#F97316); }
         .gc-speed::before { background: linear-gradient(90deg,#FBBF24,#F59E0B); }
         .gc-cross::before { background: linear-gradient(90deg,#C9A23A,#8C6A0A); }
@@ -9105,6 +9105,15 @@
                                     <div style="font-size:10px;color:var(--adm-text-3);margin-top:4px;line-height:1.4;">A busca será restrita aos alunos deste CT (mais rápido e preciso).</div>
                                 </div>
 
+                                <!-- Seletor de Modalidade (Fix: lista filtrada → IA mais precisa) -->
+                                <div style="margin-bottom:10px;">
+                                    <label style="font-size:11px;font-weight:700;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:5px;">🥋 Modalidade da turma</label>
+                                    <select id="fotoModFiltro" style="width:100%;padding:10px 12px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;outline:none;">
+                                        <option value="">— Todas as modalidades —</option>
+                                    </select>
+                                    <div style="font-size:10px;color:var(--adm-text-3);margin-top:4px;line-height:1.4;">Selecionar a turma reduz a lista de candidatos e aumenta a precisão da IA.</div>
+                                </div>
+
                                 <button onclick="fotoAnalisar()"
                                     style="width:100%;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;">
                                     📸 Confirmar Presença
@@ -11893,13 +11902,13 @@
             // Sem plano identificado — não aplica locks (evita bloquear clientes indefinidamente)
             if (!_planId) return;
 
-            // Aplica _planLimits do plano identificado se ainda padrão
+            // Aplica _planLimits vindos do backend (planilha PLANOS — fonte de verdade)
             if (_planLimits.alunos === 9999) {
-                var _lim = { basico: { alunos:100, modalidades:1, filiais:1, cobranca:false, redesBeneficio:false, fotoCheckin:false, qrCode:false, pixWhatsapp:false },
-                             profissional: { alunos:200, modalidades:3, filiais:1, cobranca:true,  redesBeneficio:true,  fotoCheckin:false, qrCode:true,  pixWhatsapp:true  },
-                             premium:      { alunos:500, modalidades:5, filiais:3, cobranca:true,  redesBeneficio:true,  fotoCheckin:true,  qrCode:true,  pixWhatsapp:true  },
-                             trial:        { alunos:20,  modalidades:1, filiais:1, cobranca:false, redesBeneficio:false, fotoCheckin:false, qrCode:false, pixWhatsapp:false } };
-                if (_lim[_planId]) _planLimits = _lim[_planId];
+                if (currentUser && currentUser.planoLimites) {
+                    _planLimits = currentUser.planoLimites;
+                } else {
+                    return; // aguarda limites do servidor antes de aplicar locks
+                }
             }
 
             // Atualiza ícone de cadeado no nav
@@ -12220,7 +12229,7 @@
                     graus:         'Kyus / Dans',
                     confirmarBtn:  '🥋 Treinei',
                     evolucaoTitulo:'Minha Progressão',
-                    roadmapTitulo: '🎌 Sistema de Graduação — Judô',
+                    roadmapTitulo: '🥋 Sistema de Graduação — Judô',
                     roadmapSub:    'Do 6º Kyu ao 10º Dan',
                 },
                 ui: {
@@ -12231,7 +12240,7 @@
                     mostrarFrequencia:true,
                     mostrarCriterios: false,  // Judô não usa critérios de exame como BJJ
                     roadmapTipo:      'cintura',
-                    iconeEvo:         '🎌',
+                    iconeEvo:         '🥋',
                 },
             },
 
@@ -12311,11 +12320,11 @@
                     // 11 graus — Graduação Infantil CBMT
                     faixas: [
                         { id:'1',  grau:1,  label:'Branco — Iniciante',            nivel:'Iniciante',  emoji:'⬜', cor:'#f5f5f5', corPonta:null,     cssClass:'prajied-k1',  next:'2',  ordemProgresso:1  },
-                        { id:'2',  grau:2,  label:'Cinza — 4 anos',                nivel:'4 anos',     emoji:'🩶', cor:'#9ca3af', corPonta:null,     cssClass:'prajied-k2',  next:'3',  ordemProgresso:2  },
-                        { id:'3',  grau:3,  label:'Cinza — 5 anos',                nivel:'5 anos',     emoji:'🩶', cor:'#9ca3af', corPonta:null,     cssClass:'prajied-k3',  next:'4',  ordemProgresso:3  },
-                        { id:'4',  grau:4,  label:'Cinza Ponta Amarela — 6 anos',  nivel:'6 anos',     emoji:'🩶', cor:'#9ca3af', corPonta:'#eab308',cssClass:'prajied-k4',  next:'5',  ordemProgresso:4  },
-                        { id:'5',  grau:5,  label:'Cinza Ponta Verde — 7 anos',    nivel:'7 anos',     emoji:'🩶', cor:'#9ca3af', corPonta:'#16a34a',cssClass:'prajied-k5',  next:'6',  ordemProgresso:5  },
-                        { id:'6',  grau:6,  label:'Cinza Ponta Azul — 8 anos',     nivel:'8 anos',     emoji:'🩶', cor:'#9ca3af', corPonta:'#1d4ed8',cssClass:'prajied-k6',  next:'7',  ordemProgresso:6  },
+                        { id:'2',  grau:2,  label:'Cinza — 4 anos',                nivel:'4 anos',     emoji:'⚪', cor:'#9ca3af', corPonta:null,     cssClass:'prajied-k2',  next:'3',  ordemProgresso:2  },
+                        { id:'3',  grau:3,  label:'Cinza — 5 anos',                nivel:'5 anos',     emoji:'⚪', cor:'#9ca3af', corPonta:null,     cssClass:'prajied-k3',  next:'4',  ordemProgresso:3  },
+                        { id:'4',  grau:4,  label:'Cinza Ponta Amarela — 6 anos',  nivel:'6 anos',     emoji:'⚪', cor:'#9ca3af', corPonta:'#eab308',cssClass:'prajied-k4',  next:'5',  ordemProgresso:4  },
+                        { id:'5',  grau:5,  label:'Cinza Ponta Verde — 7 anos',    nivel:'7 anos',     emoji:'⚪', cor:'#9ca3af', corPonta:'#16a34a',cssClass:'prajied-k5',  next:'6',  ordemProgresso:5  },
+                        { id:'6',  grau:6,  label:'Cinza Ponta Azul — 8 anos',     nivel:'8 anos',     emoji:'⚪', cor:'#9ca3af', corPonta:'#1d4ed8',cssClass:'prajied-k6',  next:'7',  ordemProgresso:6  },
                         { id:'7',  grau:7,  label:'Laranja — 9 anos',              nivel:'9 anos',     emoji:'🟠', cor:'#ea580c', corPonta:null,     cssClass:'prajied-k7',  next:'8',  ordemProgresso:7  },
                         { id:'8',  grau:8,  label:'Laranja Ponta Branca — 10 anos',nivel:'10 anos',    emoji:'🟠', cor:'#ea580c', corPonta:'#f5f5f5',cssClass:'prajied-k8',  next:'9',  ordemProgresso:8  },
                         { id:'9',  grau:9,  label:'Laranja Ponta Amarela — 11a',   nivel:'11 anos',    emoji:'🟠', cor:'#ea580c', corPonta:'#eab308',cssClass:'prajied-k9',  next:'10', ordemProgresso:9  },
@@ -12546,9 +12555,9 @@
                     maxGrausPorFaixa: 4, simbolo: 'grau',
                     faixas: [
                         { id:'Branca',         label:'Branca',          emoji:'⚪',   cor:'#e8e8e8', cssClass:'branca',     next:'Cinza-Branca',    ordemProgresso:1  },
-                        { id:'Cinza-Branca',   label:'Cinza/Branca',    emoji:'⚪🩶', cor:'#bdbdbd', cssClass:'cinza-b',    next:'Cinza',           ordemProgresso:2  },
-                        { id:'Cinza',          label:'Cinza',           emoji:'🩶',   cor:'#9e9e9e', cssClass:'cinza',      next:'Cinza-Preta',     ordemProgresso:3  },
-                        { id:'Cinza-Preta',    label:'Cinza/Preta',     emoji:'🩶⚫', cor:'#757575', cssClass:'cinza-p',    next:'Amarela-Branca',  ordemProgresso:4  },
+                        { id:'Cinza-Branca',   label:'Cinza/Branca',    emoji:'⚪', cor:'#bdbdbd', cssClass:'cinza-b',    next:'Cinza',           ordemProgresso:2  },
+                        { id:'Cinza',          label:'Cinza',           emoji:'⚪',   cor:'#9e9e9e', cssClass:'cinza',      next:'Cinza-Preta',     ordemProgresso:3  },
+                        { id:'Cinza-Preta',    label:'Cinza/Preta',     emoji:'⚪⚫', cor:'#757575', cssClass:'cinza-p',    next:'Amarela-Branca',  ordemProgresso:4  },
                         { id:'Amarela-Branca', label:'Amarela/Branca',  emoji:'⚪🟡', cor:'#fff176', cssClass:'amarela-b',  next:'Amarela',         ordemProgresso:5  },
                         { id:'Amarela',        label:'Amarela',         emoji:'🟡',   cor:'#fdd835', cssClass:'amarela',    next:'Amarela-Preta',   ordemProgresso:6  },
                         { id:'Amarela-Preta',  label:'Amarela/Preta',   emoji:'🟡⚫', cor:'#f9a825', cssClass:'amarela-p',  next:'Laranja-Branca',  ordemProgresso:7  },
@@ -12576,7 +12585,7 @@
                     labelFaixa: 'Prajied', labelGrau: 'Grau', labelGrauPlural: 'Graus',
                     maxGrausPorFaixa: null, simbolo: 'grau',
                     faixas: [
-                        { id:'branco',   label:'Branco (Grau 1)',    emoji:'🤍', cor:'#f5f5f5', cssClass:'branco',   next:'amarelo',  ordemProgresso:1 },
+                        { id:'branco',   label:'Branco (Grau 1)',    emoji:'⬜', cor:'#f5f5f5', cssClass:'branco',   next:'amarelo',  ordemProgresso:1 },
                         { id:'amarelo',  label:'Amarelo (Grau 2)',   emoji:'🟡', cor:'#fdd835', cssClass:'amarelo',  next:'laranja',  ordemProgresso:2 },
                         { id:'laranja',  label:'Laranja (Grau 3)',   emoji:'🟠', cor:'#fb8c00', cssClass:'laranja',  next:'verde',    ordemProgresso:3 },
                         { id:'verde',    label:'Verde (Grau 4)',     emoji:'🟢', cor:'#43a047', cssClass:'verde',    next:'azul',     ordemProgresso:4 },
@@ -14643,7 +14652,7 @@
         var KIDS_FAIXAS = [
             { value: 'Branca',          label: '⚪ Branca' },
             { value: 'Cinza-Branca',    label: '⬜ Cinza-Branca' },
-            { value: 'Cinza',           label: '🩶 Cinza' },
+            { value: 'Cinza',           label: '⚪ Cinza' },
             { value: 'Cinza-Preta',     label: '🖤 Cinza-Preta' },
             { value: 'Amarela-Branca',  label: '⬜ Amarela-Branca' },
             { value: 'Amarela',         label: '🟡 Amarela' },
@@ -14769,7 +14778,7 @@
                 { id:'u13',      label:'Sub-13 (Mirim)',   emoji:'🧒', idadeMin:10, idadeMax:12,  isMaster:false, isKids:true,  restricoes:['Sem kansetsu waza (torções)','Sem shime waza avançado'] },
                 { id:'u15',      label:'Sub-15 (Infantil)',emoji:'👦', idadeMin:13, idadeMax:14,  isMaster:false, isKids:true,  restricoes:['Sem kansetsu waza','Sem atemiwaza'] },
                 { id:'u18',      label:'Sub-18 (Juvenil)', emoji:'🧑', idadeMin:15, idadeMax:17,  isMaster:false, isKids:false, restricoes:['Sem atemiwaza'] },
-                { id:'senior',   label:'Senior (Adulto)',  emoji:'🎌', idadeMin:18, idadeMax:29,  isMaster:false, isKids:false, restricoes:[] },
+                { id:'senior',   label:'Senior (Adulto)',  emoji:'🥋', idadeMin:18, idadeMax:29,  isMaster:false, isKids:false, restricoes:[] },
                 { id:'master_1', label:'Master 1 (30+)',   emoji:'🏅', idadeMin:30, idadeMax:39,  isMaster:true,  isKids:false, restricoes:[] },
                 { id:'master_2', label:'Master 2 (40+)',   emoji:'🏅', idadeMin:40, idadeMax:49,  isMaster:true,  isKids:false, restricoes:[] },
                 { id:'master_3', label:'Master 3 (50+)',   emoji:'🏅', idadeMin:50, idadeMax:59,  isMaster:true,  isKids:false, restricoes:[] },
@@ -16613,9 +16622,9 @@
         // Emojis: círculo da cor principal da faixa — faixas mistas têm dois círculos
         const BELT_CONFIG_KIDS = {
             'Branca':          { order: 0,  emoji: '⚪',    class: 'branca',   next: 'Cinza-Branca' },
-            'Cinza-Branca':    { order: 1,  emoji: '⚪🩶',  class: 'cinza-b',  next: 'Cinza' },
-            'Cinza':           { order: 2,  emoji: '🩶',    class: 'cinza',    next: 'Cinza-Preta' },
-            'Cinza-Preta':     { order: 3,  emoji: '🩶⚫',  class: 'cinza-p',  next: 'Amarela-Branca' },
+            'Cinza-Branca':    { order: 1,  emoji: '⚪',  class: 'cinza-b',  next: 'Cinza' },
+            'Cinza':           { order: 2,  emoji: '⚪',    class: 'cinza',    next: 'Cinza-Preta' },
+            'Cinza-Preta':     { order: 3,  emoji: '⚪⚫',  class: 'cinza-p',  next: 'Amarela-Branca' },
             'Amarela-Branca':  { order: 4,  emoji: '⚪🟡',  class: 'amarela-b',next: 'Amarela' },
             'Amarela':         { order: 5,  emoji: '🟡',    class: 'amarela',  next: 'Amarela-Preta' },
             'Amarela-Preta':   { order: 6,  emoji: '🟡⚫',  class: 'amarela-p',next: 'Laranja-Branca' },
@@ -17040,9 +17049,9 @@
 
         var IBJJF_BELTS_KIDS = [
             { id: 'branca',       name: 'Branca',          cls: 'branca',    age: '4+',  graus: 0, minMonths: 0,  minTreinos: 0 },
-            { id: 'cinza-b',      name: 'Cinza/Branca',    emoji: '⚪🩶', cls: 'cinza-b',   age: '4+',  graus: 0, minMonths: 6,  minTreinos: 30 },
-            { id: 'cinza',        name: 'Cinza',           emoji: '🩶',   cls: 'cinza',     age: '4+',  graus: 0, minMonths: 6,  minTreinos: 50 },
-            { id: 'cinza-p',      name: 'Cinza/Preta',     emoji: '🩶⚫', cls: 'cinza-p',   age: '4+',  graus: 0, minMonths: 6,  minTreinos: 70 },
+            { id: 'cinza-b',      name: 'Cinza/Branca',    emoji: '⚪', cls: 'cinza-b',   age: '4+',  graus: 0, minMonths: 6,  minTreinos: 30 },
+            { id: 'cinza',        name: 'Cinza',           emoji: '⚪',   cls: 'cinza',     age: '4+',  graus: 0, minMonths: 6,  minTreinos: 50 },
+            { id: 'cinza-p',      name: 'Cinza/Preta',     emoji: '⚪⚫', cls: 'cinza-p',   age: '4+',  graus: 0, minMonths: 6,  minTreinos: 70 },
             { id: 'amarela-b',    name: 'Amarela/Branca',  emoji: '⚪🟡', cls: 'amarela-b', age: '7+',  graus: 0, minMonths: 6,  minTreinos: 90 },
             { id: 'amarela',      name: 'Amarela',         emoji: '🟡',   cls: 'amarela',   age: '7+',  graus: 0, minMonths: 6,  minTreinos: 110 },
             { id: 'amarela-p',    name: 'Amarela/Preta',   emoji: '🟡⚫', cls: 'amarela-p', age: '7+',  graus: 0, minMonths: 6,  minTreinos: 130 },
@@ -17768,7 +17777,7 @@
                 schema.graduacao.faixas.forEach(function(f) { faixaEmojiMap[f.id] = f.emoji || '🏅'; });
             }
             // Fallback for common BJJ belts
-            var DEFAULT_EMOJI = { 'Branca':'⬜','Cinza':'🩶','Amarela':'🟨','Laranja':'🟧',
+            var DEFAULT_EMOJI = { 'Branca':'⬜','Cinza':'⚪','Amarela':'🟨','Laranja':'🟧',
                 'Verde':'🟩','Azul':'🟦','Roxa':'🟪','Marrom':'🟫','Preta':'⬛' };
 
             var html = '';
@@ -18297,7 +18306,7 @@
 
         function renderEvoTimeline(container, events) {
             var FAIXA_EMOJI = {
-                'Branca':'⬜','Cinza':'🩶','Amarela':'🟨','Laranja':'🟧',
+                'Branca':'⬜','Cinza':'⚪','Amarela':'🟨','Laranja':'🟧',
                 'Verde':'🟩','Azul':'🟦','Roxa':'🟪','Marrom':'🟫','Preta':'⬛'
             };
             var MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -26608,9 +26617,9 @@
                     var temCobranca  = lims.cobranca === true || lims.cobranca === 'TRUE' || lims.cobranca === 'true';
                     var temRedes     = lims.redes_beneficio === true || lims.redes_beneficio === 'TRUE' || lims.redes_beneficio === 'true';
                     var temFoto      = lims.foto_checkin === true || lims.foto_checkin === 'TRUE' || lims.foto_checkin === 'true';
-                    var maxAlunos    = lims.max_alunos    ? String(lims.max_alunos)    : (planoId==='basico'?'100':planoId==='profissional'?'200':'500');
-                    var maxMods      = lims.max_modalidades ? String(lims.max_modalidades) : (planoId==='basico'?'1':planoId==='profissional'?'3':'5');
-                    var maxFiliais   = lims.max_filiais   ? String(lims.max_filiais)   : (planoId==='premium'?'3':'1');
+                    var maxAlunos    = lims.max_alunos      ? String(lims.max_alunos)      : (lims.alunos      ? String(lims.alunos)      : '—');
+                    var maxMods      = lims.max_modalidades ? String(lims.max_modalidades) : (lims.modalidades  ? String(lims.modalidades)  : '—');
+                    var maxFiliais   = lims.max_filiais     ? String(lims.max_filiais)     : (lims.filiais      ? String(lims.filiais)      : '—');
 
                     var funcList = [
                         '✅ Check-in de alunos',
@@ -34772,7 +34781,7 @@
             try {
                 var data = await secureFetch('getRankingMonth', { email: currentUser.email, period: admRankPeriod });
                 if (data.success && data.ranking && data.ranking.length > 0) {
-                    var BELT_EMOJI = { 'Branca':'⬜','Cinza':'🩶','Amarela':'🟨','Laranja':'🟧','Verde':'🟩','Azul':'🟦','Roxa':'🟪','Marrom':'🟫','Preta':'⬛','Coral':'🔴','Vermelha':'🔴' };
+                    var BELT_EMOJI = { 'Branca':'⬜','Cinza':'⚪','Amarela':'🟨','Laranja':'🟧','Verde':'🟩','Azul':'🟦','Roxa':'🟪','Marrom':'🟫','Preta':'⬛','Coral':'🔴','Vermelha':'🔴' };
                     var html = '';
                     for (var i = 0; i < data.ranking.length; i++) {
                         var r2 = data.ranking[i];
@@ -37166,6 +37175,8 @@
             fotoCameraFechar();
             _fotoBase64 = null; _fotoDataUrl = null;
             _alunosList = []; _selecionados = {};
+            var _modSel = document.getElementById('fotoModFiltro');
+            if (_modSel) { _modSel.innerHTML = '<option value="">— Todas as modalidades —</option>'; }
             document.getElementById('fotoInputCamera').value  = '';
             document.getElementById('fotoInputGaleria').value = '';
             setFase(0);
@@ -37243,10 +37254,39 @@
                 });
             }
             _alunosList = alunos;
-            _alunosList = alunos;
+
+            // 2a. Popula seletor de modalidade com as modalidades presentes na lista
+            var modSel = document.getElementById('fotoModFiltro');
+            if (modSel) {
+                var modsVistas = {};
+                alunos.forEach(function(a) {
+                    var m = a.modPrincipal || a.modalidadePrincipal || '';
+                    if (m && !modsVistas[m]) {
+                        modsVistas[m] = true;
+                        var opt = document.createElement('option');
+                        opt.value = m;
+                        opt.textContent = m;
+                        // Pré-seleciona a modalidade principal do admin
+                        if (currentUser && m === currentUser.modalidadePrincipal) opt.selected = true;
+                        modSel.appendChild(opt);
+                    }
+                });
+            }
+
+            // 2b. Filtra lista pela modalidade selecionada antes de enviar à IA
+            var modFiltro = modSel ? modSel.value : '';
+            var alunosFiltrados = modFiltro
+                ? alunos.filter(function(a) {
+                    return (a.modPrincipal || a.modalidadePrincipal || '') === modFiltro;
+                  })
+                : alunos;
+
+            // Se o filtro retornou menos de 3 alunos, usa lista completa como fallback
+            if (alunosFiltrados.length < 3) alunosFiltrados = alunos;
+            _alunosList = alunosFiltrados;
 
             // 2. Conta alunos com foto de perfil cadastrada
-            var comFoto = alunos.filter(function(a) { return a.temFoto && a.avatar && a.avatar.length > 50; });
+            var comFoto = alunosFiltrados.filter(function(a) { return a.temFoto && a.avatar && a.avatar.length > 50; });
 
             document.getElementById('fotoProgressoTxt').textContent = 'Enviando para análise...';
             document.getElementById('fotoProgressoSub').textContent = alunos.length + ' alunos na base · IA identificando rostos';
@@ -37257,7 +37297,7 @@
                 var proxyResp = await secureFetch('analisarFotoTreino', {
                     fotoBase64: _fotoBase64,
                     mimeType:   'image/jpeg',
-                    alunos:     JSON.stringify(_alunosList),
+                    alunos:     JSON.stringify(_alunosList),   // já filtrado por modalidade
                     temFotos:   comFoto.length > 0
                 });
 
@@ -37478,9 +37518,15 @@
             var btn = document.getElementById('fotoBtnConfirmar');
             btn.disabled = true; btn.textContent = '⏳ Registrando...';
             try {
+                // Usa a modalidade da turma fotografada (seletor) — não a do admin
+                var _modCheckin = (function() {
+                    var sel = document.getElementById('fotoModFiltro');
+                    if (sel && sel.value) return sel.value;
+                    return (typeof currentUser !== 'undefined' && currentUser && currentUser.modalidadePrincipal) ? currentUser.modalidadePrincipal : '';
+                })();
                 var result = await secureFetch('checkinEmMassa', {
                     emails: emails,
-                    modalidade: (typeof currentUser !== 'undefined' && currentUser && currentUser.modalidadePrincipal) ? currentUser.modalidadePrincipal : '',
+                    modalidade: _modCheckin,
                     origem: 'foto_treino'
                 });
                 var ok = (result && result.totalRegistrado) ? result.totalRegistrado : emails.length;
