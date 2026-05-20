@@ -9095,6 +9095,16 @@
                                     <div class="foto-zoom-info" id="fotoZoomInfo">100%</div>
                                 </div>
                                 <div id="fotoErroMsg" style="display:none;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#EF4444;"></div>
+
+                                <!-- Seletor de Centro de Treinamento -->
+                                <div style="margin-bottom:10px;">
+                                    <label style="font-size:11px;font-weight:700;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:5px;">📍 Filtrar por Centro</label>
+                                    <select id="fotoCtFiltro" style="width:100%;padding:10px 12px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;outline:none;">
+                                        <option value="">— Selecione o CT —</option>
+                                    </select>
+                                    <div style="font-size:10px;color:var(--adm-text-3);margin-top:4px;line-height:1.4;">A busca será restrita aos alunos deste CT (mais rápido e preciso).</div>
+                                </div>
+
                                 <button onclick="fotoAnalisar()"
                                     style="width:100%;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;">
                                     📸 Confirmar Presença
@@ -36870,7 +36880,34 @@
         var _fase         = 0;      // 0=upload 1=preview 2=analisando 3=resultado 4=ok
 
         // ── Troca de fase ───────────────────────────────────
+        function _popularFotoCtFiltro() {
+            var sel = document.getElementById('fotoCtFiltro');
+            if (!sel || sel.options.length > 1) return; // já populado
+
+            var ctsList = [];
+            if (typeof allCTs !== 'undefined' && Array.isArray(allCTs) && allCTs.length > 0) {
+                ctsList = allCTs.map(function(c){ return typeof c === 'string' ? c : (c.nome||c.ct||c); }).filter(Boolean);
+            }
+            // Acrescenta CTs do currentUser (ctsliberados + ctsProfessor)
+            if (typeof currentUser !== 'undefined' && currentUser) {
+                var addLib = (currentUser.ctsliberados||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+                var addPrf = (currentUser.ctsProfessor||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+                if (currentUser.ct) addLib.unshift(currentUser.ct);
+                [].concat(addLib, addPrf).forEach(function(c){
+                    if (c && ctsList.indexOf(c) === -1) ctsList.push(c);
+                });
+            }
+
+            ctsList.forEach(function(ct) {
+                var opt = document.createElement('option');
+                opt.value = ct; opt.textContent = ct;
+                if (ct === (currentUser && currentUser.ct)) opt.selected = true;
+                sel.appendChild(opt);
+            });
+        }
+
         function setFase(n) {
+            _popularFotoCtFiltro && _popularFotoCtFiltro();
             _fase = n;
             [0,1,2,3,4].forEach(function(i) {
                 var el = document.getElementById('fotoFase' + i);
@@ -37183,7 +37220,14 @@
             var alunos = [];
             try {
                 if (typeof secureFetch === 'function' && typeof currentUser !== 'undefined' && currentUser) {
-                    var resp = await secureFetch('getAlunosComFotos', { ct: currentUser.ct || '' });
+                    var ctSelecionado = (document.getElementById('fotoCtFiltro') && document.getElementById('fotoCtFiltro').value) || currentUser.ct || '';
+                    if (!ctSelecionado) {
+                        setFase(1);
+                        var errEl = document.getElementById('fotoErroMsg');
+                        if (errEl) { errEl.textContent = '⚠️ Selecione um Centro de Treinamento antes de analisar.'; errEl.style.display = 'block'; }
+                        return;
+                    }
+                    var resp = await secureFetch('getAlunosComFotos', { ct: ctSelecionado });
                     if (resp && resp.success && resp.alunos) alunos = resp.alunos;
                 }
             } catch(e) {}
