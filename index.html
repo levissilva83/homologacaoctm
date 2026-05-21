@@ -29553,6 +29553,7 @@
             // ADD-ONS — compra separada
             { id: 'musculacao',  icon: '💪',  nome: 'Preparação Física',   desc: 'Fichas de musculação complementar',           plano: 'completo'  },
             { id: 'jogos',       icon: '🎮',  nome: 'Jogos CT',           desc: 'Quiz, memória, forca e jogos educativos',     plano: 'completo'  }
+            ,{ id: 'feedback',   icon: '💬',  nome: 'Feedback',           desc: 'Alunos enviam elogios, sugestões e reclamações ao professor/CT', plano: 'completo'  }
         ];
 
         var PLANO_LABELS = {
@@ -29678,6 +29679,12 @@
         }
 
         async function toggleModuleConfig(moduleId, enabled) {
+            // Feedback: sincroniza com o botão na barra do aluno
+            if (moduleId === 'feedback') {
+                var fbBtn = document.getElementById('fbSubBtnAluno');
+                if (fbBtn && !enabled) fbBtn.style.display = 'none';
+                // Se habilitado globalmente, a visibilidade final depende também do feedbackAtivo do CT
+            }
             // Todos os módulos são permitidos
             _modulesConfig[moduleId] = enabled;
             renderModulesToggle();
@@ -29730,6 +29737,9 @@
             if (!_activeModules) return;
             var isKid = _isKidsMode || (currentUser && currentUser.isKids);
             var subTabMap = { 'checkin':'checkin','evolucao':'evolucao','presencas':'presencas','cronograma':'aulas','musculacao':'musculacao','ranking':'ranking','campeonato':'campeonato' };
+            // Feedback: controlado pelo fbSubBtnAluno (pode ser sobrescrito pelo feedbackAtivo do CT)
+            var feedbackMod = document.getElementById('fbSubBtnAluno');
+            if (feedbackMod && _activeModules && _activeModules.feedback === false) feedbackMod.style.display = 'none';
             var kidsHidden = ['campeonato','musculacao']; // ranking habilitado para kids
             Object.keys(subTabMap).forEach(function(modId) {
                 var attr = subTabMap[modId];
