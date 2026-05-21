@@ -9127,6 +9127,17 @@
                                 </button>
                             </div>
 
+                            <!-- Medidor de créditos -->
+                            <div id="fotoCreditosBar" style="display:none;margin-bottom:12px;padding:10px 12px;background:rgba(0,0,0,0.15);border-radius:10px;">
+                                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                                    <span style="font-size:10px;font-weight:700;color:var(--adm-text-3);">📸 ANÁLISES DO MÊS</span>
+                                    <span id="fotoCreditosTxt" style="font-size:11px;font-weight:800;color:var(--adm-primary);">—</span>
+                                </div>
+                                <div style="background:rgba(255,255,255,0.08);border-radius:4px;height:5px;overflow:hidden;">
+                                    <div id="fotoCreditosFill" style="height:100%;border-radius:4px;background:var(--adm-primary);width:0%;transition:width .5s;"></div>
+                                </div>
+                            </div>
+
                             <!-- FASE 2: analisando (spinner) -->
                             <div id="fotoFase2" style="display:none;text-align:center;padding:36px 0;">
                                 <div class="foto-spinner"></div>
@@ -37336,6 +37347,36 @@
         };
 
         // ── Reiniciar ─────────────────────────────────────────
+        async function carregarCreditosFoto() {
+            try {
+                var res = await secureFetch('getCreditosFotoStatus', {});
+                if (!res.success) return;
+                var bar  = document.getElementById('fotoCreditosBar');
+                var txt  = document.getElementById('fotoCreditosTxt');
+                var fill = document.getElementById('fotoCreditosFill');
+                if (!bar) return;
+                bar.style.display = '';
+                var lim  = res.limite;
+                var usado = res.usado || 0;
+                var rest  = res.restante;
+                var pct   = res.pct || 0;
+
+                if (lim === -1) {
+                    if (txt) txt.textContent = '∞ Ilimitado';
+                    if (fill) { fill.style.width = '15%'; fill.style.background = '#4ade80'; }
+                } else {
+                    if (txt) {
+                        txt.textContent = rest + ' restantes de ' + lim;
+                        txt.style.color = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : 'var(--adm-primary)';
+                    }
+                    if (fill) {
+                        fill.style.width  = Math.min(pct, 100) + '%';
+                        fill.style.background = pct >= 90 ? '#ef4444' : pct >= 70 ? '#f59e0b' : '#4ade80';
+                    }
+                }
+            } catch(e) {}
+        }
+
         window.fotoReiniciar = function() {
             fotoCameraFechar();
             _fotoBase64 = null; _fotoDataUrl = null;
@@ -37343,6 +37384,7 @@
             document.getElementById('fotoInputCamera').value  = '';
             document.getElementById('fotoInputGaleria').value = '';
             setFase(0);
+            carregarCreditosFoto();
         };
 
         // ── ANALISAR com Claude API ──────────────────────────
@@ -37463,12 +37505,29 @@
 
                 var resultado = proxyResp.resultado;
                 renderResultado(resultado, comFoto.length > 0, comFoto.length, alunos.length);
+                // Atualiza medidor de créditos com dados retornados
+                if (resultado._creditos) {
+                    var cr = resultado._creditos;
+                    var txt2  = document.getElementById('fotoCreditosTxt');
+                    var fill2 = document.getElementById('fotoCreditosFill');
+                    if (txt2 && cr.limite !== -1) {
+                        txt2.textContent = cr.restante + ' restantes de ' + cr.limite;
+                        txt2.style.color = cr.pct >= 90 ? '#ef4444' : cr.pct >= 70 ? '#f59e0b' : 'var(--adm-primary)';
+                        if (fill2) { fill2.style.width = Math.min(cr.pct,100)+'%'; fill2.style.background = cr.pct>=90?'#ef4444':cr.pct>=70?'#f59e0b':'#4ade80'; }
+                    }
+                }
 
             } catch(ex) {
                 document.getElementById('fotoPreviewImg').src = _fotoDataUrl;
                 var _errMsg = ex.message || 'Erro ao analisar. Tente novamente.';
                 // Mensagem diferente para usuário sem produto adquirido
-                if (_errMsg.indexOf('__PRODUTO_NAO_ADQUIRIDO__') !== -1) {
+                if (_errMsg.indexOf('creditosEsgotados') !== -1 ||
+                    (proxyResp && proxyResp.creditosEsgotados)) {
+                    _errMsg = '📸 Limite de análises do mês atingido.\n\nFaça upgrade do plano para continuar usando o check-in por foto.';
+                    document.getElementById('fotoErroMsg').style.background = 'rgba(245,158,11,0.08)';
+                    document.getElementById('fotoErroMsg').style.borderColor = 'rgba(245,158,11,0.25)';
+                    document.getElementById('fotoErroMsg').style.color = '#f59e0b';
+                } else if (_errMsg.indexOf('__PRODUTO_NAO_ADQUIRIDO__') !== -1) {
                     _errMsg = '💬 Para utilizar o Checkin por Foto com IA, entre em contato com o suporte para adquirir este recurso.';
                     document.getElementById('fotoErroMsg').style.background = 'rgba(201,162,58,0.08)';
                     document.getElementById('fotoErroMsg').style.borderColor = 'rgba(201,162,58,0.25)';
