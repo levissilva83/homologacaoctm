@@ -7910,7 +7910,7 @@
                         <button class="subtab-btn" data-module="aulas" onclick="switchSubTab('treino-tab','sub-aulas',event)">📅<br><span>Cronograma</span></button>
                         <button class="subtab-btn" data-module="evolucao" onclick="switchSubTab('treino-tab','sub-evolucao',event)">📈<br><span>Evolução</span></button>
                         <button class="subtab-btn" data-module="presencas" onclick="switchSubTab('treino-tab','sub-presencas',event)">🗓️<br><span>Presenças</span></button>
-                        <button id="fbSubBtnAluno" class="subtab-btn" data-module="feedback" onclick="switchSubTab('treino-tab','sub-feedback',event)" style="display:none;">💬<br><span>Feedback</span></button>
+                        <button id="fbSubBtnAluno" class="subtab-btn" data-module="feedback" onclick="switchSubTab('treino-tab','sub-feedback',event)">💬<br><span>Feedback</span></button>
 
                     </div>
 
@@ -15487,7 +15487,7 @@
                             var userCT = currentUser ? (currentUser.ct || '') : '';
                             if (!userCT) return;
                             var ctObj = data.cts.find(function(x){ return (typeof x==='string'?x:x.name) === userCT; });
-                            fbBtn.style.display = (ctObj && ctObj.feedbackAtivo) ? '' : 'none';
+                            fbBtn.style.display = (ctObj && ctObj.feedbackAtivo === false) ? 'none' : '';
                         } catch(_e) {}
                     })();
                     // Armazenar schedules
@@ -29739,7 +29739,7 @@
             var subTabMap = { 'checkin':'checkin','evolucao':'evolucao','presencas':'presencas','cronograma':'aulas','musculacao':'musculacao','ranking':'ranking','campeonato':'campeonato' };
             // Feedback: controlado pelo fbSubBtnAluno (pode ser sobrescrito pelo feedbackAtivo do CT)
             var feedbackMod = document.getElementById('fbSubBtnAluno');
-            if (feedbackMod && _activeModules && _activeModules.feedback === false) feedbackMod.style.display = 'none';
+            if (feedbackMod && _activeModules) feedbackMod.style.display = (_activeModules.feedback === false) ? 'none' : '';
             var kidsHidden = ['campeonato','musculacao']; // ranking habilitado para kids
             Object.keys(subTabMap).forEach(function(modId) {
                 var attr = subTabMap[modId];
