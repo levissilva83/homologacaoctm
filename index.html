@@ -9106,7 +9106,18 @@
                                     <div style="font-size:10px;color:var(--adm-text-3);margin-top:4px;line-height:1.4;">A busca será restrita aos alunos deste CT (mais rápido e preciso).</div>
                                 </div>
 
-                                <button onclick="fotoAnalisar()"
+                                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(0,0,0,0.15);border-radius:8px;margin-bottom:8px;">
+                                    <span style="font-size:10px;font-weight:700;color:var(--adm-text-3);">🔍 MOTOR DE ANÁLISE</span>
+                                    <div style="display:flex;gap:10px;">
+                                        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:var(--adm-text-2);">
+                                            <input type="radio" name="motorFoto" value="claude" checked style="accent-color:var(--adm-primary);"> Claude AI
+                                        </label>
+                                        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:#f59e0b;font-weight:700;">
+                                            <input type="radio" id="motorRekognition" name="motorFoto" value="rekognition" style="accent-color:#f59e0b;"> ⚡ Rekognition
+                                        </label>
+                                    </div>
+                                </div>
+                                <button onclick="fotoAnalisar()" 
                                     style="width:100%;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;">
                                     📸 Confirmar Presença
                                 </button>
@@ -10041,6 +10052,19 @@
 
                     <!-- ════ SUB-TAB: SISTEMA (conteúdo original) ════ -->
                     <div class="sis-subtab-panel active" id="sis-panel-sistema">
+
+                    <!-- AWS REKOGNITION -->
+                    <div style="margin-bottom:20px;">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                            <span style="font-size:20px;">⚡</span>
+                            <div><div style="font-size:13px;font-weight:800;color:var(--adm-text-1);">AWS Rekognition</div>
+                            <div style="font-size:10px;color:var(--adm-text-3);">Reconhecimento facial preciso para check-in por foto</div></div>
+                        </div>
+                        <div id="awsConfigPanel" style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:12px;padding:14px;">
+                            <div style="text-align:center;color:var(--adm-text-3);font-size:12px;padding:8px;">Carregando...</div>
+                        </div>
+                    </div>
+                    <hr style="border:none;border-top:1px solid var(--adm-border);margin:0 0 20px;">
 
                     <!-- ABOUT / VERSÃO -->
                     <!-- ABOUT -->
@@ -15474,7 +15498,86 @@
             }
         }
 
-        async function loadCTs() {
+        async function loadAWSConfig() {
+            var el = document.getElementById('awsConfigPanel');
+            if (!el) return;
+            el.innerHTML = '<div style="text-align:center;color:var(--adm-text-3);font-size:12px;padding:8px;">Verificando...</div>';
+            try {
+                var res = await secureFetch('getAWSStatus', {});
+                if (!res.success) { el.innerHTML = '<div style="color:#f87171;font-size:12px;padding:8px;">Erro: '+(res.message||'')+'</div>'; return; }
+                renderAWSPanel(el, res);
+            } catch(e) { el.innerHTML = '<div style="color:#f87171;font-size:12px;">Erro de conexão</div>'; }
+        }
+
+        function renderAWSPanel(el, res) {
+            var configured = res.configured; var colExists = res.collectionExists; var faceCount = res.faceCount || 0;
+            var statusColor = !configured ? '#f59e0b' : (!colExists ? '#60a5fa' : '#4ade80');
+            var statusText  = !configured ? 'Não configurado' : (!colExists ? 'Credenciais OK — coleção não criada' : 'Ativo · ' + faceCount + ' face(s) indexada(s)');
+            var h = '';
+            h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">';
+            h += '<span style="width:8px;height:8px;border-radius:50%;background:'+statusColor+';flex-shrink:0;"></span>';
+            h += '<span style="font-size:12px;color:'+statusColor+';font-weight:700;">'+statusText+'</span></div>';
+            h += '<div style="display:grid;gap:7px;margin-bottom:10px;">';
+            h += '<div><div style="font-size:10px;font-weight:700;color:var(--adm-text-3);margin-bottom:3px;">ACCESS KEY ID</div>';
+            h += '<input id="awsAccessKey" type="password" placeholder="AKIA..."'+(configured?' value="••••••••••••••••"':'')+' style="width:100%;box-sizing:border-box;padding:8px 10px;background:rgba(0,0,0,0.2);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:11px;font-family:monospace;"></div>';
+            h += '<div><div style="font-size:10px;font-weight:700;color:var(--adm-text-3);margin-bottom:3px;">SECRET ACCESS KEY</div>';
+            h += '<input id="awsSecretKey" type="password" placeholder="wJalrXUtn..." style="width:100%;box-sizing:border-box;padding:8px 10px;background:rgba(0,0,0,0.2);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:11px;font-family:monospace;"></div>';
+            h += '<div><div style="font-size:10px;font-weight:700;color:var(--adm-text-3);margin-bottom:3px;">REGIÃO</div>';
+            h += '<select id="awsRegion" style="width:100%;padding:8px 10px;background:rgba(0,0,0,0.2);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:11px;">';
+            [['us-east-1','US Leste (N. Virginia)'],['us-west-2','US Oeste (Oregon)'],['sa-east-1','América do Sul (São Paulo)'],['eu-west-1','Europa (Irlanda)'],['ap-southeast-1','Ásia (Singapura)']].forEach(function(r){ h += '<option value="'+r[0]+'"'+(res.region===r[0]?' selected':'')+'>'+r[0]+' — '+r[1]+'</option>'; });
+            h += '</select></div></div>';
+            h += '<div style="display:flex;gap:6px;">';
+            h += '<button onclick="salvarAWSCredenciais()" style="flex:1;padding:8px;background:var(--adm-primary);color:#000;border:none;border-radius:7px;font-size:11px;font-weight:800;cursor:pointer;">💾 Salvar</button>';
+            if (configured && !colExists) h += '<button onclick="criarColecaoRek()" style="flex:1;padding:8px;background:rgba(96,165,250,0.12);color:#60a5fa;border:1px solid rgba(96,165,250,0.3);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">🗂 Criar Coleção</button>';
+            if (colExists) h += '<button onclick="reindexarTodasFaces()" style="flex:1;padding:8px;background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.25);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">🔄 Reindexar</button>';
+            h += '</div>';
+            h += '<div id="awsMsg" style="margin-top:7px;font-size:11px;text-align:center;min-height:14px;"></div>';
+            el.innerHTML = h;
+        }
+
+        async function salvarAWSCredenciais() {
+            var ak = (document.getElementById('awsAccessKey')||{}).value||'';
+            var sk = (document.getElementById('awsSecretKey')||{}).value||'';
+            var rg = (document.getElementById('awsRegion')||{}).value||'us-east-1';
+            var m  = document.getElementById('awsMsg');
+            if (ak==='••••••••••••••••') ak='';
+            var payload = { awsRegion: rg };
+            if (ak) payload.awsAccessKey = ak;
+            if (sk) payload.awsSecretKey = sk;
+            if (m) m.textContent='⏳ Salvando...';
+            try { var r=await secureFetch('saveAWSConfig',payload); if(m) m.textContent=r.success?'✅ '+r.message:'❌ '+r.message; if(r.success) setTimeout(loadAWSConfig,800); } catch(e){ if(m) m.textContent='❌ Erro'; }
+        }
+
+        async function criarColecaoRek() {
+            var m = document.getElementById('awsMsg');
+            if (m) m.textContent='⏳ Criando coleção...';
+            try { var r=await secureFetch('createRekCollection',{}); if(m) m.textContent=r.success?'✅ '+r.message:'❌ '+r.message; if(r.success) setTimeout(loadAWSConfig,800); } catch(e){ if(m) m.textContent='❌ Erro'; }
+        }
+
+        async function indexarFaceAluno(email, fotoBase64) {
+            try { var r=await secureFetch('indexFaceRek',{email:email,fotoBase64:fotoBase64}); return r; } catch(e){ return null; }
+        }
+
+        async function reindexarTodasFaces() {
+            if (!confirm('Reindexar fotos de todos os alunos no AWS Rekognition?\n\nPode demorar alguns minutos.')) return;
+            var m = document.getElementById('awsMsg');
+            if (m) m.textContent='⏳ Buscando alunos...';
+            try {
+                var rd = await secureFetch('getAlunos',{}); if(!rd.success){if(m)m.textContent='❌ Erro ao buscar alunos';return;}
+                var comFoto=(rd.alunos||[]).filter(function(a){return a.avatar&&a.avatar.length>100;});
+                var ok=0,erro=0;
+                for(var i=0;i<comFoto.length;i++){
+                    var a=comFoto[i]; if(m) m.textContent='⏳ '+(i+1)+'/'+comFoto.length+' — '+(a.nome||a.email);
+                    var r=await secureFetch('indexFaceRek',{email:a.email,fotoBase64:a.avatar});
+                    if(r&&r.success) ok++; else erro++;
+                    await new Promise(function(res){setTimeout(res,400);});
+                }
+                if(m) m.textContent='✅ '+ok+' indexados, '+erro+' erros.';
+                setTimeout(loadAWSConfig,1500);
+            } catch(e){if(m)m.textContent='❌ Erro: '+e.message;}
+        }
+
+                async function loadCTs() {
             try {
                 const data = await secureFetch('getCTsList', {});
                 if (data.success && data.cts) {
@@ -21350,7 +21453,7 @@
                     }
                 } catch(e) {}
                 loadModulesConfig(); loadSystemHealth(); loadAdminProfile();
-                loadGradConfig(); renderGradSystemAdmin(); loadCTScheduleAdmin(); initAdmAulaForm();
+                loadGradConfig(); renderGradSystemAdmin(); loadCTScheduleAdmin(); initAdmAulaForm(); loadAWSConfig();
                 loadAdminTreinos(); loadQRCodes();
                 (async function() {
                     await loadAdminCTs();
@@ -37312,15 +37415,37 @@
             document.getElementById('fotoProgressoTxt').textContent = 'Enviando para análise...';
             document.getElementById('fotoProgressoSub').textContent = alunos.length + ' alunos na base · IA identificando rostos';
 
-            // 3. Chama o proxy no GAS — ele monta o prompt e chama a API Anthropic
-            //    (evita CORS, protege a chave da API, usa fotos de perfil do servidor)
+            // 3. Motor: AWS Rekognition (preciso) ou Claude AI (padrão)
+            var _usarRek = document.getElementById('motorRekognition') && document.getElementById('motorRekognition').checked;
             try {
-                var proxyResp = await secureFetch('analisarFotoTreino', {
-                    fotoBase64: _fotoBase64,
-                    mimeType:   'image/jpeg',
-                    alunos:     JSON.stringify(_alunosList),
-                    temFotos:   comFoto.length > 0
-                });
+                var proxyResp;
+                if (_usarRek) {
+                    document.getElementById('fotoProgressoSub').textContent = '⚡ AWS Rekognition identificando rostos...';
+                    proxyResp = await secureFetch('searchFaceRek', {
+                        fotoBase64: _fotoBase64,
+                        ct:         currentUser ? (currentUser.ct || '') : '',
+                        threshold:  80
+                    });
+                    // Normaliza para o formato esperado pelo renderResultado
+                    if (proxyResp && proxyResp.success && proxyResp.matches) {
+                        proxyResp.resultado = {
+                            reconhecidos: proxyResp.matches.map(function(m) {
+                                return { nome: m.nome, email: m.email, confianca: m.similarity, descricao: 'Faixa: ' + (m.faixa||'?') };
+                            }),
+                            total_pessoas: proxyResp.matches.length,
+                            nao_identificados: 0,
+                            observacoes: '⚡ AWS Rekognition — ' + proxyResp.matches.length + ' match(es)',
+                            motor: 'rekognition'
+                        };
+                    }
+                } else {
+                    proxyResp = await secureFetch('analisarFotoTreino', {
+                        fotoBase64: _fotoBase64,
+                        mimeType:   'image/jpeg',
+                        alunos:     JSON.stringify(_alunosList),
+                        temFotos:   comFoto.length > 0
+                    });
+                }
 
                 if (!proxyResp || !proxyResp.success) {
                     throw new Error(proxyResp && proxyResp.message ? proxyResp.message : 'Erro ao analisar foto.');
