@@ -37486,43 +37486,68 @@
             document.getElementById('fotoProgressoTxt').textContent = 'Processando...';
             document.getElementById('fotoProgressoSub').textContent = 'Identificando ' + alunos.length + ' alunos cadastrados';
 
-            // 3. Motor: AWS Rekognition (preciso) ou // CTM seleciona automaticamente o melhor motor disponível
-            var _rekDisponivel = (function() {
-                try { return window._rekConfigured === true; } catch(e) { return false; }
-            })();
-            var _usarRek = _rekDisponivel;
+            // 3. Motor em cascata: Rekognition (primário) → CTM Vision (fallback)
             try {
-                var proxyResp;
-                if (_usarRek) {
-                    document.getElementById('fotoProgressoSub').textContent = 'CTM identificando presenças...';
-                    proxyResp = await secureFetch('searchFaceRek', {
+                var proxyResp = null;
+                var _motorUsado = 'vision';
+                var _rekErro = null;
+
+                // ── ETAPA 1: tenta Rekognition (primário) ────────────────────
+                document.getElementById('fotoProgressoSub').textContent = 'CTM identificando presenças...';
+                try {
+                    var rekResp = await secureFetch('searchFaceRek', {
                         fotoBase64: _fotoBase64,
                         ct:         currentUser ? (currentUser.ct || '') : '',
-                        threshold:  80
+                        threshold:  75
                     });
-                    // Normaliza para o formato esperado pelo renderResultado
-                    if (proxyResp && proxyResp.success && proxyResp.matches) {
-                        proxyResp.resultado = {
-                            reconhecidos: proxyResp.matches.map(function(m) {
-                                return { nome: m.nome, email: m.email, confianca: m.similarity, descricao: 'Faixa: ' + (m.faixa||'?') };
-                            }),
-                            total_pessoas: proxyResp.matches.length,
-                            nao_identificados: 0,
-                            observacoes: 'CTM identificou ' + proxyResp.matches.length + ' aluno(s) presente(s)',
-                            motor: 'rekognition'
+
+                    if (rekResp && rekResp.success && rekResp.matches && rekResp.matches.length >= 0) {
+                        // Rekognition respondeu com sucesso — usa mesmo com 0 matches
+                        proxyResp = {
+                            success: true,
+                            resultado: {
+                                reconhecidos: rekResp.matches.map(function(m) {
+                                    return {
+                                        nome:      m.nome,
+                                        email:     m.email,
+                                        confianca: m.similarity,
+                                        descricao: 'Faixa: ' + (m.faixa || '?')
+                                    };
+                                }),
+                                total_pessoas: rekResp.matches.length || 0,
+                                nao_identificados: 0,
+                                observacoes: 'CTM identificou ' + rekResp.matches.length + ' aluno(s)',
+                                motor: 'rekognition'
+                            }
                         };
+                        _motorUsado = 'rekognition';
+                    } else {
+                        // Rekognition falhou — guarda o motivo para decidir o fallback
+                        _rekErro = rekResp ? (rekResp.message || 'Rekognition indisponível') : 'Sem resposta';
                     }
-                } else {
+                } catch(eRek) {
+                    _rekErro = eRek.message || 'Erro ao acessar reconhecimento facial';
+                }
+
+                // ── ETAPA 2: fallback para CTM Vision se Rekognition falhou ──
+                if (!proxyResp) {
+                    document.getElementById('fotoProgressoSub').textContent = 'CTM analisando visualmente...';
                     proxyResp = await secureFetch('analisarFotoTreino', {
                         fotoBase64: _fotoBase64,
                         mimeType:   'image/jpeg',
                         alunos:     JSON.stringify(_alunosList),
                         temFotos:   comFoto.length > 0
                     });
+                    _motorUsado = 'vision';
                 }
 
                 if (!proxyResp || !proxyResp.success) {
-                    throw new Error(proxyResp && proxyResp.message ? proxyResp.message : 'Erro ao analisar foto.');
+                    // Se créditos esgotados no Vision e Rek também falhou — informa claramente
+                    var _msg = (proxyResp && proxyResp.message) ? proxyResp.message : 'Erro ao analisar foto.';
+                    if (proxyResp && proxyResp.creditosEsgotados) {
+                        _msg = '📸 Limite de análises do mês atingido. Faça upgrade do plano para continuar.';
+                    }
+                    throw new Error(_msg);
                 }
 
                 var resultado = proxyResp.resultado;
