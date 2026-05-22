@@ -9106,17 +9106,9 @@
                                     <div style="font-size:10px;color:var(--adm-text-3);margin-top:4px;line-height:1.4;">A busca será restrita aos alunos deste CT (mais rápido e preciso).</div>
                                 </div>
 
-                                <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(0,0,0,0.15);border-radius:8px;margin-bottom:8px;">
-                                    <span style="font-size:10px;font-weight:700;color:var(--adm-text-3);">🔍 MOTOR DE ANÁLISE</span>
-                                    <div style="display:flex;gap:10px;">
-                                        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:var(--adm-text-2);">
-                                            <input type="radio" name="motorFoto" value="claude" checked style="accent-color:var(--adm-primary);"> Claude AI
-                                        </label>
-                                        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:#f59e0b;font-weight:700;">
-                                            <input type="radio" id="motorRekognition" name="motorFoto" value="rekognition" style="accent-color:#f59e0b;"> ⚡ Rekognition
-                                        </label>
-                                    </div>
-                                </div>
+                                <!-- Motor selecionado automaticamente pelo sistema CTM -->
+                                <input type="radio" name="motorFoto" value="claude" checked id="motorClaudeHidden" style="display:none;">
+                                <input type="radio" name="motorFoto" value="rekognition" id="motorRekognition" style="display:none;">
                                 <button onclick="fotoAnalisar()" 
                                     style="width:100%;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;">
                                     📸 Confirmar Presença
@@ -9142,7 +9134,7 @@
                             <div id="fotoFase2" style="display:none;text-align:center;padding:36px 0;">
                                 <div class="foto-spinner"></div>
                                 <div id="fotoProgressoTxt" style="margin-top:16px;font-size:13px;font-weight:600;color:var(--adm-primary);">Analisando foto...</div>
-                                <div id="fotoProgressoSub" style="margin-top:4px;font-size:11px;color:var(--adm-text-3);">Aguarde enquanto a IA identifica os alunos</div>
+                                <div id="fotoProgressoSub" style="margin-top:4px;font-size:11px;color:var(--adm-text-3);">CTM está processando a imagem</div>
                             </div>
 
                             <!-- FASE 3: resultado -->
@@ -15525,6 +15517,8 @@
                 }
                 if (wrapper) wrapper.style.display = '';
                 if (!res.success) { el.innerHTML = '<div style="color:#f87171;font-size:12px;padding:8px;">Erro: '+(res.message||'')+'</div>'; return; }
+                // Informa o motor automático se Rekognition está pronto
+                window._rekConfigured = !!(res.rekReady);
                 renderAWSPanel(el, res);
             } catch(e) { el.innerHTML = '<div style="color:#f87171;font-size:12px;">Erro de conexão</div>'; }
         }
@@ -15580,7 +15574,7 @@
         }
 
         async function reindexarTodasFaces() {
-            if (!confirm('Reindexar fotos de todos os alunos no AWS Rekognition?\n\nPode demorar alguns minutos.')) return;
+            if (!confirm('Reindexar reconhecimento facial de todos os alunos?\n\nPode demorar alguns minutos.')) return;
             var m = document.getElementById('awsMsg');
             if (m) m.textContent='⏳ Buscando alunos...';
             try {
@@ -37434,8 +37428,8 @@
         window.fotoAnalisar = async function() {
             if (!_fotoBase64) return;
             setFase(2);
-            document.getElementById('fotoProgressoTxt').textContent = 'Carregando lista de alunos...';
-            document.getElementById('fotoProgressoSub').textContent = 'Aguarde enquanto a IA identifica os alunos';
+            document.getElementById('fotoProgressoTxt').textContent = 'Processando...';
+            document.getElementById('fotoProgressoSub').textContent = 'CTM está processando a imagem';
 
             // 1. Busca lista de alunos com fotos do backend
             var alunos = [];
@@ -37464,15 +37458,18 @@
             // 2. Conta alunos com foto de perfil cadastrada
             var comFoto = alunos.filter(function(a) { return a.temFoto && a.avatar && a.avatar.length > 50; });
 
-            document.getElementById('fotoProgressoTxt').textContent = 'Enviando para análise...';
-            document.getElementById('fotoProgressoSub').textContent = alunos.length + ' alunos na base · IA identificando rostos';
+            document.getElementById('fotoProgressoTxt').textContent = 'Processando...';
+            document.getElementById('fotoProgressoSub').textContent = 'Identificando ' + alunos.length + ' alunos cadastrados';
 
-            // 3. Motor: AWS Rekognition (preciso) ou Claude AI (padrão)
-            var _usarRek = document.getElementById('motorRekognition') && document.getElementById('motorRekognition').checked;
+            // 3. Motor: AWS Rekognition (preciso) ou // CTM seleciona automaticamente o melhor motor disponível
+            var _rekDisponivel = (function() {
+                try { return window._rekConfigured === true; } catch(e) { return false; }
+            })();
+            var _usarRek = _rekDisponivel;
             try {
                 var proxyResp;
                 if (_usarRek) {
-                    document.getElementById('fotoProgressoSub').textContent = '⚡ AWS Rekognition identificando rostos...';
+                    document.getElementById('fotoProgressoSub').textContent = 'CTM identificando presenças...';
                     proxyResp = await secureFetch('searchFaceRek', {
                         fotoBase64: _fotoBase64,
                         ct:         currentUser ? (currentUser.ct || '') : '',
@@ -37486,7 +37483,7 @@
                             }),
                             total_pessoas: proxyResp.matches.length,
                             nao_identificados: 0,
-                            observacoes: '⚡ AWS Rekognition — ' + proxyResp.matches.length + ' match(es)',
+                            observacoes: 'CTM identificou ' + proxyResp.matches.length + ' aluno(s) presente(s)',
                             motor: 'rekognition'
                         };
                     }
@@ -37552,10 +37549,10 @@
             // Aviso de precisão
             var aviso = document.getElementById('fotoAvisoFotos');
             if (!temFotos) {
-                aviso.innerHTML = '⚠️ <strong>Sem fotos de perfil cadastradas.</strong> A IA usou apenas faixa e posição — pode errar. Revise a lista abaixo antes de confirmar. Para mais precisão, peça aos alunos para cadastrarem foto de perfil.';
+                aviso.innerHTML = '⚠️ Sem fotos de perfil cadastradas. Revise a lista antes de confirmar e peça aos alunos para cadastrarem foto de perfil.';
                 aviso.style.display = 'block';
             } else {
-                aviso.innerHTML = '✅ Comparando com <strong>' + qtdFotos + '</strong> foto(s) de perfil cadastrada(s).';
+                aviso.innerHTML = '✅ CTM identificou <strong>' + reconhecidos.length + '</strong> aluno(s) presente(s).';
                 aviso.style.display = 'block';
             }
 
