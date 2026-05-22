@@ -37063,24 +37063,49 @@
             var sel = document.getElementById('fotoCtFiltro');
             if (!sel || sel.options.length > 1) return; // já populado
 
+            // IDs de modalidades conhecidas — NÃO são nomes de CT
+            var _MODALIDADE_IDS = ['bjj','bjj_kids','muay_thai','muay_thai_khan','muay_thai_fmce',
+                'kickboxing','judo','taekwondo','wrestling','boxe','luta_livre','capoeira',
+                'jiujitsu','jiu_jitsu','karate','mma','grappling','submission'];
+
+            function _ehModalidade(s) {
+                return _MODALIDADE_IDS.indexOf((s||'').toLowerCase().trim()) !== -1;
+            }
+            function _ehCTValido(s) {
+                if (!s || typeof s !== 'string') return false;
+                if (_ehModalidade(s)) return false;
+                if (s.length < 2) return false;
+                return true;
+            }
+
             var ctsList = [];
             if (typeof allCTs !== 'undefined' && Array.isArray(allCTs) && allCTs.length > 0) {
                 ctsList = allCTs
-                  .map(function(c){
-                    if (typeof c === 'string') return c;
-                    return c.name || c.nome || c.ct || '';
+                  .map(function(ct){
+                    // Pega apenas o nome real do CT, nunca o id de modalidade
+                    if (typeof ct === 'string') return ct;
+                    return ct.name || ct.nome || '';  // ignora ct.ct que pode ser modalidade
                   })
-                  .filter(function(s){ return s && typeof s === 'string'; });
+                  .filter(_ehCTValido);
             }
-            // Acrescenta CTs do currentUser (ctsliberados + ctsProfessor)
+            // Acrescenta CTs do currentUser (só ctsliberados e ct principal, nunca modalidades)
             if (typeof currentUser !== 'undefined' && currentUser) {
-                var addLib = (currentUser.ctsliberados||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
-                var addPrf = (currentUser.ctsProfessor||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
-                if (currentUser.ct) addLib.unshift(currentUser.ct);
-                [].concat(addLib, addPrf).forEach(function(c){
-                    if (c && ctsList.indexOf(c) === -1) ctsList.push(c);
+                var addLib = (currentUser.ctsliberados||'').split(',').map(function(s){return s.trim();}).filter(_ehCTValido);
+                var addPrf = (currentUser.ctsProfessor||'').split(',').map(function(s){return s.trim();}).filter(_ehCTValido);
+                if (currentUser.ct && _ehCTValido(currentUser.ct)) addLib.unshift(currentUser.ct);
+                [].concat(addLib, addPrf).forEach(function(ct){
+                    if (ct && ctsList.indexOf(ct) === -1) ctsList.push(ct);
                 });
             }
+
+            // Remove duplicatas case-insensitive
+            var vistos = {};
+            ctsList = ctsList.filter(function(ct) {
+                var key = ct.toLowerCase().trim();
+                if (vistos[key]) return false;
+                vistos[key] = true;
+                return true;
+            });
 
             ctsList.forEach(function(ct) {
                 var opt = document.createElement('option');
