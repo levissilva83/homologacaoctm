@@ -37571,21 +37571,25 @@
             _selecionados = {};
             document.getElementById('fotoResultImg').src = _fotoDataUrl;
 
-            // Aviso de precisão
-            var aviso = document.getElementById('fotoAvisoFotos');
-            if (!temFotos) {
-                aviso.innerHTML = '⚠️ Sem fotos de perfil cadastradas. Revise a lista antes de confirmar e peça aos alunos para cadastrarem foto de perfil.';
-                aviso.style.display = 'block';
-            } else {
-                aviso.innerHTML = '✅ CTM identificou <strong>' + reconhecidos.length + '</strong> aluno(s) presente(s).';
-                aviso.style.display = 'block';
-            }
+            // Declara reconhecidos PRIMEIRO antes de qualquer uso
+            var reconhecidos = (res && res.reconhecidos ? res.reconhecidos : []).filter(function(r){
+                return r && parseInt(r.confianca) >= 65;
+            });
 
             // Mapa de nome → aluno (para cruzar com resultado da IA)
             var nomeMap = {};
-            _alunosList.forEach(function(a) { nomeMap[a.nome.toLowerCase().trim()] = a; });
+            if (_alunosList) _alunosList.forEach(function(a) { if (a && a.nome) nomeMap[a.nome.toLowerCase().trim()] = a; });
 
-            var reconhecidos = (res.reconhecidos || []).filter(function(r){ return r.confianca >= 65; }); // threshold elevado para evitar falsos positivos
+            // Aviso de precisão
+            var aviso = document.getElementById('fotoAvisoFotos');
+            if (aviso) {
+                if (!temFotos) {
+                    aviso.innerHTML = '⚠️ Sem fotos de perfil cadastradas. Revise a lista antes de confirmar e peça aos alunos para cadastrarem foto de perfil.';
+                } else {
+                    aviso.innerHTML = '✅ CTM identificou <strong>' + reconhecidos.length + '</strong> aluno(s) presente(s).';
+                }
+                aviso.style.display = 'block';
+            }
             var emailsRec = {};
 
             // ── Secção reconhecidos ──────────────────────────
