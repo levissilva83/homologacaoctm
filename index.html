@@ -21648,9 +21648,10 @@
 
         function switchAdminTab(tabName, evt) {
             if (tabName === 'adm-financeiro') {
-                document.querySelectorAll('.adm-tab').forEach(function(t){ t.classList.remove('active'); t.style.display='none'; });
+                // Usa APENAS classes — sem inline style que bloqueia outras abas
+                document.querySelectorAll('.adm-tab').forEach(function(t){ t.classList.remove('active'); });
                 var fTab = document.getElementById('adm-financeiro');
-                if (fTab) { fTab.classList.add('active'); fTab.style.display='block'; }
+                if (fTab) fTab.classList.add('active');
                 document.querySelectorAll('#adminNav .bnav-btn').forEach(function(b){ b.classList.remove('active'); });
                 if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
                 if (typeof initFinanceiro === 'function') initFinanceiro();
@@ -31755,8 +31756,7 @@
         function switchFinTab(tab) {
             ['dashboard','cobrancas','fluxo','alertas'].forEach(function(t) {
                 var p = document.getElementById('fPanel_' + t);
-                var b = document.getElementById('fTab' + t.charAt(0).toUpperCase() + t.slice(1).replace('cobrancas','Cobr').replace('alertas','Alertas').replace('fluxo','Fluxo').replace('dashboard','Dash'));
-                if (p) p.style.display = t === tab ? '' : 'none';
+                if (p) p.style.display = t === tab ? 'block' : 'none';
             });
             // Botões
             document.querySelectorAll('.fin-tab-btn').forEach(function(b) {
@@ -31776,8 +31776,14 @@
 
         // ── Inicializa ao abrir a aba ─────────────────────────────────────
         function initFinanceiro() {
-            _finData = {};
-            switchFinTab('dashboard');
+            // Só reseta se for a primeira visita (não recarrega ao trocar de aba e voltar)
+            if (!_finData._initialized) {
+                _finData = { _initialized: true };
+                switchFinTab('dashboard');
+            }
+            // Garante que a sub-aba ativa está visível
+            var activePanel = document.querySelector('[id^="fPanel_"]:not([style*="display:none"])');
+            if (!activePanel) switchFinTab('dashboard');
         }
 
         // ── Formato monetário ─────────────────────────────────────────────
@@ -31799,10 +31805,34 @@
         }
 
         // ── Dashboard ─────────────────────────────────────────────────────
+        function _finLoadChartJS(cb) {
+            if (typeof Chart !== 'undefined') { cb(); return; }
+            var s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
+            s.onload  = cb;
+            s.onerror = function() { console.warn('[Fin] Chart.js não carregou'); cb(); };
+            document.head.appendChild(s);
+        }
+
         async function loadFinanceiroDashboard() {
+            // Mostra skeleton enquanto carrega
+            var grid = document.getElementById('fKpiGrid');
+            if (grid) grid.innerHTML = [1,2,3,4,5,6,7,8].map(function(){
+                return '<div class="fSkeleton" style="height:90px;border-radius:14px;"></div>';
+            }).join('');
+
             try {
-                var r = await secureFetch('getFinanceiroDashboard', {});
-                if (!r.success) return;
+                // Carrega Chart.js e dados em paralelo
+                var chartPromise = new Promise(function(res) { _finLoadChartJS(res); });
+                var dataPromise  = secureFetch('getFinanceiroDashboard', {});
+
+                var r = await dataPromise;
+                await chartPromise; // garante Chart.js disponível antes de renderizar
+
+                if (!r || !r.success) {
+                    if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px;color:rgba(255,255,255,0.3);font-size:12px;">Nenhum dado financeiro encontrado ainda.</div>';
+                    return;
+                }
                 _finData.dash   = r;
                 _finData.loaded = true;
                 renderFinKPIs(r);
@@ -31810,7 +31840,10 @@
                 renderFinChartMetodos(r.metodos || {});
                 renderFinChartInad(r);
                 renderFinResumo(r);
-            } catch(e) { console.warn('[Fin] Dashboard error:', e.message); }
+            } catch(e) {
+                console.warn('[Fin] Dashboard error:', e.message);
+                if (grid) grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px;color:#f87171;font-size:12px;">Erro ao carregar dados financeiros.</div>';
+            }
         }
 
         function renderFinKPIs(d) {
@@ -31864,12 +31897,7 @@
             var sub = document.getElementById('fFatSubtitle');
             if (sub) sub.textContent = 'Total: ' + fFmt(total) + ' nos últimos 30 dias';
 
-            if (typeof Chart === 'undefined') {
-                var s = document.createElement('script');
-                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
-                s.onload = function() { _doRenderFat(ctx, labels, valores); };
-                document.head.appendChild(s);
-            } else { _doRenderFat(ctx, labels, valores); }
+            _doRenderFat(ctx, labels, valores); // Chart.js já foi carregado em loadFinanceiroDashboard
         }
 
         function _doRenderFat(ctx, labels, valores) {
@@ -31923,7 +31951,7 @@
                         tooltip:{ backgroundColor:'rgba(10,10,20,0.9)', titleColor:'#C9A23A', bodyColor:'#fff', callbacks:{ label:function(c){ return ' ' + c.label + ': ' + fFmt(c.raw); } } } } }
                 });
             };
-            typeof Chart !== 'undefined' ? doChart() : setTimeout(doChart, 1000);
+            doChart(); // Chart.js disponível (pré-carregado)
         }
 
         function renderFinChartInad(d) {
