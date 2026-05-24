@@ -11301,7 +11301,14 @@
 
                 <!-- Hero -->
                 <div class="stu-hero">
-                    <div class="stu-hero-avatar" id="stuAvatar">?</div>
+                    <!-- Avatar clicável para trocar foto -->
+                    <div style="position:relative;display:inline-block;cursor:pointer;" onclick="adminAbrirFotoAluno()">
+                        <div class="stu-hero-avatar" id="stuAvatar">?</div>
+                        <div style="position:absolute;bottom:-2px;right:-2px;width:22px;height:22px;border-radius:50%;background:#C9A23A;display:flex;align-items:center;justify-content:center;font-size:11px;border:2px solid var(--adm-bg);">📷</div>
+                    </div>
+                    <div style="font-size:10px;color:rgba(201,162,58,0.7);margin-top:4px;cursor:pointer;" onclick="adminAbrirFotoAluno()">Trocar foto</div>
+                    <input type="file" id="stuFotoInput" accept="image/*" style="display:none;" onchange="adminHandleFotoAluno(this)">
+                    <div id="stuFotoMsg" style="font-size:10px;min-height:14px;text-align:center;margin-top:2px;"></div>
                     <div class="stu-hero-name" id="stuHeroName">—</div>
                     <div class="stu-hero-email" id="stuHeroEmail">—</div>
                     <div id="stuHeroCategoriaIBJJF" style="display:none;font-size:11px;font-weight:700;color:var(--adm-primary);margin:2px 0 6px;"></div>
@@ -31328,8 +31335,11 @@
 
             // Usa _getHorariosHoje que já trata todos os formatos do sistema
             var hpdCT  = ctObj.horariosPorDia || {};
+            // _getHorariosHoje espera dayKey como STRING ('sex','sab'...), não Date
+            var JS_DAYS2 = ['dom','seg','ter','qua','qui','sex','sab'];
+            var dayKey2  = JS_DAYS2[hoje.getDay()];
             var horStr = typeof _getHorariosHoje === 'function'
-                ? _getHorariosHoje(hpdCT, hoje, ctObj.horarios || '', '')
+                ? _getHorariosHoje(hpdCT, dayKey2, ctObj.horarios || '', '')
                 : '';
 
             // Fallback: agrega todos os dias se o dia específico não tiver horário
@@ -31468,75 +31478,135 @@
         }
 
         function fv2RenderizarResultado() {
-            // ── Desenha foto + bounding boxes no canvas ──────────────────
             var canvas = document.getElementById('fv2Canvas');
             if (!canvas) return;
+
+            // ── Monta estrutura unificada de todos os rostos ──────────────
+            // Cada entry: { type:'match'|'unknown', face, matchIdx, naoIdx, bb }
+            _fv2.allFaces = [];
+            _fv2.matches.forEach(function(m, i) {
+                if (!m.boundingBox) return;
+                var bb = m.boundingBox;
+                _fv2.allFaces.push({
+                    type: 'match', matchIdx: i,
+                    bb: { left: bb.Left||0, top: bb.Top||0, width: bb.Width||0.1, height: bb.Height||0.1 }
+                });
+            });
+            _fv2.naoIdent.forEach(function(face, i) {
+                _fv2.allFaces.push({
+                    type: 'unknown', naoIdx: i,
+                    bb: face.boundingBox
+                });
+            });
+
+            // ── Desenha canvas ────────────────────────────────────────────
             var img = new Image();
             img.onload = function() {
                 canvas.width  = img.naturalWidth;
                 canvas.height = img.naturalHeight;
+                canvas.style.cursor = 'pointer';
                 var ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-
                 var W = canvas.width, H = canvas.height;
+                var lw = Math.max(2, W/250);
+                var fs = Math.max(11, W/55);
 
-                // Reconhecidos → caixa verde
-                _fv2.matches.forEach(function(m) {
-                    if (!m.boundingBox) return;
-                    var bb = m.boundingBox;
-                    var x = (bb.Left||0)*W, y = (bb.Top||0)*H;
-                    var w = (bb.Width||0.1)*W, h = (bb.Height||0.1)*H;
-                    ctx.strokeStyle = m.jaPresenteHoje ? '#f59e0b' : '#4ade80';
-                    ctx.lineWidth = Math.max(2, W/300);
-                    ctx.strokeRect(x, y, w, h);
+                function drawFaces(highlightIdx) {
+                    ctx.clearRect(0, 0, W, H);
+                    ctx.drawImage(img, 0, 0);
 
-                    // Label de nome
-                    var fs = Math.max(12, W/50);
-                    ctx.font = 'bold ' + fs + 'px sans-serif';
-                    var label = m.jaPresenteHoje ? '✓ ' + (m.nome||'').split(' ')[0] : (m.nome||'').split(' ')[0];
-                    var lw = ctx.measureText(label).width + 8;
-                    ctx.fillStyle = m.jaPresenteHoje ? 'rgba(245,158,11,0.85)' : 'rgba(74,222,128,0.85)';
-                    ctx.fillRect(x, y - fs - 6, lw, fs + 8);
-                    ctx.fillStyle = '#000';
-                    ctx.fillText(label, x + 4, y - 4);
-                });
-
-                // Não identificados → caixa vermelha
-                _fv2.naoIdent.forEach(function(face, idx) {
-                    var bb = face.boundingBox;
-                    var x = bb.left*W, y = bb.top*H, w = bb.width*W, h = bb.height*H;
-                    ctx.strokeStyle = '#f87171';
-                    ctx.lineWidth   = Math.max(2, W/300);
-                    ctx.setLineDash([6,3]);
-                    ctx.strokeRect(x, y, w, h);
-                    ctx.setLineDash([]);
-
-                    var fs = Math.max(12, W/50);
-                    ctx.font = 'bold ' + fs + 'px sans-serif';
-                    var label = '? #' + (idx+1);
-                    var lw = ctx.measureText(label).width + 8;
-                    ctx.fillStyle = 'rgba(248,113,113,0.85)';
-                    ctx.fillRect(x, y - fs - 6, lw, fs + 8);
-                    ctx.fillStyle = '#fff';
-                    ctx.fillText(label, x + 4, y - 4);
-                });
-
-                // Click no canvas → abre vínculo manual
-                canvas.onclick = function(evt) {
-                    var rect = canvas.getBoundingClientRect();
-                    var scaleX = canvas.width  / rect.width;
-                    var scaleY = canvas.height / rect.height;
-                    var cx = (evt.clientX - rect.left) * scaleX;
-                    var cy = (evt.clientY - rect.top)  * scaleY;
-
-                    // Verifica se clicou em rosto não identificado
-                    _fv2.naoIdent.forEach(function(face, idx) {
-                        var bb = face.boundingBox;
+                    _fv2.allFaces.forEach(function(entry, idx) {
+                        var bb   = entry.bb;
                         var x = bb.left*W, y = bb.top*H, w = bb.width*W, h = bb.height*H;
-                        if (cx >= x && cx <= x+w && cy >= y && cy <= y+h) {
-                            fv2AbrirVinculoManual(face, idx);
+                        var isHover = idx === highlightIdx;
+
+                        if (entry.type === 'match') {
+                            var m = _fv2.matches[entry.matchIdx];
+                            var cor = m.jaPresenteHoje ? '#f59e0b' : (m.visitante ? '#a78bfa' : '#4ade80');
+
+                            // Halo de hover
+                            if (isHover) {
+                                ctx.strokeStyle = '#fff';
+                                ctx.lineWidth = lw + 2;
+                                ctx.strokeRect(x-2, y-2, w+4, h+4);
+                            }
+                            ctx.strokeStyle = cor;
+                            ctx.lineWidth = lw;
+                            ctx.setLineDash([]);
+                            ctx.strokeRect(x, y, w, h);
+
+                            // Label nome + ✏️
+                            ctx.font = 'bold ' + fs + 'px sans-serif';
+                            var label = (m.nome||'?').split(' ')[0] + (m.jaPresenteHoje ? ' ✓' : '') + (isHover ? ' ✏️' : '');
+                            var tw = ctx.measureText(label).width + 10;
+                            ctx.fillStyle = isHover ? '#fff' : cor;
+                            ctx.fillRect(x, y - fs - 8, tw, fs + 10);
+                            ctx.fillStyle = '#000';
+                            ctx.fillText(label, x + 5, y - 3);
+
+                        } else {
+                            // Não identificado
+                            if (isHover) {
+                                ctx.strokeStyle = '#fff';
+                                ctx.lineWidth = lw + 2;
+                                ctx.setLineDash([]);
+                                ctx.strokeRect(x-2, y-2, w+4, h+4);
+                            }
+                            ctx.strokeStyle = '#f87171';
+                            ctx.lineWidth = lw;
+                            ctx.setLineDash([5, 3]);
+                            ctx.strokeRect(x, y, w, h);
+                            ctx.setLineDash([]);
+
+                            ctx.font = 'bold ' + fs + 'px sans-serif';
+                            var label2 = isHover ? '👆 Quem é?' : ('? #' + (entry.naoIdx + 1));
+                            var tw2 = ctx.measureText(label2).width + 10;
+                            ctx.fillStyle = isHover ? '#fff' : 'rgba(248,113,113,0.9)';
+                            ctx.fillRect(x, y - fs - 8, tw2, fs + 10);
+                            ctx.fillStyle = isHover ? '#000' : '#fff';
+                            ctx.fillText(label2, x + 5, y - 3);
                         }
                     });
+                }
+
+                drawFaces(-1);
+
+                // ── Hover no canvas ───────────────────────────────────────
+                var _hoverIdx = -1;
+                canvas.onmousemove = function(evt) {
+                    var rect = canvas.getBoundingClientRect();
+                    var cx = (evt.clientX - rect.left) * (W / rect.width);
+                    var cy = (evt.clientY - rect.top)  * (H / rect.height);
+                    var newHover = -1;
+                    _fv2.allFaces.forEach(function(entry, idx) {
+                        var bb = entry.bb;
+                        var x = bb.left*W, y = bb.top*H, w = bb.width*W, h = bb.height*H;
+                        if (cx >= x && cx <= x+w && cy >= y && cy <= y+h) newHover = idx;
+                    });
+                    if (newHover !== _hoverIdx) { _hoverIdx = newHover; drawFaces(_hoverIdx); }
+                };
+                canvas.onmouseleave = function() { _hoverIdx = -1; drawFaces(-1); };
+
+                // ── Click — abre modal correto ────────────────────────────
+                canvas.onclick = function(evt) {
+                    var rect = canvas.getBoundingClientRect();
+                    var cx = (evt.clientX - rect.left) * (W / rect.width);
+                    var cy = (evt.clientY - rect.top)  * (H / rect.height);
+
+                    for (var i = 0; i < _fv2.allFaces.length; i++) {
+                        var entry = _fv2.allFaces[i];
+                        var bb = entry.bb;
+                        var x = bb.left*W, y = bb.top*H, w = bb.width*W, h = bb.height*H;
+                        if (cx >= x && cx <= x+w && cy >= y && cy <= y+h) {
+                            if (entry.type === 'unknown') {
+                                fv2AbrirVinculoManual(_fv2.naoIdent[entry.naoIdx], entry.naoIdx, false);
+                            } else {
+                                // Rosto reconhecido — abre modal de correção
+                                var m = _fv2.matches[entry.matchIdx];
+                                fv2AbrirCorrecaoReconhecido(m, entry.matchIdx);
+                            }
+                            break;
+                        }
+                    }
                 };
             };
             img.src = _fv2.fotoDataUrl;
@@ -31564,17 +31634,24 @@
             var listaRec = document.getElementById('fv2ListaReconhecidos');
             if (listaRec && _fv2.matches.length > 0) {
                 secRec.style.display = '';
-                listaRec.innerHTML = _fv2.matches.map(function(m) {
-                    var cor  = m.jaPresenteHoje ? 'rgba(245,158,11,0.12)' : 'rgba(74,222,128,0.06)';
-                    var bord = m.jaPresenteHoje ? 'rgba(245,158,11,0.25)' : 'rgba(74,222,128,0.18)';
+                listaRec.innerHTML = _fv2.matches.map(function(m, mIdx) {
+                    var cor  = m.jaPresenteHoje ? 'rgba(245,158,11,0.12)' : m.vinculadoManualmente ? 'rgba(96,165,250,0.06)' : 'rgba(74,222,128,0.06)';
+                    var bord = m.jaPresenteHoje ? 'rgba(245,158,11,0.25)' : m.vinculadoManualmente ? 'rgba(96,165,250,0.2)' : 'rgba(74,222,128,0.18)';
+                    var icon = m.jaPresenteHoje ? '✓' : m.vinculadoManualmente ? '🔗' : '✅';
                     var tag  = m.jaPresenteHoje
                         ? '<span style="font-size:9px;background:rgba(245,158,11,0.15);color:#f59e0b;padding:2px 6px;border-radius:5px;">Já presente</span>'
+                        : m.vinculadoManualmente
+                        ? '<span style="font-size:9px;background:rgba(96,165,250,0.12);color:#60a5fa;padding:2px 6px;border-radius:5px;">Vinculado</span>'
                         : '<span style="font-size:9px;background:rgba(74,222,128,0.12);color:#4ade80;padding:2px 6px;border-radius:5px;">✓ ' + m.similarity + '%</span>';
-                    return '<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:'+cor+';border:1px solid '+bord+';border-radius:9px;margin-bottom:5px;">' +
-                           '<div style="width:28px;height:28px;border-radius:50%;background:rgba(201,162,58,0.15);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">✅</div>' +
+                    return '<div id="fv2match_'+mIdx+'" style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:'+cor+';border:1px solid '+bord+';border-radius:9px;margin-bottom:5px;">' +
+                           '<div style="width:28px;height:28px;border-radius:50%;background:rgba(201,162,58,0.15);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">'+icon+'</div>' +
                            '<div style="flex:1;"><div style="font-size:12px;font-weight:700;color:#e2e8f0;">'+escapeHtml(m.nome||m.email)+'</div>' +
                            '<div style="font-size:10px;color:rgba(255,255,255,0.4);">'+escapeHtml(m.faixa||'')+'</div></div>' +
-                           tag + '</div>';
+                           tag +
+                           '<button onclick="fv2AbrirCorrecaoReconhecido(_fv2.matches['+mIdx+'],'+mIdx+')" ' +
+                           'title="Corrigir reconhecimento" ' +
+                           'style="flex-shrink:0;width:26px;height:26px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.5);font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✏️</button>' +
+                           '</div>';
                 }).join('');
             }
 
@@ -31586,10 +31663,11 @@
                 listaNao.innerHTML = _fv2.naoIdent.map(function(face, idx) {
                     return '<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.18);border-radius:9px;margin-bottom:5px;">' +
                            '<div style="width:28px;height:28px;border-radius:50%;background:rgba(248,113,113,0.12);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">❓</div>' +
-                           '<div style="flex:1;"><div style="font-size:12px;font-weight:700;color:#f87171;">Rosto #' + (idx+1) + '</div>' +
-                           '<div style="font-size:10px;color:rgba(255,255,255,0.35);">Clique no rosto na foto para vincular</div></div>' +
-                           '<button onclick="fv2AbrirVinculoManual(_fv2.naoIdent['+idx+'],'+idx+')" ' +
-                           'style="padding:5px 10px;background:rgba(201,162,58,0.12);color:#C9A23A;border:1px solid rgba(201,162,58,0.25);border-radius:7px;font-size:10px;font-weight:700;cursor:pointer;">Vincular</button>' +
+                           '<div style="flex:1;">' +
+                           '<div style="font-size:12px;font-weight:700;color:#f87171;">Rosto #' + (idx+1) + '</div>' +
+                           '<div style="font-size:10px;color:rgba(255,255,255,0.35);">Toque no rosto na foto ou no botão →</div></div>' +
+                           '<button onclick="fv2AbrirVinculoManual(_fv2.naoIdent['+idx+'],'+idx+',false)" ' +
+                           'style="padding:5px 12px;background:rgba(201,162,58,0.12);color:#C9A23A;border:1px solid rgba(201,162,58,0.25);border-radius:7px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap;">👤 Vincular</button>' +
                            '</div>';
                 }).join('');
             }
@@ -31598,9 +31676,11 @@
             var novos = _fv2.matches.filter(function(m){ return !m.jaPresenteHoje; }).length;
             var btn = document.getElementById('fv2BtnConfirmar');
             if (btn) {
-                btn.textContent = novos > 0 ? '✅ Confirmar ' + novos + ' presença(s)' : '(nenhuma nova presença)';
-                btn.disabled = novos === 0;
-                btn.style.opacity = novos === 0 ? '0.4' : '1';
+                var txt = novos.length > 0 ? '✅ Confirmar ' + novos.length + ' presença(s)' : '(nenhuma nova presença)';
+                if (visitantes.length > 0) txt += ' + ' + visitantes.length + ' visitante(s)';
+                btn.textContent = txt;
+                btn.disabled = novos.length === 0 && visitantes.length === 0;
+                btn.style.opacity = (novos.length === 0 && visitantes.length === 0) ? '0.4' : '1';
             }
         }
 
@@ -31663,6 +31743,117 @@
                     if (em) fv2ConfirmarVinculo(em, nom, ix);
                 }, { once: true });
             }, 100);
+        }
+
+        // Abre modal para CORRIGIR um rosto já reconhecido
+        function fv2AbrirCorrecaoReconhecido(match, matchIdx) {
+            var modal = document.getElementById('fv2ModalVinculo');
+            if (!modal) { fv2AbrirVinculoManual({ boundingBox: match.boundingBox || {} }, 0, true); return; }
+
+            var ctFiltro = document.getElementById('fotoCtFiltro');
+            var ctName   = (ctFiltro && ctFiltro.value) ? ctFiltro.value : (_fv2.ct || '');
+            var alunosCT = typeof allStudents !== 'undefined' ? allStudents.filter(function(s) {
+                return !ctName || (s.ct || s[4] || '') === ctName;
+            }) : [];
+
+            modal.innerHTML = '<div style="background:#16161f;border-radius:16px 16px 0 0;padding:20px 16px;width:100%;max-width:600px;max-height:75vh;overflow-y:auto;">' +
+                '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">' +
+                '<div><div style="font-size:14px;font-weight:800;color:#f59e0b;">✏️ Corrigir Reconhecimento</div>' +
+                '<div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;">Reconhecido como: <strong style="color:#e2e8f0;">' + escapeHtml(match.nome||match.email) + '</strong></div></div>' +
+                '<button onclick="fv2FecharModalVinculo()" style="border:none;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);width:28px;height:28px;border-radius:50%;font-size:14px;cursor:pointer;">✕</button></div>' +
+
+                // Opção: remover do reconhecido
+                '<div onclick="fv2RemoverReconhecido(' + matchIdx + ')" ' +
+                'style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;cursor:pointer;margin-bottom:8px;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.15);">' +
+                '<span style="font-size:18px;">❌</span>' +
+                '<div><div style="font-size:13px;font-weight:700;color:#f87171;">Não é esta pessoa</div>' +
+                '<div style="font-size:10px;color:rgba(255,255,255,0.35);">Move para "Não identificados"</div></div></div>' +
+
+                '<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.3);letter-spacing:.5px;margin-bottom:8px;">OU SELECIONE O ALUNO CORRETO:</div>' +
+                '<input id="fv2VinculoBusca" oninput="fv2FiltrarAlunosVinculo(this.value)" placeholder="🔍 Buscar..." ' +
+                'style="width:100%;box-sizing:border-box;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#fff;font-size:13px;margin-bottom:10px;">' +
+                '<div id="fv2ListaVinculo">' +
+                alunosCT.map(function(s) {
+                    var email = s.email || s[0] || '';
+                    var nome  = s.nome  || s.name || s[1] || email;
+                    var faixa = s.faixa || s[2] || '';
+                    return '<div class="fv2AlunoItem" data-email="' + escapeHtml(email) + '" data-nome="' + escapeHtml(nome) + '" data-idx="' + matchIdx + '"' +
+                           ' style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;cursor:pointer;margin-bottom:4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">' +
+                           '<div style="width:32px;height:32px;border-radius:50%;background:rgba(201,162,58,0.12);display:flex;align-items:center;justify-content:center;font-size:15px;">👤</div>' +
+                           '<div><div style="font-size:13px;font-weight:700;color:#e2e8f0;">' + escapeHtml(nome) + '</div>' +
+                           '<div style="font-size:10px;color:rgba(255,255,255,0.4);">' + escapeHtml(faixa) + '</div></div>' +
+                           (nome === (match.nome||match.email) ? '<span style="font-size:9px;color:#4ade80;margin-left:auto;">atual</span>' : '') +
+                           '</div>';
+                }).join('') +
+                '</div></div>';
+
+            modal.style.display = 'flex';
+            _fv2._faceParaVincular  = { boundingBox: match.boundingBox };
+            _fv2._idxParaVincular   = matchIdx;
+            _fv2._modoCorrecao      = true; // sinaliza que é correção, não vínculo novo
+
+            // Event delegation
+            setTimeout(function() {
+                var lista = document.getElementById('fv2ListaVinculo');
+                if (!lista) return;
+                lista.addEventListener('click', function(e) {
+                    var item = e.target.closest('.fv2AlunoItem');
+                    if (!item) return;
+                    var em  = item.getAttribute('data-email') || '';
+                    var nom = item.getAttribute('data-nome')  || '';
+                    var ix  = parseInt(item.getAttribute('data-idx') || '0');
+                    if (em) fv2CorrigirMatch(em, nom, ix);
+                }, { once: true });
+            }, 100);
+        }
+
+        // Corrige um match: troca o nome sem reindexar (só atualiza local)
+        function fv2CorrigirMatch(email, nome, matchIdx) {
+            fv2FecharModalVinculo();
+            var m = _fv2.matches[matchIdx];
+            if (!m) return;
+
+            // Busca dados do aluno correto
+            var alunoInfo = {};
+            if (typeof allStudents !== 'undefined') {
+                var found = allStudents.find(function(s){ return (s.email||s[0]||'') === email; });
+                if (found) alunoInfo = { faixa: found.faixa||found[2]||'' };
+            }
+
+            // Atualiza o match local
+            _fv2.matches[matchIdx] = Object.assign({}, m, {
+                email: email, nome: nome,
+                faixa: alunoInfo.faixa || m.faixa,
+                vinculadoManualmente: true,
+                similarity: m.similarity
+            });
+
+            var msg = document.getElementById('fv2ResultMsg');
+            if (msg) { msg.textContent = '✅ Corrigido para: ' + nome; msg.style.color = '#4ade80'; setTimeout(function(){ if(msg) msg.textContent=''; }, 2500); }
+
+            // Indexa o rosto correto no Rekognition (aprendizado)
+            fv2ConfirmarVinculo(email, nome, matchIdx);
+        }
+
+        // Remove um rosto dos reconhecidos e manda para não identificados
+        function fv2RemoverReconhecido(matchIdx) {
+            fv2FecharModalVinculo();
+            var m = _fv2.matches[matchIdx];
+            if (!m) return;
+
+            // Move para naoIdent
+            _fv2.naoIdent.push({
+                id: 'face_removed_' + matchIdx,
+                boundingBox: m.boundingBox
+                    ? { left: m.boundingBox.Left||0, top: m.boundingBox.Top||0, width: m.boundingBox.Width||0.1, height: m.boundingBox.Height||0.1 }
+                    : { left: 0, top: 0, width: 0.1, height: 0.1 }
+            });
+            // Remove do matches
+            _fv2.matches.splice(matchIdx, 1);
+
+            var msg = document.getElementById('fv2ResultMsg');
+            if (msg) { msg.textContent = '↩ Movido para não identificados'; msg.style.color = '#f59e0b'; setTimeout(function(){ if(msg) msg.textContent=''; }, 2500); }
+            fv2RenderizarResultado();
         }
 
         function fv2FecharModalVinculo() {
@@ -31728,7 +31919,9 @@
         }
 
         async function fv2ConfirmarTodos() {
-            var novos = _fv2.matches.filter(function(m){ return !m.jaPresenteHoje; });
+            // Visitantes (outros CTs) ficam separados — professor decide incluir
+            var novos      = _fv2.matches.filter(function(m){ return !m.jaPresenteHoje && !m.visitante; });
+            var visitantes = _fv2.matches.filter(function(m){ return !m.jaPresenteHoje && m.visitante; });
             if (novos.length === 0) return;
 
             var btn = document.getElementById('fv2BtnConfirmar');
@@ -32252,6 +32445,7 @@
 
             sel.innerHTML = '<option value="">— Selecione —</option>';
 
+            // Busca ctObj em allCTs
             var ctObj = null;
             if (typeof allCTs !== 'undefined' && Array.isArray(allCTs)) {
                 ctObj = allCTs.find(function(ct) {
@@ -32260,43 +32454,61 @@
             }
             if (!ctObj || typeof ctObj !== 'object') return;
 
-            // Dia da semana da data selecionada
-            var hoje = new Date();
+            // Converte data selecionada → dayKey string ('seg','ter',...,'dom')
+            var JS_DAY_KEYS = ['dom','seg','ter','qua','qui','sex','sab'];
+            var dataObj = new Date();
             if (dataStr) {
                 var p = dataStr.split('-');
-                hoje = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+                dataObj = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
             }
+            var dayKey = JS_DAY_KEYS[dataObj.getDay()]; // 'sex', 'sab', etc.
 
             var hpdCT  = ctObj.horariosPorDia || {};
-            var horStr = typeof _getHorariosHoje === 'function'
-                ? _getHorariosHoje(hpdCT, hoje, ctObj.horarios || '', '')
-                : '';
+            var horStr = '';
 
-            // Fallback: agrega todos os dias
-            if (!horStr) {
-                var DAY_KEYS = ['seg','ter','qua','qui','sex','sab','dom'];
+            // Usa _getHorariosHoje com dayKey (string), não com Date
+            if (typeof _getHorariosHoje === 'function') {
+                horStr = _getHorariosHoje(hpdCT, dayKey, ctObj.horarios || '', '');
+            }
+
+            // Fallback 1: tenta _global se o dia específico não tiver
+            if (!horStr && hpdCT._global) {
+                horStr = typeof _extrairHorariosStr === 'function'
+                    ? _extrairHorariosStr(hpdCT._global)
+                    : (hpdCT._global || '');
+            }
+
+            // Fallback 2: agrega todos os dias da semana
+            if (!horStr && typeof _getHorariosHoje === 'function') {
                 var allH = {};
-                DAY_KEYS.forEach(function(dk) {
-                    var entry = hpdCT[dk];
-                    if (!entry) return;
-                    var s = typeof entry === 'string' ? entry : (Array.isArray(entry) ? entry.join(',') : JSON.stringify(entry));
-                    (s.match(/\d{1,2}:\d{2}/g) || []).forEach(function(h){ allH[h] = true; });
+                JS_DAY_KEYS.forEach(function(dk) {
+                    var hrs = _getHorariosHoje(hpdCT, dk, '', '');
+                    if (!hrs) return;
+                    hrs.split(/[,;]/).forEach(function(h) {
+                        h = h.trim();
+                        if (/^\d{1,2}:\d{2}$/.test(h)) allH[h] = true;
+                    });
                 });
-                if (hpdCT._global) {
-                    (hpdCT._global.match && hpdCT._global.match(/\d{1,2}:\d{2}/g) || []).forEach(function(h){ allH[h] = true; });
-                }
                 horStr = Object.keys(allH).sort().join(',');
             }
 
             if (!horStr) return;
-            var hors = horStr.split(',').map(function(h){ return h.trim(); }).filter(function(h){ return /^\d{1,2}:\d{2}$/.test(h); }).sort();
+
+            var hors = horStr.split(/[,;]/)
+                .map(function(h){ return h.trim(); })
+                .filter(function(h){ return /^\d{1,2}:\d{2}$/.test(h); })
+                .sort();
+
+            // Remove duplicatas
+            hors = hors.filter(function(h, i){ return hors.indexOf(h) === i; });
 
             hors.forEach(function(h) {
-                var opt = document.createElement('option'); opt.value = h; opt.textContent = h;
+                var opt = document.createElement('option');
+                opt.value = h; opt.textContent = h;
                 sel.appendChild(opt);
             });
 
-            // Seleciona o mais próximo do horário atual
+            // Seleciona o horário mais próximo do momento atual
             if (hors.length > 0) {
                 var agoraMins = new Date().getHours() * 60 + new Date().getMinutes();
                 var melhor = hors[0], menorDiff = Infinity;
@@ -32356,6 +32568,86 @@
             if (cfgFase) cfgFase.style.display = 'none';
             overlay.style.display = 'flex';
             fv2ProcessarFoto();
+        }
+
+
+        // ── Admin: cadastrar/trocar foto de perfil de um aluno ─────────────
+        function adminAbrirFotoAluno() {
+            var input = document.getElementById('stuFotoInput');
+            if (input) input.click();
+        }
+
+        function adminHandleFotoAluno(input) {
+            var file = input.files && input.files[0];
+            if (!file) return;
+            var msg = document.getElementById('stuFotoMsg');
+            if (msg) { msg.textContent = '⏳ Processando...'; msg.style.color = 'rgba(255,255,255,0.5)'; }
+
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var img = new Image();
+                img.onload = function() {
+                    // Redimensiona para alta qualidade
+                    var canvas = document.createElement('canvas');
+                    var maxSide = 640;
+                    var ratio   = Math.min(maxSide / img.width, maxSide / img.height, 1);
+                    canvas.width  = Math.round(img.width  * ratio);
+                    canvas.height = Math.round(img.height * ratio);
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    // Verifica brilho mínimo
+                    var ctx     = canvas.getContext('2d');
+                    var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                    var brilho  = 0, n = 0;
+                    for (var i = 0; i < imgData.length; i += 4 * Math.floor(imgData.length/4/500)) {
+                        brilho += (imgData[i]*0.299 + imgData[i+1]*0.587 + imgData[i+2]*0.114);
+                        n++;
+                    }
+                    brilho = brilho / n;
+
+                    if (brilho < 40) {
+                        if (msg) { msg.textContent = '❌ Foto muito escura. Use boa iluminação.'; msg.style.color = '#f87171'; }
+                        return;
+                    }
+
+                    var dataUrl    = canvas.toDataURL('image/jpeg', 0.92);
+                    var base64     = dataUrl.split(',')[1];
+                    var targetEmail = typeof stuModalEmail !== 'undefined' ? stuModalEmail : '';
+
+                    if (!targetEmail) {
+                        if (msg) { msg.textContent = '❌ Aluno não identificado.'; msg.style.color = '#f87171'; }
+                        return;
+                    }
+
+                    // Atualiza o avatar visualmente imediato
+                    var avatarEl = document.getElementById('stuAvatar');
+                    if (avatarEl) {
+                        avatarEl.innerHTML = '';
+                        var imgEl = document.createElement('img');
+                        imgEl.src = dataUrl;
+                        imgEl.style.cssText = 'width:100%;height:100%;border-radius:50%;object-fit:cover;';
+                        avatarEl.appendChild(imgEl);
+                    }
+
+                    // Salva no backend
+                    secureFetch('saveAvatarFotoAdmin', {
+                        targetEmail: targetEmail,
+                        fotoBase64:  base64,
+                        mimeType:    'image/jpeg'
+                    }).then(function(r) {
+                        if (r && r.success) {
+                            if (msg) { msg.textContent = '✅ Foto salva e indexada!'; msg.style.color = '#4ade80'; }
+                            setTimeout(function() { if (msg) msg.textContent = ''; }, 3000);
+                        } else {
+                            if (msg) { msg.textContent = '❌ ' + (r ? r.message : 'Erro ao salvar'); msg.style.color = '#f87171'; }
+                        }
+                    }).catch(function(e) {
+                        if (msg) { msg.textContent = '❌ Erro de conexão'; msg.style.color = '#f87171'; }
+                    });
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
         }
 
         async function loadPresencaList() {
