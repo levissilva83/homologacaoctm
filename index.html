@@ -33080,7 +33080,8 @@
                     var bg   = dis ? 'rgba(74,222,128,0.1)' : 'rgba(255,255,255,0.04)';
                     var bord = dis ? 'rgba(74,222,128,0.3)' : 'rgba(255,255,255,0.08)';
                     var cor  = dis ? '#4ade80' : 'rgba(255,255,255,0.3)';
-                    return '<div onclick="'+(dis?'partSelecionarSlot(this,''+s.horario+'','+s.duracao+','+s.valor+')'  :'')+'"' +
+                    var slotAttr = dis ? (' data-horario="'+s.horario+'" data-duracao="'+s.duracao+'" data-valor="'+s.valor+'" class="ap-slot-btn"') : '';
+                    return '<div'+slotAttr+' '
                            ' style="text-align:center;padding:8px 6px;background:'+bg+';border:1px solid '+bord+';border-radius:8px;cursor:'+(dis?'pointer':'default')+';">' +
                            '<div style="font-size:12px;font-weight:800;color:'+cor+';">'+s.horario+'</div>' +
                            '<div style="font-size:9px;color:rgba(255,255,255,0.35);">'+s.duracao+'min</div>' +
@@ -33235,8 +33236,8 @@
                         '<div style="flex:1;"><div style="font-size:12px;font-weight:700;color:var(--adm-text-1);">'+escapeHtml(s.alunoNome)+'</div>' +
                         '<div style="font-size:10px;color:rgba(255,255,255,0.4);">'+s.data+' · '+s.horario+'</div></div>' +
                         (s.status==='AGENDADA' ?
-                        '<button onclick="admConfirmarSessao(''+s.id+'','CONFIRMADA')" style="padding:5px 10px;background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.25);border-radius:7px;font-size:10px;cursor:pointer;margin-right:4px;">✅ Confirmar</button>' +
-                        '<button onclick="admConfirmarSessao(''+s.id+'','FALTOU')" style="padding:5px 10px;background:rgba(248,113,113,0.08);color:#f87171;border:1px solid rgba(248,113,113,0.2);border-radius:7px;font-size:10px;cursor:pointer;">❌ Faltou</button>'
+                        '<button data-action="fix-needed" style="padding:5px 10px;background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.25);border-radius:7px;font-size:10px;cursor:pointer;margin-right:4px;">✅ Confirmar</button>' +
+                        '<button data-action="fix-needed" style="padding:5px 10px;background:rgba(248,113,113,0.08);color:#f87171;border:1px solid rgba(248,113,113,0.2);border-radius:7px;font-size:10px;cursor:pointer;">❌ Faltou</button>'
                         : '<span style="font-size:10px;font-weight:700;color:'+(COR[s.status]||'#C9A23A')+';">'+s.status+'</span>') +
                         '</div>';
                 }).join('');
@@ -33268,7 +33269,7 @@
                 html += '<div style="margin-bottom:10px;">' +
                     '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.5);margin-bottom:6px;">'+d.label.toUpperCase()+'</div>' +
                     '<div id="disp_'+d.key+'" style="display:grid;gap:5px;"></div>' +
-                    '<button onclick="dispAddSlot(''+d.key+'')" style="margin-top:5px;padding:5px 10px;background:rgba(201,162,58,0.08);color:rgba(201,162,58,0.7);border:1px solid rgba(201,162,58,0.15);border-radius:6px;font-size:10px;cursor:pointer;">+ Adicionar horário</button>' +
+                    '<button data-action="fix-needed" style="margin-top:5px;padding:5px 10px;background:rgba(201,162,58,0.08);color:rgba(201,162,58,0.7);border:1px solid rgba(201,162,58,0.15);border-radius:6px;font-size:10px;cursor:pointer;">+ Adicionar horário</button>' +
                     '</div>';
             });
             el.innerHTML = html;
@@ -33286,7 +33287,7 @@
             row.innerHTML =
                 '<input type="time" value="08:00" onchange="_dispSlots['+idx+'].inicio=this.value" style="padding:6px 8px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#fff;font-size:12px;">' +
                 '<input type="time" value="12:00" onchange="_dispSlots['+idx+'].fim=this.value" style="padding:6px 8px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#fff;font-size:12px;">' +
-                '<button onclick="document.getElementById('dispRow_'+idx+'').remove();_dispSlots['+idx+']=null;" style="padding:6px 10px;background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.2);border-radius:6px;cursor:pointer;">✕</button>' +
+                '<button data-action="fix" style="padding:6px 10px;background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.2);border-radius:6px;cursor:pointer;">✕</button>' +
                 '<div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">' +
                 '<div><div style="font-size:9px;color:rgba(255,255,255,0.3);margin-bottom:3px;">DURAÇÃO (min)</div>' +
                 '<select onchange="_dispSlots['+idx+'].duracao=parseInt(this.value)" style="width:100%;padding:6px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#fff;font-size:12px;">' +
@@ -33586,4 +33587,8 @@
                 }
                 el.appendChild(card);
             });
-        }>
+        }
+
+    </script>
+</body>
+</html>
