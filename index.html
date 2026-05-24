@@ -31175,19 +31175,19 @@
 
               <!-- FASE: CONFIG -->
               <div id="fv2Fase_config">
-                <div style="display:grid;gap:10px;margin-bottom:14px;">
-
-                  <div>
-                    <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:5px;letter-spacing:.5px;">CENTRO DE TREINAMENTO</div>
-                    <select id="fv2CT" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:13px;">
-                      <option value="">— Selecione o CT —</option>
-                    </select>
+                <!-- CT vem do filtro da tela principal -->
+                  <div style="background:rgba(201,162,58,0.06);border:1px solid rgba(201,162,58,0.15);border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:16px;">📍</span>
+                    <div>
+                      <div style="font-size:9px;color:rgba(201,162,58,0.7);font-weight:700;letter-spacing:.5px;">CENTRO DE TREINAMENTO</div>
+                      <div id="fv2CTLabel" style="font-size:13px;font-weight:800;color:#C9A23A;">—</div>
+                    </div>
                   </div>
 
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
                     <div>
                       <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:5px;letter-spacing:.5px;">DATA DA AULA</div>
-                      <input type="date" id="fv2Data" style="width:100%;box-sizing:border-box;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:13px;">
+                      <input type="date" id="fv2Data" onchange="_fv2PopularHorarios()" style="width:100%;box-sizing:border-box;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:13px;">
                     </div>
                     <div>
                       <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:5px;letter-spacing:.5px;">HORÁRIO DA AULA</div>
@@ -31196,7 +31196,6 @@
                       </select>
                     </div>
                   </div>
-
                 </div>
 
                 <!-- Upload foto -->
@@ -31266,64 +31265,83 @@
             if (dataInput) dataInput.value = dataHoje;
 
             // Popula horários ao trocar CT
-            document.getElementById('fv2CT').addEventListener('change', _fv2PopularHorarios);
+            // CT gerenciado pelo filtro da tela principal
         }
 
         function _fv2PopularCTs() {
-            var sel = document.getElementById('fv2CT');
-            if (!sel) return;
-            var _MODAL_IDS = ['bjj','bjj_kids','muay_thai','muay_thai_khan','muay_thai_fmce','kickboxing','judo','taekwondo','wrestling','boxe','luta_livre','capoeira'];
-            if (typeof allCTs !== 'undefined' && Array.isArray(allCTs)) {
-                allCTs.forEach(function(ct) {
-                    var name = typeof ct === 'string' ? ct : (ct.name || ct.nome || '');
-                    if (!name || _MODAL_IDS.indexOf(name.toLowerCase()) !== -1) return;
-                    var opt = document.createElement('option');
-                    opt.value = name; opt.textContent = name;
-                    if (currentUser && name === currentUser.ct) opt.selected = true;
-                    sel.appendChild(opt);
-                });
-            }
+            // CT vem do filtro da tela principal (fotoCtFiltro)
+            var ctFiltro = document.getElementById('fotoCtFiltro');
+            var ctName   = (ctFiltro && ctFiltro.value) ? ctFiltro.value : (currentUser && currentUser.ct ? currentUser.ct : '');
+            _fv2.ct = ctName;
+            var label = document.getElementById('fv2CTLabel');
+            if (label) label.textContent = ctName || 'Não selecionado';
             _fv2PopularHorarios();
         }
 
         function _fv2PopularHorarios() {
-            var ctName  = (document.getElementById('fv2CT')||{}).value || '';
-            var selHor  = document.getElementById('fv2Horario');
+            var selHor = document.getElementById('fv2Horario');
             if (!selHor) return;
             selHor.innerHTML = '<option value="">— Selecione —</option>';
 
-            var ctObj = typeof allCTs !== 'undefined' ? allCTs.find(function(c){ return (typeof c==='string'?c:(c.name||c.nome||'')) === ctName; }) : null;
+            // CT pode vir do filtro da tela principal ou do _fv2
+            var ctFiltro = document.getElementById('fotoCtFiltro');
+            var ctName   = (ctFiltro && ctFiltro.value) ? ctFiltro.value : (_fv2.ct || (currentUser && currentUser.ct) || '');
+            if (ctName) { _fv2.ct = ctName; var lbl = document.getElementById('fv2CTLabel'); if (lbl) lbl.textContent = ctName; }
+
+            var ctObj = null;
+            if (typeof allCTs !== 'undefined' && Array.isArray(allCTs)) {
+                ctObj = allCTs.find(function(ct) {
+                    return (typeof ct === 'string' ? ct : (ct.name || ct.nome || '')) === ctName;
+                });
+            }
             if (!ctObj || typeof ctObj !== 'object') return;
 
-            var hpd = ctObj.horariosPorDia || {};
-            var DAY_KEYS = ['dom','seg','ter','qua','qui','sex','sab'];
-            var horSet = {};
-            DAY_KEYS.forEach(function(dk) {
-                var entry = hpd[dk];
-                if (!entry) return;
-                var hors = Array.isArray(entry) ? entry : (typeof entry === 'string' ? entry.split(',') : Object.values(entry));
-                hors.forEach(function(h) {
-                    var ht = (h||'').toString().trim().match(/\d{1,2}:\d{2}/);
-                    if (ht) horSet[ht[0]] = true;
-                });
-            });
+            // Data selecionada → dia da semana
+            var dataInput = document.getElementById('fv2Data');
+            var dataStr   = dataInput ? dataInput.value : '';
+            var hoje      = new Date();
+            if (dataStr) {
+                var parts = dataStr.split('-');
+                hoje = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+            }
 
-            Object.keys(horSet).sort().forEach(function(h) {
+            // Usa _getHorariosHoje que já trata todos os formatos do sistema
+            var hpdCT  = ctObj.horariosPorDia || {};
+            var horStr = typeof _getHorariosHoje === 'function'
+                ? _getHorariosHoje(hpdCT, hoje, ctObj.horarios || '', '')
+                : '';
+
+            // Fallback: agrega todos os dias se o dia específico não tiver horário
+            if (!horStr) {
+                var DAY_KEYS = ['seg','ter','qua','qui','sex','sab','dom'];
+                var allHors  = {};
+                DAY_KEYS.forEach(function(dk) {
+                    var dayStr = typeof _getHorariosHoje === 'function'
+                        ? _getHorariosHoje(hpdCT, (function(d){ var tmp=new Date(hoje); while(['seg','ter','qua','qui','sex','sab','dom'][tmp.getDay()===0?6:tmp.getDay()-1]!==dk){tmp.setDate(tmp.getDate()+1);} return tmp; })(), ctObj.horarios||'', '')
+                        : '';
+                    if (dayStr) dayStr.split(',').forEach(function(h){ if(/^\d{1,2}:\d{2}$/.test(h.trim())) allHors[h.trim()]=true; });
+                });
+                horStr = Object.keys(allHors).sort().join(',');
+            }
+
+            if (!horStr) return;
+
+            var hors = horStr.split(',').map(function(h){ return h.trim(); }).filter(function(h){ return /^\d{1,2}:\d{2}$/.test(h); });
+            hors.sort();
+
+            hors.forEach(function(h) {
                 var opt = document.createElement('option'); opt.value = h; opt.textContent = h;
                 selHor.appendChild(opt);
             });
 
-            // Seleciona horário mais próximo ao atual
-            var agora = new Date();
-            var agoraMin = agora.getHours() * 60 + agora.getMinutes();
-            var hors = Object.keys(horSet).sort();
+            // Seleciona o horário mais próximo do momento atual
             if (hors.length > 0) {
-                var melhor = hors[0];
-                var menorDiff = Infinity;
+                var agora    = new Date();
+                var agoraMins = agora.getHours() * 60 + agora.getMinutes();
+                var melhor   = hors[0], menorDiff = Infinity;
                 hors.forEach(function(h) {
-                    var parts = h.split(':');
-                    var horMin = parseInt(parts[0]) * 60 + parseInt(parts[1]);
-                    var diff = Math.abs(agoraMin - horMin);
+                    var p = h.split(':');
+                    var diff = Math.abs(parseInt(p[0])*60 + parseInt(p[1]) - agoraMins);
                     if (diff < menorDiff) { menorDiff = diff; melhor = h; }
                 });
                 selHor.value = melhor;
@@ -31340,9 +31358,13 @@
             var dataAula= (document.getElementById('fv2Data')||{}).value || '';
             var msg = document.getElementById('fv2ConfigMsg');
 
-            if (!ct)      { if(msg) msg.textContent='❌ Selecione o CT antes de enviar a foto.'; if(msg) msg.style.color='#f87171'; return; }
-            if (!horario) { if(msg) msg.textContent='❌ Selecione o horário da aula.';           if(msg) msg.style.color='#f87171'; return; }
-            if (!dataAula){ if(msg) msg.textContent='❌ Informe a data da aula.';                 if(msg) msg.style.color='#f87171'; return; }
+            // CT vem do filtro da tela principal
+            var ctFiltro2 = document.getElementById('fotoCtFiltro');
+            ct = (ctFiltro2 && ctFiltro2.value) ? ctFiltro2.value : ct;
+
+            if (!ct)      { if(msg) { msg.textContent='❌ Selecione um CT no filtro da tela principal.'; msg.style.color='#f87171'; } return; }
+            if (!horario) { if(msg) { msg.textContent='❌ Selecione o horário da aula.';                 msg.style.color='#f87171'; } return; }
+            if (!dataAula){ if(msg) { msg.textContent='❌ Informe a data da aula.';                       msg.style.color='#f87171'; } return; }
 
             _fv2.ct = ct; _fv2.horario = horario; _fv2.dataAula = dataAula;
 
