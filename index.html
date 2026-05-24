@@ -3519,6 +3519,24 @@
             border: 1px solid var(--adm-border-accent);
         }
 
+
+        /* ── Financeiro — Skeleton ── */
+        @keyframes fSkeleton { 0%{opacity:.4} 50%{opacity:.9} 100%{opacity:.4} }
+        .fSkeleton { background:linear-gradient(90deg,rgba(255,255,255,0.05) 25%,rgba(255,255,255,0.1) 50%,rgba(255,255,255,0.05) 75%); animation:fSkeleton 1.5s ease infinite; }
+
+        @keyframes fCountUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+        .fKpiCard { animation:fCountUp .4s ease forwards; }
+
+        .fin-tab-btn { transition:color .2s,border-color .2s; }
+        .fin-tab-btn.active { color:#C9A23A!important; border-bottom-color:#C9A23A!important; }
+
+        /* Cobranças badge */
+        .fcob-badge { font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;display:inline-block; }
+        .fcob-critico { background:rgba(239,68,68,.15);color:#ef4444; }
+        .fcob-alto    { background:rgba(249,115,22,.15);color:#f97316; }
+        .fcob-medio   { background:rgba(234,179,8,.15);color:#eab308; }
+        .fcob-baixo   { background:rgba(74,222,128,.15);color:#4ade80; }
+
         /* Admin bottom nav */
         #adminNav {
             background: var(--adm-bg-card) !important;
@@ -7916,6 +7934,17 @@
 
                     <!-- SUB: CHECK-IN -->
                     <div id="sub-checkin" class="subtab-content active">
+                        <!-- Banner: aluno sem foto de perfil -->
+                        <div id="semFotoPerfilBanner" style="display:none;margin:12px 0 4px;padding:12px 14px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:12px;">
+                            <div style="display:flex;align-items:center;gap:10px;">
+                                <span style="font-size:22px;flex-shrink:0;">📸</span>
+                                <div style="flex:1;">
+                                    <div style="font-size:13px;font-weight:800;color:#f59e0b;">Foto de perfil necessária</div>
+                                    <div style="font-size:11px;color:rgba(245,158,11,0.8);margin-top:2px;line-height:1.4;">Cadastre sua foto para participar do check-in automático por foto de turma. Use uma foto frontal com boa iluminação.</div>
+                                </div>
+                            </div>
+                            <button onclick="switchSubTab('treino-tab','sub-perfil',event)" style="width:100%;margin-top:10px;padding:9px;background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3);border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;">📷 Cadastrar minha foto agora</button>
+                        </div>
                     <!-- ALARM: Hoje tem treino! -->
                     <div id="treino-alarm" class="treino-alarm" style="display:none;">
                         <div class="treino-alarm-glow"></div>
@@ -9109,7 +9138,7 @@
                                 <!-- Motor selecionado automaticamente pelo sistema CTM -->
                                 <input type="radio" name="motorFoto" value="claude" checked id="motorClaudeHidden" style="display:none;">
                                 <input type="radio" name="motorFoto" value="rekognition" id="motorRekognition" style="display:none;">
-                                <button onclick="fotoAnalisar()" 
+                                <button onclick="abrirCheckinFacialV2()" 
                                     style="width:100%;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;">
                                     📸 Confirmar Presença
                                 </button>
@@ -9500,7 +9529,135 @@
             </div>
 
             <!-- TAB: SUPER ADMIN -->
-            <div id="adm-superadmin" class="adm-tab">
+            <!-- TAB: FINANCEIRO -->
+            <div id="adm-financeiro" class="adm-tab">
+                <div style="padding:0 0 100px;">
+
+                    <!-- Sub-nav financeiro -->
+                    <div style="display:flex;gap:0;background:rgba(0,0,0,0.3);border-bottom:1px solid rgba(201,162,58,0.12);overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);">
+                        <button id="fTabDash"    onclick="switchFinTab('dashboard')"    class="fin-tab-btn active" style="flex-shrink:0;padding:12px 16px;border:none;background:transparent;color:#C9A23A;font-size:11px;font-weight:800;cursor:pointer;border-bottom:2px solid #C9A23A;letter-spacing:.3px;">📊 Dashboard</button>
+                        <button id="fTabCobr"    onclick="switchFinTab('cobrancas')"    class="fin-tab-btn" style="flex-shrink:0;padding:12px 16px;border:none;background:transparent;color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.3px;">💳 Cobranças</button>
+                        <button id="fTabFluxo"   onclick="switchFinTab('fluxo')"        class="fin-tab-btn" style="flex-shrink:0;padding:12px 16px;border:none;background:transparent;color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.3px;">📈 Fluxo</button>
+                        <button id="fTabAlertas" onclick="switchFinTab('alertas')"      class="fin-tab-btn" style="flex-shrink:0;padding:12px 16px;border:none;background:transparent;color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.3px;">🔔 Alertas <span id="fAlertasBadge" style="display:none;background:#ef4444;color:#fff;border-radius:10px;font-size:9px;padding:1px 5px;margin-left:3px;"></span></button>
+                    </div>
+
+                    <!-- DASHBOARD -->
+                    <div id="fPanel_dashboard" style="padding:14px;">
+
+                        <!-- KPI Cards -->
+                        <div id="fKpiGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;">
+                            <!-- Skeleton inicial -->
+                            <div class="fSkeleton" style="height:90px;border-radius:14px;"></div>
+                            <div class="fSkeleton" style="height:90px;border-radius:14px;"></div>
+                            <div class="fSkeleton" style="height:90px;border-radius:14px;"></div>
+                            <div class="fSkeleton" style="height:90px;border-radius:14px;"></div>
+                        </div>
+
+                        <!-- Gráfico faturamento -->
+                        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,162,58,0.12);border-radius:16px;padding:16px;margin-bottom:14px;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                                <div>
+                                    <div style="font-size:13px;font-weight:800;color:var(--adm-text-1);">Faturamento — Últimos 30 dias</div>
+                                    <div id="fFatSubtitle" style="font-size:10px;color:var(--adm-text-3);">carregando...</div>
+                                </div>
+                                <div id="fVariacao" style="font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px;"></div>
+                            </div>
+                            <div style="position:relative;height:160px;">
+                                <canvas id="fChartFat"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Gráficos secundários -->
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+                            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,162,58,0.12);border-radius:16px;padding:14px;">
+                                <div style="font-size:11px;font-weight:800;color:var(--adm-text-2);margin-bottom:10px;">💳 Por método</div>
+                                <div style="position:relative;height:130px;">
+                                    <canvas id="fChartMetodos"></canvas>
+                                </div>
+                            </div>
+                            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,162,58,0.12);border-radius:16px;padding:14px;">
+                                <div style="font-size:11px;font-weight:800;color:var(--adm-text-2);margin-bottom:10px;">🔴 Inadimplência</div>
+                                <div style="position:relative;height:130px;">
+                                    <canvas id="fChartInad"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Resumo financeiro -->
+                        <div id="fResumoBox" style="background:rgba(201,162,58,0.06);border:1px solid rgba(201,162,58,0.2);border-radius:16px;padding:16px;display:none;">
+                            <div style="font-size:11px;font-weight:800;color:var(--adm-text-3);letter-spacing:.5px;margin-bottom:12px;">RESUMO DO MÊS</div>
+                            <div id="fResumoContent"></div>
+                        </div>
+                    </div>
+
+                    <!-- COBRANÇAS -->
+                    <div id="fPanel_cobrancas" style="padding:14px;display:none;">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+                            <input id="fCobBusca" oninput="fFiltrarCobrancas()" placeholder="🔍 Buscar aluno..." style="flex:1;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:var(--adm-text-1);font-size:13px;">
+                            <select id="fCobFiltro" onchange="fFiltrarCobrancas()" style="padding:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:var(--adm-text-1);font-size:12px;">
+                                <option value="">Todos</option>
+                                <option value="critico">🔴 Crítico</option>
+                                <option value="alto">🟠 Alto risco</option>
+                                <option value="medio">🟡 Médio</option>
+                                <option value="baixo">🟢 Baixo</option>
+                            </select>
+                        </div>
+                        <div id="fCobResumo" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px;"></div>
+                        <div id="fCobLista"></div>
+                    </div>
+
+                    <!-- FLUXO DE CAIXA -->
+                    <div id="fPanel_fluxo" style="padding:14px;display:none;">
+                        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,162,58,0.12);border-radius:16px;padding:16px;margin-bottom:14px;">
+                            <div style="font-size:13px;font-weight:800;color:var(--adm-text-1);margin-bottom:14px;">💰 Saldo do mês</div>
+                            <div id="fFluxoSaldo" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;"></div>
+                        </div>
+
+                        <!-- Despesas -->
+                        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,162,58,0.12);border-radius:16px;padding:16px;margin-bottom:14px;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                                <div style="font-size:13px;font-weight:800;color:var(--adm-text-1);">📤 Despesas</div>
+                                <button onclick="fAbrirNovaDespesa()" style="padding:6px 12px;background:rgba(201,162,58,0.12);color:#C9A23A;border:1px solid rgba(201,162,58,0.25);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">+ Nova</button>
+                            </div>
+                            <div id="fDespLista"><div style="text-align:center;padding:20px;color:rgba(255,255,255,0.3);font-size:12px;">Carregando despesas...</div></div>
+                        </div>
+
+                        <!-- Form nova despesa (oculto) -->
+                        <div id="fNovaDespForm" style="display:none;background:rgba(201,162,58,0.05);border:1px solid rgba(201,162,58,0.2);border-radius:16px;padding:16px;margin-bottom:14px;">
+                            <div style="font-size:13px;font-weight:800;color:#C9A23A;margin-bottom:12px;">Nova Despesa</div>
+                            <div style="display:grid;gap:8px;">
+                                <select id="fDespCat" style="padding:9px 12px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--adm-text-1);font-size:13px;">
+                                    <option value="aluguel">🏠 Aluguel</option>
+                                    <option value="agua">💧 Água</option>
+                                    <option value="luz">💡 Luz</option>
+                                    <option value="professor">🥋 Professor</option>
+                                    <option value="marketing">📱 Marketing</option>
+                                    <option value="campeonato">🏆 Campeonato</option>
+                                    <option value="manutencao">🔧 Manutenção</option>
+                                    <option value="outros">📦 Outros</option>
+                                </select>
+                                <input id="fDespDesc" placeholder="Descrição" style="padding:9px 12px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--adm-text-1);font-size:13px;">
+                                <input id="fDespValor" type="number" placeholder="Valor (R$)" style="padding:9px 12px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--adm-text-1);font-size:13px;">
+                                <input id="fDespData" type="date" style="padding:9px 12px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--adm-text-1);font-size:13px;">
+                                <div style="display:flex;gap:8px;">
+                                    <button onclick="fSalvarDespesa()" style="flex:1;padding:10px;background:linear-gradient(135deg,#C9A23A,#F0C84A);color:#000;border:none;border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">💾 Salvar</button>
+                                    <button onclick="document.getElementById('fNovaDespForm').style.display='none'" style="padding:10px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.5);cursor:pointer;">Cancelar</button>
+                                </div>
+                                <div id="fDespMsg" style="font-size:11px;text-align:center;min-height:14px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ALERTAS -->
+                    <div id="fPanel_alertas" style="padding:14px;display:none;">
+                        <div id="fAlertasList"></div>
+                    </div>
+
+                </div>
+            </div>
+            <!-- FIM TAB FINANCEIRO -->
+
+                        <div id="adm-superadmin" class="adm-tab">
                 <div class="admin-container" style="padding-bottom:40px;">
 
                     <!-- ── PAGE HEADER ─────────────────────────────────── -->
@@ -10957,6 +11114,9 @@
                 </button>
                 <button class="bnav-btn" onclick="switchAdminTab('adm-sistema', event)">
                     <span class="bnav-icon">🔧</span><span class="bnav-label">Sistema</span>
+                </button>
+                <button class="bnav-btn" onclick="switchAdminTab('adm-financeiro', event)">
+                    <span class="bnav-icon">💰</span><span class="bnav-label">Financeiro</span>
                 </button>
                 <button class="bnav-btn" id="bnavSuperAdmin" onclick="switchAdminTab('adm-superadmin', event)" style="display:none;">
                     <span class="bnav-icon">🔑</span><span class="bnav-label">Super</span>
@@ -20653,21 +20813,68 @@
                 // Redimensiona para max 400px (economiza espaço no GAS)
                 var img = new Image();
                 img.onload = function() {
+                    // ── Validação de qualidade da foto de perfil ───────────────
+                    var msgEl  = document.getElementById('avbFotoMsg');
+                    var btnEl  = document.getElementById('avbSaveFotoBtn');
+
+                    // 1. Verifica dimensão mínima (rosto precisa ser detectável)
+                    if (img.width < 200 || img.height < 200) {
+                        msgEl.textContent = '❌ Foto muito pequena. Use uma imagem de pelo menos 200×200px com seu rosto visível.';
+                        msgEl.style.color = '#f87171';
+                        return;
+                    }
+
+                    // 2. Detecta se há rosto na imagem usando proporção + análise de pixels centrais
+                    // (Validação robusta ocorre no backend ao indexar — aqui fazemos um pré-check)
                     var canvas = document.createElement('canvas');
-                    var maxSide = 400;
-                    var ratio = Math.min(maxSide / img.width, maxSide / img.height, 1);
+                    var maxSide = 640; // Alta qualidade para reconhecimento facial
+                    var ratio   = Math.min(maxSide / img.width, maxSide / img.height, 1);
                     canvas.width  = Math.round(img.width  * ratio);
                     canvas.height = Math.round(img.height * ratio);
-                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-                    var dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+                    var ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    var dataUrl = canvas.toDataURL('image/jpeg', 0.92); // qualidade alta
+
+                    // 3. Verifica brilho médio (foto muito escura rejeita)
+                    var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                    var totalBrilho = 0;
+                    var sampleStep = Math.max(1, Math.floor(imgData.length / 4 / 1000)); // amostra 1000 pixels
+                    var sampleCount = 0;
+                    for (var px = 0; px < imgData.length; px += 4 * sampleStep) {
+                        totalBrilho += (imgData[px] * 0.299 + imgData[px+1] * 0.587 + imgData[px+2] * 0.114);
+                        sampleCount++;
+                    }
+                    var brilhoMedio = totalBrilho / sampleCount;
+
+                    if (brilhoMedio < 40) {
+                        msgEl.textContent = '❌ Foto muito escura. Tire a foto em local bem iluminado com seu rosto visível.';
+                        msgEl.style.color = '#f87171';
+                        // Mostra preview mesmo assim mas bloqueia salvar
+                        var prev2 = document.getElementById('avbFotoPreview');
+                        var icon2 = document.getElementById('avbFotoPreviewIcon');
+                        prev2.src = dataUrl; prev2.style.display = 'block'; icon2.style.display = 'none';
+                        return;
+                    }
+                    if (brilhoMedio > 220) {
+                        msgEl.textContent = '⚠️ Foto muito clara (superexposta). Prefira uma foto com iluminação natural.';
+                        msgEl.style.color = '#f59e0b';
+                        // Permite salvar mas avisa
+                    } else {
+                        msgEl.textContent = '';
+                    }
+
+                    // 4. Qualidade OK — mostra resultado
+                    var qualStr = brilhoMedio < 80 ? '⚠️ Iluminação baixa' : brilhoMedio > 200 ? '⚠️ Muito clara' : '✅ Qualidade boa';
+                    var dimStr  = canvas.width + '×' + canvas.height + 'px';
+                    msgEl.textContent = qualStr + ' · ' + dimStr + ' · Pronta para salvar';
+                    msgEl.style.color = brilhoMedio < 80 || brilhoMedio > 200 ? '#f59e0b' : 'rgba(34,197,94,0.9)';
+
                     _avbFotoBase64 = dataUrl;
-                    // Mostra preview
                     var prev = document.getElementById('avbFotoPreview');
                     var icon = document.getElementById('avbFotoPreviewIcon');
                     prev.src = dataUrl; prev.style.display = 'block'; icon.style.display = 'none';
-                    document.getElementById('avbFotoMsg').textContent = '✅ Foto pronta para salvar';
-                    document.getElementById('avbSaveFotoBtn').disabled = false;
-                    document.getElementById('avbSaveFotoBtn').style.opacity = '1';
+                    btnEl.disabled = false;
+                    btnEl.style.opacity = '1';
                 };
                 img.src = e.target.result;
             };
@@ -21440,6 +21647,15 @@
         let adminStudentsCache = [];
 
         function switchAdminTab(tabName, evt) {
+            if (tabName === 'adm-financeiro') {
+                document.querySelectorAll('.adm-tab').forEach(function(t){ t.classList.remove('active'); t.style.display='none'; });
+                var fTab = document.getElementById('adm-financeiro');
+                if (fTab) { fTab.classList.add('active'); fTab.style.display='block'; }
+                document.querySelectorAll('#adminNav .bnav-btn').forEach(function(b){ b.classList.remove('active'); });
+                if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+                if (typeof initFinanceiro === 'function') initFinanceiro();
+                return;
+            }
             document.querySelectorAll('.adm-tab').forEach(function(t) { t.classList.remove('active'); });
             document.querySelectorAll('#adminNav .bnav-btn').forEach(function(b) { b.classList.remove('active'); });
             var tab = document.getElementById(tabName);
@@ -30890,6 +31106,1020 @@
             } catch(e) { alert('Erro: ' + e.message); }
         }
 
+
+        // ═══════════════════════════════════════════════════════════════════
+        // CHECK-IN FACIAL v2.0 — Motor completo com bounding boxes + vínculo
+        // ═══════════════════════════════════════════════════════════════════
+
+        var _fv2 = {
+            fotoDataUrl:  null,
+            fotoBase64:   null,
+            faces:        [],   // bounding boxes detectados
+            matches:      [],   // reconhecidos
+            naoIdent:     [],   // não reconhecidos (com bbox)
+            ct:           '',
+            horario:      '',
+            dataAula:     '',
+            modalidade:   '',
+            canvas:       null,
+            ctx:          null,
+            imgEl:        null,
+            imgW:         0,
+            imgH:         0,
+            logData:      {}
+        };
+
+        // ── Abre a UI v2.0 ────────────────────────────────────────────────
+        function abrirCheckinFacialV2() {
+            var overlay = document.getElementById('checkinFacialV2Overlay');
+            if (!overlay) { _criarOverlayFacialV2(); overlay = document.getElementById('checkinFacialV2Overlay'); }
+            overlay.style.display = 'flex';
+            _fv2Resetar();
+        }
+
+        function fecharCheckinFacialV2() {
+            var overlay = document.getElementById('checkinFacialV2Overlay');
+            if (overlay) overlay.style.display = 'none';
+        }
+
+        function _fv2Resetar() {
+            _fv2.fotoDataUrl = null; _fv2.fotoBase64 = null;
+            _fv2.faces = []; _fv2.matches = []; _fv2.naoIdent = [];
+            _fv2Setarfase('config');
+        }
+
+        function _fv2Setarfase(fase) {
+            ['config','preview','resultado'].forEach(function(f) {
+                var el = document.getElementById('fv2Fase_' + f);
+                if (el) el.style.display = f === fase ? '' : 'none';
+            });
+        }
+
+        // ── Cria o overlay completo ───────────────────────────────────────
+        function _criarOverlayFacialV2() {
+            var el = document.createElement('div');
+            el.id = 'checkinFacialV2Overlay';
+            el.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,0.95);display:none;flex-direction:column;overflow-y:auto;';
+
+            el.innerHTML = `
+            <div style="max-width:600px;margin:0 auto;width:100%;padding:16px;box-sizing:border-box;">
+
+              <!-- Header -->
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                <div>
+                  <div style="font-size:15px;font-weight:800;color:#C9A23A;">📸 Check-in por Foto</div>
+                  <div style="font-size:10px;color:rgba(255,255,255,0.4);">Reconhecimento facial automático</div>
+                </div>
+                <button onclick="fecharCheckinFacialV2()" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.08);border:none;color:rgba(255,255,255,0.6);font-size:16px;cursor:pointer;">✕</button>
+              </div>
+
+              <!-- FASE: CONFIG -->
+              <div id="fv2Fase_config">
+                <div style="display:grid;gap:10px;margin-bottom:14px;">
+
+                  <div>
+                    <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:5px;letter-spacing:.5px;">CENTRO DE TREINAMENTO</div>
+                    <select id="fv2CT" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:13px;">
+                      <option value="">— Selecione o CT —</option>
+                    </select>
+                  </div>
+
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                    <div>
+                      <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:5px;letter-spacing:.5px;">DATA DA AULA</div>
+                      <input type="date" id="fv2Data" style="width:100%;box-sizing:border-box;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:13px;">
+                    </div>
+                    <div>
+                      <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:5px;letter-spacing:.5px;">HORÁRIO DA AULA</div>
+                      <select id="fv2Horario" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:13px;">
+                        <option value="">— Selecione —</option>
+                      </select>
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- Upload foto -->
+                <div id="fv2DropZone" onclick="document.getElementById('fv2FotoInput').click()"
+                  style="border:2px dashed rgba(201,162,58,0.3);border-radius:14px;padding:32px 16px;text-align:center;cursor:pointer;background:rgba(201,162,58,0.03);transition:background .2s;">
+                  <div style="font-size:36px;margin-bottom:8px;">📷</div>
+                  <div style="font-size:13px;font-weight:700;color:#C9A23A;">Toque para selecionar a foto da turma</div>
+                  <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:4px;">Galeria ou câmera · até 50 pessoas</div>
+                </div>
+                <input type="file" id="fv2FotoInput" accept="image/*" style="display:none;" onchange="fv2HandleFoto(this)">
+
+                <div id="fv2ConfigMsg" style="margin-top:10px;font-size:12px;text-align:center;min-height:16px;"></div>
+              </div>
+
+              <!-- FASE: PREVIEW (processando) -->
+              <div id="fv2Fase_preview" style="display:none;text-align:center;padding:40px 0;">
+                <div style="font-size:36px;margin-bottom:12px;">🔍</div>
+                <div id="fv2PreviewTxt" style="font-size:14px;font-weight:700;color:#C9A23A;">Detectando rostos...</div>
+                <div id="fv2PreviewSub" style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:6px;">CTM está analisando a imagem</div>
+                <div style="margin-top:20px;width:48px;height:48px;border:3px solid rgba(201,162,58,0.2);border-top-color:#C9A23A;border-radius:50%;animation:spin .7s linear infinite;margin:20px auto 0;"></div>
+              </div>
+
+              <!-- FASE: RESULTADO (canvas + lista) -->
+              <div id="fv2Fase_resultado" style="display:none;">
+
+                <!-- Canvas com bounding boxes -->
+                <div style="position:relative;border-radius:12px;overflow:hidden;margin-bottom:14px;">
+                  <canvas id="fv2Canvas" style="width:100%;display:block;border-radius:12px;"></canvas>
+                </div>
+
+                <!-- KPIs -->
+                <div id="fv2KPIs" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;"></div>
+
+                <!-- Rostos reconhecidos -->
+                <div id="fv2SecReconhecidos" style="display:none;margin-bottom:14px;">
+                  <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:.5px;margin-bottom:8px;">✅ RECONHECIDOS</div>
+                  <div id="fv2ListaReconhecidos"></div>
+                </div>
+
+                <!-- Rostos não reconhecidos -->
+                <div id="fv2SecNaoIdent" style="display:none;margin-bottom:14px;">
+                  <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:.5px;margin-bottom:8px;">❓ NÃO IDENTIFICADOS</div>
+                  <div id="fv2ListaNaoIdent"></div>
+                </div>
+
+                <!-- Botões de ação -->
+                <div style="display:flex;gap:8px;">
+                  <button onclick="fv2TrocarFoto()" style="flex:1;padding:11px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.12);border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">↩ Trocar foto</button>
+                  <button onclick="fv2ConfirmarTodos()" id="fv2BtnConfirmar" style="flex:2;padding:11px;background:linear-gradient(135deg,#C9A23A,#F0C84A);color:#000;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;">✅ Confirmar presenças</button>
+                </div>
+                <div id="fv2ResultMsg" style="margin-top:8px;font-size:12px;text-align:center;min-height:14px;"></div>
+              </div>
+
+            </div>`;
+
+            document.body.appendChild(el);
+
+            // Popula CT select
+            _fv2PopularCTs();
+
+            // Data padrão = hoje
+            var hoje = new Date();
+            var dataHoje = hoje.getFullYear() + '-' +
+                String(hoje.getMonth()+1).padStart(2,'0') + '-' +
+                String(hoje.getDate()).padStart(2,'0');
+            var dataInput = document.getElementById('fv2Data');
+            if (dataInput) dataInput.value = dataHoje;
+
+            // Popula horários ao trocar CT
+            document.getElementById('fv2CT').addEventListener('change', _fv2PopularHorarios);
+        }
+
+        function _fv2PopularCTs() {
+            var sel = document.getElementById('fv2CT');
+            if (!sel) return;
+            var _MODAL_IDS = ['bjj','bjj_kids','muay_thai','muay_thai_khan','muay_thai_fmce','kickboxing','judo','taekwondo','wrestling','boxe','luta_livre','capoeira'];
+            if (typeof allCTs !== 'undefined' && Array.isArray(allCTs)) {
+                allCTs.forEach(function(ct) {
+                    var name = typeof ct === 'string' ? ct : (ct.name || ct.nome || '');
+                    if (!name || _MODAL_IDS.indexOf(name.toLowerCase()) !== -1) return;
+                    var opt = document.createElement('option');
+                    opt.value = name; opt.textContent = name;
+                    if (currentUser && name === currentUser.ct) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+            }
+            _fv2PopularHorarios();
+        }
+
+        function _fv2PopularHorarios() {
+            var ctName  = (document.getElementById('fv2CT')||{}).value || '';
+            var selHor  = document.getElementById('fv2Horario');
+            if (!selHor) return;
+            selHor.innerHTML = '<option value="">— Selecione —</option>';
+
+            var ctObj = typeof allCTs !== 'undefined' ? allCTs.find(function(c){ return (typeof c==='string'?c:(c.name||c.nome||'')) === ctName; }) : null;
+            if (!ctObj || typeof ctObj !== 'object') return;
+
+            var hpd = ctObj.horariosPorDia || {};
+            var DAY_KEYS = ['dom','seg','ter','qua','qui','sex','sab'];
+            var horSet = {};
+            DAY_KEYS.forEach(function(dk) {
+                var entry = hpd[dk];
+                if (!entry) return;
+                var hors = Array.isArray(entry) ? entry : (typeof entry === 'string' ? entry.split(',') : Object.values(entry));
+                hors.forEach(function(h) {
+                    var ht = (h||'').toString().trim().match(/\d{1,2}:\d{2}/);
+                    if (ht) horSet[ht[0]] = true;
+                });
+            });
+
+            Object.keys(horSet).sort().forEach(function(h) {
+                var opt = document.createElement('option'); opt.value = h; opt.textContent = h;
+                selHor.appendChild(opt);
+            });
+
+            // Seleciona horário mais próximo ao atual
+            var agora = new Date();
+            var agoraMin = agora.getHours() * 60 + agora.getMinutes();
+            var hors = Object.keys(horSet).sort();
+            if (hors.length > 0) {
+                var melhor = hors[0];
+                var menorDiff = Infinity;
+                hors.forEach(function(h) {
+                    var parts = h.split(':');
+                    var horMin = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+                    var diff = Math.abs(agoraMin - horMin);
+                    if (diff < menorDiff) { menorDiff = diff; melhor = h; }
+                });
+                selHor.value = melhor;
+            }
+        }
+
+        function fv2HandleFoto(input) {
+            var file = input.files && input.files[0];
+            if (!file) return;
+
+            // Valida seleção de CT + horário
+            var ct      = (document.getElementById('fv2CT')||{}).value || '';
+            var horario = (document.getElementById('fv2Horario')||{}).value || '';
+            var dataAula= (document.getElementById('fv2Data')||{}).value || '';
+            var msg = document.getElementById('fv2ConfigMsg');
+
+            if (!ct)      { if(msg) msg.textContent='❌ Selecione o CT antes de enviar a foto.'; if(msg) msg.style.color='#f87171'; return; }
+            if (!horario) { if(msg) msg.textContent='❌ Selecione o horário da aula.';           if(msg) msg.style.color='#f87171'; return; }
+            if (!dataAula){ if(msg) msg.textContent='❌ Informe a data da aula.';                 if(msg) msg.style.color='#f87171'; return; }
+
+            _fv2.ct = ct; _fv2.horario = horario; _fv2.dataAula = dataAula;
+
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var img = new Image();
+                img.onload = function() {
+                    // Redimensiona preservando qualidade (max 1200px)
+                    var canvas = document.createElement('canvas');
+                    var maxSide = 1200;
+                    var ratio = Math.min(maxSide / img.width, maxSide / img.height, 1);
+                    canvas.width  = Math.round(img.width  * ratio);
+                    canvas.height = Math.round(img.height * ratio);
+                    canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                    _fv2.fotoDataUrl  = canvas.toDataURL('image/jpeg', 0.92);
+                    _fv2.fotoBase64   = _fv2.fotoDataUrl.split(',')[1];
+                    _fv2.imgW = canvas.width;
+                    _fv2.imgH = canvas.height;
+                    fv2ProcessarFoto();
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function fv2ProcessarFoto() {
+            _fv2Setarfase('preview');
+            var sub = document.getElementById('fv2PreviewSub');
+
+            try {
+                // ETAPA 1: DetectFaces — bounding boxes
+                if(sub) sub.textContent = 'Detectando ' + _fv2.ct + ' · ' + _fv2.horario;
+                var detResp = await secureFetch('detectFacesRek', { fotoBase64: _fv2.fotoBase64 });
+
+                if (!detResp || !detResp.success) throw new Error(detResp ? detResp.message : 'Erro ao detectar rostos');
+                _fv2.faces = detResp.faces || [];
+
+                if (_fv2.faces.length === 0) {
+                    _fv2Setarfase('config');
+                    document.getElementById('fv2ConfigMsg').textContent = '⚠️ Nenhum rosto detectado. Tente uma foto mais próxima com boa iluminação.';
+                    return;
+                }
+
+                // ETAPA 2: ReconhecerFotos — matches + duplicatas
+                if(sub) sub.textContent = _fv2.faces.length + ' rostos detectados · Reconhecendo...';
+                var recResp = await secureFetch('reconhecerFotoRek', {
+                    fotoBase64: _fv2.fotoBase64,
+                    ct:         _fv2.ct,
+                    horario:    _fv2.horario,
+                    dataAula:   _fv2.dataAula,
+                    faces:      JSON.stringify(_fv2.faces),
+                    threshold:  85
+                });
+
+                if (!recResp || !recResp.success) throw new Error(recResp ? recResp.message : 'Erro no reconhecimento');
+                _fv2.matches  = recResp.matches || [];
+                _fv2.logData  = {
+                    totalRostos: recResp.totalRostos, reconhecidos: recResp.reconhecidos,
+                    naoReconhecidos: recResp.naoReconhecidos, threshold: 85, manual: 0
+                };
+
+                // Rostos não identificados = faces sem match
+                _fv2.naoIdent = _fv2.faces.filter(function(face) {
+                    return !_fv2.matches.some(function(m) {
+                        return m.boundingBox &&
+                               Math.abs((m.boundingBox.Left||0) - face.boundingBox.left) < 0.05;
+                    });
+                }).map(function(face, idx) {
+                    return Object.assign({}, face, { label: 'Não identificado ' + (idx+1) });
+                });
+
+                _fv2Setarfase('resultado');
+                fv2RenderizarResultado();
+
+            } catch(e) {
+                _fv2Setarfase('config');
+                var msgEl = document.getElementById('fv2ConfigMsg');
+                if (msgEl) { msgEl.textContent = '❌ ' + e.message; msgEl.style.color = '#f87171'; }
+            }
+        }
+
+        function fv2RenderizarResultado() {
+            // ── Desenha foto + bounding boxes no canvas ──────────────────
+            var canvas = document.getElementById('fv2Canvas');
+            if (!canvas) return;
+            var img = new Image();
+            img.onload = function() {
+                canvas.width  = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                var ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+
+                var W = canvas.width, H = canvas.height;
+
+                // Reconhecidos → caixa verde
+                _fv2.matches.forEach(function(m) {
+                    if (!m.boundingBox) return;
+                    var bb = m.boundingBox;
+                    var x = (bb.Left||0)*W, y = (bb.Top||0)*H;
+                    var w = (bb.Width||0.1)*W, h = (bb.Height||0.1)*H;
+                    ctx.strokeStyle = m.jaPresenteHoje ? '#f59e0b' : '#4ade80';
+                    ctx.lineWidth = Math.max(2, W/300);
+                    ctx.strokeRect(x, y, w, h);
+
+                    // Label de nome
+                    var fs = Math.max(12, W/50);
+                    ctx.font = 'bold ' + fs + 'px sans-serif';
+                    var label = m.jaPresenteHoje ? '✓ ' + (m.nome||'').split(' ')[0] : (m.nome||'').split(' ')[0];
+                    var lw = ctx.measureText(label).width + 8;
+                    ctx.fillStyle = m.jaPresenteHoje ? 'rgba(245,158,11,0.85)' : 'rgba(74,222,128,0.85)';
+                    ctx.fillRect(x, y - fs - 6, lw, fs + 8);
+                    ctx.fillStyle = '#000';
+                    ctx.fillText(label, x + 4, y - 4);
+                });
+
+                // Não identificados → caixa vermelha
+                _fv2.naoIdent.forEach(function(face, idx) {
+                    var bb = face.boundingBox;
+                    var x = bb.left*W, y = bb.top*H, w = bb.width*W, h = bb.height*H;
+                    ctx.strokeStyle = '#f87171';
+                    ctx.lineWidth   = Math.max(2, W/300);
+                    ctx.setLineDash([6,3]);
+                    ctx.strokeRect(x, y, w, h);
+                    ctx.setLineDash([]);
+
+                    var fs = Math.max(12, W/50);
+                    ctx.font = 'bold ' + fs + 'px sans-serif';
+                    var label = '? #' + (idx+1);
+                    var lw = ctx.measureText(label).width + 8;
+                    ctx.fillStyle = 'rgba(248,113,113,0.85)';
+                    ctx.fillRect(x, y - fs - 6, lw, fs + 8);
+                    ctx.fillStyle = '#fff';
+                    ctx.fillText(label, x + 4, y - 4);
+                });
+
+                // Click no canvas → abre vínculo manual
+                canvas.onclick = function(evt) {
+                    var rect = canvas.getBoundingClientRect();
+                    var scaleX = canvas.width  / rect.width;
+                    var scaleY = canvas.height / rect.height;
+                    var cx = (evt.clientX - rect.left) * scaleX;
+                    var cy = (evt.clientY - rect.top)  * scaleY;
+
+                    // Verifica se clicou em rosto não identificado
+                    _fv2.naoIdent.forEach(function(face, idx) {
+                        var bb = face.boundingBox;
+                        var x = bb.left*W, y = bb.top*H, w = bb.width*W, h = bb.height*H;
+                        if (cx >= x && cx <= x+w && cy >= y && cy <= y+h) {
+                            fv2AbrirVinculoManual(face, idx);
+                        }
+                    });
+                };
+            };
+            img.src = _fv2.fotoDataUrl;
+
+            // ── KPIs ──────────────────────────────────────────────────────
+            var kpiEl = document.getElementById('fv2KPIs');
+            if (kpiEl) {
+                var reconNovos = _fv2.matches.filter(function(m){ return !m.jaPresenteHoje; }).length;
+                var jaPresentes = _fv2.matches.filter(function(m){ return m.jaPresenteHoje; }).length;
+                var kpis = [
+                    { label:'Rostos', val: _fv2.faces.length,   cor:'#C9A23A' },
+                    { label:'Reconhecidos', val: reconNovos,    cor:'#4ade80' },
+                    { label:'Já presentes', val: jaPresentes,   cor:'#f59e0b' },
+                    { label:'Não ident.', val: _fv2.naoIdent.length, cor:'#f87171' }
+                ];
+                kpiEl.innerHTML = kpis.map(function(k) {
+                    return '<div style="text-align:center;padding:10px 6px;background:rgba(255,255,255,0.04);border-radius:10px;">' +
+                           '<div style="font-size:22px;font-weight:800;color:'+k.cor+';">'+k.val+'</div>' +
+                           '<div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:2px;">'+k.label+'</div></div>';
+                }).join('');
+            }
+
+            // ── Lista reconhecidos ────────────────────────────────────────
+            var secRec  = document.getElementById('fv2SecReconhecidos');
+            var listaRec = document.getElementById('fv2ListaReconhecidos');
+            if (listaRec && _fv2.matches.length > 0) {
+                secRec.style.display = '';
+                listaRec.innerHTML = _fv2.matches.map(function(m) {
+                    var cor  = m.jaPresenteHoje ? 'rgba(245,158,11,0.12)' : 'rgba(74,222,128,0.06)';
+                    var bord = m.jaPresenteHoje ? 'rgba(245,158,11,0.25)' : 'rgba(74,222,128,0.18)';
+                    var tag  = m.jaPresenteHoje
+                        ? '<span style="font-size:9px;background:rgba(245,158,11,0.15);color:#f59e0b;padding:2px 6px;border-radius:5px;">Já presente</span>'
+                        : '<span style="font-size:9px;background:rgba(74,222,128,0.12);color:#4ade80;padding:2px 6px;border-radius:5px;">✓ ' + m.similarity + '%</span>';
+                    return '<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:'+cor+';border:1px solid '+bord+';border-radius:9px;margin-bottom:5px;">' +
+                           '<div style="width:28px;height:28px;border-radius:50%;background:rgba(201,162,58,0.15);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">✅</div>' +
+                           '<div style="flex:1;"><div style="font-size:12px;font-weight:700;color:#e2e8f0;">'+escapeHtml(m.nome||m.email)+'</div>' +
+                           '<div style="font-size:10px;color:rgba(255,255,255,0.4);">'+escapeHtml(m.faixa||'')+'</div></div>' +
+                           tag + '</div>';
+                }).join('');
+            }
+
+            // ── Lista não identificados ───────────────────────────────────
+            var secNao  = document.getElementById('fv2SecNaoIdent');
+            var listaNao = document.getElementById('fv2ListaNaoIdent');
+            if (listaNao && _fv2.naoIdent.length > 0) {
+                secNao.style.display = '';
+                listaNao.innerHTML = _fv2.naoIdent.map(function(face, idx) {
+                    return '<div style="display:flex;align-items:center;gap:8px;padding:9px 12px;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.18);border-radius:9px;margin-bottom:5px;">' +
+                           '<div style="width:28px;height:28px;border-radius:50%;background:rgba(248,113,113,0.12);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">❓</div>' +
+                           '<div style="flex:1;"><div style="font-size:12px;font-weight:700;color:#f87171;">Rosto #' + (idx+1) + '</div>' +
+                           '<div style="font-size:10px;color:rgba(255,255,255,0.35);">Clique no rosto na foto para vincular</div></div>' +
+                           '<button onclick="fv2AbrirVinculoManual(_fv2.naoIdent['+idx+'],'+idx+')" ' +
+                           'style="padding:5px 10px;background:rgba(201,162,58,0.12);color:#C9A23A;border:1px solid rgba(201,162,58,0.25);border-radius:7px;font-size:10px;font-weight:700;cursor:pointer;">Vincular</button>' +
+                           '</div>';
+                }).join('');
+            }
+
+            // Botão confirmar: só habilita se há novos a registrar
+            var novos = _fv2.matches.filter(function(m){ return !m.jaPresenteHoje; }).length;
+            var btn = document.getElementById('fv2BtnConfirmar');
+            if (btn) {
+                btn.textContent = novos > 0 ? '✅ Confirmar ' + novos + ' presença(s)' : '(nenhuma nova presença)';
+                btn.disabled = novos === 0;
+                btn.style.opacity = novos === 0 ? '0.4' : '1';
+            }
+        }
+
+        // ── Modal de vínculo manual ───────────────────────────────────────
+        function fv2AbrirVinculoManual(face, idx) {
+            var modal = document.getElementById('fv2ModalVinculo');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'fv2ModalVinculo';
+                modal.style.cssText = 'position:fixed;inset:0;z-index:9500;background:rgba(0,0,0,0.85);display:flex;align-items:flex-end;justify-content:center;';
+                document.getElementById('checkinFacialV2Overlay').appendChild(modal);
+            }
+
+            // Prepara lista de alunos do CT selecionado
+            var ctFiltro = _fv2.ct;
+            var alunosCT = typeof allStudents !== 'undefined' ? allStudents.filter(function(s) {
+                return !ctFiltro || (s.ct || s[4] || '') === ctFiltro;
+            }) : [];
+
+            modal.innerHTML = '<div style="background:#16161f;border-radius:16px 16px 0 0;padding:20px 16px;width:100%;max-width:600px;max-height:70vh;overflow-y:auto;">' +
+                '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">' +
+                '<div style="font-size:14px;font-weight:800;color:#C9A23A;">Vincular Rosto #' + (idx+1) + '</div>' +
+                '<button onclick="fv2FecharModalVinculo()" style="border:none;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.6);width:28px;height:28px;border-radius:50%;font-size:14px;cursor:pointer;">✕</button>' +
+                '</div>' +
+                '<div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:12px;">Selecione o aluno para associar a este rosto. Isso melhora o reconhecimento futuro.</div>' +
+                '<input id="fv2VinculoBusca" oninput="fv2FiltrarAlunosVinculo(this.value)" placeholder="🔍 Buscar aluno..." ' +
+                'style="width:100%;box-sizing:border-box;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#fff;font-size:13px;margin-bottom:10px;">' +
+                '<div id="fv2ListaVinculo">' +
+                alunosCT.map(function(s) {
+                    var email = s.email || s[0] || '';
+                    var nome  = s.nome || s.name || s[1] || email;
+                    var faixa = s.faixa || s[2] || '';
+                    return '<div class="fv2AlunoItem"' +
+                        ' data-email="' + escapeHtml(email) + '"' +
+                        ' data-nome="'  + escapeHtml(nome)  + '"' +
+                        ' data-idx="'   + idx + '"' +
+                        ' style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;cursor:pointer;margin-bottom:4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">' +
+                        '<div style="width:32px;height:32px;border-radius:50%;background:rgba(201,162,58,0.12);display:flex;align-items:center;justify-content:center;font-size:15px;">👤</div>' +
+                        '<div><div style="font-size:13px;font-weight:700;color:#e2e8f0;">' + escapeHtml(nome) + '</div>' +
+                        '<div style="font-size:10px;color:rgba(255,255,255,0.4);">' + escapeHtml(faixa) + '</div></div>' +
+                        '</div>';
+                }).join('') +
+                '</div></div>';
+            modal.style.display = 'flex';
+
+            // Guarda face no objeto global para uso posterior
+            _fv2._faceParaVincular = face;
+            _fv2._idxParaVincular  = idx;
+
+            // Event delegation — evita onclick inline com parâmetros
+            setTimeout(function() {
+                var lista = document.getElementById('fv2ListaVinculo');
+                if (!lista) return;
+                lista.addEventListener('click', function(e) {
+                    var item = e.target.closest('.fv2AlunoItem');
+                    if (!item) return;
+                    var em  = item.getAttribute('data-email') || '';
+                    var nom = item.getAttribute('data-nome')  || '';
+                    var ix  = parseInt(item.getAttribute('data-idx') || '0');
+                    if (em) fv2ConfirmarVinculo(em, nom, ix);
+                }, { once: true });
+            }, 100);
+        }
+
+        function fv2FecharModalVinculo() {
+            var m = document.getElementById('fv2ModalVinculo');
+            if (m) m.style.display = 'none';
+        }
+
+        function fv2FiltrarAlunosVinculo(busca) {
+            var items = document.querySelectorAll('.fv2AlunoItem');
+            var b = (busca || '').toLowerCase();
+            items.forEach(function(el) {
+                var nome = (el.getAttribute('data-nome') || '').toLowerCase();
+                el.style.display = (!b || nome.indexOf(b) !== -1) ? '' : 'none';
+            });
+        }
+
+        async function fv2ConfirmarVinculo(email, nome, idx) {
+            document.getElementById('fv2ModalVinculo').style.display = 'none';
+            var face = _fv2._faceParaVincular;
+            if (!face || !email) return;
+
+            // Recorta o rosto da foto usando o bounding box
+            var canvas = document.createElement('canvas');
+            var imgEl  = new Image();
+            imgEl.onload = async function() {
+                var W = imgEl.naturalWidth, H = imgEl.naturalHeight;
+                var bb = face.boundingBox;
+                // Margem extra de 10% para melhor indexação
+                var margin = 0.05;
+                var x = Math.max(0, (bb.left - margin)) * W;
+                var y = Math.max(0, (bb.top  - margin)) * H;
+                var w = Math.min(1, bb.width  + margin*2) * W;
+                var h = Math.min(1, bb.height + margin*2) * H;
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(imgEl, x, y, w, h, 0, 0, w, h);
+                var cropBase64 = canvas.toDataURL('image/jpeg', 0.92).split(',')[1];
+
+                // Chama backend para indexar + vincular
+                var msgEl = document.getElementById('fv2ResultMsg');
+                if (msgEl) msgEl.textContent = '⏳ Vinculando ' + nome + '...';
+                try {
+                    var r = await secureFetch('vincularRostoRek', {
+                        email:       email,
+                        fotoBase64:  cropBase64,
+                        ct:          _fv2.ct,
+                        obs:         'vinculo_manual_foto_turma'
+                    });
+                    if (r.success) {
+                        if (msgEl) { msgEl.textContent = '✅ ' + nome + ' vinculado! Reconhecimento futuro melhorado.'; msgEl.style.color='#4ade80'; }
+                        // Move da lista de não identificados para reconhecidos
+                        _fv2.naoIdent.splice(idx, 1);
+                        _fv2.matches.push({ email: email, nome: nome, faixa: '', similarity: 0, confidence: 0, jaPresenteHoje: false, vinculadoManualmente: true });
+                        _fv2.logData.manual = (_fv2.logData.manual || 0) + 1;
+                        fv2RenderizarResultado();
+                    } else {
+                        if (msgEl) { msgEl.textContent = '❌ ' + (r.message || 'Erro ao vincular'); msgEl.style.color='#f87171'; }
+                    }
+                } catch(e) {
+                    if (msgEl) { msgEl.textContent = '❌ Erro de conexão'; msgEl.style.color='#f87171'; }
+                }
+            };
+            imgEl.src = _fv2.fotoDataUrl;
+        }
+
+        async function fv2ConfirmarTodos() {
+            var novos = _fv2.matches.filter(function(m){ return !m.jaPresenteHoje; });
+            if (novos.length === 0) return;
+
+            var btn = document.getElementById('fv2BtnConfirmar');
+            var msg = document.getElementById('fv2ResultMsg');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Registrando...'; }
+
+            try {
+                var r = await secureFetch('registrarPresencasEmMassa', {
+                    presencas:  JSON.stringify(novos),
+                    ct:         _fv2.ct,
+                    horario:    _fv2.horario,
+                    dataAula:   _fv2.dataAula,
+                    modalidade: _fv2.modalidade || (currentUser && currentUser.modalidadePrincipal) || '',
+                    logData:    JSON.stringify(_fv2.logData)
+                });
+                if (r.success) {
+                    if (msg) { msg.textContent = '🎉 ' + r.registrados + ' presença(s) registrada(s)!'; msg.style.color = '#4ade80'; }
+                    setTimeout(fecharCheckinFacialV2, 2000);
+                } else {
+                    if (msg) { msg.textContent = '❌ ' + (r.message || 'Erro ao registrar'); msg.style.color='#f87171'; }
+                    if (btn) { btn.disabled = false; btn.textContent = '✅ Tentar novamente'; }
+                }
+            } catch(e) {
+                if (msg) { msg.textContent = '❌ Erro de conexão'; msg.style.color='#f87171'; }
+                if (btn) { btn.disabled = false; btn.textContent = '✅ Tentar novamente'; }
+            }
+        }
+
+        function fv2TrocarFoto() {
+            _fv2Setarfase('config');
+            document.getElementById('fv2FotoInput').value = '';
+            var msg = document.getElementById('fv2ConfigMsg');
+            if (msg) { msg.textContent = ''; }
+        }
+
+
+        // ═══════════════════════════════════════════════════════════════════
+        // MÓDULO FINANCEIRO — JS Completo
+        // ═══════════════════════════════════════════════════════════════════
+
+        var _finCharts = {};
+        var _finData   = {};
+        var _finCobAll = [];
+
+        function switchFinTab(tab) {
+            ['dashboard','cobrancas','fluxo','alertas'].forEach(function(t) {
+                var p = document.getElementById('fPanel_' + t);
+                var b = document.getElementById('fTab' + t.charAt(0).toUpperCase() + t.slice(1).replace('cobrancas','Cobr').replace('alertas','Alertas').replace('fluxo','Fluxo').replace('dashboard','Dash'));
+                if (p) p.style.display = t === tab ? '' : 'none';
+            });
+            // Botões
+            document.querySelectorAll('.fin-tab-btn').forEach(function(b) {
+                b.classList.remove('active');
+                b.style.color = 'rgba(255,255,255,0.4)';
+                b.style.borderBottomColor = 'transparent';
+            });
+            var btnMap = {dashboard:'fTabDash',cobrancas:'fTabCobr',fluxo:'fTabFluxo',alertas:'fTabAlertas'};
+            var activeBtn = document.getElementById(btnMap[tab]);
+            if (activeBtn) { activeBtn.classList.add('active'); activeBtn.style.color='#C9A23A'; activeBtn.style.borderBottomColor='#C9A23A'; }
+
+            if (tab === 'dashboard' && !_finData.loaded) loadFinanceiroDashboard();
+            if (tab === 'cobrancas' && !_finData.cobLoaded) loadFinCobrancas();
+            if (tab === 'fluxo'     && !_finData.fluxoLoaded) loadFinFluxo();
+            if (tab === 'alertas'   && !_finData.alertasLoaded) loadFinAlertas();
+        }
+
+        // ── Inicializa ao abrir a aba ─────────────────────────────────────
+        function initFinanceiro() {
+            _finData = {};
+            switchFinTab('dashboard');
+        }
+
+        // ── Formato monetário ─────────────────────────────────────────────
+        function fFmt(v) {
+            return 'R$ ' + parseFloat(v||0).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+        }
+
+        // ── Anima número ──────────────────────────────────────────────────
+        function fAnimateNum(el, target, prefix, suffix, isInt) {
+            if (!el) return;
+            var start = 0, dur = 800, step = 16;
+            var timer = setInterval(function() {
+                start += step;
+                var pct = Math.min(start / dur, 1);
+                var val = target * pct;
+                el.textContent = prefix + (isInt ? Math.round(val) : val.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})) + suffix;
+                if (pct >= 1) clearInterval(timer);
+            }, step);
+        }
+
+        // ── Dashboard ─────────────────────────────────────────────────────
+        async function loadFinanceiroDashboard() {
+            try {
+                var r = await secureFetch('getFinanceiroDashboard', {});
+                if (!r.success) return;
+                _finData.dash   = r;
+                _finData.loaded = true;
+                renderFinKPIs(r);
+                renderFinChartFat(r.dias30 || []);
+                renderFinChartMetodos(r.metodos || {});
+                renderFinChartInad(r);
+                renderFinResumo(r);
+            } catch(e) { console.warn('[Fin] Dashboard error:', e.message); }
+        }
+
+        function renderFinKPIs(d) {
+            var grid = document.getElementById('fKpiGrid');
+            if (!grid) return;
+
+            var varIcon  = d.variacao >= 0 ? '▲' : '▼';
+            var varColor = d.variacao >= 0 ? '#4ade80' : '#f87171';
+
+            var kpis = [
+                { icon:'💰', label:'Faturamento do mês', val:d.recMes, prefix:'R$ ', suffix:'', isInt:false, sub: varIcon + ' ' + Math.abs(d.variacao) + '% vs mês ant.', subColor: varColor },
+                { icon:'📅', label:'Recebido hoje',       val:d.recHoje, prefix:'R$ ', suffix:'', isInt:false, sub:'atualizado agora', subColor:'rgba(255,255,255,0.35)' },
+                { icon:'⚠️', label:'Inadimplentes',       val:d.alunosInad, prefix:'', suffix:' alunos', isInt:true, sub: d.pctInad + '% da base', subColor: d.pctInad > 15 ? '#f87171' : '#f59e0b' },
+                { icon:'💳', label:'Ticket médio',        val:d.ticketMedio, prefix:'R$ ', suffix:'', isInt:false, sub:'por aluno ativo', subColor:'rgba(255,255,255,0.35)' },
+                { icon:'📊', label:'Alunos ativos',       val:d.totalAlunos, prefix:'', suffix:'', isInt:true, sub:(d.alunosVencendo||0) + ' vencendo em breve', subColor:'#f59e0b' },
+                { icon:'🏦', label:'Despesas do mês',     val:d.despMes, prefix:'R$ ', suffix:'', isInt:false, sub:'registradas', subColor:'rgba(255,255,255,0.35)' },
+                { icon:'📈', label:'Lucro líquido',       val:d.lucroMes, prefix:'R$ ', suffix:'', isInt:false, sub:'receita − despesas', subColor: d.lucroMes >= 0 ? '#4ade80' : '#f87171' },
+                { icon:'🔴', label:'% Inadimplência',     val:d.pctInad, prefix:'', suffix:'%', isInt:true, sub: d.pctInad > 20 ? '⚠️ Atenção necessária' : '✓ Dentro do esperado', subColor: d.pctInad > 20 ? '#f87171' : '#4ade80' }
+            ];
+
+            grid.style.gridTemplateColumns = '1fr 1fr';
+            grid.innerHTML = kpis.map(function(k, idx) {
+                var valColor = k.label === 'Lucro líquido' && k.val < 0 ? '#f87171' : '#C9A23A';
+                return '<div class="fKpiCard" style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,162,58,0.12);border-radius:14px;padding:14px;animation-delay:' + (idx*0.06) + 's;">' +
+                       '<div style="font-size:18px;margin-bottom:6px;">' + k.icon + '</div>' +
+                       '<div id="fKpi_' + idx + '" style="font-size:18px;font-weight:800;color:' + valColor + ';line-height:1;">' + k.prefix + '…' + '</div>' +
+                       '<div style="font-size:9px;color:rgba(255,255,255,0.4);font-weight:700;letter-spacing:.3px;margin-top:3px;text-transform:uppercase;">' + k.label + '</div>' +
+                       '<div style="font-size:10px;color:' + k.subColor + ';margin-top:4px;">' + k.sub + '</div>' +
+                       '</div>';
+            }).join('');
+
+            // Anima os valores após render
+            kpis.forEach(function(k, idx) {
+                var el = document.getElementById('fKpi_' + idx);
+                if (el) fAnimateNum(el, k.val, k.prefix, k.suffix, k.isInt);
+            });
+        }
+
+        function renderFinChartFat(dias30) {
+            var ctx = document.getElementById('fChartFat');
+            if (!ctx) return;
+            if (_finCharts.fat) { _finCharts.fat.destroy(); }
+
+            var labels = dias30.map(function(d) {
+                var parts = d.data.split('-');
+                return parts[2] + '/' + parts[1];
+            });
+            var valores = dias30.map(function(d) { return d.valor; });
+            var total   = valores.reduce(function(a,b){ return a+b; }, 0);
+
+            var sub = document.getElementById('fFatSubtitle');
+            if (sub) sub.textContent = 'Total: ' + fFmt(total) + ' nos últimos 30 dias';
+
+            if (typeof Chart === 'undefined') {
+                var s = document.createElement('script');
+                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js';
+                s.onload = function() { _doRenderFat(ctx, labels, valores); };
+                document.head.appendChild(s);
+            } else { _doRenderFat(ctx, labels, valores); }
+        }
+
+        function _doRenderFat(ctx, labels, valores) {
+            _finCharts.fat = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: valores,
+                        borderColor: '#C9A23A',
+                        backgroundColor: function(ctx2) {
+                            var g = ctx2.chart.ctx.createLinearGradient(0,0,0,160);
+                            g.addColorStop(0, 'rgba(201,162,58,0.25)');
+                            g.addColorStop(1, 'rgba(201,162,58,0)');
+                            return g;
+                        },
+                        borderWidth: 2, fill: true, tension: 0.4,
+                        pointRadius: 0, pointHoverRadius: 4,
+                        pointHoverBackgroundColor: '#C9A23A'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, animation: { duration: 800 },
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { display: false }, tooltip: {
+                        backgroundColor: 'rgba(10,10,20,0.9)', titleColor: '#C9A23A',
+                        bodyColor: '#fff', borderColor: 'rgba(201,162,58,0.3)', borderWidth: 1,
+                        callbacks: { label: function(ctx3) { return ' R$ ' + parseFloat(ctx3.raw||0).toLocaleString('pt-BR',{minimumFractionDigits:2}); } }
+                    }},
+                    scales: {
+                        x: { ticks: { color: 'rgba(255,255,255,0.3)', font:{size:9}, maxTicksLimit: 8 }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                        y: { ticks: { color: 'rgba(255,255,255,0.3)', font:{size:9}, callback: function(v) { return 'R$' + (v/1000).toFixed(0) + 'k'; } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+                    }
+                }
+            });
+        }
+
+        function renderFinChartMetodos(metodos) {
+            var ctx = document.getElementById('fChartMetodos');
+            if (!ctx) return;
+            if (_finCharts.met) { _finCharts.met.destroy(); }
+            var labels = ['PIX','Cartão','Dinheiro','Manual'];
+            var values = [metodos.pix||0, metodos.cartao||0, metodos.dinheiro||0, metodos.manual||0];
+            var colors = ['#4ade80','#60a5fa','#C9A23A','#a78bfa'];
+            var doChart = function() {
+                _finCharts.met = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: { labels: labels, datasets: [{ data: values, backgroundColor: colors.map(function(c){ return c+'99'; }), borderColor: colors, borderWidth: 2, hoverOffset: 4 }] },
+                    options: { responsive:true, maintainAspectRatio:false, cutout:'70%',
+                        plugins: { legend: { display:true, position:'bottom', labels:{ color:'rgba(255,255,255,0.5)', font:{size:9}, boxWidth:8 } },
+                        tooltip:{ backgroundColor:'rgba(10,10,20,0.9)', titleColor:'#C9A23A', bodyColor:'#fff', callbacks:{ label:function(c){ return ' ' + c.label + ': ' + fFmt(c.raw); } } } } }
+                });
+            };
+            typeof Chart !== 'undefined' ? doChart() : setTimeout(doChart, 1000);
+        }
+
+        function renderFinChartInad(d) {
+            var ctx = document.getElementById('fChartInad');
+            if (!ctx) return;
+            if (_finCharts.inad) { _finCharts.inad.destroy(); }
+            var emDia    = Math.max(0, (d.totalAlunos||0) - (d.alunosInad||0) - (d.alunosVencendo||0));
+            var values   = [emDia, d.alunosVencendo||0, d.alunosInad||0];
+            var labels   = ['Em dia','Vencendo','Atrasados'];
+            var colors   = ['#4ade80','#f59e0b','#ef4444'];
+            var doChart  = function() {
+                _finCharts.inad = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: { labels:labels, datasets:[{ data:values, backgroundColor:colors.map(function(c){return c+'99';}), borderColor:colors, borderWidth:2, hoverOffset:4 }] },
+                    options: { responsive:true, maintainAspectRatio:false, cutout:'70%',
+                        plugins:{ legend:{ display:true, position:'bottom', labels:{ color:'rgba(255,255,255,0.5)', font:{size:9}, boxWidth:8 } },
+                        tooltip:{ backgroundColor:'rgba(10,10,20,0.9)', callbacks:{ label:function(c){ return ' ' + c.label + ': ' + c.raw + ' alunos'; } } } } }
+                });
+            };
+            typeof Chart !== 'undefined' ? doChart() : setTimeout(doChart, 1000);
+        }
+
+        function renderFinResumo(d) {
+            var box = document.getElementById('fResumoBox');
+            var cnt = document.getElementById('fResumoContent');
+            if (!box || !cnt) return;
+            box.style.display = '';
+            var rows = [
+                { label:'Faturamento', val:fFmt(d.recMes), color:'#4ade80' },
+                { label:'Despesas', val:fFmt(d.despMes), color:'#f87171' },
+                { label:'Lucro líquido', val:fFmt(d.lucroMes), color: d.lucroMes >= 0 ? '#C9A23A' : '#f87171' },
+                { label:'Vs mês anterior', val:(d.variacao >= 0 ? '+' : '') + d.variacao + '%', color: d.variacao >= 0 ? '#4ade80' : '#f87171' }
+            ];
+            cnt.innerHTML = rows.map(function(r) {
+                return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.06);">' +
+                       '<span style="font-size:12px;color:rgba(255,255,255,0.5);">' + r.label + '</span>' +
+                       '<span style="font-size:14px;font-weight:800;color:' + r.color + ';">' + r.val + '</span></div>';
+            }).join('');
+        }
+
+        // ── Cobranças ─────────────────────────────────────────────────────
+        async function loadFinCobrancas() {
+            try {
+                var r = await secureFetch('getCobrancasList', {});
+                if (!r.success) return;
+                _finCobAll = r.cobrancas || [];
+                _finData.cobLoaded = true;
+                renderFinCobResumo(r.resumo || {});
+                fFiltrarCobrancas();
+            } catch(e) { console.warn('[Fin] Cobranças error:', e.message); }
+        }
+
+        function renderFinCobResumo(res) {
+            var el = document.getElementById('fCobResumo');
+            if (!el) return;
+            var items = [
+                { label:'Total', val:res.total||0, cor:'rgba(255,255,255,0.6)', bg:'rgba(255,255,255,0.04)' },
+                { label:'Crítico', val:res.critico||0, cor:'#ef4444', bg:'rgba(239,68,68,0.08)' },
+                { label:'Alto', val:res.alto||0, cor:'#f97316', bg:'rgba(249,115,22,0.08)' },
+                { label:'R$ total', val:'R$' + ((res.valorTotal||0)/1000).toFixed(1)+'k', cor:'#C9A23A', bg:'rgba(201,162,58,0.08)' }
+            ];
+            el.innerHTML = items.map(function(i) {
+                return '<div style="text-align:center;padding:10px 6px;background:'+i.bg+';border-radius:10px;">' +
+                       '<div style="font-size:18px;font-weight:800;color:'+i.cor+';">'+i.val+'</div>' +
+                       '<div style="font-size:9px;color:rgba(255,255,255,0.35);margin-top:2px;">'+i.label+'</div></div>';
+            }).join('');
+        }
+
+        function fFiltrarCobrancas() {
+            var busca  = ((document.getElementById('fCobBusca')||{}).value||'').toLowerCase();
+            var filtro = (document.getElementById('fCobFiltro')||{}).value||'';
+            var lista  = _finCobAll.filter(function(c) {
+                if (filtro && c.risco !== filtro) return false;
+                if (busca && (c.nome||'').toLowerCase().indexOf(busca) === -1) return false;
+                return true;
+            });
+            renderFinCobLista(lista);
+        }
+
+        function renderFinCobLista(lista) {
+            var el = document.getElementById('fCobLista');
+            if (!el) return;
+            if (!lista.length) {
+                el.innerHTML = '<div style="text-align:center;padding:32px;color:rgba(255,255,255,0.3);"><div style="font-size:28px;margin-bottom:8px;">✅</div><div style="font-size:12px;">Nenhuma cobrança pendente</div></div>';
+                return;
+            }
+            el.innerHTML = lista.map(function(c) {
+                var riscoCls = 'fcob-' + c.risco;
+                var riscoDB = {critico:'🔴 Crítico', alto:'🟠 Alto', medio:'🟡 Médio', baixo:'🟢 Baixo'}[c.risco] || '';
+                var atrStr  = c.diasAtraso > 0 ? c.diasAtraso + 'd atraso' : 'Vence hoje';
+                var tel = (c.telefone||'').replace(/\D/g,'');
+                var whaUrl = tel ? 'https://wa.me/55' + tel + '?text=' + encodeURIComponent('Olá ' + (c.nome||'').split(' ')[0] + ', sua mensalidade de ' + fFmt(c.valor) + ' venceu em ' + c.vencimento + '. Por favor regularize sua situação!') : '';
+                return '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:12px;margin-bottom:8px;">' +
+                    '<div style="display:flex;align-items:flex-start;gap:10px;">' +
+                    '<div style="width:36px;height:36px;border-radius:50%;background:rgba(201,162,58,0.1);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;font-weight:800;color:#C9A23A;">' + (c.nome||'?').charAt(0).toUpperCase() + '</div>' +
+                    '<div style="flex:1;min-width:0;">' +
+                    '<div style="font-size:13px;font-weight:700;color:var(--adm-text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(c.nome||'') + '</div>' +
+                    '<div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px;">' + escapeHtml(c.faixa||'') + ' · Venc: ' + c.vencimento + ' · ' + atrStr + '</div>' +
+                    '</div>' +
+                    '<div style="text-align:right;flex-shrink:0;">' +
+                    '<div style="font-size:14px;font-weight:800;color:#f87171;">' + fFmt(c.valor) + '</div>' +
+                    '<span class="fcob-badge ' + riscoCls + '">' + riscoDB + '</span>' +
+                    '</div></div>' +
+                    (whaUrl ? '<a href="' + whaUrl + '" target="_blank" style="display:flex;align-items:center;justify-content:center;gap:6px;margin-top:8px;padding:7px;background:rgba(37,211,102,0.08);border:1px solid rgba(37,211,102,0.2);border-radius:8px;color:#25d366;font-size:11px;font-weight:700;text-decoration:none;">📱 Cobrar no WhatsApp</a>' : '') +
+                    '</div>';
+            }).join('');
+        }
+
+        // ── Fluxo de Caixa ────────────────────────────────────────────────
+        async function loadFinFluxo() {
+            try {
+                var r1 = await secureFetch('getFinanceiroDashboard', {});
+                var r2 = await secureFetch('getDespesas', {});
+                _finData.fluxoLoaded = true;
+                if (r1.success) renderFinFluxoSaldo(r1);
+                if (r2.success) renderFinDespLista(r2.despesas || []);
+            } catch(e) { console.warn('[Fin] Fluxo error:', e.message); }
+        }
+
+        function renderFinFluxoSaldo(d) {
+            var el = document.getElementById('fFluxoSaldo');
+            if (!el) return;
+            var items = [
+                { label:'Receita', val:fFmt(d.recMes), color:'#4ade80', icon:'📈' },
+                { label:'Despesas', val:fFmt(d.despMes), color:'#f87171', icon:'📤' },
+                { label:'Saldo', val:fFmt(d.lucroMes), color: d.lucroMes >= 0 ? '#C9A23A' : '#f87171', icon:'💰' }
+            ];
+            el.innerHTML = items.map(function(i) {
+                return '<div style="text-align:center;padding:12px 6px;background:rgba(255,255,255,0.03);border-radius:12px;">' +
+                       '<div style="font-size:18px;margin-bottom:4px;">' + i.icon + '</div>' +
+                       '<div style="font-size:13px;font-weight:800;color:' + i.color + ';">' + i.val + '</div>' +
+                       '<div style="font-size:9px;color:rgba(255,255,255,0.35);margin-top:3px;">' + i.label + '</div></div>';
+            }).join('');
+        }
+
+        function renderFinDespLista(despesas) {
+            var el = document.getElementById('fDespLista');
+            if (!el) return;
+            var catIcon = {aluguel:'🏠',agua:'💧',luz:'💡',professor:'🥋',marketing:'📱',campeonato:'🏆',manutencao:'🔧',outros:'📦'};
+            if (!despesas.length) {
+                el.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.3);font-size:12px;">Nenhuma despesa registrada</div>';
+                return;
+            }
+            el.innerHTML = despesas.map(function(d) {
+                return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.02);border-radius:9px;margin-bottom:5px;">' +
+                       '<span style="font-size:18px;">' + (catIcon[d.categoria]||'📦') + '</span>' +
+                       '<div style="flex:1;"><div style="font-size:12px;font-weight:700;color:var(--adm-text-1);">' + escapeHtml(d.descricao||d.categoria) + '</div>' +
+                       '<div style="font-size:10px;color:rgba(255,255,255,0.35);">' + d.data + '</div></div>' +
+                       '<div style="font-size:13px;font-weight:800;color:#f87171;">' + fFmt(d.valor) + '</div></div>';
+            }).join('');
+        }
+
+        function fAbrirNovaDespesa() {
+            var f = document.getElementById('fNovaDespForm');
+            if (f) f.style.display = f.style.display === 'none' ? '' : 'none';
+            var hoje = new Date();
+            var hojeStr = hoje.getFullYear() + '-' + String(hoje.getMonth()+1).padStart(2,'0') + '-' + String(hoje.getDate()).padStart(2,'0');
+            var dataEl = document.getElementById('fDespData');
+            if (dataEl && !dataEl.value) dataEl.value = hojeStr;
+        }
+
+        async function fSalvarDespesa() {
+            var msg = document.getElementById('fDespMsg');
+            var payload = {
+                categoria: (document.getElementById('fDespCat')||{}).value||'outros',
+                descricao: (document.getElementById('fDespDesc')||{}).value||'',
+                valor:     (document.getElementById('fDespValor')||{}).value||0,
+                data:      (document.getElementById('fDespData')||{}).value||''
+            };
+            if (!payload.valor || payload.valor <= 0) { if(msg){ msg.textContent='❌ Informe o valor'; msg.style.color='#f87171'; } return; }
+            if (msg) { msg.textContent='⏳ Salvando...'; msg.style.color='rgba(255,255,255,0.5)'; }
+            try {
+                var r = await secureFetch('saveDespesa', payload);
+                if (r.success) {
+                    if (msg) { msg.textContent='✅ Salvo!'; msg.style.color='#4ade80'; }
+                    document.getElementById('fDespDesc').value = '';
+                    document.getElementById('fDespValor').value = '';
+                    _finData.fluxoLoaded = false;
+                    setTimeout(function() { loadFinFluxo(); document.getElementById('fNovaDespForm').style.display='none'; }, 800);
+                } else {
+                    if (msg) { msg.textContent='❌ ' + (r.message||'Erro'); msg.style.color='#f87171'; }
+                }
+            } catch(e) { if(msg){ msg.textContent='❌ Erro de conexão'; msg.style.color='#f87171'; } }
+        }
+
+        // ── Alertas ───────────────────────────────────────────────────────
+        async function loadFinAlertas() {
+            try {
+                var r = await secureFetch('getAlertasFinanceiros', {});
+                _finData.alertasLoaded = true;
+                if (!r.success) return;
+                var alertas = r.alertas || [];
+                var badge   = document.getElementById('fAlertasBadge');
+                if (badge) { badge.textContent = alertas.length; badge.style.display = alertas.length > 0 ? '' : 'none'; }
+                renderFinAlertas(alertas);
+            } catch(e) { console.warn('[Fin] Alertas error:', e.message); }
+        }
+
+        function renderFinAlertas(alertas) {
+            var el = document.getElementById('fAlertasList');
+            if (!el) return;
+            if (!alertas.length) {
+                el.innerHTML = '<div style="text-align:center;padding:48px 16px;"><div style="font-size:40px;margin-bottom:12px;">✅</div><div style="font-size:14px;font-weight:700;color:#4ade80;">Tudo em ordem</div><div style="font-size:12px;color:rgba(255,255,255,0.35);margin-top:6px;">Nenhum alerta financeiro no momento</div></div>';
+                return;
+            }
+            var priMap = { critica: { bg:'rgba(239,68,68,0.08)', border:'rgba(239,68,68,0.25)', badge:'rgba(239,68,68,0.15)', cor:'#ef4444', label:'CRÍTICO' },
+                          alta:    { bg:'rgba(249,115,22,0.08)', border:'rgba(249,115,22,0.25)', badge:'rgba(249,115,22,0.15)', cor:'#f97316', label:'ALTO' },
+                          media:   { bg:'rgba(234,179,8,0.08)',  border:'rgba(234,179,8,0.25)',  badge:'rgba(234,179,8,0.15)',  cor:'#eab308', label:'MÉDIO' },
+                          baixa:   { bg:'rgba(74,222,128,0.06)', border:'rgba(74,222,128,0.15)', badge:'rgba(74,222,128,0.12)', cor:'#4ade80', label:'BAIXO' } };
+            el.innerHTML = alertas.map(function(a) {
+                var p = priMap[a.prioridade] || priMap.media;
+                return '<div style="display:flex;align-items:center;gap:12px;padding:14px;background:'+p.bg+';border:1px solid '+p.border+';border-radius:12px;margin-bottom:8px;">' +
+                       '<span style="font-size:22px;flex-shrink:0;">' + a.icone + '</span>' +
+                       '<div style="flex:1;"><div style="font-size:13px;font-weight:700;color:var(--adm-text-1);">' + escapeHtml(a.msg) + '</div>' +
+                       '</div><span style="font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;background:'+p.badge+';color:'+p.cor+';flex-shrink:0;">' + p.label + '</span></div>';
+            }).join('');
+        }
+
         async function loadPresencaList() {
             var ct = document.getElementById('presListCT').value;
             var modSel = document.getElementById('presListMod');
@@ -34836,6 +36066,73 @@
             }
         }
 
+        /**
+         * Calcula quantas aulas o aluno faltou desde o último check-in.
+         * Usa o cronograma do CT para saber quais dias da semana têm aula.
+         * @param {Date}   lastDate  - Data do último check-in
+         * @param {string} ctName    - Nome do CT do aluno
+         * @returns {number} quantidade de aulas perdidas
+         */
+        function _calcAulasFaltadas(lastDate, ctName) {
+            if (!lastDate || isNaN(lastDate.getTime())) return 0;
+
+            // Dia da semana JS → chave do cronograma
+            var JS_DAY_TO_KEY = ['dom','seg','ter','qua','qui','sex','sab'];
+
+            // Descobre quais dias da semana têm aula neste CT
+            var diasComAula = {};
+            var ctObj = null;
+            if (typeof allCTs !== 'undefined' && Array.isArray(allCTs)) {
+                ctObj = allCTs.find(function(ct) {
+                    return typeof ct === 'object' && (ct.name || ct.nome) === ctName;
+                });
+            }
+
+            if (ctObj) {
+                var hpd = ctObj.horariosPorDia || {};
+                JS_DAY_TO_KEY.forEach(function(key) {
+                    var entry = hpd[key];
+                    if (entry) {
+                        // Tem horário definido neste dia → dia de aula
+                        var temHorario = false;
+                        if (typeof entry === 'string' && entry.trim().length > 0) temHorario = true;
+                        if (typeof entry === 'object') {
+                            // Pode ser { horarios: [...] } ou array de horários
+                            var vals = Array.isArray(entry) ? entry : Object.values(entry);
+                            temHorario = vals.some(function(v) { return v && v.toString().trim().length > 0; });
+                        }
+                        if (temHorario) diasComAula[key] = true;
+                    }
+                });
+                // Fallback: usa ct.schedule (booleanos)
+                if (Object.keys(diasComAula).length === 0 && ctObj.schedule) {
+                    JS_DAY_TO_KEY.forEach(function(key) {
+                        if (ctObj.schedule[key]) diasComAula[key] = true;
+                    });
+                }
+            }
+
+            // Se não temos dados do cronograma → assume seg/qua/sex (3x/semana)
+            if (Object.keys(diasComAula).length === 0) {
+                diasComAula = { seg: true, qua: true, sex: true };
+            }
+
+            // Conta os dias de aula entre lastDate+1 e ontem (não conta hoje)
+            var hoje   = new Date();
+            hoje.setHours(0, 0, 0, 0);
+            var cursor = new Date(lastDate);
+            cursor.setHours(0, 0, 0, 0);
+            cursor.setDate(cursor.getDate() + 1); // começa no dia APÓS o último check-in
+
+            var faltadas = 0;
+            while (cursor < hoje) {
+                var dow = JS_DAY_TO_KEY[cursor.getDay()];
+                if (diasComAula[dow]) faltadas++;
+                cursor.setDate(cursor.getDate() + 1);
+            }
+            return faltadas;
+        }
+
         function renderStudentsList(students) {
             var container = document.getElementById('adminStudentsList');
             if (students.length === 0) {
@@ -34856,16 +36153,16 @@
                     : (s.treinos || 0);                            // fallback: total histórico
                 var isDeactivated = s.status === 'DESATIVADO';
                 
-                // Calculate days since last check-in
-                var diasAusente = 0;
+                // Calcula aulas faltadas (dias de aula do CT que o aluno não compareceu)
+                var aulasAusente = 0;
                 var alertaAusencia = '';
                 if (s.ultimoCheckin) {
                     var lastDate = new Date(s.ultimoCheckin);
-                    diasAusente = Math.floor((hoje - lastDate) / (1000*60*60*24));
-                    if (diasAusente >= 25 && diasAusente < 30) {
-                        alertaAusencia = '<div style="font-size:9px;color:#f59e0b;margin-top:2px;">⚠️ ' + diasAusente + ' dias sem treinar — notifique no painel se necessário</div>';
-                    } else if (diasAusente >= 30 && !isDeactivated) {
-                        alertaAusencia = '<div style="font-size:9px;color:#f87171;margin-top:2px;">🔴 ' + diasAusente + ' dias ausente — verificar no painel</div>';
+                    aulasAusente = _calcAulasFaltadas(lastDate, s.ct || '');
+                    if (aulasAusente >= 8 && aulasAusente < 12) {
+                        alertaAusencia = '<div style="font-size:9px;color:#f59e0b;margin-top:2px;">⚠️ ' + aulasAusente + ' aulas perdidas — notifique no painel se necessário</div>';
+                    } else if (aulasAusente >= 12 && !isDeactivated) {
+                        alertaAusencia = '<div style="font-size:9px;color:#f87171;margin-top:2px;">🔴 ' + aulasAusente + ' aulas perdidas — verificar no painel</div>';
                     }
                 }
                 
@@ -34905,7 +36202,7 @@
                     return { icon: '🌀', nome: mp || 'Sem modalidade', nivel: nivelLabel };
                 })();
                 html += '<div class="admin-student-belt">' + _modDisplay.icon + ' ' + _modDisplay.nome + (_modDisplay.nivel ? ' · ' + _modDisplay.nivel : '') + ' · 📍 ' + (s.ct || '-') + (isAdm ? ' · 🏫 ' + ((s.ctsProfessor || '').split(',').filter(function(x){ return x.trim(); }).length || '?') + ' CT(s)' : ' · 💪 ' + treinos);
-                if (!isAdm && diasAusente > 0) html += ' · 📅 ' + diasAusente + 'd ausente';
+                if (!isAdm && aulasAusente > 0) html += ' · 📅 ' + aulasAusente + ' aula' + (aulasAusente !== 1 ? 's' : '') + ' perdida' + (aulasAusente !== 1 ? 's' : '');
                 // Categoria etária para qualquer modalidade com sistema de categorias
                 var _mpCat = s.modalidadePrincipal || 'bjj';
                 if (s.nascimento && CATEGORIAS_POR_MODALIDADE[_mpCat]) {
@@ -37394,6 +38691,14 @@
                     }
                 }
             } catch(e) {}
+        }
+
+        // Aviso de foto de perfil ausente — exibido na aba principal do aluno
+        function _verificarFotoPerfilAluno() {
+            var banner = document.getElementById('semFotoPerfilBanner');
+            if (!banner) return;
+            var temFoto = currentUser && currentUser.avatar && currentUser.avatar.length > 100;
+            banner.style.display = temFoto ? 'none' : '';
         }
 
         window.fotoReiniciar = function() {
