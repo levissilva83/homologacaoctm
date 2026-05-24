@@ -9133,7 +9133,7 @@
                                 <!-- CT — só mostra se houver mais de um -->
                                 <div id="fotoCtBox" style="margin-bottom:10px;display:none;">
                                     <label style="font-size:11px;font-weight:700;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:5px;">📍 Centro de Treinamento</label>
-                                    <select id="fotoCtFiltro" onchange="fotoAtualizarHorarios()" style="width:100%;padding:10px 12px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;outline:none;">
+                                    <select id="fotoCtFiltro" onchange="fotoPopularDatas(this.value);fotoAtualizarHorarios()" style="width:100%;padding:10px 12px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;outline:none;">
                                         <option value="">— Selecione o CT —</option>
                                     </select>
                                 </div>
@@ -9142,7 +9142,7 @@
                                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
                                     <div>
                                         <label style="font-size:11px;font-weight:700;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:5px;">📅 Data da Aula</label>
-                                        <input type="date" id="fotoDataAula" onchange="fotoAtualizarHorarios()" style="width:100%;box-sizing:border-box;padding:10px 12px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:10px;font-size:13px;">
+                                        <select id="fotoDataAula" onchange="fotoAtualizarHorarios()" style="width:100%;padding:10px 12px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:10px;font-size:13px;"><option value="">— Carregando —</option></select>
                                     </div>
                                     <div>
                                         <label style="font-size:11px;font-weight:700;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:5px;">🕐 Horário</label>
@@ -31658,6 +31658,19 @@
 
         // ── Modal de vínculo manual ───────────────────────────────────────
         function fv2AbrirVinculoManual(face, idx) {
+            // Guard: carrega alunos se cache vazio
+            if (typeof adminStudentsCache === 'undefined' || adminStudentsCache.length === 0) {
+                var msgEl2 = document.getElementById('fv2ResultMsg');
+                if (msgEl2) { msgEl2.textContent = '⏳ Carregando alunos...'; msgEl2.style.color = '#C9A23A'; }
+                secureFetch('getStudents', {}).then(function(r) {
+                    if (r && r.students) { adminStudentsCache = r.students; }
+                    if (msgEl2) msgEl2.textContent = '';
+                    fv2AbrirVinculoManual(face, idx);
+                }).catch(function() {
+                    if (msgEl2) { msgEl2.textContent = '❌ Erro ao carregar alunos'; msgEl2.style.color = '#f87171'; }
+                });
+                return;
+            }
             var modal = document.getElementById('fv2ModalVinculo');
             if (!modal) {
                 modal = document.createElement('div');
@@ -31668,9 +31681,9 @@
 
             // Prepara lista de alunos do CT selecionado
             var ctFiltro = _fv2.ct;
-            var alunosCT = typeof allStudents !== 'undefined' ? allStudents.filter(function(s) {
-                return !ctFiltro || (s.ct || s[4] || '') === ctFiltro;
-            }) : [];
+            var alunosCT = adminStudentsCache.filter(function(s) {
+                return !ctFiltro || (s.ct || '') === ctFiltro;
+            });
 
             modal.innerHTML = '<div style="background:#16161f;border-radius:16px 16px 0 0;padding:20px 16px;width:100%;max-width:600px;max-height:70vh;overflow-y:auto;">' +
                 '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">' +
@@ -31724,8 +31737,8 @@
 
             var ctFiltro = document.getElementById('fotoCtFiltro');
             var ctName   = (ctFiltro && ctFiltro.value) ? ctFiltro.value : (_fv2.ct || '');
-            var alunosCT = typeof allStudents !== 'undefined' ? allStudents.filter(function(s) {
-                return !ctName || (s.ct || s[4] || '') === ctName;
+            var alunosCT = typeof adminStudentsCache !== 'undefined' && adminStudentsCache.length > 0 ? adminStudentsCache.filter(function(s) {
+                return !ctName || (s.ct || '') === ctName;
             }) : [];
 
             modal.innerHTML = '<div style="background:#16161f;border-radius:16px 16px 0 0;padding:20px 16px;width:100%;max-width:600px;max-height:75vh;overflow-y:auto;">' +
@@ -31746,9 +31759,9 @@
                 'style="width:100%;box-sizing:border-box;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#fff;font-size:13px;margin-bottom:10px;">' +
                 '<div id="fv2ListaVinculo">' +
                 alunosCT.map(function(s) {
-                    var email = s.email || s[0] || '';
-                    var nome  = s.nome  || s.name || s[1] || email;
-                    var faixa = s.faixa || s[2] || '';
+                    var email = s.email || '';
+                    var nome  = s.name  || s.nome || email;
+                    var faixa = s.faixa || '';
                     return '<div class="fv2AlunoItem" data-email="' + escapeHtml(email) + '" data-nome="' + escapeHtml(nome) + '" data-idx="' + matchIdx + '"' +
                            ' style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;cursor:pointer;margin-bottom:4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);">' +
                            '<div style="width:32px;height:32px;border-radius:50%;background:rgba(201,162,58,0.12);display:flex;align-items:center;justify-content:center;font-size:15px;">👤</div>' +
@@ -31787,9 +31800,9 @@
 
             // Busca dados do aluno correto
             var alunoInfo = {};
-            if (typeof allStudents !== 'undefined') {
-                var found = allStudents.find(function(s){ return (s.email||s[0]||'') === email; });
-                if (found) alunoInfo = { faixa: found.faixa||found[2]||'' };
+            if (typeof adminStudentsCache !== 'undefined') {
+                var found = adminStudentsCache.find(function(s){ return (s.email||'') === email; });
+                if (found) alunoInfo = { faixa: found.faixa||'' };
             }
 
             // Atualiza o match local
@@ -32359,16 +32372,93 @@
         // ── Funções auxiliares da tela de foto inline ────────────────────
 
         // Popula CT e data ao entrar no fase1 (chamado por fotoHandleFile e fotoAbrirCamera)
-        function fotoInicializarFase1() {
-            // Data padrão = hoje
-            var dataInput = document.getElementById('fotoDataAula');
-            if (dataInput && !dataInput.value) {
-                var hoje = new Date();
-                dataInput.value = hoje.getFullYear() + '-' +
-                    String(hoje.getMonth()+1).padStart(2,'0') + '-' +
-                    String(hoje.getDate()).padStart(2,'0');
+        // Popula o select com SOMENTE as datas que têm aula (até 30 dias atrás + 14 dias à frente)
+        function fotoPopularDatas(ctName) {
+            var sel = document.getElementById('fotoDataAula');
+            if (!sel) return;
+
+            // Descobre dias da semana com aula para este CT
+            var JS_DAYS = ['dom','seg','ter','qua','qui','sex','sab'];
+            var PT_DAYS = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+            var PT_LONG = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+
+            var ctObj = null;
+            if (typeof allCTs !== 'undefined' && Array.isArray(allCTs)) {
+                ctObj = allCTs.find(function(ct) {
+                    return (typeof ct === 'string' ? ct : (ct.name || ct.nome || '')) === ctName;
+                });
             }
 
+            // Determina quais dias têm aula
+            var diasComAula = {}; // { 'seg': true, 'qua': true, 'sex': true }
+            if (ctObj && typeof ctObj === 'object') {
+                var hpdCT = ctObj.horariosPorDia || {};
+                JS_DAYS.forEach(function(dk) {
+                    if (typeof _getHorariosHoje === 'function') {
+                        var hrs = _getHorariosHoje(hpdCT, dk, ctObj.horarios || '', '');
+                        if (hrs) diasComAula[dk] = true;
+                    }
+                });
+
+                // Fallback: schedule booleano
+                if (Object.keys(diasComAula).length === 0 && ctObj.schedule) {
+                    JS_DAYS.forEach(function(dk) { if (ctObj.schedule[dk]) diasComAula[dk] = true; });
+                }
+            }
+
+            // Se não tiver cronograma, aceita qualquer dia
+            var qualquerDia = Object.keys(diasComAula).length === 0;
+
+            // Gera datas: 14 dias atrás até 7 dias à frente
+            var hoje = new Date(); hoje.setHours(0,0,0,0);
+            var datas = [];
+            for (var d = -14; d <= 7; d++) {
+                var dt = new Date(hoje);
+                dt.setDate(hoje.getDate() + d);
+                var dk = JS_DAYS[dt.getDay()];
+                if (qualquerDia || diasComAula[dk]) datas.push(dt);
+            }
+
+            // Ordena do mais recente para o mais antigo (hoje primeiro)
+            datas.sort(function(a, b) { return b - a; });
+
+            sel.innerHTML = '';
+
+            datas.forEach(function(dt) {
+                var opt   = document.createElement('option');
+                var y = dt.getFullYear();
+                var m = String(dt.getMonth()+1).padStart(2,'0');
+                var d2 = String(dt.getDate()).padStart(2,'0');
+                opt.value = y + '-' + m + '-' + d2;
+
+                var dayName = PT_LONG[dt.getDay()];
+                var diffDias = Math.round((dt - hoje) / 86400000);
+                var label = '';
+                if (diffDias === 0)  label = '🟢 Hoje · ' + dayName + ' ' + d2 + '/' + m + '/' + y;
+                else if (diffDias === -1) label = '⬅ Ontem · ' + dayName + ' ' + d2 + '/' + m + '/' + y;
+                else if (diffDias === 1)  label = '➡ Amanhã · ' + dayName + ' ' + d2 + '/' + m + '/' + y;
+                else if (diffDias < 0)    label = dayName + ' ' + d2 + '/' + m + '/' + y + ' (' + Math.abs(diffDias) + 'd atrás)';
+                else                      label = dayName + ' ' + d2 + '/' + m + '/' + y + ' (em ' + diffDias + 'd)';
+
+                opt.textContent = label;
+
+                // Seleciona hoje por padrão
+                if (diffDias === 0) opt.selected = true;
+                sel.appendChild(opt);
+            });
+
+            // Se não gerou nada, insere opção de hoje como fallback
+            if (datas.length === 0) {
+                var opt2 = document.createElement('option');
+                var hj = new Date();
+                opt2.value = hj.getFullYear() + '-' + String(hj.getMonth()+1).padStart(2,'0') + '-' + String(hj.getDate()).padStart(2,'0');
+                opt2.textContent = 'Hoje · ' + PT_LONG[hj.getDay()];
+                opt2.selected = true;
+                sel.appendChild(opt2);
+            }
+        }
+
+        function fotoInicializarFase1() {
             // CT: mostra seletor só se houver mais de um CT disponível
             var ctBox = document.getElementById('fotoCtBox');
             var ctSel = document.getElementById('fotoCtFiltro');
@@ -32405,6 +32495,9 @@
                     }
                 }
             }
+            // Popula as datas com base no cronograma do CT
+            var ctSelFinal = (document.getElementById('fotoCtFiltro')||{}).value || (currentUser && currentUser.ct) || '';
+            fotoPopularDatas(ctSelFinal);
             fotoAtualizarHorarios();
         }
 
@@ -33253,7 +33346,7 @@
                 _gradTabData = {
                     prontos:    (data.overdueAlerts || []).concat(data.alerts || []),
                     near:       data.nearAlerts   || [],
-                    allStudents: data.allStudents || []
+                    adminStudentsCache: data.adminStudentsCache || []
                 };
                 _gradTabCT    = null;
                 _gradTabFaixa = null;
@@ -33267,7 +33360,7 @@
         // v4.9 — filtros de nível dinâmicos por schema da modalidade ativa
         function renderGradTabFilters() {
             if (!_gradTabData) return;
-            var all = _gradTabData.prontos.concat(_gradTabData.near).concat(_gradTabData.allStudents);
+            var all = _gradTabData.prontos.concat(_gradTabData.near).concat(_gradTabData.adminStudentsCache);
             var cts = {};
             all.forEach(function(a) { if (a.ct) cts[a.ct] = true; });
 
@@ -33350,7 +33443,7 @@
 
             var prontos = applyFilters(_gradTabData.prontos);
             var near    = applyFilters(_gradTabData.near);
-            var rest    = applyFilters(_gradTabData.allStudents);
+            var rest    = applyFilters(_gradTabData.adminStudentsCache);
 
             if (badge)    { badge.textContent = prontos.length;    badge.style.display = prontos.length ? 'inline-block' : 'none'; }
             if (badgeAll) { badgeAll.textContent = rest.length;    badgeAll.style.display = rest.length ? 'inline-block' : 'none'; }
@@ -39279,9 +39372,9 @@
                     if (resp && resp.success && resp.alunos) alunos = resp.alunos;
                 }
             } catch(e) {}
-            // Fallback: usa allStudents se já carregado na memória
-            if (!alunos.length && typeof allStudents !== 'undefined' && allStudents && allStudents.length) {
-                alunos = allStudents.map(function(s) {
+            // Fallback: usa adminStudentsCache se já carregado na memória
+            if (!alunos.length && typeof adminStudentsCache !== 'undefined' && adminStudentsCache && adminStudentsCache.length) {
+                alunos = adminStudentsCache.map(function(s) {
                     return { email: s.email || s[0], nome: s.nome || s.name || s[1], faixa: s.faixa || s[2], ct: s.ct || s[4], avatar: s.avatar || s[20] || null, temFoto: !!(s.avatar || s[20]) };
                 });
             }
