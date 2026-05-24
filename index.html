@@ -9126,19 +9126,33 @@
                                 </div>
                                 <div id="fotoErroMsg" style="display:none;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px;color:#EF4444;"></div>
 
-                                <!-- Seletor de Centro de Treinamento -->
-                                <div style="margin-bottom:10px;">
-                                    <label style="font-size:11px;font-weight:700;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:5px;">📍 Filtrar por Centro</label>
-                                    <select id="fotoCtFiltro" style="width:100%;padding:10px 12px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;outline:none;">
-                                        <option value="">— Selecione o CT —</option>
-                                    </select>
-                                    <div style="font-size:10px;color:var(--adm-text-3);margin-top:4px;line-height:1.4;">A busca será restrita aos alunos deste CT (mais rápido e preciso).</div>
-                                </div>
-
-                                <!-- Motor selecionado automaticamente pelo sistema CTM -->
+                                <!-- Motores ocultos (CTM seleciona automaticamente) -->
                                 <input type="radio" name="motorFoto" value="claude" checked id="motorClaudeHidden" style="display:none;">
                                 <input type="radio" name="motorFoto" value="rekognition" id="motorRekognition" style="display:none;">
-                                <button onclick="abrirCheckinFacialV2()" 
+
+                                <!-- CT — só mostra se houver mais de um -->
+                                <div id="fotoCtBox" style="margin-bottom:10px;display:none;">
+                                    <label style="font-size:11px;font-weight:700;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:5px;">📍 Centro de Treinamento</label>
+                                    <select id="fotoCtFiltro" onchange="fotoAtualizarHorarios()" style="width:100%;padding:10px 12px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;outline:none;">
+                                        <option value="">— Selecione o CT —</option>
+                                    </select>
+                                </div>
+
+                                <!-- Data + Horário -->
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+                                    <div>
+                                        <label style="font-size:11px;font-weight:700;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:5px;">📅 Data da Aula</label>
+                                        <input type="date" id="fotoDataAula" onchange="fotoAtualizarHorarios()" style="width:100%;box-sizing:border-box;padding:10px 12px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:10px;font-size:13px;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size:11px;font-weight:700;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:0.6px;display:block;margin-bottom:5px;">🕐 Horário</label>
+                                        <select id="fotoHorarioAula" style="width:100%;padding:10px 12px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:10px;font-size:13px;">
+                                            <option value="">— Selecione —</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <button onclick="iniciarFotoCheckin()" id="btnIniciarFotoCheckin"
                                     style="width:100%;padding:13px;border-radius:12px;border:none;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;">
                                     📸 Confirmar Presença
                                 </button>
@@ -31132,15 +31146,21 @@
 
         // ── Abre a UI v2.0 ────────────────────────────────────────────────
         function abrirCheckinFacialV2() {
-            var overlay = document.getElementById('checkinFacialV2Overlay');
-            if (!overlay) { _criarOverlayFacialV2(); overlay = document.getElementById('checkinFacialV2Overlay'); }
-            overlay.style.display = 'flex';
-            _fv2Resetar();
+            // Chamado diretamente pela tela principal — inicia flow inline
+            iniciarFotoCheckin && iniciarFotoCheckin();
         }
 
         function fecharCheckinFacialV2() {
             var overlay = document.getElementById('checkinFacialV2Overlay');
             if (overlay) overlay.style.display = 'none';
+            // Restaura a fase config para próxima abertura via _fv2Resetar
+            var cfgFase = document.getElementById('fv2Fase_config');
+            if (cfgFase) cfgFase.style.display = '';
+            // Volta para tela de foto após confirmar presenças
+            if (_fv2 && _fv2._confirmado) {
+                fotoReiniciar && fotoReiniciar();
+                _fv2._confirmado = false;
+            }
         }
 
         function _fv2Resetar() {
@@ -32168,6 +32188,174 @@
                        '<div style="flex:1;"><div style="font-size:13px;font-weight:700;color:var(--adm-text-1);">' + escapeHtml(a.msg) + '</div>' +
                        '</div><span style="font-size:9px;font-weight:800;padding:3px 8px;border-radius:20px;background:'+p.badge+';color:'+p.cor+';flex-shrink:0;">' + p.label + '</span></div>';
             }).join('');
+        }
+
+
+        // ── Funções auxiliares da tela de foto inline ────────────────────
+
+        // Popula CT e data ao entrar no fase1 (chamado por fotoHandleFile e fotoAbrirCamera)
+        function fotoInicializarFase1() {
+            // Data padrão = hoje
+            var dataInput = document.getElementById('fotoDataAula');
+            if (dataInput && !dataInput.value) {
+                var hoje = new Date();
+                dataInput.value = hoje.getFullYear() + '-' +
+                    String(hoje.getMonth()+1).padStart(2,'0') + '-' +
+                    String(hoje.getDate()).padStart(2,'0');
+            }
+
+            // CT: mostra seletor só se houver mais de um CT disponível
+            var ctBox = document.getElementById('fotoCtBox');
+            var ctSel = document.getElementById('fotoCtFiltro');
+            if (ctBox && ctSel) {
+                // Limpa e repopula
+                var ctAtual = ctSel.value;
+                ctSel.innerHTML = '<option value="">— Selecione o CT —</option>';
+                var _MODAL_IDS = ['bjj','bjj_kids','muay_thai','muay_thai_khan','muay_thai_fmce',
+                    'kickboxing','judo','taekwondo','wrestling','boxe','luta_livre','capoeira'];
+                var ctNames = [];
+                if (typeof allCTs !== 'undefined' && Array.isArray(allCTs)) {
+                    allCTs.forEach(function(ct) {
+                        var name = typeof ct === 'string' ? ct : (ct.name || ct.nome || '');
+                        if (!name || _MODAL_IDS.indexOf(name.toLowerCase()) !== -1) return;
+                        ctNames.push(name);
+                        var opt = document.createElement('option');
+                        opt.value = name; opt.textContent = name;
+                        if (name === ctAtual || (currentUser && name === currentUser.ct)) opt.selected = true;
+                        ctSel.appendChild(opt);
+                    });
+                }
+                // Só mostra seletor se mais de 1 CT
+                if (ctNames.length > 1) {
+                    ctBox.style.display = '';
+                } else {
+                    ctBox.style.display = 'none';
+                    // Auto-seleciona o único CT disponível
+                    if (ctNames.length === 1) {
+                        ctSel.value = ctNames[0];
+                    } else if (currentUser && currentUser.ct) {
+                        var opt2 = document.createElement('option');
+                        opt2.value = currentUser.ct; opt2.textContent = currentUser.ct; opt2.selected = true;
+                        ctSel.appendChild(opt2);
+                    }
+                }
+            }
+            fotoAtualizarHorarios();
+        }
+
+        // Atualiza horários quando CT ou data mudam
+        function fotoAtualizarHorarios() {
+            var sel     = document.getElementById('fotoHorarioAula');
+            var ctName  = (document.getElementById('fotoCtFiltro')||{}).value || (currentUser && currentUser.ct) || '';
+            var dataStr = (document.getElementById('fotoDataAula')||{}).value || '';
+            if (!sel) return;
+
+            sel.innerHTML = '<option value="">— Selecione —</option>';
+
+            var ctObj = null;
+            if (typeof allCTs !== 'undefined' && Array.isArray(allCTs)) {
+                ctObj = allCTs.find(function(ct) {
+                    return (typeof ct === 'string' ? ct : (ct.name || ct.nome || '')) === ctName;
+                });
+            }
+            if (!ctObj || typeof ctObj !== 'object') return;
+
+            // Dia da semana da data selecionada
+            var hoje = new Date();
+            if (dataStr) {
+                var p = dataStr.split('-');
+                hoje = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+            }
+
+            var hpdCT  = ctObj.horariosPorDia || {};
+            var horStr = typeof _getHorariosHoje === 'function'
+                ? _getHorariosHoje(hpdCT, hoje, ctObj.horarios || '', '')
+                : '';
+
+            // Fallback: agrega todos os dias
+            if (!horStr) {
+                var DAY_KEYS = ['seg','ter','qua','qui','sex','sab','dom'];
+                var allH = {};
+                DAY_KEYS.forEach(function(dk) {
+                    var entry = hpdCT[dk];
+                    if (!entry) return;
+                    var s = typeof entry === 'string' ? entry : (Array.isArray(entry) ? entry.join(',') : JSON.stringify(entry));
+                    (s.match(/\d{1,2}:\d{2}/g) || []).forEach(function(h){ allH[h] = true; });
+                });
+                if (hpdCT._global) {
+                    (hpdCT._global.match && hpdCT._global.match(/\d{1,2}:\d{2}/g) || []).forEach(function(h){ allH[h] = true; });
+                }
+                horStr = Object.keys(allH).sort().join(',');
+            }
+
+            if (!horStr) return;
+            var hors = horStr.split(',').map(function(h){ return h.trim(); }).filter(function(h){ return /^\d{1,2}:\d{2}$/.test(h); }).sort();
+
+            hors.forEach(function(h) {
+                var opt = document.createElement('option'); opt.value = h; opt.textContent = h;
+                sel.appendChild(opt);
+            });
+
+            // Seleciona o mais próximo do horário atual
+            if (hors.length > 0) {
+                var agoraMins = new Date().getHours() * 60 + new Date().getMinutes();
+                var melhor = hors[0], menorDiff = Infinity;
+                hors.forEach(function(h) {
+                    var pp = h.split(':');
+                    var diff = Math.abs(parseInt(pp[0])*60 + parseInt(pp[1]) - agoraMins);
+                    if (diff < menorDiff) { menorDiff = diff; melhor = h; }
+                });
+                sel.value = melhor;
+            }
+        }
+
+        // Botão "Confirmar Presença" — inicia processamento direto sem overlay de config
+        function iniciarFotoCheckin() {
+            var ct      = (document.getElementById('fotoCtFiltro')||{}).value || (currentUser && currentUser.ct) || '';
+            var data    = (document.getElementById('fotoDataAula')||{}).value || '';
+            var horario = (document.getElementById('fotoHorarioAula')||{}).value || '';
+            var errEl   = document.getElementById('fotoErroMsg');
+
+            if (!ct) {
+                if (errEl) { errEl.textContent = 'Selecione o Centro de Treinamento.'; errEl.style.display = 'block'; }
+                return;
+            }
+            if (!horario) {
+                if (errEl) { errEl.textContent = 'Selecione o horário da aula.'; errEl.style.display = 'block'; }
+                return;
+            }
+            if (errEl) errEl.style.display = 'none';
+
+            // Alimenta os dados no sistema v2 e abre diretamente no modo resultado
+            _fv2.ct       = ct;
+            _fv2.horario  = horario;
+            _fv2.dataAula = data;
+
+            // Garante que a foto está no _fv2
+            var previewImg = document.getElementById('fotoPreviewImg');
+            if (previewImg && previewImg.src && !_fv2.fotoDataUrl) {
+                _fv2.fotoDataUrl = previewImg.src;
+                _fv2.fotoBase64  = previewImg.src.indexOf(',') > -1 ? previewImg.src.split(',')[1] : previewImg.src;
+            }
+
+            if (!_fv2.fotoBase64 && typeof _fotoBase64 !== 'undefined' && _fotoBase64) {
+                _fv2.fotoBase64 = _fotoBase64;
+                _fv2.fotoDataUrl = _fotoDataUrl || ('data:image/jpeg;base64,' + _fotoBase64);
+            }
+
+            if (!_fv2.fotoBase64) {
+                if (errEl) { errEl.textContent = 'Erro: foto não encontrada. Selecione novamente.'; errEl.style.display = 'block'; }
+                return;
+            }
+
+            // Abre overlay direto no modo processamento (pula a config)
+            var overlay = document.getElementById('checkinFacialV2Overlay');
+            if (!overlay) { _criarOverlayFacialV2(); overlay = document.getElementById('checkinFacialV2Overlay'); }
+            // Oculta a fase de config e vai direto para preview
+            var cfgFase = document.getElementById('fv2Fase_config');
+            if (cfgFase) cfgFase.style.display = 'none';
+            overlay.style.display = 'flex';
+            fv2ProcessarFoto();
         }
 
         async function loadPresencaList() {
@@ -38509,6 +38697,7 @@
                     fotoZoomReset && fotoZoomReset();
                     document.getElementById('fotoErroMsg').style.display = 'none';
                     setFase(1);
+            fotoInicializarFase1 && fotoInicializarFase1();
                 };
                 img.src = e.target.result;
             };
