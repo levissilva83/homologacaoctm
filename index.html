@@ -3537,6 +3537,19 @@
         .fcob-medio   { background:rgba(234,179,8,.15);color:#eab308; }
         .fcob-baixo   { background:rgba(74,222,128,.15);color:#4ade80; }
 
+
+        /* ── Aulas Particulares ── */
+        .ap-tab-btn { padding:10px 14px;border:none;background:transparent;color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;flex-shrink:0; }
+        .ap-tab-btn.active { color:#C9A23A;border-bottom-color:#C9A23A; }
+        .ap-card { background:rgba(255,255,255,0.03);border:1px solid rgba(201,162,58,0.12);border-radius:14px;padding:14px;margin-bottom:10px; }
+        .ap-badge { font-size:9px;font-weight:800;padding:2px 7px;border-radius:20px;display:inline-block; }
+        .ap-badge-pend { background:rgba(234,179,8,.15);color:#eab308; }
+        .ap-badge-conf { background:rgba(74,222,128,.15);color:#4ade80; }
+        .ap-badge-canc { background:rgba(248,113,113,.15);color:#f87171; }
+        .ap-badge-real { background:rgba(96,165,250,.15);color:#60a5fa; }
+        @keyframes apFadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        .ap-anim { animation:apFadeIn .3s ease; }
+
         /* Admin bottom nav */
         #adminNav {
             background: var(--adm-bg-card) !important;
@@ -7928,6 +7941,7 @@
                         <button class="subtab-btn" data-module="aulas" onclick="switchSubTab('treino-tab','sub-aulas',event)">📅<br><span>Cronograma</span></button>
                         <button class="subtab-btn" data-module="evolucao" onclick="switchSubTab('treino-tab','sub-evolucao',event)">📈<br><span>Evolução</span></button>
                         <button class="subtab-btn" data-module="presencas" onclick="switchSubTab('treino-tab','sub-presencas',event)">🗓️<br><span>Presenças</span></button>
+                        <button class="subtab-btn" data-module="particular" onclick="switchSubTab('treino-tab','sub-particular',event)">🥊<br><span>Particular</span></button>
                         <button id="fbSubBtnAluno" class="subtab-btn" data-module="feedback" onclick="switchSubTab('treino-tab','sub-feedback',event)">💬<br><span>Feedback</span></button>
 
                     </div>
@@ -8269,6 +8283,49 @@
                     </div> <!-- /sub-aulas -->
 
                     <!-- SUB: FEEDBACK -->
+                                        <div id="sub-particular" class="subtab-content">
+                        <div style="padding:14px 14px 100px;">
+
+                            <!-- Créditos do aluno -->
+                            <div id="partCreditos" style="margin-bottom:16px;"></div>
+
+                            <!-- Agendar nova sessão -->
+                            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,162,58,0.15);border-radius:14px;padding:14px;margin-bottom:14px;">
+                                <div style="font-size:13px;font-weight:800;color:var(--text-1);margin-bottom:12px;">📅 Agendar Aula Particular</div>
+
+                                <div style="display:grid;gap:8px;">
+                                    <div>
+                                        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:4px;">PROFESSOR</div>
+                                        <select id="partProfSel" onchange="partCarregarSlots()" style="width:100%;padding:10px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:#fff;font-size:13px;">
+                                            <option value="">Carregando...</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:4px;">DATA</div>
+                                        <input type="date" id="partData" onchange="partCarregarSlots()" style="width:100%;box-sizing:border-box;padding:10px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:#fff;font-size:13px;">
+                                    </div>
+                                    <div>
+                                        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:4px;">HORÁRIO DISPONÍVEL</div>
+                                        <div id="partSlots" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;min-height:40px;"></div>
+                                    </div>
+                                    <div id="partCompraBox" style="display:none;">
+                                        <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:4px;">USAR CRÉDITOS DE</div>
+                                        <select id="partCompraSel" style="width:100%;padding:10px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:9px;color:#fff;font-size:13px;">
+                                            <option value="">Sem créditos (avulso)</option>
+                                        </select>
+                                    </div>
+                                    <button onclick="partAgendar()" id="partBtnAgendar" disabled style="width:100%;padding:12px;background:linear-gradient(135deg,#C9A23A,#F0C84A);color:#000;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;opacity:0.4;">Agendar Sessão</button>
+                                    <div id="partMsg" style="font-size:11px;text-align:center;min-height:14px;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Próximas sessões -->
+                            <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:.5px;margin-bottom:8px;">PRÓXIMAS SESSÕES</div>
+                            <div id="partProximas"></div>
+
+                        </div>
+                    </div>
+
                     <div id="sub-feedback" class="subtab-content">
                         <div style="padding:16px 0;">
                             <div style="font-size:13px;font-weight:800;color:var(--text-1);margin-bottom:4px;">💬 Enviar Feedback</div>
@@ -9544,7 +9601,70 @@
 
             <!-- TAB: SUPER ADMIN -->
             <!-- TAB: FINANCEIRO -->
-            <div id="adm-financeiro" class="adm-tab">
+            <!-- TAB: PARTICULARES -->
+            <div id="adm-particular" class="adm-tab">
+                <div style="padding:0 0 100px;">
+
+                    <!-- Sub-nav -->
+                    <div style="display:flex;gap:0;background:rgba(0,0,0,0.3);border-bottom:1px solid rgba(201,162,58,0.12);overflow-x:auto;scrollbar-width:none;position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);">
+                        <button id="pTabProfs"   onclick="switchPartTab('professores')" class="fin-tab-btn active"  style="flex-shrink:0;padding:12px 16px;border:none;background:transparent;color:#C9A23A;font-size:11px;font-weight:800;cursor:pointer;border-bottom:2px solid #C9A23A;">👨‍🏫 Professores</button>
+                        <button id="pTabPacotes" onclick="switchPartTab('pacotes')"    class="fin-tab-btn"          style="flex-shrink:0;padding:12px 16px;border:none;background:transparent;color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;">📦 Pacotes</button>
+                        <button id="pTabSessoes" onclick="switchPartTab('sessoes')"    class="fin-tab-btn"          style="flex-shrink:0;padding:12px 16px;border:none;background:transparent;color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;">📅 Sessões</button>
+                        <button id="pTabDisp"    onclick="switchPartTab('disponibilidade')" class="fin-tab-btn"    style="flex-shrink:0;padding:12px 16px;border:none;background:transparent;color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;cursor:pointer;border-bottom:2px solid transparent;">🕐 Minha Agenda</button>
+                    </div>
+
+                    <!-- Professores disponíveis -->
+                    <div id="pPanel_professores" style="padding:14px;">
+                        <div id="pProfLista"></div>
+                    </div>
+
+                    <!-- Pacotes -->
+                    <div id="pPanel_pacotes" style="padding:14px;display:none;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                            <div style="font-size:13px;font-weight:800;color:var(--adm-text-1);">Pacotes de Sessões</div>
+                            <button onclick="pAbrirNovoPacote()" style="padding:8px 14px;background:rgba(201,162,58,0.12);color:#C9A23A;border:1px solid rgba(201,162,58,0.25);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">+ Novo</button>
+                        </div>
+                        <div id="pPacoteLista"></div>
+
+                        <!-- Form novo pacote -->
+                        <div id="pFormPacote" style="display:none;background:rgba(201,162,58,0.05);border:1px solid rgba(201,162,58,0.2);border-radius:14px;padding:16px;margin-top:14px;">
+                            <div style="font-size:13px;font-weight:800;color:#C9A23A;margin-bottom:12px;">Novo Pacote</div>
+                            <div style="display:grid;gap:8px;">
+                                <input id="pPacNome"     placeholder="Nome (ex: Pacote 10 aulas)"   style="padding:9px 12px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-size:13px;">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                    <input id="pPacSessoes" type="number" placeholder="Sessões"    style="padding:9px 12px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-size:13px;">
+                                    <input id="pPacValor"   type="number" placeholder="Valor R$"   style="padding:9px 12px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-size:13px;">
+                                </div>
+                                <input id="pPacValidade"   type="number" placeholder="Validade em dias (ex: 365)" style="padding:9px 12px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-size:13px;" value="365">
+                                <input id="pPacDesc"       placeholder="Descrição (opcional)"      style="padding:9px 12px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:#fff;font-size:13px;">
+                                <div style="display:flex;gap:8px;">
+                                    <button onclick="pSalvarPacote()" style="flex:1;padding:10px;background:linear-gradient(135deg,#C9A23A,#F0C84A);color:#000;border:none;border-radius:8px;font-weight:800;font-size:13px;cursor:pointer;">💾 Salvar</button>
+                                    <button onclick="document.getElementById('pFormPacote').style.display='none'" style="padding:10px 14px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:rgba(255,255,255,0.5);cursor:pointer;">Cancelar</button>
+                                </div>
+                                <div id="pPacMsg" style="font-size:11px;text-align:center;min-height:14px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sessões (agenda geral) -->
+                    <div id="pPanel_sessoes" style="padding:14px;display:none;">
+                        <div id="pSessaoLista"></div>
+                    </div>
+
+                    <!-- Minha Disponibilidade (professor) -->
+                    <div id="pPanel_disponibilidade" style="padding:14px;display:none;">
+                        <div style="font-size:13px;font-weight:800;color:var(--adm-text-1);margin-bottom:4px;">⏰ Minha Disponibilidade</div>
+                        <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:14px;">Configure os horários em que você oferece aulas particulares</div>
+                        <div id="pDispForm"></div>
+                        <button onclick="pSalvarDisponibilidade()" style="width:100%;margin-top:14px;padding:12px;background:linear-gradient(135deg,#C9A23A,#F0C84A);color:#000;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;">💾 Salvar Disponibilidade</button>
+                        <div id="pDispMsg" style="margin-top:8px;font-size:11px;text-align:center;min-height:14px;"></div>
+                    </div>
+
+                </div>
+            </div>
+            <!-- FIM TAB PARTICULARES -->
+
+                        <div id="adm-financeiro" class="adm-tab">
                 <div style="padding:0 0 100px;">
 
                     <!-- Sub-nav financeiro -->
@@ -9671,7 +9791,114 @@
             </div>
             <!-- FIM TAB FINANCEIRO -->
 
-                        <div id="adm-superadmin" class="adm-tab">
+            
+            <!-- TAB: AULAS PARTICULARES -->
+            <div id="adm-particulares" class="adm-tab">
+              <div style="padding:0 0 100px;">
+
+                <!-- Sub-nav -->
+                <div style="display:flex;gap:0;background:rgba(0,0,0,0.3);border-bottom:1px solid rgba(201,162,58,0.12);overflow-x:auto;scrollbar-width:none;position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);">
+                  <button id="apTabCheckin"  class="ap-tab-btn active" onclick="switchAPTab('checkin')">✅ Check-in</button>
+                  <button id="apTabPacotes"  class="ap-tab-btn"        onclick="switchAPTab('pacotes')">📦 Pacotes</button>
+                  <button id="apTabAgenda"   class="ap-tab-btn"        onclick="switchAPTab('agenda')">📅 Agenda</button>
+                  <button id="apTabHistorico"class="ap-tab-btn"        onclick="switchAPTab('historico')">📋 Histórico</button>
+                </div>
+
+                <!-- CHECK-IN -->
+                <div id="apPanel_checkin" style="padding:14px;">
+                  <div class="ap-card">
+                    <div style="font-size:13px;font-weight:800;color:var(--adm-text-1);margin-bottom:12px;">✅ Registrar Presença Individual</div>
+                    <div style="display:grid;gap:8px;">
+                      <div>
+                        <div style="font-size:10px;font-weight:700;color:var(--adm-text-3);margin-bottom:4px;">ALUNO</div>
+                        <input id="apCheckinBusca" oninput="apFiltrarAlunos(this.value)" placeholder="🔍 Buscar aluno por nome ou email..."
+                          style="width:100%;box-sizing:border-box;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:var(--adm-text-1);font-size:13px;">
+                        <div id="apAlunoResultados" style="display:none;background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;max-height:160px;overflow-y:auto;margin-top:4px;"></div>
+                        <div id="apAlunoSel" style="display:none;margin-top:6px;padding:8px 12px;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:8px;font-size:12px;font-weight:700;color:#4ade80;"></div>
+                      </div>
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                        <div>
+                          <div style="font-size:10px;font-weight:700;color:var(--adm-text-3);margin-bottom:4px;">DURAÇÃO (min)</div>
+                          <select id="apCheckinDuracao" style="width:100%;padding:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:var(--adm-text-1);font-size:13px;">
+                            <option value="30">30 min</option>
+                            <option value="60" selected>60 min</option>
+                            <option value="90">90 min</option>
+                            <option value="120">2 horas</option>
+                          </select>
+                        </div>
+                        <div>
+                          <div style="font-size:10px;font-weight:700;color:var(--adm-text-3);margin-bottom:4px;">AGENDAMENTO</div>
+                          <select id="apCheckinAgend" style="width:100%;padding:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:var(--adm-text-1);font-size:12px;">
+                            <option value="">Avulso</option>
+                          </select>
+                        </div>
+                      </div>
+                      <button onclick="apFazerCheckin()" style="width:100%;padding:12px;background:linear-gradient(135deg,#C9A23A,#F0C84A);color:#000;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">✅ Confirmar Presença</button>
+                      <div id="apCheckinMsg" style="font-size:12px;text-align:center;min-height:14px;"></div>
+                    </div>
+                  </div>
+
+                  <!-- Agendamentos do dia -->
+                  <div style="font-size:11px;font-weight:700;color:var(--adm-text-3);letter-spacing:.5px;margin-bottom:8px;">📅 AGENDAMENTOS DE HOJE</div>
+                  <div id="apAgendHoje"><div style="text-align:center;padding:20px;color:rgba(255,255,255,0.3);font-size:12px;">Carregando...</div></div>
+                </div>
+
+                <!-- PACOTES -->
+                <div id="apPanel_pacotes" style="padding:14px;display:none;">
+                  <div class="ap-card">
+                    <div style="font-size:13px;font-weight:800;color:var(--adm-text-1);margin-bottom:12px;">📦 Criar Pacote</div>
+                    <div style="display:grid;gap:8px;">
+                      <div>
+                        <div style="font-size:10px;font-weight:700;color:var(--adm-text-3);margin-bottom:4px;">ALUNO</div>
+                        <input id="apPacAluno" placeholder="Email do aluno" style="width:100%;box-sizing:border-box;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:var(--adm-text-1);font-size:13px;">
+                      </div>
+                      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                        <div>
+                          <div style="font-size:10px;font-weight:700;color:var(--adm-text-3);margin-bottom:4px;">SESSÕES</div>
+                          <input id="apPacTotal" type="number" value="10" min="1" style="width:100%;box-sizing:border-box;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:var(--adm-text-1);font-size:13px;">
+                        </div>
+                        <div>
+                          <div style="font-size:10px;font-weight:700;color:var(--adm-text-3);margin-bottom:4px;">VALOR (R$)</div>
+                          <input id="apPacValor" type="number" placeholder="500" style="width:100%;box-sizing:border-box;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:var(--adm-text-1);font-size:13px;">
+                        </div>
+                        <div>
+                          <div style="font-size:10px;font-weight:700;color:var(--adm-text-3);margin-bottom:4px;">VALIDADE</div>
+                          <input id="apPacVal" type="date" style="width:100%;box-sizing:border-box;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:var(--adm-text-1);font-size:12px;">
+                        </div>
+                      </div>
+                      <button onclick="apCriarPacote()" style="width:100%;padding:10px;background:rgba(201,162,58,0.15);color:#C9A23A;border:1px solid rgba(201,162,58,0.3);border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;">💾 Criar Pacote</button>
+                      <div id="apPacMsg" style="font-size:11px;text-align:center;min-height:14px;"></div>
+                    </div>
+                  </div>
+                  <div style="font-size:11px;font-weight:700;color:var(--adm-text-3);letter-spacing:.5px;margin:14px 0 8px;">PACOTES ATIVOS</div>
+                  <div id="apPacLista"><div style="text-align:center;padding:20px;color:rgba(255,255,255,0.3);font-size:12px;">Selecione um aluno para ver os pacotes</div></div>
+                </div>
+
+                <!-- AGENDA -->
+                <div id="apPanel_agenda" style="padding:14px;display:none;">
+                  <div class="ap-card">
+                    <div style="font-size:13px;font-weight:800;color:var(--adm-text-1);margin-bottom:12px;">📅 Minha Disponibilidade</div>
+                    <div id="apDisponibilidadeForm"></div>
+                    <button onclick="apSalvarDisponibilidade()" style="width:100%;margin-top:10px;padding:10px;background:linear-gradient(135deg,#C9A23A,#F0C84A);color:#000;border:none;border-radius:8px;font-size:13px;font-weight:800;cursor:pointer;">💾 Salvar Disponibilidade</button>
+                    <div id="apDispMsg" style="font-size:11px;text-align:center;margin-top:6px;min-height:14px;"></div>
+                  </div>
+                  <div style="font-size:11px;font-weight:700;color:var(--adm-text-3);letter-spacing:.5px;margin:14px 0 8px;">PRÓXIMOS AGENDAMENTOS</div>
+                  <div id="apAgendProf"></div>
+                </div>
+
+                <!-- HISTÓRICO -->
+                <div id="apPanel_historico" style="padding:14px;display:none;">
+                  <div style="display:flex;gap:8px;margin-bottom:12px;">
+                    <input id="apHistBusca" oninput="apFiltrarHistorico()" placeholder="🔍 Buscar aluno..." style="flex:1;padding:9px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:var(--adm-text-1);font-size:13px;">
+                  </div>
+                  <div id="apHistLista"></div>
+                </div>
+
+              </div>
+            </div>
+            <!-- FIM TAB PARTICULARES -->
+
+            <div id="adm-superadmin" class="adm-tab">
                 <div class="admin-container" style="padding-bottom:40px;">
 
                     <!-- ── PAGE HEADER ─────────────────────────────────── -->
@@ -11131,6 +11358,12 @@
                 </button>
                 <button class="bnav-btn" onclick="switchAdminTab('adm-financeiro', event)">
                     <span class="bnav-icon">💰</span><span class="bnav-label">Financeiro</span>
+                </button>
+                <button class="bnav-btn" onclick="switchAdminTab('adm-particulares', event)">
+                    <span class="bnav-icon">🎯</span><span class="bnav-label">Particulares</span>
+                </button>
+                <button class="bnav-btn" onclick="switchAdminTab('adm-particular', event)">
+                    <span class="bnav-icon">🥊</span><span class="bnav-label">Particular</span>
                 </button>
                 <button class="bnav-btn" id="bnavSuperAdmin" onclick="switchAdminTab('adm-superadmin', event)" style="display:none;">
                     <span class="bnav-icon">🔑</span><span class="bnav-label">Super</span>
@@ -15556,6 +15789,7 @@
             if (subId === 'sub-ranking') loadRanking();
             if (subId === 'sub-evolucao') { loadEvolucao(); loadMyGraduacoes(); }
             if (subId === 'sub-presencas') loadPresencas();
+            if (subId === 'sub-particular') { if(typeof initParticular==='function') initParticular(); }
             if (subId === 'sub-feedback')  initFeedbackTab();
             // sub-campeonato removido — borrachinha não existe mais
             if (subId === 'sub-aulas') {
@@ -21668,6 +21902,24 @@
         let adminStudentsCache = [];
 
         function switchAdminTab(tabName, evt) {
+            if (tabName === 'adm-particulares') {
+                document.querySelectorAll('.adm-tab').forEach(function(t){ t.classList.remove('active'); });
+                var pt = document.getElementById('adm-particulares');
+                if (pt) pt.classList.add('active');
+                document.querySelectorAll('#adminNav .bnav-btn').forEach(function(b){ b.classList.remove('active'); });
+                if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+                if (typeof initParticulares === 'function') initParticulares();
+                return;
+            }
+            if (tabName === 'adm-particular') {
+                document.querySelectorAll('.adm-tab').forEach(function(t){ t.classList.remove('active'); });
+                var pTab = document.getElementById('adm-particular');
+                if (pTab) pTab.classList.add('active');
+                document.querySelectorAll('#adminNav .bnav-btn').forEach(function(b){ b.classList.remove('active'); });
+                if (evt && evt.currentTarget) evt.currentTarget.classList.add('active');
+                if (typeof initAdmParticular === 'function') initAdmParticular();
+                return;
+            }
             if (tabName === 'adm-financeiro') {
                 // Usa APENAS classes — sem inline style que bloqueia outras abas
                 document.querySelectorAll('.adm-tab').forEach(function(t){ t.classList.remove('active'); });
@@ -31422,6 +31674,15 @@
 
                 if (!recResp || !recResp.success) throw new Error(recResp ? recResp.message : 'Erro no reconhecimento');
                 _fv2.matches  = recResp.matches || [];
+
+                // Diagnóstico: detectou rostos mas não reconheceu ninguém
+                if (_fv2.matches.length === 0 && _fv2.faces.length > 0) {
+                    var diagMsg = document.getElementById('fv2PreviewSub');
+                    if (diagMsg) {
+                        diagMsg.innerHTML = '⚠️ Nenhum rosto reconhecido. Verifique se os alunos têm fotos cadastradas e se o reconhecimento facial foi ativado em <strong>Sistema → AWS Rekognition → 🔄 Reindexar</strong>.';
+                        diagMsg.style.color = '#f59e0b';
+                    }
+                }
                 _fv2.logData  = {
                     totalRostos: recResp.totalRostos, reconhecidos: recResp.reconhecidos,
                     naoReconhecidos: recResp.naoReconhecidos, threshold: 85, manual: 0
@@ -31662,8 +31923,8 @@
             if (typeof adminStudentsCache === 'undefined' || adminStudentsCache.length === 0) {
                 var msgEl2 = document.getElementById('fv2ResultMsg');
                 if (msgEl2) { msgEl2.textContent = '⏳ Carregando alunos...'; msgEl2.style.color = '#C9A23A'; }
-                secureFetch('getStudents', {}).then(function(r) {
-                    if (r && r.students) { adminStudentsCache = r.students; }
+                secureFetch('getStudentsList', {}).then(function(r) {
+                    if (r && r.success && r.students) { adminStudentsCache = r.students; }
                     if (msgEl2) msgEl2.textContent = '';
                     fv2AbrirVinculoManual(face, idx);
                 }).catch(function() {
@@ -31681,8 +31942,12 @@
 
             // Prepara lista de alunos do CT selecionado
             var ctFiltro = _fv2.ct;
-            var alunosCT = adminStudentsCache.filter(function(s) {
-                return !ctFiltro || (s.ct || '') === ctFiltro;
+            // Mostra todos os alunos (não filtra por CT — pode ser visitante)
+            var alunosCT = adminStudentsCache.slice().sort(function(a,b){
+                // CT do professor primeiro, depois o resto
+                var aCT = (a.ct||'') === ctFiltro ? 0 : 1;
+                var bCT = (b.ct||'') === ctFiltro ? 0 : 1;
+                return aCT - bCT || (a.name||'').localeCompare(b.name||'');
             });
 
             modal.innerHTML = '<div style="background:#16161f;border-radius:16px 16px 0 0;padding:20px 16px;width:100%;max-width:600px;max-height:70vh;overflow-y:auto;">' +
@@ -32714,6 +32979,669 @@
             };
             reader.readAsDataURL(file);
         }
+
+
+        // ═══════════════════════════════════════════════════════════════════
+        // MÓDULO AULAS PARTICULARES — JS Completo
+        // ═══════════════════════════════════════════════════════════════════
+
+        var _partData  = {};
+        var _partSlotSel = null;
+
+        // ── Inicializa aba do aluno ────────────────────────────────────────
+        async function initParticular() {
+            if (_partData._init) return;
+            _partData._init = true;
+            await Promise.all([partCarregarProfessores(), partCarregarCreditos()]);
+            partCarregarSessoes();
+
+            // Data padrão = hoje
+            var dt = document.getElementById('partData');
+            if (dt && !dt.value) {
+                var hoje = new Date();
+                dt.value = hoje.getFullYear()+'-'+String(hoje.getMonth()+1).padStart(2,'0')+'-'+String(hoje.getDate()).padStart(2,'0');
+            }
+        }
+
+        async function partCarregarProfessores() {
+            try {
+                var r = await secureFetch('getProfessoresParticulares', {});
+                if (!r.success) return;
+                var sel = document.getElementById('partProfSel');
+                if (!sel) return;
+                sel.innerHTML = '<option value="">— Selecione o professor —</option>';
+                (r.professores||[]).forEach(function(p) {
+                    var opt = document.createElement('option');
+                    opt.value = p.email;
+                    opt.textContent = p.nome + (p.valor > 0 ? ' · R$'+p.valor+'/h' : '');
+                    sel.appendChild(opt);
+                });
+            } catch(e) {}
+        }
+
+        async function partCarregarCreditos() {
+            try {
+                var r = await secureFetch('getCreditosAluno', {});
+                if (!r.success) return;
+                var el = document.getElementById('partCreditos');
+                if (!el) return;
+                var creds = r.creditos || [];
+
+                if (!creds.length) {
+                    el.innerHTML = '<div style="background:rgba(201,162,58,0.06);border:1px solid rgba(201,162,58,0.15);border-radius:12px;padding:12px 14px;margin-bottom:4px;">' +
+                        '<div style="font-size:12px;color:rgba(255,255,255,0.5);">Sem pacotes ativos. Solicite ao seu professor ou academia.</div></div>';
+                    return;
+                }
+
+                el.innerHTML = '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);letter-spacing:.5px;margin-bottom:8px;">💳 SEUS CRÉDITOS</div>' +
+                    creds.map(function(cr) {
+                        var pct = Math.round((cr.usadas/cr.total)*100);
+                        var cor = cr.restante <= 2 ? '#f87171' : cr.restante <= 5 ? '#f59e0b' : '#4ade80';
+                        return '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(201,162,58,0.12);border-radius:12px;padding:12px 14px;margin-bottom:8px;">' +
+                            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
+                            '<div style="font-size:12px;font-weight:700;color:var(--text-1);">'+escapeHtml(cr.profEmail.split('@')[0])+'</div>' +
+                            '<div style="font-size:18px;font-weight:800;color:'+cor+';">'+cr.restante+' <span style="font-size:10px;color:rgba(255,255,255,0.4);">restantes</span></div></div>' +
+                            '<div style="background:rgba(255,255,255,0.08);border-radius:4px;height:4px;overflow:hidden;">' +
+                            '<div style="height:100%;background:'+cor+';width:'+Math.min(pct,100)+'%;border-radius:4px;"></div></div>' +
+                            '<div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:4px;">'+cr.usadas+'/'+cr.total+' sessões usadas · Válido até '+cr.validade+'</div></div>';
+                    }).join('');
+
+                // Popula select de créditos no form
+                var compSel = document.getElementById('partCompraSel');
+                if (compSel) {
+                    compSel.innerHTML = '<option value="">Sem créditos (avulso)</option>';
+                    creds.forEach(function(cr) {
+                        var opt = document.createElement('option');
+                        opt.value = cr.compraId;
+                        opt.textContent = escapeHtml(cr.profEmail.split('@')[0]) + ' · ' + cr.restante + ' restantes';
+                        compSel.appendChild(opt);
+                    });
+                    if (creds.length > 0) document.getElementById('partCompraBox').style.display = '';
+                }
+            } catch(e) {}
+        }
+
+        async function partCarregarSlots() {
+            var prof  = (document.getElementById('partProfSel')||{}).value || '';
+            var data  = (document.getElementById('partData')||{}).value || '';
+            var el    = document.getElementById('partSlots');
+            if (!prof || !data || !el) return;
+            _partSlotSel = null;
+            el.innerHTML = '<div style="font-size:11px;color:rgba(255,255,255,0.35);padding:6px;">Carregando...</div>';
+
+            try {
+                var r = await secureFetch('getSlotsDisponiveis', { profEmail: prof, data: data });
+                if (!r.success || !r.slots || !r.slots.length) {
+                    el.innerHTML = '<div style="font-size:11px;color:rgba(255,255,255,0.35);padding:6px;">Nenhum horário disponível nesta data.</div>';
+                    return;
+                }
+                el.innerHTML = r.slots.map(function(s) {
+                    var dis  = s.disponivel;
+                    var bg   = dis ? 'rgba(74,222,128,0.1)' : 'rgba(255,255,255,0.04)';
+                    var bord = dis ? 'rgba(74,222,128,0.3)' : 'rgba(255,255,255,0.08)';
+                    var cor  = dis ? '#4ade80' : 'rgba(255,255,255,0.3)';
+                    return '<div onclick="'+(dis?'partSelecionarSlot(this,''+s.horario+'','+s.duracao+','+s.valor+')'  :'')+'"' +
+                           ' style="text-align:center;padding:8px 6px;background:'+bg+';border:1px solid '+bord+';border-radius:8px;cursor:'+(dis?'pointer':'default')+';">' +
+                           '<div style="font-size:12px;font-weight:800;color:'+cor+';">'+s.horario+'</div>' +
+                           '<div style="font-size:9px;color:rgba(255,255,255,0.35);">'+s.duracao+'min</div>' +
+                           (dis && s.valor > 0 ? '<div style="font-size:9px;color:#C9A23A;">R$'+s.valor+'</div>' : '') +
+                           (!dis ? '<div style="font-size:9px;color:#f87171;">Ocupado</div>' : '') +
+                           '</div>';
+                }).join('');
+            } catch(e) {
+                el.innerHTML = '<div style="font-size:11px;color:#f87171;">Erro ao carregar horários</div>';
+            }
+        }
+
+        function partSelecionarSlot(el, horario, duracao, valor) {
+            document.querySelectorAll('#partSlots > div').forEach(function(d) {
+                d.style.border = d.style.border.replace('#C9A23A','rgba(74,222,128,0.3)');
+                d.style.background = d.style.background.replace('rgba(201,162,58,0.2)','rgba(74,222,128,0.1)');
+            });
+            el.style.border = '2px solid #C9A23A';
+            el.style.background = 'rgba(201,162,58,0.15)';
+            _partSlotSel = { horario: horario, duracao: duracao, valor: valor };
+            var btn = document.getElementById('partBtnAgendar');
+            if (btn) { btn.disabled = false; btn.style.opacity = '1'; }
+        }
+
+        async function partAgendar() {
+            if (!_partSlotSel) return;
+            var prof    = (document.getElementById('partProfSel')||{}).value || '';
+            var data    = (document.getElementById('partData')||{}).value || '';
+            var compraId= (document.getElementById('partCompraSel')||{}).value || '';
+            var msg     = document.getElementById('partMsg');
+
+            if (!prof || !data) { if(msg){msg.textContent='Selecione professor e data'; msg.style.color='#f87171';} return; }
+            if (msg) { msg.textContent='⏳ Agendando...'; msg.style.color='rgba(255,255,255,0.5)'; }
+
+            try {
+                var r = await secureFetch('agendarSessao', {
+                    profEmail: prof, data: data,
+                    horario: _partSlotSel.horario, duracao: _partSlotSel.duracao,
+                    compraId: compraId
+                });
+                if (r.success) {
+                    if(msg){msg.textContent='✅ '+r.message; msg.style.color='#4ade80';}
+                    _partSlotSel = null;
+                    _partData._init = false;
+                    setTimeout(function(){ initParticular(); }, 1000);
+                } else {
+                    if(msg){msg.textContent='❌ '+(r.message||'Erro'); msg.style.color='#f87171';}
+                }
+            } catch(e) { if(msg){msg.textContent='❌ Erro de conexão'; msg.style.color='#f87171';} }
+        }
+
+        async function partCarregarSessoes() {
+            try {
+                var r = await secureFetch('getSessoesAluno', {});
+                if (!r.success) return;
+                var el = document.getElementById('partProximas');
+                if (!el) return;
+                var sess = (r.sessoes||[]).filter(function(s){ return s.status !== 'CANCELADA'; }).slice(0,10);
+                if (!sess.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.3);font-size:12px;">Nenhuma sessão agendada</div>'; return; }
+
+                var STATUS = {AGENDADA:'🕐 Agendada',CONFIRMADA:'✅ Confirmada',FALTOU:'❌ Faltou'};
+                var COR    = {AGENDADA:'#f59e0b',CONFIRMADA:'#4ade80',FALTOU:'#f87171'};
+                el.innerHTML = sess.map(function(s) {
+                    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;margin-bottom:6px;">' +
+                        '<div style="font-size:22px;flex-shrink:0;">🥊</div>' +
+                        '<div style="flex:1;"><div style="font-size:12px;font-weight:700;color:var(--text-1);">'+escapeHtml(s.profNome||s.profEmail)+'</div>' +
+                        '<div style="font-size:10px;color:rgba(255,255,255,0.4);">'+s.data+' · '+s.horario+' · '+s.duracao+'min</div></div>' +
+                        '<span style="font-size:10px;font-weight:700;color:'+(COR[s.status]||'#C9A23A')+';">'+(STATUS[s.status]||s.status)+'</span></div>';
+                }).join('');
+            } catch(e) {}
+        }
+
+        // ── ADMIN: Módulo Particular ───────────────────────────────────────
+        var _partAdmData = {};
+
+        function switchPartTab(tab) {
+            ['professores','pacotes','sessoes','disponibilidade'].forEach(function(t) {
+                var p = document.getElementById('pPanel_'+t);
+                if (p) p.style.display = t===tab ? 'block' : 'none';
+            });
+            document.querySelectorAll('[id^="pTab"]').forEach(function(b) {
+                b.classList.remove('active'); b.style.color='rgba(255,255,255,0.4)'; b.style.borderBottomColor='transparent';
+            });
+            var capMap = {professores:'Profs',pacotes:'Pacotes',sessoes:'Sessoes',disponibilidade:'Disp'};
+            var activeBtn = document.getElementById('pTab'+(capMap[tab]||tab.charAt(0).toUpperCase()+tab.slice(1)));
+            if (activeBtn) { activeBtn.classList.add('active'); activeBtn.style.color='#C9A23A'; activeBtn.style.borderBottomColor='#C9A23A'; }
+
+            if (tab==='professores' && !_partAdmData.profsLoaded) loadProfessoresAdm();
+            if (tab==='pacotes'     && !_partAdmData.pacLoaded)  loadPacotesAdm();
+            if (tab==='sessoes'     && !_partAdmData.sesLoaded)  loadSessoesAdm();
+            if (tab==='disponibilidade') initDispForm();
+        }
+
+        function initAdmParticular() {
+            _partAdmData = {};
+            switchPartTab('professores');
+        }
+
+        async function loadProfessoresAdm() {
+            _partAdmData.profsLoaded = true;
+            try {
+                var r = await secureFetch('getProfessoresParticulares', {});
+                var el = document.getElementById('pProfLista');
+                if (!el) return;
+                if (!r.success || !(r.professores||[]).length) {
+                    el.innerHTML = '<div style="text-align:center;padding:32px;color:rgba(255,255,255,0.3);"><div style="font-size:28px;margin-bottom:8px;">👨‍🏫</div><div style="font-size:12px;">Nenhum professor configurou disponibilidade ainda.</div><div style="font-size:11px;margin-top:6px;color:rgba(255,255,255,0.2);">O professor deve ir em Particular → Minha Agenda e configurar os horários.</div></div>';
+                    return;
+                }
+                el.innerHTML = r.professores.map(function(p) {
+                    var totalSlots = (p.dias||[]).length;
+                    var diasUniq   = [...new Set((p.dias||[]).map(function(d){return d.dia;}))];
+                    var PT = {seg:'Seg',ter:'Ter',qua:'Qua',qui:'Qui',sex:'Sex',sab:'Sáb',dom:'Dom'};
+                    return '<div style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:rgba(255,255,255,0.03);border:1px solid rgba(201,162,58,0.12);border-radius:12px;margin-bottom:8px;">' +
+                        '<div style="width:44px;height:44px;border-radius:50%;background:rgba(201,162,58,0.1);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#C9A23A;flex-shrink:0;">'+escapeHtml((p.nome||'?').charAt(0).toUpperCase())+'</div>' +
+                        '<div style="flex:1;"><div style="font-size:13px;font-weight:700;color:var(--adm-text-1);">'+escapeHtml(p.nome)+'</div>' +
+                        '<div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px;">'+diasUniq.map(function(d){return PT[d]||d;}).join(' · ')+' · R$'+p.valor+'/sessão</div></div>' +
+                        '<div style="text-align:right;"><div style="font-size:20px;font-weight:800;color:#C9A23A;">'+totalSlots+'</div><div style="font-size:9px;color:rgba(255,255,255,0.35);">slots</div></div></div>';
+                }).join('');
+            } catch(e) {}
+        }
+
+        async function loadPacotesAdm() {
+            _partAdmData.pacLoaded = true;
+            try {
+                var r = await secureFetch('getPacotes', {});
+                var el = document.getElementById('pPacoteLista');
+                if (!el) return;
+                var pacs = r.pacotes||[];
+                if (!pacs.length) { el.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(255,255,255,0.3);font-size:12px;">Nenhum pacote cadastrado</div>'; return; }
+                el.innerHTML = pacs.map(function(p) {
+                    return '<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:10px;margin-bottom:6px;">' +
+                        '<span style="font-size:20px;">📦</span>' +
+                        '<div style="flex:1;"><div style="font-size:13px;font-weight:700;color:var(--adm-text-1);">'+escapeHtml(p.nome)+'</div>' +
+                        '<div style="font-size:10px;color:rgba(255,255,255,0.4);">'+p.sessoes+' sessões · '+p.validadeDias+'d validade</div></div>' +
+                        '<div style="font-size:16px;font-weight:800;color:#C9A23A;">R$'+parseFloat(p.valor).toFixed(0)+'</div></div>';
+                }).join('');
+            } catch(e) {}
+        }
+
+        async function loadSessoesAdm() {
+            _partAdmData.sesLoaded = true;
+            try {
+                var r = await secureFetch('getAgendaProf', {});
+                var el = document.getElementById('pSessaoLista');
+                if (!el) return;
+                var sess = r.sessoes||[];
+                if (!sess.length) { el.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(255,255,255,0.3);font-size:12px;">Nenhuma sessão agendada</div>'; return; }
+                var COR = {AGENDADA:'#f59e0b',CONFIRMADA:'#4ade80',CANCELADA:'#f87171',FALTOU:'#ef4444'};
+                el.innerHTML = sess.map(function(s) {
+                    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:10px;margin-bottom:6px;">' +
+                        '<div style="font-size:18px;">🥊</div>' +
+                        '<div style="flex:1;"><div style="font-size:12px;font-weight:700;color:var(--adm-text-1);">'+escapeHtml(s.alunoNome)+'</div>' +
+                        '<div style="font-size:10px;color:rgba(255,255,255,0.4);">'+s.data+' · '+s.horario+'</div></div>' +
+                        (s.status==='AGENDADA' ?
+                        '<button onclick="admConfirmarSessao(''+s.id+'','CONFIRMADA')" style="padding:5px 10px;background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.25);border-radius:7px;font-size:10px;cursor:pointer;margin-right:4px;">✅ Confirmar</button>' +
+                        '<button onclick="admConfirmarSessao(''+s.id+'','FALTOU')" style="padding:5px 10px;background:rgba(248,113,113,0.08);color:#f87171;border:1px solid rgba(248,113,113,0.2);border-radius:7px;font-size:10px;cursor:pointer;">❌ Faltou</button>'
+                        : '<span style="font-size:10px;font-weight:700;color:'+(COR[s.status]||'#C9A23A')+';">'+s.status+'</span>') +
+                        '</div>';
+                }).join('');
+            } catch(e) {}
+        }
+
+        async function admConfirmarSessao(id, status) {
+            try {
+                var r = await secureFetch('confirmarSessaoParticular', { sessaoId: id, status: status });
+                if (r.success) { _partAdmData.sesLoaded=false; loadSessoesAdm(); }
+                else alert('Erro: '+(r.message||''));
+            } catch(e) { alert('Erro de conexão'); }
+        }
+
+        // ── Disponibilidade (form dinâmico) ───────────────────────────────
+        var _dispSlots = [];
+        var DIAS_SEMANA = [
+            {key:'seg',label:'Segunda'},  {key:'ter',label:'Terça'},
+            {key:'qua',label:'Quarta'},   {key:'qui',label:'Quinta'},
+            {key:'sex',label:'Sexta'},    {key:'sab',label:'Sábado'},
+            {key:'dom',label:'Domingo'}
+        ];
+
+        function initDispForm() {
+            var el = document.getElementById('pDispForm');
+            if (!el) return;
+            var html = '';
+            DIAS_SEMANA.forEach(function(d) {
+                html += '<div style="margin-bottom:10px;">' +
+                    '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.5);margin-bottom:6px;">'+d.label.toUpperCase()+'</div>' +
+                    '<div id="disp_'+d.key+'" style="display:grid;gap:5px;"></div>' +
+                    '<button onclick="dispAddSlot(''+d.key+'')" style="margin-top:5px;padding:5px 10px;background:rgba(201,162,58,0.08);color:rgba(201,162,58,0.7);border:1px solid rgba(201,162,58,0.15);border-radius:6px;font-size:10px;cursor:pointer;">+ Adicionar horário</button>' +
+                    '</div>';
+            });
+            el.innerHTML = html;
+        }
+
+        function dispAddSlot(dia) {
+            var cont = document.getElementById('disp_'+dia);
+            if (!cont) return;
+            var idx = _dispSlots.length;
+            _dispSlots.push({ dia: dia, inicio:'08:00', fim:'12:00', duracao:60, valor:80, maxAlunos:1 });
+
+            var row = document.createElement('div');
+            row.id = 'dispRow_'+idx;
+            row.style.cssText = 'display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:center;background:rgba(255,255,255,0.03);padding:8px;border-radius:8px;';
+            row.innerHTML =
+                '<input type="time" value="08:00" onchange="_dispSlots['+idx+'].inicio=this.value" style="padding:6px 8px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#fff;font-size:12px;">' +
+                '<input type="time" value="12:00" onchange="_dispSlots['+idx+'].fim=this.value" style="padding:6px 8px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#fff;font-size:12px;">' +
+                '<button onclick="document.getElementById('dispRow_'+idx+'').remove();_dispSlots['+idx+']=null;" style="padding:6px 10px;background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.2);border-radius:6px;cursor:pointer;">✕</button>' +
+                '<div style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">' +
+                '<div><div style="font-size:9px;color:rgba(255,255,255,0.3);margin-bottom:3px;">DURAÇÃO (min)</div>' +
+                '<select onchange="_dispSlots['+idx+'].duracao=parseInt(this.value)" style="width:100%;padding:6px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#fff;font-size:12px;">' +
+                '<option value="30">30min</option><option value="45">45min</option><option value="60" selected>1h</option><option value="90">1h30</option></select></div>' +
+                '<div><div style="font-size:9px;color:rgba(255,255,255,0.3);margin-bottom:3px;">VALOR (R$)</div>' +
+                '<input type="number" value="80" onchange="_dispSlots['+idx+'].valor=parseFloat(this.value)" style="width:100%;box-sizing:border-box;padding:6px 8px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#fff;font-size:12px;"></div>' +
+                '<div><div style="font-size:9px;color:rgba(255,255,255,0.3);margin-bottom:3px;">MAX ALUNOS</div>' +
+                '<input type="number" value="1" min="1" max="4" onchange="_dispSlots['+idx+'].maxAlunos=parseInt(this.value)" style="width:100%;box-sizing:border-box;padding:6px 8px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:#fff;font-size:12px;"></div></div>';
+            cont.appendChild(row);
+        }
+
+        async function pSalvarDisponibilidade() {
+            var slots = _dispSlots.filter(function(s){ return s !== null; });
+            var msg   = document.getElementById('pDispMsg');
+            if (!slots.length) { if(msg){msg.textContent='Adicione pelo menos um horário';msg.style.color='#f87171';} return; }
+            if (msg) { msg.textContent='⏳ Salvando...'; msg.style.color='rgba(255,255,255,0.5)'; }
+            try {
+                var r = await secureFetch('salvarDisponibilidade', { slots: JSON.stringify(slots) });
+                if (r.success) { if(msg){msg.textContent='✅ '+r.message;msg.style.color='#4ade80';} _partAdmData.profsLoaded=false; }
+                else { if(msg){msg.textContent='❌ '+(r.message||'');msg.style.color='#f87171';} }
+            } catch(e) { if(msg){msg.textContent='❌ Erro';msg.style.color='#f87171';} }
+        }
+
+        function pAbrirNovoPacote() {
+            var f = document.getElementById('pFormPacote');
+            if (f) f.style.display = f.style.display==='none' ? '' : 'none';
+        }
+
+        async function pSalvarPacote() {
+            var msg = document.getElementById('pPacMsg');
+            var payload = {
+                nome:        (document.getElementById('pPacNome')||{}).value||'',
+                sessoes:     (document.getElementById('pPacSessoes')||{}).value||0,
+                valor:       (document.getElementById('pPacValor')||{}).value||0,
+                validadeDias:(document.getElementById('pPacValidade')||{}).value||365,
+                descricao:   (document.getElementById('pPacDesc')||{}).value||''
+            };
+            if (!payload.nome||!payload.sessoes||!payload.valor) { if(msg){msg.textContent='Nome, sessões e valor obrigatórios';msg.style.color='#f87171';} return; }
+            if (msg) { msg.textContent='⏳ Salvando...'; msg.style.color='rgba(255,255,255,0.5)'; }
+            try {
+                var r = await secureFetch('salvarPacote', payload);
+                if (r.success) {
+                    if(msg){msg.textContent='✅ '+r.message;msg.style.color='#4ade80';}
+                    _partAdmData.pacLoaded=false;
+                    setTimeout(function(){ document.getElementById('pFormPacote').style.display='none'; loadPacotesAdm(); },800);
+                } else { if(msg){msg.textContent='❌ '+(r.message||'');msg.style.color='#f87171';} }
+            } catch(e) { if(msg){msg.textContent='❌ Erro';msg.style.color='#f87171';} }
+        }
+
+
+
+        // ═══════════════════════════════════════════════════════════════════
+        // AULAS PARTICULARES — JS Completo (Fases 1, 2 e 3)
+        // ═══════════════════════════════════════════════════════════════════
+
+        var _apData = {};
+        var _apAlunoSelecionado = null;
+
+        // ── Inicialização ─────────────────────────────────────────────────
+        function initParticulares() {
+            if (!_apData._init) {
+                _apData._init = true;
+                switchAPTab('checkin');
+            }
+        }
+
+        function switchAPTab(tab) {
+            ['checkin','pacotes','agenda','historico'].forEach(function(t) {
+                var p = document.getElementById('apPanel_' + t);
+                var b = document.getElementById('apTab' + t.charAt(0).toUpperCase() + t.slice(1));
+                if (p) p.style.display = t === tab ? 'block' : 'none';
+                if (b) { b.classList.toggle('active', t === tab); }
+            });
+            if (tab === 'checkin'  && !_apData.checkinLoaded)  apCarregarCheckin();
+            if (tab === 'pacotes'  )                            apCarregarPacotes();
+            if (tab === 'agenda'   && !_apData.agendaLoaded)   apCarregarAgenda();
+            if (tab === 'historico'&& !_apData.histLoaded)     apCarregarHistorico();
+        }
+
+        // ── Helpers ───────────────────────────────────────────────────────
+        function apFmt(v) { return 'R$ ' + parseFloat(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2}); }
+
+        function apBadge(status) {
+            var map = { PENDENTE:'ap-badge-pend', CONFIRMADO:'ap-badge-conf', CANCELADO:'ap-badge-canc', REALIZADO:'ap-badge-real' };
+            return '<span class="ap-badge ' + (map[status]||'ap-badge-pend') + '">' + status + '</span>';
+        }
+
+        // ── Busca de alunos ───────────────────────────────────────────────
+        function apFiltrarAlunos(busca) {
+            var box = document.getElementById('apAlunoResultados');
+            if (!box) return;
+            if (!busca || busca.length < 2) { box.style.display = 'none'; return; }
+            var b = busca.toLowerCase();
+            var lista = typeof adminStudentsCache !== 'undefined'
+                ? adminStudentsCache.filter(function(s){ return ((s.name||s.nome||'')+(s.email||'')).toLowerCase().indexOf(b) !== -1; })
+                : [];
+            if (!lista.length) { box.style.display = 'none'; return; }
+            box.innerHTML = lista.slice(0,8).map(function(s) {
+                return '<div onclick="apSelecionarAluno('+JSON.stringify({email:s.email||'',nome:s.name||s.nome||'',faixa:s.faixa||''}).replace(/"/g,"'")+')"' +
+                    ' style="padding:9px 12px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.06);font-size:12px;">' +
+                    '<strong>' + escapeHtml(s.name||s.nome||'') + '</strong>' +
+                    ' <span style="color:rgba(255,255,255,0.4);font-size:10px;">' + escapeHtml(s.faixa||'') + ' · ' + escapeHtml(s.email||'') + '</span></div>';
+            }).join('');
+            box.style.display = '';
+        }
+
+        function apSelecionarAluno(aluno) {
+            _apAlunoSelecionado = aluno;
+            var box = document.getElementById('apAlunoResultados');
+            var sel = document.getElementById('apAlunoSel');
+            var inp = document.getElementById('apCheckinBusca');
+            if (box) box.style.display = 'none';
+            if (inp) inp.value = aluno.nome;
+            if (sel) { sel.style.display = ''; sel.textContent = '✅ ' + aluno.nome + ' · ' + aluno.faixa; }
+            // Carrega agendamentos pendentes deste aluno
+            apCarregarAgendamentosAluno(aluno.email);
+        }
+
+        async function apCarregarAgendamentosAluno(email) {
+            var sel = document.getElementById('apCheckinAgend');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">Avulso</option>';
+            try {
+                var r = await secureFetch('getAgendamentos', { papel: 'professor' });
+                if (!r.success) return;
+                var hoje = new Date();
+                var hojeStr = hoje.getFullYear() + '-' + String(hoje.getMonth()+1).padStart(2,'0') + '-' + String(hoje.getDate()).padStart(2,'0');
+                (r.agendamentos||[]).filter(function(a) {
+                    return a.emailAluno === email && a.status === 'CONFIRMADO';
+                }).forEach(function(a) {
+                    var opt = document.createElement('option');
+                    opt.value = a.id;
+                    opt.textContent = a.data + ' · ' + a.horario + ' · ' + a.nomeAluno;
+                    sel.appendChild(opt);
+                });
+            } catch(e) {}
+        }
+
+        // ── FASE 1: Check-in ──────────────────────────────────────────────
+        async function apCarregarCheckin() {
+            _apData.checkinLoaded = true;
+            var el = document.getElementById('apAgendHoje');
+            if (!el) return;
+            try {
+                var r = await secureFetch('getAgendamentos', { papel: 'professor' });
+                if (!r.success) { el.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.3);font-size:12px;">Nenhum agendamento encontrado</div>'; return; }
+                var hoje = new Date();
+                var dd = String(hoje.getDate()).padStart(2,'0');
+                var mm = String(hoje.getMonth()+1).padStart(2,'0');
+                var hojeStr = dd + '/' + mm + '/' + hoje.getFullYear();
+                var agHoje = (r.agendamentos||[]).filter(function(a){ return a.data === hojeStr && a.status !== 'CANCELADO'; });
+                if (!agHoje.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.3);font-size:12px;">Nenhum agendamento para hoje</div>'; return; }
+                el.innerHTML = agHoje.map(function(a) {
+                    var isRealizado = a.status === 'REALIZADO';
+                    return '<div class="ap-card ap-anim" style="opacity:' + (isRealizado?'.5':'1') + ';">' +
+                        '<div style="display:flex;align-items:center;gap:10px;">' +
+                        '<div style="font-size:22px;">🥋</div>' +
+                        '<div style="flex:1;">' +
+                        '<div style="font-size:13px;font-weight:700;color:var(--adm-text-1);">' + escapeHtml(a.nomeAluno) + '</div>' +
+                        '<div style="font-size:10px;color:var(--adm-text-3);">🕐 ' + a.horario + ' · ' + a.duracao + 'min · ' + apBadge(a.status) + '</div>' +
+                        '</div>' +
+                        (!isRealizado ? '<button onclick="apCheckinRapido('' + escapeHtml(a.emailAluno) + '','' + a.id + '',' + a.duracao + ')" style="padding:6px 12px;background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.25);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">✅ Check-in</button>' : '<span style="font-size:11px;color:#60a5fa;">✓ Realizado</span>') +
+                        '</div></div>';
+                }).join('');
+            } catch(e) { el.innerHTML = '<div style="color:#f87171;font-size:12px;text-align:center;">Erro ao carregar</div>'; }
+        }
+
+        async function apCheckinRapido(email, agendId, duracao) {
+            var r = await secureFetch('checkinParticular', { emailAluno: email, agendamentoId: agendId, duracao: duracao });
+            if (r.success) {
+                var msg = '✅ Presença registrada!';
+                if (r.creditoDebitado && r.pacote) msg += ' (créditos restantes: ' + r.pacote.restante + ')';
+                alert(msg);
+                _apData.checkinLoaded = false;
+                apCarregarCheckin();
+            } else { alert('❌ ' + r.message); }
+        }
+
+        async function apFazerCheckin() {
+            if (!_apAlunoSelecionado) { alert('Selecione um aluno'); return; }
+            var dur   = (document.getElementById('apCheckinDuracao')||{}).value || 60;
+            var agId  = (document.getElementById('apCheckinAgend')||{}).value || '';
+            var msg   = document.getElementById('apCheckinMsg');
+            if (msg) msg.textContent = '⏳ Registrando...';
+            var r = await secureFetch('checkinParticular', { emailAluno: _apAlunoSelecionado.email, agendamentoId: agId, duracao: dur });
+            if (r.success) {
+                if (msg) { msg.textContent = '✅ Presença registrada!'; msg.style.color = '#4ade80'; }
+                if (r.pacote) {
+                    msg.textContent += ' · Créditos restantes: ' + r.pacote.restante + '/' + r.pacote.total;
+                }
+                _apAlunoSelecionado = null;
+                document.getElementById('apCheckinBusca').value = '';
+                document.getElementById('apAlunoSel').style.display = 'none';
+                _apData.checkinLoaded = false;
+                setTimeout(function() { apCarregarCheckin(); if(msg) msg.textContent=''; }, 1000);
+            } else {
+                if (msg) { msg.textContent = '❌ ' + r.message; msg.style.color = '#f87171'; }
+            }
+        }
+
+        // ── FASE 2: Pacotes ───────────────────────────────────────────────
+        async function apCarregarPacotes() {
+            var lista = document.getElementById('apPacLista');
+            if (!lista) return;
+            lista.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.3);font-size:12px;">Informe o email do aluno abaixo para ver os pacotes</div>';
+        }
+
+        async function apCriarPacote() {
+            var emailAluno = (document.getElementById('apPacAluno')||{}).value||'';
+            var total      = (document.getElementById('apPacTotal')||{}).value||10;
+            var valor      = (document.getElementById('apPacValor')||{}).value||0;
+            var validade   = (document.getElementById('apPacVal')||{}).value||'';
+            var msg        = document.getElementById('apPacMsg');
+            if (!emailAluno) { if(msg){msg.textContent='❌ Informe o email do aluno';msg.style.color='#f87171';} return; }
+            if(msg) msg.textContent='⏳ Criando...';
+            var r = await secureFetch('criarPacoteAP', { emailAluno: emailAluno.toLowerCase().trim(), emailProf: currentUser ? currentUser.email : '', totalSessoes: total, valor: valor, validade: validade });
+            if (r.success) {
+                if(msg){msg.textContent='✅ Pacote criado!';msg.style.color='#4ade80';}
+                apVerPacotesAluno(emailAluno);
+            } else { if(msg){msg.textContent='❌ '+r.message;msg.style.color='#f87171';} }
+        }
+
+        async function apVerPacotesAluno(email) {
+            var lista = document.getElementById('apPacLista');
+            if (!lista || !email) return;
+            lista.innerHTML = '<div style="text-align:center;padding:16px;color:rgba(255,255,255,0.3);font-size:12px;">Buscando...</div>';
+            var r = await secureFetch('getPacoteAP', { emailAluno: email.toLowerCase().trim() });
+            if (!r.success || !r.pacotes.length) { lista.innerHTML = '<div style="text-align:center;padding:16px;color:rgba(255,255,255,0.3);font-size:12px;">Nenhum pacote encontrado</div>'; return; }
+            lista.innerHTML = r.pacotes.map(function(p) {
+                var pct = p.total > 0 ? Math.round((p.usado/p.total)*100) : 0;
+                var cor = pct > 80 ? '#f87171' : pct > 50 ? '#f59e0b' : '#4ade80';
+                return '<div class="ap-card ap-anim">' +
+                    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
+                    '<div style="font-size:13px;font-weight:700;color:var(--adm-text-1);">📦 ' + escapeHtml(p.nomeProf) + '</div>' +
+                    '<div style="font-size:13px;font-weight:800;color:#C9A23A;">' + apFmt(p.valor) + '</div></div>' +
+                    '<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--adm-text-3);margin-bottom:6px;">' +
+                    '<span>' + p.usado + ' / ' + p.total + ' sessões</span><span>Validade: ' + (p.validade||'—') + '</span></div>' +
+                    '<div style="background:rgba(255,255,255,0.08);border-radius:4px;height:5px;overflow:hidden;">' +
+                    '<div style="height:100%;width:'+pct+'%;background:'+cor+';border-radius:4px;transition:width .5s;"></div></div>' +
+                    '<div style="font-size:10px;color:'+cor+';margin-top:4px;font-weight:700;">' + p.restante + ' sessões restantes</div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        // ── FASE 3: Agenda / Disponibilidade ─────────────────────────────
+        var _apDisp = {}; // { seg: [{inicio,fim,duracao,maxAlunos}] }
+
+        async function apCarregarAgenda() {
+            _apData.agendaLoaded = true;
+            apRenderDisponibilidade();
+            // Carrega agendamentos do professor
+            var el = document.getElementById('apAgendProf');
+            if (!el) return;
+            var r = await secureFetch('getAgendamentos', { papel: 'professor' });
+            if (!r.success) return;
+            var futuros = (r.agendamentos||[]).filter(function(a){ return a.status !== 'CANCELADO' && a.status !== 'REALIZADO'; });
+            if (!futuros.length) { el.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.3);font-size:12px;">Nenhum agendamento futuro</div>'; return; }
+            el.innerHTML = futuros.map(function(a) {
+                return '<div class="ap-card ap-anim">' +
+                    '<div style="display:flex;align-items:center;gap:10px;">' +
+                    '<div style="font-size:20px;">📅</div>' +
+                    '<div style="flex:1;">' +
+                    '<div style="font-size:12px;font-weight:700;color:var(--adm-text-1);">' + escapeHtml(a.nomeAluno) + '</div>' +
+                    '<div style="font-size:10px;color:var(--adm-text-3);">' + a.data + ' às ' + a.horario + ' · ' + a.duracao + 'min</div>' +
+                    '</div>' + apBadge(a.status) +
+                    (a.status === 'PENDENTE' ?
+                        ' <button onclick="apConfirmar('' + a.id + '','confirmar')" style="padding:4px 10px;background:rgba(74,222,128,.1);color:#4ade80;border:1px solid rgba(74,222,128,.25);border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;margin-left:4px;">✓ Confirmar</button>' +
+                        ' <button onclick="apConfirmar('' + a.id + '','cancelar')" style="padding:4px 10px;background:rgba(248,113,113,.08);color:#f87171;border:1px solid rgba(248,113,113,.2);border-radius:6px;font-size:10px;cursor:pointer;margin-left:4px;">✕</button>'
+                        : '') +
+                    '</div></div>';
+            }).join('');
+        }
+
+        function apRenderDisponibilidade() {
+            var el = document.getElementById('apDisponibilidadeForm');
+            if (!el) return;
+            var DIAS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+            var KEYS = ['dom','seg','ter','qua','qui','sex','sab'];
+            el.innerHTML = KEYS.map(function(k, i) {
+                var slots = _apDisp[k] || [{}];
+                return '<div style="margin-bottom:10px;">' +
+                    '<div style="font-size:11px;font-weight:700;color:var(--adm-text-3);margin-bottom:4px;">' + DIAS[i].toUpperCase() + '</div>' +
+                    '<div style="display:grid;grid-template-columns:1fr 1fr 80px 80px auto;gap:6px;align-items:center;">' +
+                    '<input placeholder="Início (08:00)" data-day="'+k+'" data-field="inicio" value="'+(slots[0].inicio||'')+'"' +
+                    ' style="padding:7px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:var(--adm-text-1);font-size:12px;">' +
+                    '<input placeholder="Fim (12:00)" data-day="'+k+'" data-field="fim" value="'+(slots[0].fim||'')+'"' +
+                    ' style="padding:7px 10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:var(--adm-text-1);font-size:12px;">' +
+                    '<select data-day="'+k+'" data-field="duracao" style="padding:7px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:var(--adm-text-1);font-size:11px;">' +
+                    ['30','60','90','120'].map(function(d){ return '<option value="'+d+'"'+(parseInt(slots[0].duracao||60)===parseInt(d)?' selected':'')+'>'+d+'m</option>'; }).join('') +
+                    '</select>' +
+                    '<select data-day="'+k+'" data-field="maxAlunos" style="padding:7px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:var(--adm-text-1);font-size:11px;">' +
+                    ['1','2','3','4'].map(function(n){ return '<option value="'+n+'"'+(parseInt(slots[0].maxAlunos||1)===parseInt(n)?' selected':'')+'>'+n+'aluno(s)</option>'; }).join('') +
+                    '</select>' +
+                    '</div></div>';
+            }).join('');
+        }
+
+        async function apSalvarDisponibilidade() {
+            var form = document.getElementById('apDisponibilidadeForm');
+            var msg  = document.getElementById('apDispMsg');
+            if (!form) return;
+            var KEYS = ['dom','seg','ter','qua','qui','sex','sab'];
+            var slots = [];
+            KEYS.forEach(function(k) {
+                var inputs = form.querySelectorAll('[data-day="'+k+'"]');
+                var obj = { dia: k };
+                inputs.forEach(function(inp){ obj[inp.getAttribute('data-field')] = inp.value; });
+                if (obj.inicio && obj.fim) slots.push(obj);
+            });
+            if(msg) msg.textContent = '⏳ Salvando...';
+            var r = await secureFetch('salvarDisponibilidade', { slots: JSON.stringify(slots) });
+            if(msg) { msg.textContent = r.success ? '✅ Disponibilidade salva!' : '❌ ' + r.message; msg.style.color = r.success ? '#4ade80' : '#f87171'; }
+            if (r.success) setTimeout(function(){ if(msg) msg.textContent=''; }, 2500);
+        }
+
+        async function apConfirmar(id, acao) {
+            var r = await secureFetch('confirmarAgendamento', { id: id, acao: acao });
+            if (r.success) { _apData.agendaLoaded = false; apCarregarAgenda(); }
+            else alert('❌ ' + r.message);
+        }
+
+        // ── Histórico ─────────────────────────────────────────────────────
+        var _apHistAll = [];
+        async function apCarregarHistorico() {
+            _apData.histLoaded = true;
+            var el = document.getElementById('apHistLista');
+            if (!el) return;
+            el.innerHTML = '<div style="text-align:center;padding:20px;color:rgba(255,255,255,0.3);font-size:12px;">Carregando...</div>';
+            var r = await secureFetch('getHistoricoAP', {});
+            if (!r.success) { el.innerHTML = '<div style="color:#f87171;text-align:center;padding:16px;font-size:12px;">Erro ao carregar</div>'; return; }
+            _apHistAll = r.historico || [];
+            apRenderHistorico(_apHistAll);
+        }
+
+        function apFiltrarHistorico() {
+            var b = ((document.getElementById('apHistBusca')||{}).value||'').toLowerCase();
+            var filtered = b ? _apHistAll.filter(function(h){ return (h.nomeAluno+h.emailAluno).toLowerCase().indexOf(b)!==-1; }) : _apHistAll;
+            apRenderHistorico(filtered);
+        }
+
+        function apRenderHistorico(lista) {
+            var el = document.getElementById('apHistLista');
+            if (!el) return;
+            if (!lista.length) { el.innerHTML = '<div style="text-align:center;padding:24px;color:rgba(255,255,255,0.3);font-size:12px;">Nenhuma aula registrada</div>'; return; }
+            el.innerHTML = lista.map(function(h) {
+                return '<div class="ap-card ap-anim">' +
+                    '<div style="display:flex;align-items:center;gap:10px;">' +
+                    '<div style="width:36px;height:36px;border-radius:50%;background:rgba(201,162,58,0.1);display:flex;align-items:center;justify-content:center;font-size:16px;">🥋</div>' +
+                    '<div style="flex:1;">' +
+                    '<div style="font-size:12px;font-weight:700;color:var(--adm-text-1);">' + escapeHtml(h.nomeAluno) + '</div>' +
+                    '<div style="font-size:10px;color:var(--adm-text-3);">Prof: ' + escapeHtml(h.nomeProf) + ' · ' + h.data + ' · ' + h.horario + ' · ' + h.duracao + 'min</div>' +
+                    '</div>' + apBadge(h.status||'REALIZADO') + '</div></div>';
+            }).join('');
+        }
+
 
         async function loadPresencaList() {
             var ct = document.getElementById('presListCT').value;
