@@ -31177,10 +31177,15 @@
         }
 
         function _fv2Setarfase(fase) {
-            ['config','preview','resultado'].forEach(function(f) {
+            // 'config' nunca aparece — configuração feita na tela principal
+            if (fase === 'config') fase = 'preview';
+            ['preview','resultado'].forEach(function(f) {
                 var el = document.getElementById('fv2Fase_' + f);
                 if (el) el.style.display = f === fase ? '' : 'none';
             });
+            // Garante que a fase config está sempre oculta
+            var cfg = document.getElementById('fv2Fase_config');
+            if (cfg) cfg.style.display = 'none';
         }
 
         // ── Cria o overlay completo ───────────────────────────────────────
@@ -31201,42 +31206,7 @@
                 <button onclick="fecharCheckinFacialV2()" style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.08);border:none;color:rgba(255,255,255,0.6);font-size:16px;cursor:pointer;">✕</button>
               </div>
 
-              <!-- FASE: CONFIG -->
-              <div id="fv2Fase_config">
-                <!-- CT vem do filtro da tela principal -->
-                  <div style="background:rgba(201,162,58,0.06);border:1px solid rgba(201,162,58,0.15);border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
-                    <span style="font-size:16px;">📍</span>
-                    <div>
-                      <div style="font-size:9px;color:rgba(201,162,58,0.7);font-weight:700;letter-spacing:.5px;">CENTRO DE TREINAMENTO</div>
-                      <div id="fv2CTLabel" style="font-size:13px;font-weight:800;color:#C9A23A;">—</div>
-                    </div>
-                  </div>
-
-                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
-                    <div>
-                      <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:5px;letter-spacing:.5px;">DATA DA AULA</div>
-                      <input type="date" id="fv2Data" onchange="_fv2PopularHorarios()" style="width:100%;box-sizing:border-box;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:13px;">
-                    </div>
-                    <div>
-                      <div style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.4);margin-bottom:5px;letter-spacing:.5px;">HORÁRIO DA AULA</div>
-                      <select id="fv2Horario" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:10px;color:#fff;font-size:13px;">
-                        <option value="">— Selecione —</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Upload foto -->
-                <div id="fv2DropZone" onclick="document.getElementById('fv2FotoInput').click()"
-                  style="border:2px dashed rgba(201,162,58,0.3);border-radius:14px;padding:32px 16px;text-align:center;cursor:pointer;background:rgba(201,162,58,0.03);transition:background .2s;">
-                  <div style="font-size:36px;margin-bottom:8px;">📷</div>
-                  <div style="font-size:13px;font-weight:700;color:#C9A23A;">Toque para selecionar a foto da turma</div>
-                  <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:4px;">Galeria ou câmera · até 50 pessoas</div>
-                </div>
-                <input type="file" id="fv2FotoInput" accept="image/*" style="display:none;" onchange="fv2HandleFoto(this)">
-
-                <div id="fv2ConfigMsg" style="margin-top:10px;font-size:12px;text-align:center;min-height:16px;"></div>
-              </div>
+              <!-- config removida -->
 
               <!-- FASE: PREVIEW (processando) -->
               <div id="fv2Fase_preview" style="display:none;text-align:center;padding:40px 0;">
@@ -31674,13 +31644,15 @@
 
             // Botão confirmar: só habilita se há novos a registrar
             var novos = _fv2.matches.filter(function(m){ return !m.jaPresenteHoje; }).length;
+            var _novosLista     = _fv2.matches.filter(function(m){ return !m.jaPresenteHoje && !m.visitante; });
+            var _visitantesLista = _fv2.matches.filter(function(m){ return !m.jaPresenteHoje && m.visitante; });
             var btn = document.getElementById('fv2BtnConfirmar');
             if (btn) {
-                var txt = novos.length > 0 ? '✅ Confirmar ' + novos.length + ' presença(s)' : '(nenhuma nova presença)';
-                if (visitantes.length > 0) txt += ' + ' + visitantes.length + ' visitante(s)';
+                var txt = _novosLista.length > 0 ? '✅ Confirmar ' + _novosLista.length + ' presença(s)' : '(nenhuma nova presença)';
+                if (_visitantesLista.length > 0) txt += ' · ' + _visitantesLista.length + ' visitante(s)';
                 btn.textContent = txt;
-                btn.disabled = novos.length === 0 && visitantes.length === 0;
-                btn.style.opacity = (novos.length === 0 && visitantes.length === 0) ? '0.4' : '1';
+                btn.disabled = _novosLista.length === 0 && _visitantesLista.length === 0;
+                btn.style.opacity = (_novosLista.length === 0 && _visitantesLista.length === 0) ? '0.4' : '1';
             }
         }
 
