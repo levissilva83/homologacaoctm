@@ -12859,6 +12859,140 @@
                 },
             },
 
+
+            aikido: {
+                id: 'aikido',
+                graduacao: {
+                    tipo:             'faixa_cintura',
+                    hasGraduacao:     true,
+                    hasFaixa:         true,
+                    hasPrajied:       false,
+                    hasCorda:         false,
+                    labelFaixa:       'Faixa',
+                    labelGrau:        'Dan',
+                    labelGrauPlural:  'Dans',
+                    maxGrausPorFaixa: 0,
+                    simbolo:          'stripe',
+                    faixas: [
+                        // Amarela: 8° / 7° (I listra) / 6° (II listras)
+                        { id:'kyu_8',    label:'8° Kyu — Amarela',              emoji:'🟡',   cor:'#EAB308', cssClass:'amarela',         next:'kyu_7',    minMeses:3,   ordemProgresso:1  },
+                        { id:'kyu_7',    label:'7° Kyu — Amarela I',            emoji:'🟡⬛', cor:'#EAB308', cssClass:'amarela',         next:'kyu_6',    minMeses:3,   ordemProgresso:2  },
+                        { id:'kyu_6',    label:'6° Kyu — Amarela II',           emoji:'🟡⬛', cor:'#F59E0B', cssClass:'amarela',         next:'kyu_5',    minMeses:3,   ordemProgresso:3  },
+                        // Verde: 5° / 4° (I listra) / 3° (II listras)
+                        { id:'kyu_5',    label:'5° Kyu — Verde',                emoji:'🟢',   cor:'#16A34A', cssClass:'verde',           next:'kyu_4',    minMeses:4,   ordemProgresso:4  },
+                        { id:'kyu_4',    label:'4° Kyu — Verde I',              emoji:'🟢⬛', cor:'#16A34A', cssClass:'verde',           next:'kyu_3',    minMeses:4,   ordemProgresso:5  },
+                        { id:'kyu_3',    label:'3° Kyu — Verde II',             emoji:'🟢⬛', cor:'#15803D', cssClass:'verde',           next:'kyu_2',    minMeses:4,   ordemProgresso:6  },
+                        // Marrom: 2° / 1° (I listra)
+                        { id:'kyu_2',    label:'2° Kyu — Marrom',               emoji:'🟤',   cor:'#92400E', cssClass:'marrom',          next:'kyu_1',    minMeses:6,   ordemProgresso:7  },
+                        { id:'kyu_1',    label:'1° Kyu — Marrom I',             emoji:'🟤⬛', cor:'#78350F', cssClass:'marrom',          next:'shodan',   minMeses:6,   ordemProgresso:8  },
+                        // Dans
+                        { id:'shodan',   label:'1° Dan — Shodan',               emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',           next:'nidan',    minMeses:12,  ordemProgresso:9  },
+                        { id:'nidan',    label:'2° Dan — Nidan',                emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',           next:'sandan',   minMeses:24,  ordemProgresso:10 },
+                        { id:'sandan',   label:'3° Dan — Sandan',               emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',           next:'yondan',   minMeses:36,  ordemProgresso:11 },
+                        { id:'yondan',   label:'4° Dan — Yondan',               emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',           next:'godan',    minMeses:48,  ordemProgresso:12 },
+                        { id:'godan',    label:'5° Dan — Godan',                emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',           next:'shihan_6', minMeses:60,  ordemProgresso:13 },
+                        { id:'shihan_6', label:'6° Dan — Shihan ★',             emoji:'⚫⭐', cor:'#1a1a1a', cssClass:'preta',           next:'shihan_7', minMeses:72,  ordemProgresso:14 },
+                        { id:'shihan_7', label:'7° Dan — Shihan ★★',            emoji:'⚫⭐', cor:'#1a1a1a', cssClass:'preta',           next:'shihan_8', minMeses:84,  ordemProgresso:15 },
+                        { id:'shihan_8', label:'8° Dan — Hanshi ★★★',           emoji:'🔴⚪', cor:'#8B0000', cssClass:'vermelha-branca', next:'shihan_9', minMeses:96,  ordemProgresso:16 },
+                        { id:'shihan_9', label:'9° Dan — Hanshi ★★★★',          emoji:'🔴⚪', cor:'#991B1B', cssClass:'vermelha-branca', next:'hanshi_10',minMeses:108, ordemProgresso:17 },
+                        { id:'hanshi_10',label:'10° Dan — Honbu Shihan',         emoji:'🔴',   cor:'#B91C1C', cssClass:'vermelha',        next:null,       minMeses:0,   ordemProgresso:18 },
+                    ],
+                },
+                nomenclatura: {
+                    treino:        'Treino / Prática',
+                    aula:          'Aula',
+                    professor:     'Sensei / Shihan',
+                    aluno:         'Aikidoka',
+                    academia:      'Dojo',
+                    faixa:         'Faixa',
+                    faixas:        'Faixas',
+                    grau:          'Dan',
+                    graus:         'Dans',
+                    confirmarBtn:  '🥋 Treinei',
+                    evolucaoTitulo:'Minha Progressão',
+                    roadmapTitulo: '🥋 Sistema de Graduação — Aikido',
+                    roadmapSub:    'Do 8° Kyu (Amarela) ao 10° Dan — Sistema com Listras',
+                },
+                ui: {
+                    mostrarFaixa:     true,
+                    mostrarGraus:     false,
+                    mostrarPrajied:   false,
+                    mostrarCorda:     false,
+                    mostrarRoadmap:   true,
+                    mostrarFrequencia:true,
+                    mostrarCriterios: true,
+                    roadmapTipo:      'faixa',
+                    iconeEvo:         '🥋',
+                },
+            },
+
+
+            karate_shotokan: {
+                id: 'karate_shotokan',
+                graduacao: {
+                    tipo:             'faixa_cintura',
+                    hasGraduacao:     true,
+                    hasFaixa:         true,
+                    hasPrajied:       false,
+                    hasCorda:         false,
+                    labelFaixa:       'Faixa',
+                    labelGrau:        'Dan',
+                    labelGrauPlural:  'Dans',
+                    maxGrausPorFaixa: 0,
+                    simbolo:          'stripe',
+                    faixas: [
+                        { id:'branca',      label:'Branca',          emoji:'⚪',   cor:'#e8e8e8', cssClass:'branca',      next:'cinza',       minMeses:0,  ordemProgresso:1  },
+                        { id:'cinza',       label:'Cinza',           emoji:'🩶',   cor:'#9e9e9e', cssClass:'cinza',       next:'amarela',     minMeses:3,  ordemProgresso:2  },
+                        { id:'amarela',     label:'Amarela',         emoji:'🟡',   cor:'#EAB308', cssClass:'amarela',     next:'vermelha',    minMeses:3,  ordemProgresso:3  },
+                        { id:'vermelha',    label:'Vermelha',        emoji:'🔴',   cor:'#DC2626', cssClass:'vermelha',    next:'laranja',     minMeses:3,  ordemProgresso:4  },
+                        { id:'laranja',     label:'Laranja',         emoji:'🟠',   cor:'#F97316', cssClass:'laranja',     next:'verde',       minMeses:4,  ordemProgresso:5  },
+                        { id:'verde',       label:'Verde',           emoji:'🟢',   cor:'#16A34A', cssClass:'verde',       next:'azul_claro',  minMeses:4,  ordemProgresso:6  },
+                        { id:'azul_claro',  label:'Azul Claro',      emoji:'🔵',   cor:'#42A5F5', cssClass:'azul',        next:'roxa',        minMeses:6,  ordemProgresso:7  },
+                        { id:'roxa',        label:'Roxa',            emoji:'🟣',   cor:'#7C3AED', cssClass:'roxa',        next:'azul_escuro', minMeses:6,  ordemProgresso:8  },
+                        { id:'azul_escuro', label:'Azul Escuro',     emoji:'🔵',   cor:'#1565C0', cssClass:'azul',        next:'marrom_1',    minMeses:6,  ordemProgresso:9  },
+                        { id:'marrom_1',    label:'Marrom 1',        emoji:'🟤',   cor:'#92400E', cssClass:'marrom',      next:'marrom_2',    minMeses:8,  ordemProgresso:10 },
+                        { id:'marrom_2',    label:'Marrom 2',        emoji:'🟤',   cor:'#7C3311', cssClass:'marrom',      next:'marrom_3',    minMeses:8,  ordemProgresso:11 },
+                        { id:'marrom_3',    label:'Marrom 3',        emoji:'🟤',   cor:'#78350F', cssClass:'marrom',      next:'preta_1dan',  minMeses:8,  ordemProgresso:12 },
+                        { id:'preta_1dan',  label:'Preta — 1° Dan',  emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',       next:'preta_2dan',  minMeses:12, ordemProgresso:13 },
+                        { id:'preta_2dan',  label:'Preta — 2° Dan',  emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',       next:'preta_3dan',  minMeses:24, ordemProgresso:14 },
+                        { id:'preta_3dan',  label:'Preta — 3° Dan',  emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',       next:'preta_4dan',  minMeses:36, ordemProgresso:15 },
+                        { id:'preta_4dan',  label:'Preta — 4° Dan',  emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',       next:'preta_5dan',  minMeses:48, ordemProgresso:16 },
+                        { id:'preta_5dan',  label:'Preta — 5° Dan',  emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',       next:'preta_6dan',  minMeses:60, ordemProgresso:17 },
+                        { id:'preta_6dan',  label:'Preta — 6° Dan',  emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',       next:'preta_7dan',  minMeses:72, ordemProgresso:18 },
+                        { id:'preta_7dan',  label:'Preta — 7° Dan',  emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',       next:'preta_8dan',  minMeses:84, ordemProgresso:19 },
+                        { id:'preta_8dan',  label:'Preta — 8° Dan',  emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',       next:'preta_9dan',  minMeses:96, ordemProgresso:20 },
+                        { id:'preta_9dan',  label:'Preta — 9° Dan',  emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',       next:'preta_10dan', minMeses:108,ordemProgresso:21 },
+                        { id:'preta_10dan', label:'Preta — 10° Dan', emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',       next:null,          minMeses:0,  ordemProgresso:22 },
+                    ],
+                },
+                nomenclatura: {
+                    treino:        'Treino',
+                    aula:          'Aula',
+                    professor:     'Sensei',
+                    aluno:         'Karateka',
+                    academia:      'Dojo',
+                    faixa:         'Faixa',
+                    faixas:        'Faixas',
+                    grau:          'Dan',
+                    graus:         'Dans',
+                    confirmarBtn:  '🥋 Treinei',
+                    evolucaoTitulo:'Minha Progressão',
+                    roadmapTitulo: '🥋 Sistema de Graduação — Karate Shotokan',
+                    roadmapSub:    'Da Faixa Branca ao 10° Dan',
+                },
+                ui: {
+                    mostrarFaixa:     true,
+                    mostrarGraus:     false,
+                    mostrarPrajied:   false,
+                    mostrarCorda:     false,
+                    mostrarRoadmap:   true,
+                    mostrarFrequencia:true,
+                    mostrarCriterios: true,
+                    roadmapTipo:      'faixa',
+                    iconeEvo:         '🥋',
+                },
+            },
+
         };
 
         // =================================================================
@@ -32679,7 +32813,7 @@
                 _stuHorariosSelecionados = data.horarioSalvo || {};
 
                 var h = '';
-                var MOD_LABELS = { bjj:'BJJ', muay_thai:'Muay Thai', judo:'Judô', karate:'Karatê', boxing:'Boxe', mma:'MMA', funcional:'Funcional', wrestling:'Wrestling', kickboxing:'Kickboxing' , kravmaga:'Krav Maga' };
+                var MOD_LABELS = { bjj:'BJJ', muay_thai:'Muay Thai', judo:'Judô', karate:'Karatê', boxing:'Boxe', mma:'MMA', funcional:'Funcional', wrestling:'Wrestling', kickboxing:'Kickboxing' , kravmaga:'Krav Maga', aikido:'Aikido', karate_shotokan:'Karate Shotokan' };
                 var DAY_LABELS = { seg:'Seg', ter:'Ter', qua:'Qua', qui:'Qui', sex:'Sex', sab:'Sáb', dom:'Dom' };
 
                 data.modalidades.forEach(function(mod) {
@@ -32893,7 +33027,7 @@
                     return;
                 }
                 _stuHorariosSelecionados = data.horarioSalvo || {};
-                var MOD_LABELS = { bjj:'BJJ', muay_thai:'Muay Thai', judo:'Judô', karate:'Karatê', boxing:'Boxe', mma:'MMA', funcional:'Funcional', wrestling:'Wrestling', kickboxing:'Kickboxing', taekwondo:'Taekwondo' , kravmaga:'Krav Maga' };
+                var MOD_LABELS = { bjj:'BJJ', muay_thai:'Muay Thai', judo:'Judô', karate:'Karatê', boxing:'Boxe', mma:'MMA', funcional:'Funcional', wrestling:'Wrestling', kickboxing:'Kickboxing', taekwondo:'Taekwondo' , kravmaga:'Krav Maga', aikido:'Aikido', karate_shotokan:'Karate Shotokan' };
                 var DAY_LABELS = { seg:'Segunda', ter:'Terça', qua:'Quarta', qui:'Quinta', sex:'Sexta', sab:'Sábado', dom:'Domingo' };
                 var h = '';
                 data.modalidades.forEach(function(mod) {
