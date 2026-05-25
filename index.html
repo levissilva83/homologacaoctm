@@ -15569,6 +15569,7 @@
             if (tabName === 'perfil') {
                 loadProfile();
                 loadPagamentos();
+                _carregarMeusContratos(); // carrega contratos e termos do CT
                 // Renderiza seção de modalidades/perfil principal
                 renderPerfilPrincipalSection();
                 // Monta lista de CTs permitidos a partir do currentUser (disponível desde o login)
@@ -21947,36 +21948,151 @@
 
         // ── Editor de contratos no Admin (Sistema) ────────────────────────────
 
+        // Textos padrão para contratos sem texto configurado
+        var _CONTRATO_DEFAULTS = {
+            imagem:   { titulo: 'Autorização de Uso de Imagem',  texto: 'O aluno autoriza o uso de sua imagem e semelhança em fotos, vídeos e materiais de divulgação produzidos pelo CT, incluindo redes sociais e material promocional, sem direito a remuneração.' },
+            acidente: { titulo: 'Termo de Responsabilidade',     texto: 'O aluno declara estar ciente dos riscos inerentes à prática de artes marciais e isenta o CT e seus professores de responsabilidade por eventuais acidentes decorrentes da prática esportiva regular.' },
+            plano:    { titulo: 'Aceite do Plano de Pagamento',  texto: 'O aluno concorda com os termos do plano selecionado, incluindo: valor e periodicidade de cobrança, política de cancelamento e reajustes. Em caso de atraso, incidirá multa de 2% (cobrada no 1° dia) e juros de 1% ao mês, nos termos do Art. 52 do CDC.' },
+            atestado: { titulo: 'Declaração de Aptidão Física',  texto: 'O aluno declara estar em boas condições de saúde para a prática de artes marciais e se compromete a apresentar atestado médico de aptidão física sempre que solicitado pelo CT.' }
+        };
+
         async function carregarContratosAdmin() {
             var ct = currentUser ? currentUser.ct : '';
             var r  = await secureFetch('getContratosCT', { ct: ct });
             if (!r || !r.success) return;
             var contratos = r.contratos || [];
-
             var container = document.getElementById('adminContratosContainer');
             if (!container) return;
-            var h = '';
+
             var tipos = [
                 { tipo:'imagem',   icon:'📸', label:'Uso de Imagem' },
                 { tipo:'acidente', icon:'⚠️', label:'Responsabilidade' },
-                { tipo:'plano',    icon:'💳', label:'Plano de Pagamento' }
+                { tipo:'plano',    icon:'💳', label:'Plano de Pagamento' },
+                { tipo:'atestado', icon:'🏥', label:'Aptidão Física' }
             ];
+
+            // Monta cards usando createElement para evitar problemas de aspas
+            container.innerHTML = '';
             tipos.forEach(function(t) {
-                var found = contratos.find(function(c){ return c.tipo === t.tipo; }) || { tipo: t.tipo, titulo: '', texto: '', obrigatorio: true, ativo: true };
-                h += '<div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:12px;padding:14px;margin-bottom:12px;">';
-                h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">';
-                h += '<div style="font-size:13px;font-weight:800;color:var(--adm-text-1);">' + t.icon + ' ' + t.label + '</div>';
-                h += '<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--adm-text-3);cursor:pointer;">';
-                h += '<input type="checkbox" id="ctAtivo_' + t.tipo + '" ' + (found.ativo ? 'checked' : '') + ' style="accent-color:#C9A23A;"> Ativo</label></div>';
-                h += '<input type="text" id="ctTitulo_' + t.tipo + '" value="' + escapeHtml(found.titulo) + '" placeholder="Título do contrato" style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:8px;">';
-                h += '<textarea id="ctTexto_' + t.tipo + '" rows="4" placeholder="Texto completo do contrato..." style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:11px;resize:vertical;line-height:1.5;">' + escapeHtml(found.texto) + '</textarea>';
-                h += '<div style="display:flex;align-items:center;gap:8px;margin-top:8px;">';
-                h += '<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--adm-text-3);cursor:pointer;">';
-                h += '<input type="checkbox" id="ctObrig_' + t.tipo + '" ' + (found.obrigatorio ? 'checked' : '') + ' style="accent-color:#DC2626;"> Obrigatório</label>';
-                h += '<button onclick="salvarContrato(\'' + t.tipo + '\')" style="margin-left:auto;padding:6px 14px;background:var(--adm-primary);color:#000;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">💾 Salvar</button>';
-                h += '</div></div>';
+                var def   = _CONTRATO_DEFAULTS[t.tipo] || { titulo: t.label, texto: '' };
+                var found = contratos.find(function(c){ return c.tipo === t.tipo; }) || {
+                    tipo: t.tipo, titulo: def.titulo, texto: def.texto, obrigatorio: t.tipo !== 'imagem' && t.tipo !== 'atestado', ativo: true
+                };
+                // Usa defaults se estiver em branco
+                var titulo = found.titulo || def.titulo;
+                var texto  = found.texto  || def.texto;
+                var ativo  = found.ativo !== false && found.ativo !== 'FALSE';
+
+                var card = document.createElement('div');
+                card.style.cssText = 'background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:12px;padding:14px;margin-bottom:12px;';
+
+                // Cabeçalho: ícone + label + toggle
+                var header = document.createElement('div');
+                header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;';
+
+                var labelEl = document.createElement('div');
+                labelEl.style.cssText = 'font-size:13px;font-weight:800;color:var(--adm-text-1);';
+                labelEl.textContent = t.icon + ' ' + t.label;
+
+                // Toggle switch estilo iOS
+                var toggleWrap = document.createElement('label');
+                toggleWrap.style.cssText = 'position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;flex-shrink:0;';
+                toggleWrap.title = ativo ? 'Ativo — clique para desativar' : 'Inativo — clique para ativar';
+
+                var toggleInput = document.createElement('input');
+                toggleInput.type    = 'checkbox';
+                toggleInput.id      = 'ctAtivo_' + t.tipo;
+                toggleInput.checked = ativo;
+                toggleInput.style.cssText = 'opacity:0;width:0;height:0;position:absolute;';
+
+                var toggleSlider = document.createElement('span');
+                toggleSlider.style.cssText = [
+                    'position:absolute;inset:0;border-radius:24px;transition:background .2s;',
+                    'background:' + (ativo ? '#22c55e' : '#374151') + ';'
+                ].join('');
+
+                var toggleCircle = document.createElement('span');
+                toggleCircle.style.cssText = [
+                    'position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;',
+                    'top:3px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,0.3);',
+                    'left:' + (ativo ? '23px' : '3px') + ';'
+                ].join('');
+
+                toggleInput.addEventListener('change', function() {
+                    var on = toggleInput.checked;
+                    toggleSlider.style.background = on ? '#22c55e' : '#374151';
+                    toggleCircle.style.left       = on ? '23px'    : '3px';
+                    toggleWrap.title = on ? 'Ativo — clique para desativar' : 'Inativo — clique para ativar';
+                    // Auto-save ao alternar
+                    _salvarContratoSilencioso(t.tipo);
+                });
+
+                toggleSlider.appendChild(toggleCircle);
+                toggleWrap.appendChild(toggleInput);
+                toggleWrap.appendChild(toggleSlider);
+                header.appendChild(labelEl);
+                header.appendChild(toggleWrap);
+                card.appendChild(header);
+
+                // Campo título
+                var tituloInput = document.createElement('input');
+                tituloInput.type  = 'text';
+                tituloInput.id    = 'ctTitulo_' + t.tipo;
+                tituloInput.value = titulo;
+                tituloInput.placeholder = 'Título do contrato';
+                tituloInput.style.cssText = 'width:100%;box-sizing:border-box;padding:8px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:8px;';
+                card.appendChild(tituloInput);
+
+                // Campo texto
+                var textoArea = document.createElement('textarea');
+                textoArea.id    = 'ctTexto_' + t.tipo;
+                textoArea.rows  = 4;
+                textoArea.placeholder = 'Texto completo do contrato...';
+                textoArea.style.cssText = 'width:100%;box-sizing:border-box;padding:8px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:11px;resize:vertical;line-height:1.5;';
+                textoArea.textContent = texto;
+                card.appendChild(textoArea);
+
+                // Rodapé: obrigatório + botão salvar
+                var footer = document.createElement('div');
+                footer.style.cssText = 'display:flex;align-items:center;gap:8px;margin-top:8px;';
+
+                var obrigLabel = document.createElement('label');
+                obrigLabel.style.cssText = 'display:flex;align-items:center;gap:5px;font-size:11px;color:var(--adm-text-3);cursor:pointer;';
+                var obrigChk = document.createElement('input');
+                obrigChk.type    = 'checkbox';
+                obrigChk.id      = 'ctObrig_' + t.tipo;
+                obrigChk.checked = found.obrigatorio !== false && found.obrigatorio !== 'FALSE';
+                obrigChk.style.cssText = 'accent-color:#DC2626;width:14px;height:14px;';
+                obrigLabel.appendChild(obrigChk);
+                obrigLabel.appendChild(document.createTextNode(' Obrigatório'));
+
+                var salvarBtn = document.createElement('button');
+                salvarBtn.id   = 'ctSaveBtn_' + t.tipo;
+                salvarBtn.style.cssText = 'margin-left:auto;padding:6px 14px;background:var(--adm-primary);color:#000;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;';
+                salvarBtn.textContent = '💾 Salvar';
+                (function(tipo){ salvarBtn.addEventListener('click', function() { salvarContrato(tipo); }); })(t.tipo);
+
+                footer.appendChild(obrigLabel);
+                footer.appendChild(salvarBtn);
+                card.appendChild(footer);
+
+                // Msg de feedback por card
+                var msgEl = document.createElement('div');
+                msgEl.id  = 'ctMsg_' + t.tipo;
+                msgEl.style.cssText = 'min-height:14px;font-size:10px;margin-top:4px;text-align:right;';
+                card.appendChild(msgEl);
+
+                container.appendChild(card);
             });
-            container.innerHTML = h;
+        }
+
+        async function _salvarContratoSilencioso(tipo) {
+            // Auto-save silencioso ao alternar toggle — não valida campos
+            var titulo = (document.getElementById('ctTitulo_'+tipo)||{}).value || (_CONTRATO_DEFAULTS[tipo]||{}).titulo || tipo;
+            var texto  = (document.getElementById('ctTexto_' +tipo)||{}).value || (_CONTRATO_DEFAULTS[tipo]||{}).texto  || '';
+            var obrig  = (document.getElementById('ctObrig_' +tipo)||{}).checked;
+            var ativo  = (document.getElementById('ctAtivo_' +tipo)||{}).checked;
+            await secureFetch('saveContratoCT', { tipo: tipo, titulo: titulo, texto: texto, obrigatorio: obrig, ativo: ativo });
         }
 
         async function salvarContrato(tipo) {
@@ -21984,9 +22100,16 @@
             var texto  = (document.getElementById('ctTexto_' +tipo)||{}).value || '';
             var obrig  = (document.getElementById('ctObrig_' +tipo)||{}).checked;
             var ativo  = (document.getElementById('ctAtivo_' +tipo)||{}).checked;
-            if (!titulo || !texto) { showToast('⚠️ Preencha título e texto'); return; }
-            var r = await secureFetch('saveContratoCT', { tipo, titulo, texto, obrigatorio: obrig, ativo });
-            showToast(r && r.success ? '✅ Contrato salvo!' : '❌ ' + (r ? r.message : 'Erro'));
+            var msg    = document.getElementById('ctMsg_' + tipo);
+            // Usa defaults se em branco
+            if (!titulo) titulo = (_CONTRATO_DEFAULTS[tipo]||{}).titulo || tipo;
+            if (!texto)  texto  = (_CONTRATO_DEFAULTS[tipo]||{}).texto  || '';
+            var r = await secureFetch('saveContratoCT', { tipo: tipo, titulo: titulo, texto: texto, obrigatorio: obrig, ativo: ativo });
+            if (msg) {
+                msg.textContent = r && r.success ? '✅ Salvo!' : '❌ ' + (r ? r.message : 'Erro');
+                msg.style.color = r && r.success ? '#4ade80' : '#f87171';
+                setTimeout(function(){ if(msg) msg.textContent = ''; }, 2500);
+            }
         }
 
         
