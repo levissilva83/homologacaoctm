@@ -32298,7 +32298,12 @@
         function atualizarJurosPreview() {
             var multa = parseFloat(document.getElementById('jurosMulta').value || 2);
             var juros = parseFloat(document.getElementById('jurosPerc').value  || 1);
-            var valor = 150, dias = 30;
+            var planoSel = document.getElementById('jurosPlanoSim');
+            var valor = planoSel ? (parseFloat(planoSel.value) || 150) : 150;
+            var planoLabel = planoSel && planoSel.options[planoSel.selectedIndex]
+                ? planoSel.options[planoSel.selectedIndex].text.split('—')[0].trim()
+                : 'R$ ' + valor.toFixed(2);
+            var dias = 30;
             var multaVal = valor * (multa / 100);
             var jurosVal = valor * (juros / 100 / 30) * dias;
             var total    = valor + multaVal + jurosVal;
@@ -32317,15 +32322,39 @@
             var ct = (document.getElementById('jurosCT')||{}).value || '';
             if (!ct) return;
             try {
-                var r = await secureFetch('getConfigJuros', { ct: ct });
-                if (r && r.success) {
+                // Busca config de juros e planos do CT em paralelo
+                var [rJuros, rPlanos] = await Promise.all([
+                    secureFetch('getConfigJuros',  { ct: ct }),
+                    secureFetch('getPlanosList',   { ct: ct })
+                ]);
+
+                if (rJuros && rJuros.success) {
                     var mEl = document.getElementById('jurosMulta');
                     var jEl = document.getElementById('jurosPerc');
-                    if (mEl) mEl.value = r.multa || 2;
-                    if (jEl) jEl.value = r.juros || 1;
-                    atualizarJurosPreview();
+                    if (mEl) mEl.value = rJuros.multa || 2;
+                    if (jEl) jEl.value = rJuros.juros || 1;
                 }
-            } catch(e) {}
+
+                // Popula seletor de planos
+                var sel = document.getElementById('jurosPlanoSim');
+                if (sel && rPlanos && rPlanos.success && rPlanos.planos && rPlanos.planos.length > 0) {
+                    sel.innerHTML = '';
+                    rPlanos.planos.forEach(function(p) {
+                        var valor = parseFloat(p.valor || p.preco || 0);
+                        if (!valor) return;
+                        var freq  = p.frequencia || p.ciclo || '';
+                        var label = (p.nome || p.name || p.id) + ' — R$ ' + valor.toFixed(2) + (freq ? ' / ' + freq : '');
+                        var opt   = document.createElement('option');
+                        opt.value = valor;
+                        opt.textContent = label;
+                        sel.appendChild(opt);
+                    });
+                } else if (sel) {
+                    sel.innerHTML = '<option value="150">R$ 150,00 (exemplo)</option>';
+                }
+
+                atualizarJurosPreview();
+            } catch(e) { console.error('[juros]', e); }
         }
 
         async function salvarConfigJuros() {
