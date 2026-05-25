@@ -8697,6 +8697,14 @@
                         <div id="perfilMessage"></div>
                         <button class="perfil-save-btn" id="perfilSaveBtn" onclick="saveProfile()">💾 Salvar Perfil</button>
 
+                        <!-- ===== CONTRATOS E TERMOS ===== -->
+                        <div id="perfilContratosSection" class="perfil-section" style="margin-top:16px;display:none;">
+                            <div class="perfil-section-title"><span>📋</span> Contratos e Termos</div>
+                            <div id="perfilContratosLista">
+                                <div style="text-align:center;padding:12px;color:var(--text-3);font-size:12px;">⏳ Carregando...</div>
+                            </div>
+                        </div>
+
                         <div class="perfil-section" id="perfilSecSenha" style="margin-top:16px;">
                             <div class="perfil-section-title"><span>🔒</span> Alterar Senha</div>
                             <div class="perfil-field">
@@ -21755,9 +21763,12 @@
                     extra: { idade: idade }
                 });
                 if (r && r.success && r.link) {
-                    window.open(r.link, '_blank');
+                    // location.href funciona melhor no mobile (não é bloqueado como popup)
+                    window.location.href = r.link;
                 } else if (r && r.semTelefone) {
-                    showToast('⚠️ ' + nome.split(' ')[0] + ' não tem telefone cadastrado');
+                    showToast('⚠️ ' + (nome ? nome.split(' ')[0] : 'Aluno') + ' não tem telefone cadastrado');
+                } else {
+                    showToast('❌ Não foi possível gerar o link WhatsApp');
                 }
             } catch(e) {
                 showToast('❌ Erro ao gerar link WhatsApp');
@@ -34629,11 +34640,25 @@
                     // Delegação: botões WhatsApp aniversariante
                     container.querySelectorAll('.bday-wa-btn').forEach(function(btn) {
                         btn.addEventListener('click', function() {
-                            enviarWAAniversario(
-                                btn.getAttribute('data-email'),
-                                btn.getAttribute('data-nome'),
-                                parseInt(btn.getAttribute('data-idade'))||0
-                            );
+                            var email = btn.getAttribute('data-email') || '';
+                            var nome  = btn.getAttribute('data-nome')  || '';
+                            var idade = parseInt(btn.getAttribute('data-idade'))||0;
+                            var tel   = btn.getAttribute('data-tel')   || '';
+
+                            // Se não tem email mas tem telefone, abre WhatsApp direto
+                            if (!email && tel) {
+                                var digits = tel.replace(/\D/g,'');
+                                if (digits.length >= 10) {
+                                    if (!digits.startsWith('55')) digits = '55' + digits;
+                                    window.location.href = 'https://wa.me/' + digits;
+                                    return;
+                                }
+                            }
+                            if (!email) {
+                                showToast('⚠️ Email não encontrado para ' + nome.split(' ')[0]);
+                                return;
+                            }
+                            enviarWAAniversario(email, nome, idade);
                         });
                     });
                 } else {
