@@ -10120,6 +10120,20 @@
                     </div>
                     <!-- ██ FIM PAGAMENTOS v2 ██ -->
 
+                    <!-- ── CONTRATOS DO ALUNO ─────────────────────────────────── -->
+                    <div class="admin-section" id="contratosAdminSection">
+                        <div class="admin-section-header">
+                            <div class="admin-section-title">📋 Contratos do Aluno</div>
+                        </div>
+                        <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:12px;">
+                            Personalize os termos que o aluno aceita no cadastro.<br>
+                            Os marcados como <strong style="color:#DC2626;">Obrigatório</strong> bloqueiam o cadastro se não aceitos.
+                        </div>
+                        <div id="adminContratosContainer">
+                            <div style="text-align:center;padding:20px;color:var(--adm-text-3);font-size:12px;">⏳ Carregando contratos...</div>
+                        </div>
+                    </div>
+
                     <!-- SYSADMIN: Gerenciamento de Licenças (visível só para dono do SaaS) -->
 
                     <div class="admin-section" id="sysAdminLicSection" style="display:none;">
@@ -10713,13 +10727,12 @@
             <div id="adm-financeiro" class="adm-tab">
                 <div style="padding:0 0 100px;">
 
-                    <!-- Sub-nav -->
-                    <div style="display:flex;overflow-x:auto;scrollbar-width:none;background:rgba(0,0,0,0.3);border-bottom:1px solid rgba(201,162,58,0.12);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);">
+                    <!-- Sub-nav oculto — aparece quando houver mais abas -->
+                    <div id="finSubNav" style="display:none;overflow-x:auto;scrollbar-width:none;background:rgba(0,0,0,0.3);border-bottom:1px solid rgba(201,162,58,0.12);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);">
                         <button onclick="switchFinSubTab('pagamentos')" id="finSubBtn_pagamentos"
                             style="flex-shrink:0;padding:13px 18px;border:none;background:transparent;color:#C9A23A;font-size:11px;font-weight:800;cursor:pointer;border-bottom:2px solid #C9A23A;letter-spacing:.3px;">
                             💳 Pagamentos
                         </button>
-                        <!-- + Cobranças, Relatórios, etc. serão adicionadas aqui -->
                     </div>
 
                     <!-- Painel: Pagamentos -->
@@ -10962,9 +10975,17 @@
                                         </div>
                                     </div>
 
+                                    <!-- Seletor de plano -->
+                                    <div style="margin-bottom:10px;">
+                                        <label style="font-size:10px;font-weight:700;color:var(--adm-text-3);display:block;margin-bottom:4px;">SIMULAR COM O PLANO</label>
+                                        <select id="jurosPlanoSim" onchange="atualizarJurosPreview()" style="width:100%;padding:8px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                            <option value="150">Selecione um CT acima para carregar os planos</option>
+                                        </select>
+                                    </div>
+
                                     <!-- Preview de cálculo -->
                                     <div style="background:rgba(201,162,58,0.06);border:1px solid rgba(201,162,58,0.15);border-radius:8px;padding:10px;margin-bottom:12px;">
-                                        <div style="font-size:10px;font-weight:700;color:var(--adm-text-3);margin-bottom:6px;">SIMULAÇÃO — mensalidade de R$ 150 com 30 dias de atraso</div>
+                                        <div style="font-size:10px;font-weight:700;color:var(--adm-text-3);margin-bottom:6px;">SIMULAÇÃO — 30 dias de atraso</div>
                                         <div id="jurosPreview" style="font-size:12px;color:var(--adm-text-2);"></div>
                                     </div>
 
@@ -12815,20 +12836,11 @@
                     maxGrausPorFaixa: 0,
                     simbolo:          'patch',
                     faixas: [
-                        { id:'P1', label:'P1 — Praticante 1', emoji:'🟡', cor:'#EAB308', cssClass:'km-p1', next:'P2', minMeses:6,  ordemProgresso:1  },
-                        { id:'P2', label:'P2 — Praticante 2', emoji:'🟡', cor:'#F59E0B', cssClass:'km-p2', next:'P3', minMeses:6,  ordemProgresso:2  },
-                        { id:'P3', label:'P3 — Praticante 3', emoji:'🟠', cor:'#F97316', cssClass:'km-p3', next:'P4', minMeses:6,  ordemProgresso:3  },
-                        { id:'P4', label:'P4 — Praticante 4', emoji:'🟠', cor:'#EA580C', cssClass:'km-p4', next:'P5', minMeses:6,  ordemProgresso:4  },
-                        { id:'P5', label:'P5 — Praticante 5', emoji:'🟠', cor:'#C2410C', cssClass:'km-p5', next:'G1', minMeses:6,  ordemProgresso:5  },
-                        { id:'G1', label:'G1 — Graduado 1',   emoji:'🟢', cor:'#16A34A', cssClass:'km-g1', next:'G2', minMeses:8,  ordemProgresso:6  },
-                        { id:'G2', label:'G2 — Graduado 2',   emoji:'🟢', cor:'#15803D', cssClass:'km-g2', next:'G3', minMeses:8,  ordemProgresso:7  },
-                        { id:'G3', label:'G3 — Graduado 3',   emoji:'🔵', cor:'#1D4ED8', cssClass:'km-g3', next:'E1', minMeses:8,  ordemProgresso:8  },
-                        { id:'E1', label:'E1 — Expert 1',     emoji:'🔵', cor:'#1565C0', cssClass:'km-e1', next:'E2', minMeses:12, ordemProgresso:9  },
-                        { id:'E2', label:'E2 — Expert 2',     emoji:'🟣', cor:'#7C3AED', cssClass:'km-e2', next:'E3', minMeses:12, ordemProgresso:10 },
-                        { id:'E3', label:'E3 — Expert 3',     emoji:'🟤', cor:'#5D4037', cssClass:'km-e3', next:'M1', minMeses:12, ordemProgresso:11 },
-                        { id:'M1', label:'Mestre — Nível 1',  emoji:'🔴', cor:'#B91C1C', cssClass:'km-m1', next:'M2', minMeses:24, ordemProgresso:12 },
-                        { id:'M2', label:'Mestre — Nível 2',  emoji:'🔴', cor:'#991B1B', cssClass:'km-m2', next:'M3', minMeses:36, ordemProgresso:13 },
-                        { id:'M3', label:'Grão-Mestre',        emoji:'⚫', cor:'#1a1a1a', cssClass:'km-m3', next:null,  minMeses:0,  ordemProgresso:14 },
+                        { id:'praticante', label:'Praticante (P1–P5)', emoji:'🟡', cor:'#F59E0B', cssClass:'km-praticante', maxGrau:5, next:'graduado',   minMeses:6,  ordemProgresso:1 },
+                        { id:'graduado',   label:'Graduado (G1–G3)',   emoji:'🟢', cor:'#16A34A', cssClass:'km-graduado',   maxGrau:3, next:'expert',     minMeses:8,  ordemProgresso:2 },
+                        { id:'expert',     label:'Expert (E1–E3)',     emoji:'🔵', cor:'#1565C0', cssClass:'km-expert',     maxGrau:3, next:'mestre',     minMeses:12, ordemProgresso:3 },
+                        { id:'mestre',     label:'Mestre (M1–M2)',     emoji:'🔴', cor:'#B91C1C', cssClass:'km-mestre',     maxGrau:2, next:'graomestre', minMeses:24, ordemProgresso:4 },
+                        { id:'graomestre', label:'Grão-Mestre',         emoji:'⚫', cor:'#1a1a1a', cssClass:'km-gm',         maxGrau:0, next:null,        minMeses:0,  ordemProgresso:5 },
                     ],
                 },
                 nomenclatura: {
@@ -12874,28 +12886,15 @@
                     maxGrausPorFaixa: 0,
                     simbolo:          'stripe',
                     faixas: [
-                        // Amarela: 8° / 7° (I listra) / 6° (II listras)
-                        { id:'kyu_8',    label:'8° Kyu — Amarela',              emoji:'🟡',   cor:'#EAB308', cssClass:'amarela',         next:'kyu_7',    minMeses:3,   ordemProgresso:1  },
-                        { id:'kyu_7',    label:'7° Kyu — Amarela I',            emoji:'🟡⬛', cor:'#EAB308', cssClass:'amarela',         next:'kyu_6',    minMeses:3,   ordemProgresso:2  },
-                        { id:'kyu_6',    label:'6° Kyu — Amarela II',           emoji:'🟡⬛', cor:'#F59E0B', cssClass:'amarela',         next:'kyu_5',    minMeses:3,   ordemProgresso:3  },
-                        // Verde: 5° / 4° (I listra) / 3° (II listras)
-                        { id:'kyu_5',    label:'5° Kyu — Verde',                emoji:'🟢',   cor:'#16A34A', cssClass:'verde',           next:'kyu_4',    minMeses:4,   ordemProgresso:4  },
-                        { id:'kyu_4',    label:'4° Kyu — Verde I',              emoji:'🟢⬛', cor:'#16A34A', cssClass:'verde',           next:'kyu_3',    minMeses:4,   ordemProgresso:5  },
-                        { id:'kyu_3',    label:'3° Kyu — Verde II',             emoji:'🟢⬛', cor:'#15803D', cssClass:'verde',           next:'kyu_2',    minMeses:4,   ordemProgresso:6  },
-                        // Marrom: 2° / 1° (I listra)
-                        { id:'kyu_2',    label:'2° Kyu — Marrom',               emoji:'🟤',   cor:'#92400E', cssClass:'marrom',          next:'kyu_1',    minMeses:6,   ordemProgresso:7  },
-                        { id:'kyu_1',    label:'1° Kyu — Marrom I',             emoji:'🟤⬛', cor:'#78350F', cssClass:'marrom',          next:'shodan',   minMeses:6,   ordemProgresso:8  },
-                        // Dans
-                        { id:'shodan',   label:'1° Dan — Shodan',               emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',           next:'nidan',    minMeses:12,  ordemProgresso:9  },
-                        { id:'nidan',    label:'2° Dan — Nidan',                emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',           next:'sandan',   minMeses:24,  ordemProgresso:10 },
-                        { id:'sandan',   label:'3° Dan — Sandan',               emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',           next:'yondan',   minMeses:36,  ordemProgresso:11 },
-                        { id:'yondan',   label:'4° Dan — Yondan',               emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',           next:'godan',    minMeses:48,  ordemProgresso:12 },
-                        { id:'godan',    label:'5° Dan — Godan',                emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',           next:'shihan_6', minMeses:60,  ordemProgresso:13 },
-                        { id:'shihan_6', label:'6° Dan — Shihan ★',             emoji:'⚫⭐', cor:'#1a1a1a', cssClass:'preta',           next:'shihan_7', minMeses:72,  ordemProgresso:14 },
-                        { id:'shihan_7', label:'7° Dan — Shihan ★★',            emoji:'⚫⭐', cor:'#1a1a1a', cssClass:'preta',           next:'shihan_8', minMeses:84,  ordemProgresso:15 },
-                        { id:'shihan_8', label:'8° Dan — Hanshi ★★★',           emoji:'🔴⚪', cor:'#8B0000', cssClass:'vermelha-branca', next:'shihan_9', minMeses:96,  ordemProgresso:16 },
-                        { id:'shihan_9', label:'9° Dan — Hanshi ★★★★',          emoji:'🔴⚪', cor:'#991B1B', cssClass:'vermelha-branca', next:'hanshi_10',minMeses:108, ordemProgresso:17 },
-                        { id:'hanshi_10',label:'10° Dan — Honbu Shihan',         emoji:'🔴',   cor:'#B91C1C', cssClass:'vermelha',        next:null,       minMeses:0,   ordemProgresso:18 },
+                        // Kyu: graus = listras (0=sem listra, 1=I listra, 2=II listras)
+                        { id:'amarela', label:'Amarela (8°–6° Kyu)', emoji:'🟡',  cor:'#EAB308', cssClass:'amarela',        maxGrau:2, next:'verde',   minMeses:3,  ordemProgresso:1 },
+                        { id:'verde',   label:'Verde (5°–3° Kyu)',   emoji:'🟢',  cor:'#16A34A', cssClass:'verde',          maxGrau:2, next:'marrom',  minMeses:4,  ordemProgresso:2 },
+                        { id:'marrom',  label:'Marrom (2°–1° Kyu)',  emoji:'🟤',  cor:'#92400E', cssClass:'marrom',         maxGrau:1, next:'preta',   minMeses:6,  ordemProgresso:3 },
+                        // Dan: grau = número do Dan
+                        { id:'preta',   label:'Preta (1°–5° Dan)',   emoji:'⚫',  cor:'#1a1a1a', cssClass:'preta',          maxGrau:5, next:'shihan',  minMeses:12, ordemProgresso:4 },
+                        { id:'shihan',  label:'Preta — Shihan (6°–7°)', emoji:'⚫⭐', cor:'#1a1a1a', cssClass:'preta',     maxGrau:2, next:'hanshi',  minMeses:72, ordemProgresso:5 },
+                        { id:'hanshi',  label:'Vermelha/Branca — Hanshi', emoji:'🔴⚪', cor:'#8B0000', cssClass:'vermelha-branca', maxGrau:2, next:'honbu', minMeses:96, ordemProgresso:6 },
+                        { id:'honbu',   label:'10° Dan — Honbu Shihan', emoji:'🔴', cor:'#B91C1C', cssClass:'vermelha',    maxGrau:0, next:null,     minMeses:0,  ordemProgresso:7 },
                     ],
                 },
                 nomenclatura: {
@@ -12941,28 +12940,17 @@
                     maxGrausPorFaixa: 0,
                     simbolo:          'stripe',
                     faixas: [
-                        { id:'branca',      label:'Branca',          emoji:'⚪',   cor:'#e8e8e8', cssClass:'branca',      next:'cinza',       minMeses:0,  ordemProgresso:1  },
-                        { id:'cinza',       label:'Cinza',           emoji:'🩶',   cor:'#9e9e9e', cssClass:'cinza',       next:'amarela',     minMeses:3,  ordemProgresso:2  },
-                        { id:'amarela',     label:'Amarela',         emoji:'🟡',   cor:'#EAB308', cssClass:'amarela',     next:'vermelha',    minMeses:3,  ordemProgresso:3  },
-                        { id:'vermelha',    label:'Vermelha',        emoji:'🔴',   cor:'#DC2626', cssClass:'vermelha',    next:'laranja',     minMeses:3,  ordemProgresso:4  },
-                        { id:'laranja',     label:'Laranja',         emoji:'🟠',   cor:'#F97316', cssClass:'laranja',     next:'verde',       minMeses:4,  ordemProgresso:5  },
-                        { id:'verde',       label:'Verde',           emoji:'🟢',   cor:'#16A34A', cssClass:'verde',       next:'azul_claro',  minMeses:4,  ordemProgresso:6  },
-                        { id:'azul_claro',  label:'Azul Claro',      emoji:'🔵',   cor:'#42A5F5', cssClass:'azul',        next:'roxa',        minMeses:6,  ordemProgresso:7  },
-                        { id:'roxa',        label:'Roxa',            emoji:'🟣',   cor:'#7C3AED', cssClass:'roxa',        next:'azul_escuro', minMeses:6,  ordemProgresso:8  },
-                        { id:'azul_escuro', label:'Azul Escuro',     emoji:'🔵',   cor:'#1565C0', cssClass:'azul',        next:'marrom_1',    minMeses:6,  ordemProgresso:9  },
-                        { id:'marrom_1',    label:'Marrom 1',        emoji:'🟤',   cor:'#92400E', cssClass:'marrom',      next:'marrom_2',    minMeses:8,  ordemProgresso:10 },
-                        { id:'marrom_2',    label:'Marrom 2',        emoji:'🟤',   cor:'#7C3311', cssClass:'marrom',      next:'marrom_3',    minMeses:8,  ordemProgresso:11 },
-                        { id:'marrom_3',    label:'Marrom 3',        emoji:'🟤',   cor:'#78350F', cssClass:'marrom',      next:'preta_1dan',  minMeses:8,  ordemProgresso:12 },
-                        { id:'preta_1dan',  label:'Preta — 1° Dan',  emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',       next:'preta_2dan',  minMeses:12, ordemProgresso:13 },
-                        { id:'preta_2dan',  label:'Preta — 2° Dan',  emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',       next:'preta_3dan',  minMeses:24, ordemProgresso:14 },
-                        { id:'preta_3dan',  label:'Preta — 3° Dan',  emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',       next:'preta_4dan',  minMeses:36, ordemProgresso:15 },
-                        { id:'preta_4dan',  label:'Preta — 4° Dan',  emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',       next:'preta_5dan',  minMeses:48, ordemProgresso:16 },
-                        { id:'preta_5dan',  label:'Preta — 5° Dan',  emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',       next:'preta_6dan',  minMeses:60, ordemProgresso:17 },
-                        { id:'preta_6dan',  label:'Preta — 6° Dan',  emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',       next:'preta_7dan',  minMeses:72, ordemProgresso:18 },
-                        { id:'preta_7dan',  label:'Preta — 7° Dan',  emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',       next:'preta_8dan',  minMeses:84, ordemProgresso:19 },
-                        { id:'preta_8dan',  label:'Preta — 8° Dan',  emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',       next:'preta_9dan',  minMeses:96, ordemProgresso:20 },
-                        { id:'preta_9dan',  label:'Preta — 9° Dan',  emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',       next:'preta_10dan', minMeses:108,ordemProgresso:21 },
-                        { id:'preta_10dan', label:'Preta — 10° Dan', emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',       next:null,          minMeses:0,  ordemProgresso:22 },
+                        { id:'branca',     label:'Branca',               emoji:'⚪','cor':'#e8e8e8', cssClass:'branca',  maxGrau:0, next:'cinza',      minMeses:0,  ordemProgresso:1  },
+                        { id:'cinza',      label:'Cinza',                emoji:'🩶','cor':'#9e9e9e', cssClass:'cinza',   maxGrau:0, next:'amarela',    minMeses:3,  ordemProgresso:2  },
+                        { id:'amarela',    label:'Amarela',              emoji:'🟡','cor':'#EAB308', cssClass:'amarela', maxGrau:0, next:'vermelha',   minMeses:3,  ordemProgresso:3  },
+                        { id:'vermelha',   label:'Vermelha',             emoji:'🔴','cor':'#DC2626', cssClass:'vermelha',maxGrau:0, next:'laranja',    minMeses:3,  ordemProgresso:4  },
+                        { id:'laranja',    label:'Laranja',              emoji:'🟠','cor':'#F97316', cssClass:'laranja', maxGrau:0, next:'verde',      minMeses:4,  ordemProgresso:5  },
+                        { id:'verde',      label:'Verde',                emoji:'🟢','cor':'#16A34A', cssClass:'verde',   maxGrau:0, next:'azul_claro', minMeses:4,  ordemProgresso:6  },
+                        { id:'azul_claro', label:'Azul Claro',           emoji:'🔵','cor':'#42A5F5', cssClass:'azul',    maxGrau:0, next:'roxa',       minMeses:6,  ordemProgresso:7  },
+                        { id:'roxa',       label:'Roxa',                 emoji:'🟣','cor':'#7C3AED', cssClass:'roxa',    maxGrau:0, next:'azul_escuro',minMeses:6,  ordemProgresso:8  },
+                        { id:'azul_escuro',label:'Azul Escuro',          emoji:'🔵','cor':'#1565C0', cssClass:'azul',    maxGrau:0, next:'marrom',     minMeses:6,  ordemProgresso:9  },
+                        { id:'marrom',     label:'Marrom (1°–3°)',        emoji:'🟤','cor':'#92400E', cssClass:'marrom',  maxGrau:3, next:'preta',      minMeses:8,  ordemProgresso:10 },
+                        { id:'preta',      label:'Preta (1°–10° Dan)',    emoji:'⚫','cor':'#1a1a1a', cssClass:'preta',   maxGrau:10, next:null,        minMeses:12, ordemProgresso:11 },
                     ],
                 },
                 nomenclatura: {
@@ -14894,33 +14882,31 @@
                 return;
             }
 
-            showMessage('registerMessage', 'Enviando solicitação...', 'warning');
-
+            // Antes de enviar, carrega e exibe contratos do CT
+            showMessage('registerMessage', '⏳ Carregando contratos...', 'warning');
             try {
-                const r = await fetch(SCRIPT_URL, {
+                var ctmIdReg = (typeof _currentCtmId !== 'undefined') ? _currentCtmId : '';
+                var ctResp = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify({
-                        action:      'requestAccount',
-                        name,
-                        email,
-                        password,
-                        nascimento,
-                        telefone,
-                        modalidadesSolicitadas: modalidades.join(','),
-                        // CT escolhido pelo aluno (admin pode alterar ao aprovar)
-                        faixa: 'Branca',
-                        grau:  '0',
-                        ct:    ctValue
-                    })
+                    body: JSON.stringify({ action: 'getContratosCadastro', ctmId: ctmIdReg })
                 });
-                const data = await r.json();
-                if (data.success) {
-                    showMessage('registerMessage', '✅ Solicitação enviada! Aguarde aprovação do professor.', 'success');
-                    setTimeout(function(){ showLogin(); }, 2500);
+                var ctData = await ctResp.json();
+                var contratos = (ctData.success && ctData.contratos && ctData.contratos.length > 0)
+                    ? ctData.contratos : [];
+
+                if (contratos.length > 0) {
+                    // Exibe modal de contratos antes de submeter
+                    _exibirModalContratos(contratos, async function(aceitos) {
+                        await _enviarCadastro({ name, email, password, nascimento, telefone,
+                            modalidades, ctValue, ctmIdReg, contratosAceitos: aceitos });
+                    });
+                    showMessage('registerMessage', '', '');
                 } else {
-                    showMessage('registerMessage', data.message || 'Erro ao cadastrar', 'danger');
+                    // Sem contratos configurados — envia direto
+                    await _enviarCadastro({ name, email, password, nascimento, telefone,
+                        modalidades, ctValue, ctmIdReg, contratosAceitos: [] });
                 }
-            } catch (err) {
+            } catch(err) {
                 showMessage('registerMessage', 'Erro de conexão', 'danger');
             }
         }
@@ -21760,7 +21746,239 @@
             } catch(e) {}
         }
 
-        function switchAdminTab(tabName, evt) {
+
+        async function enviarWAAniversario(email, nome, idade) {
+            try {
+                var ct = currentUser ? currentUser.ct : '';
+                var r  = await secureFetch('getLinkWhatsApp', {
+                    tipo: 'aniversario', email: email, ct: ct,
+                    extra: { idade: idade }
+                });
+                if (r && r.success && r.link) {
+                    window.open(r.link, '_blank');
+                } else if (r && r.semTelefone) {
+                    showToast('⚠️ ' + nome.split(' ')[0] + ' não tem telefone cadastrado');
+                }
+            } catch(e) {
+                showToast('❌ Erro ao gerar link WhatsApp');
+            }
+        }
+
+        
+        // ── CONTRATOS DO ALUNO ────────────────────────────────────────────────
+
+        async function _enviarCadastro(opts) {
+            showMessage('registerMessage', '⏳ Enviando solicitação...', 'warning');
+            try {
+                var r = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action:                 'requestAccount',
+                        name:                   opts.name,
+                        email:                  opts.email,
+                        password:               opts.password,
+                        nascimento:             opts.nascimento,
+                        telefone:               opts.telefone,
+                        modalidadesSolicitadas: opts.modalidades.join(','),
+                        faixa: 'Branca', grau: '0',
+                        ct:                     opts.ctValue,
+                        ctmId:                  opts.ctmIdReg,
+                        contratosRespostas:     opts.contratosAceitos, // objeto {tipo:'aceito'|'recusado'}
+                        contratosAceitos:       Object.keys(opts.contratosAceitos||{}).filter(function(t){ return opts.contratosAceitos[t]==='aceito'; })
+                    })
+                });
+                var data = await r.json();
+                if (data.success) {
+                    showMessage('registerMessage', '✅ Solicitação enviada! Aguarde aprovação do professor.', 'success');
+                    setTimeout(function(){ showLogin(); }, 2500);
+                } else {
+                    showMessage('registerMessage', data.message || 'Erro ao cadastrar', 'danger');
+                }
+            } catch(err) {
+                showMessage('registerMessage', 'Erro de conexão', 'danger');
+            }
+        }
+
+        // Respostas dos contratos: { tipo: 'aceito'|'recusado'|null }
+        var _ctRespostas = {};
+
+        function _exibirModalContratos(contratos, onAceitar) {
+            var existing = document.getElementById('modalContratosOverlay');
+            if (existing) existing.remove();
+            _ctRespostas = {};
+            window._ctContratosAtivos = contratos;
+            window._onAceitarContratos = onAceitar;
+
+            var overlay = document.createElement('div');
+            overlay.id = 'modalContratosOverlay';
+            overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.92);display:flex;align-items:flex-end;justify-content:center;';
+
+            var sheet = document.createElement('div');
+            sheet.style.cssText = 'width:100%;max-width:480px;background:#0d1a2e;border-radius:20px 20px 0 0;padding:24px 20px 32px;max-height:88vh;overflow-y:auto;';
+
+            var bar = document.createElement('div');
+            bar.style.cssText = 'width:40px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:0 auto 20px;';
+            sheet.appendChild(bar);
+
+            var title = document.createElement('div');
+            title.style.cssText = 'font-size:16px;font-weight:800;color:#C9A23A;margin-bottom:4px;';
+            title.textContent = '📋 Termos e Contratos';
+            sheet.appendChild(title);
+
+            var sub = document.createElement('div');
+            sub.style.cssText = 'font-size:11px;color:rgba(255,255,255,0.45);margin-bottom:18px;';
+            sub.textContent = 'Leia cada termo e escolha sua resposta.';
+            sheet.appendChild(sub);
+
+            contratos.forEach(function(ct) {
+                var icon = ct.tipo === 'imagem' ? '📸' : ct.tipo === 'acidente' ? '⚠️' : ct.tipo === 'atestado' ? '🏥' : '💳';
+
+                var card = document.createElement('div');
+                card.id = 'ctCard_' + ct.tipo;
+                card.style.cssText = 'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:14px;margin-bottom:12px;transition:border-color .2s;';
+
+                // Título + badge
+                var cardTitle = document.createElement('div');
+                cardTitle.style.cssText = 'font-size:13px;font-weight:700;color:#fff;margin-bottom:8px;';
+                cardTitle.textContent = icon + ' ' + ct.titulo + ' ';
+                var badge = document.createElement('span');
+                badge.style.cssText = ct.obrigatorio
+                    ? 'font-size:9px;background:#DC2626;color:#fff;padding:2px 6px;border-radius:4px;vertical-align:middle;'
+                    : 'font-size:9px;background:#374151;color:#9CA3AF;padding:2px 6px;border-radius:4px;vertical-align:middle;';
+                badge.textContent = ct.obrigatorio ? 'OBRIGATÓRIO' : 'OPCIONAL';
+                cardTitle.appendChild(badge);
+                card.appendChild(cardTitle);
+
+                // Texto do contrato
+                var texto = document.createElement('div');
+                texto.style.cssText = 'font-size:11px;color:rgba(255,255,255,0.6);line-height:1.6;max-height:100px;overflow-y:auto;margin-bottom:12px;';
+                texto.textContent = ct.texto;
+                card.appendChild(texto);
+
+                // Botões aceitar / recusar
+                var btns = document.createElement('div');
+                btns.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:8px;';
+
+                var btnA = document.createElement('button');
+                btnA.id = 'ctBtnAceitar_' + ct.tipo;
+                btnA.style.cssText = 'padding:9px;background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.25);border-radius:9px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;';
+                btnA.textContent = '✅ Aceitar';
+                (function(tipo){ btnA.addEventListener('click', function(){ _responderContrato(tipo, 'aceito'); }); })(ct.tipo);
+
+                var btnR = document.createElement('button');
+                btnR.id = 'ctBtnRecusar_' + ct.tipo;
+                btnR.style.cssText = 'padding:9px;background:rgba(248,113,113,0.1);color:#f87171;border:1px solid rgba(248,113,113,0.25);border-radius:9px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;';
+                btnR.textContent = '❌ Não aceitar';
+                (function(tipo){ btnR.addEventListener('click', function(){ _responderContrato(tipo, 'recusado'); }); })(ct.tipo);
+
+                btns.appendChild(btnA);
+                btns.appendChild(btnR);
+                card.appendChild(btns);
+
+                // Aviso para opcionais
+                if (!ct.obrigatorio) {
+                    var aviso = document.createElement('div');
+                    aviso.id = 'ctAvisoImg_' + ct.tipo;
+                    aviso.style.cssText = 'display:none;margin-top:8px;padding:8px 10px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.2);border-radius:8px;font-size:10px;color:#FBB724;line-height:1.4;';
+                    aviso.innerHTML = '⚠️ Ao não aceitar, o CT <strong>não poderá usar sua imagem</strong> em fotos e divulgações. O cadastro continua normalmente.';
+                    card.appendChild(aviso);
+                }
+
+                sheet.appendChild(card);
+            });
+
+            // Botão concluir
+            var btnConcluir = document.createElement('button');
+            btnConcluir.id = 'btnConcluirContratos';
+            btnConcluir.disabled = true;
+            btnConcluir.style.cssText = 'width:100%;padding:14px;background:#374151;color:#9CA3AF;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:not-allowed;margin-top:8px;transition:all .2s;';
+            btnConcluir.textContent = 'Concluir Cadastro';
+            btnConcluir.addEventListener('click', _confirmarContratos);
+            sheet.appendChild(btnConcluir);
+
+            // Botão voltar
+            var btnVoltar = document.createElement('button');
+            btnVoltar.style.cssText = 'width:100%;padding:10px;background:transparent;color:rgba(255,255,255,0.35);border:none;font-size:12px;cursor:pointer;margin-top:4px;';
+            btnVoltar.textContent = 'Voltar';
+            btnVoltar.addEventListener('click', function(){ overlay.remove(); });
+            sheet.appendChild(btnVoltar);
+
+            overlay.appendChild(sheet);
+            document.body.appendChild(overlay);
+        }
+
+                function _verificarContratos() {
+            var contratos = window._ctContratosAtivos || [];
+            var todosRespondidos = true;
+            var obrigatoriosPendentes = false;
+
+            contratos.forEach(function(ct) {
+                if (!_ctRespostas[ct.tipo]) { todosRespondidos = false; return; }
+                if (ct.obrigatorio && _ctRespostas[ct.tipo] === 'recusado') {
+                    obrigatoriosPendentes = true;
+                }
+            });
+
+            var btn = document.getElementById('btnConcluirContratos');
+            if (!btn) return;
+            var podeAvancar = todosRespondidos && !obrigatoriosPendentes;
+            btn.disabled = !podeAvancar;
+            btn.style.background = podeAvancar ? 'linear-gradient(135deg,#C9A23A,#8C6A0A)' : '#374151';
+            btn.style.color      = podeAvancar ? '#000' : '#9CA3AF';
+            btn.style.cursor     = podeAvancar ? 'pointer' : 'not-allowed';
+        }
+
+        function _confirmarContratos() {
+            var overlay = document.getElementById('modalContratosOverlay');
+            if (overlay) overlay.remove();
+            if (window._onAceitarContratos) window._onAceitarContratos(_ctRespostas);
+        }
+
+        // ── Editor de contratos no Admin (Sistema) ────────────────────────────
+
+        async function carregarContratosAdmin() {
+            var ct = currentUser ? currentUser.ct : '';
+            var r  = await secureFetch('getContratosCT', { ct: ct });
+            if (!r || !r.success) return;
+            var contratos = r.contratos || [];
+
+            var container = document.getElementById('adminContratosContainer');
+            if (!container) return;
+            var h = '';
+            var tipos = [
+                { tipo:'imagem',   icon:'📸', label:'Uso de Imagem' },
+                { tipo:'acidente', icon:'⚠️', label:'Responsabilidade' },
+                { tipo:'plano',    icon:'💳', label:'Plano de Pagamento' }
+            ];
+            tipos.forEach(function(t) {
+                var found = contratos.find(function(c){ return c.tipo === t.tipo; }) || { tipo: t.tipo, titulo: '', texto: '', obrigatorio: true, ativo: true };
+                h += '<div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:12px;padding:14px;margin-bottom:12px;">';
+                h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">';
+                h += '<div style="font-size:13px;font-weight:800;color:var(--adm-text-1);">' + t.icon + ' ' + t.label + '</div>';
+                h += '<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--adm-text-3);cursor:pointer;">';
+                h += '<input type="checkbox" id="ctAtivo_' + t.tipo + '" ' + (found.ativo ? 'checked' : '') + ' style="accent-color:#C9A23A;"> Ativo</label></div>';
+                h += '<input type="text" id="ctTitulo_' + t.tipo + '" value="' + escapeHtml(found.titulo) + '" placeholder="Título do contrato" style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:8px;">';
+                h += '<textarea id="ctTexto_' + t.tipo + '" rows="4" placeholder="Texto completo do contrato..." style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:11px;resize:vertical;line-height:1.5;">' + escapeHtml(found.texto) + '</textarea>';
+                h += '<div style="display:flex;align-items:center;gap:8px;margin-top:8px;">';
+                h += '<label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--adm-text-3);cursor:pointer;">';
+                h += '<input type="checkbox" id="ctObrig_' + t.tipo + '" ' + (found.obrigatorio ? 'checked' : '') + ' style="accent-color:#DC2626;"> Obrigatório</label>';
+                h += '<button onclick="salvarContrato(\'' + t.tipo + '\')" style="margin-left:auto;padding:6px 14px;background:var(--adm-primary);color:#000;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">💾 Salvar</button>';
+                h += '</div></div>';
+            });
+            container.innerHTML = h;
+        }
+
+        async function salvarContrato(tipo) {
+            var titulo = (document.getElementById('ctTitulo_'+tipo)||{}).value || '';
+            var texto  = (document.getElementById('ctTexto_' +tipo)||{}).value || '';
+            var obrig  = (document.getElementById('ctObrig_' +tipo)||{}).checked;
+            var ativo  = (document.getElementById('ctAtivo_' +tipo)||{}).checked;
+            if (!titulo || !texto) { showToast('⚠️ Preencha título e texto'); return; }
+            var r = await secureFetch('saveContratoCT', { tipo, titulo, texto, obrigatorio: obrig, ativo });
+            showToast(r && r.success ? '✅ Contrato salvo!' : '❌ ' + (r ? r.message : 'Erro'));
+        }
+
+                function switchAdminTab(tabName, evt) {
             document.querySelectorAll('.adm-tab').forEach(function(t) { t.classList.remove('active'); });
             // Ao abrir Financeiro: mostra pagamentos por padrão
             if (tabName === 'adm-financeiro') {
@@ -21796,7 +22014,7 @@
                     }
                 } catch(e) {}
                 loadModulesConfig(); loadSystemHealth(); loadAdminProfile();
-                loadGradConfig(); renderGradSystemAdmin(); loadCTScheduleAdmin(); initAdmAulaForm();
+                loadGradConfig(); renderGradSystemAdmin(); loadCTScheduleAdmin(); initAdmAulaForm(); carregarContratosAdmin();
                 _preCarregarTurmas(); // pré-carrega turmas de todos os CTs loadAWSConfig();
                 loadAdminTreinos(); loadQRCodes();
                 (async function() {
@@ -34221,11 +34439,31 @@
                         h += '<div style="font-size:12px;font-weight:700;color:var(--adm-text-1);">' + escapeHtml(b.name) + (isKid ? ' <span style="font-size:9px;background:#6c3ce0;color:#fff;padding:1px 6px;border-radius:4px;">KIDS</span>' : '') + '</div>';
                         h += '<div style="font-size:10px;color:var(--adm-text-3);">' + escapeHtml(b.data) + ' · ' + b.idade + ' anos' + (b.ct ? ' · ' + escapeHtml(b.ct) : '') + '</div>';
                         h += '</div>';
-                        if (b.isToday) h += '<div style="font-size:10px;font-weight:800;color:#ffcc00;">HOJE!</div>';
-                        else h += '<div style="font-size:10px;color:var(--adm-text-3);">' + b.diasFalta + 'd</div>';
+                        if (b.isToday) {
+                            h += '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">';
+                            h += '<div style="font-size:10px;font-weight:800;color:#ffcc00;">HOJE!</div>';
+                            h += '<button class="bday-wa-btn"'
+                                + ' data-email="' + escapeHtml(b.email||b.name) + '"'
+                                + ' data-nome="'  + escapeHtml(b.name)          + '"'
+                                + ' data-idade="' + (b.idade||0)                + '"'
+                                + ' style="padding:4px 8px;background:#25D366;color:#fff;border:none;border-radius:6px;font-size:9px;font-weight:700;cursor:pointer;">📱 WhatsApp</button>';
+                            h += '</div>';
+                        } else {
+                            h += '<div style="font-size:10px;color:var(--adm-text-3);">' + b.diasFalta + 'd</div>';
+                        }
                         h += '</div>';
                     });
                     container.innerHTML = h;
+                    // Delegação: botões WhatsApp aniversariante
+                    container.querySelectorAll('.bday-wa-btn').forEach(function(btn) {
+                        btn.addEventListener('click', function() {
+                            enviarWAAniversario(
+                                btn.getAttribute('data-email'),
+                                btn.getAttribute('data-nome'),
+                                parseInt(btn.getAttribute('data-idade'))||0
+                            );
+                        });
+                    });
                 } else {
                     container.innerHTML = '<div class="admin-empty">Erro ao carregar</div>';
                 }
@@ -38977,4 +39215,4 @@
     </script>
 
 </body>
-</html>
+>
