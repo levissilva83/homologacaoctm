@@ -21978,6 +21978,173 @@
             showToast(r && r.success ? '✅ Contrato salvo!' : '❌ ' + (r ? r.message : 'Erro'));
         }
 
+        
+        // ── CONTRATOS DO ALUNO (pós-login / perfil) ──────────────────────────
+
+        function _mostrarAvisoContratos() {
+            var aviso = document.createElement('div');
+            aviso.id  = 'avisoContratosPendentes';
+            aviso.style.cssText = [
+                'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);',
+                'background:linear-gradient(135deg,#92400E,#B45309);color:#fff;',
+                'padding:12px 18px;border-radius:14px;font-size:12px;font-weight:700;',
+                'z-index:9999;box-shadow:0 4px 20px rgba(180,83,9,0.5);',
+                'max-width:300px;text-align:center;cursor:pointer;',
+                'animation:slideUp 0.4s ease;'
+            ].join('');
+            aviso.innerHTML = '📋 <strong>Termos pendentes!</strong><br>'
+                + '<span style="font-weight:400;font-size:11px;">Acesse seu Perfil para ler e aceitar os contratos do CT.</span>';
+            aviso.addEventListener('click', function() {
+                aviso.remove();
+                // Navega para o perfil
+                var perfilBtn = document.querySelector('[onclick*="perfil"]') ||
+                                document.getElementById('navBtnPerfil');
+                if (perfilBtn) perfilBtn.click();
+                else if (typeof switchTab === 'function') switchTab('perfil');
+            });
+            document.body.appendChild(aviso);
+            setTimeout(function() { if (aviso.parentNode) aviso.remove(); }, 8000);
+        }
+
+        async function _carregarMeusContratos() {
+            var sec  = document.getElementById('perfilContratosSection');
+            var lista = document.getElementById('perfilContratosLista');
+            if (!sec || !lista) return;
+
+            try {
+                var r = await secureFetch('getMeusContratos', {});
+                if (!r || !r.success || !r.contratos || r.contratos.length === 0) {
+                    sec.style.display = 'none';
+                    return;
+                }
+
+                sec.style.display = 'block';
+                var h = '';
+                var temPendente = false;
+
+                r.contratos.forEach(function(ct) {
+                    var icon     = ct.tipo === 'imagem' ? '📸' : ct.tipo === 'acidente' ? '⚠️' : ct.tipo === 'atestado' ? '🏥' : '💳';
+                    var aceito   = ct.respostaMinha === 'aceito';
+                    var recusado = ct.respostaMinha === 'recusado';
+                    var pendente = !ct.respostaMinha;
+                    if (pendente || (!aceito && ct.obrigatorio)) temPendente = true;
+
+                    var statusBadge = aceito
+                        ? '<span style="font-size:9px;background:rgba(74,222,128,0.15);color:#4ade80;border:1px solid rgba(74,222,128,0.3);padding:2px 7px;border-radius:4px;">✓ Aceito</span>'
+                        : recusado
+                            ? '<span style="font-size:9px;background:rgba(248,113,113,0.15);color:#f87171;border:1px solid rgba(248,113,113,0.3);padding:2px 7px;border-radius:4px;">✗ Não aceito</span>'
+                            : '<span style="font-size:9px;background:rgba(251,191,36,0.15);color:#FBB724;border:1px solid rgba(251,191,36,0.3);padding:2px 7px;border-radius:4px;">⏳ Pendente</span>';
+
+                    h += '<div id="ctCard_perfil_' + ct.tipo + '" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px;margin-bottom:8px;">';
+                    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
+                    h += '<span style="font-size:12px;font-weight:700;color:var(--text-1);">' + icon + ' ' + escapeHtml(ct.titulo) + '</span>';
+                    h += statusBadge;
+                    h += '</div>';
+                    h += '<div style="font-size:10px;color:rgba(255,255,255,0.5);line-height:1.5;max-height:70px;overflow-y:auto;margin-bottom:10px;">' + escapeHtml(ct.texto) + '</div>';
+                    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">';
+
+                    var btnAStyle = aceito
+                        ? 'background:rgba(74,222,128,0.2);color:#4ade80;border:1px solid #4ade80;'
+                        : 'background:rgba(74,222,128,0.06);color:rgba(74,222,128,0.5);border:1px solid rgba(74,222,128,0.15);';
+                    var btnRStyle = recusado
+                        ? 'background:rgba(248,113,113,0.2);color:#f87171;border:1px solid #f87171;'
+                        : 'background:rgba(248,113,113,0.06);color:rgba(248,113,113,0.5);border:1px solid rgba(248,113,113,0.15);';
+
+                    h += '<button class="ct-perfil-btn" data-tipo="' + ct.tipo + '" data-resp="aceito" '
+                       + 'style="padding:7px;' + btnAStyle + 'border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">✅ Aceitar</button>';
+                    if (!ct.obrigatorio) {
+                        h += '<button class="ct-perfil-btn" data-tipo="' + ct.tipo + '" data-resp="recusado" '
+                           + 'style="padding:7px;' + btnRStyle + 'border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">❌ Não aceitar</button>';
+                    } else {
+                        h += '<span style="font-size:9px;color:var(--text-3);display:flex;align-items:center;padding-left:6px;">Obrigatório</span>';
+                    }
+                    h += '</div></div>';
+                });
+
+                // Botão salvar
+                h += '<button id="btnSalvarContratos" onclick="_salvarMeusContratos()" '
+                   + 'style="width:100%;margin-top:10px;padding:12px;background:var(--accent);color:#000;border:none;'
+                   + 'border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;">💾 Salvar Meus Termos</button>';
+                h += '<div id="contratosMsgPerfil" style="min-height:14px;font-size:11px;text-align:center;margin-top:6px;"></div>';
+
+                lista.innerHTML = h;
+
+                // Event listeners nos botões
+                lista.querySelectorAll('.ct-perfil-btn').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        var tipo = btn.getAttribute('data-tipo');
+                        var resp = btn.getAttribute('data-resp');
+                        var card = document.getElementById('ctCard_perfil_' + tipo);
+                        // Atualiza visual
+                        if (card) {
+                            card.querySelectorAll('.ct-perfil-btn').forEach(function(b) {
+                                var isSelected = b.getAttribute('data-resp') === resp;
+                                if (b.getAttribute('data-resp') === 'aceito') {
+                                    b.style.background   = isSelected ? 'rgba(74,222,128,0.2)'  : 'rgba(74,222,128,0.06)';
+                                    b.style.color        = isSelected ? '#4ade80'               : 'rgba(74,222,128,0.5)';
+                                    b.style.borderColor  = isSelected ? '#4ade80'               : 'rgba(74,222,128,0.15)';
+                                } else {
+                                    b.style.background   = isSelected ? 'rgba(248,113,113,0.2)' : 'rgba(248,113,113,0.06)';
+                                    b.style.color        = isSelected ? '#f87171'              : 'rgba(248,113,113,0.5)';
+                                    b.style.borderColor  = isSelected ? '#f87171'              : 'rgba(248,113,113,0.15)';
+                                }
+                            });
+                            // Atualiza badge
+                            var badge = card.querySelector('span[style*="border-radius:4px"]');
+                            if (badge) {
+                                badge.textContent = resp === 'aceito' ? '✓ Aceito' : '✗ Não aceito';
+                                badge.style.color = resp === 'aceito' ? '#4ade80' : '#f87171';
+                            }
+                        }
+                        btn.setAttribute('data-selected', '1');
+                        // Marca no dataset temporário
+                        if (!window._ctRespostasPerfil) window._ctRespostasPerfil = {};
+                        window._ctRespostasPerfil[tipo] = resp;
+                    });
+                });
+
+                // Pré-carrega respostas existentes
+                window._ctRespostasPerfil = {};
+                r.contratos.forEach(function(ct) {
+                    if (ct.respostaMinha) window._ctRespostasPerfil[ct.tipo] = ct.respostaMinha;
+                });
+
+                // Aviso se tem pendentes
+                if (temPendente) {
+                    var avEl = document.getElementById('avisoContratosPendentes');
+                    if (avEl) avEl.remove(); // remove o toast antigo
+                }
+
+            } catch(e) {
+                sec.style.display = 'none';
+            }
+        }
+
+        async function _salvarMeusContratos() {
+            var msg = document.getElementById('contratosMsgPerfil');
+            if (!window._ctRespostasPerfil || Object.keys(window._ctRespostasPerfil).length === 0) {
+                if (msg) { msg.textContent = '⚠️ Selecione sua resposta para cada termo'; msg.style.color = '#FBB724'; }
+                return;
+            }
+            if (msg) { msg.textContent = '⏳ Salvando...'; msg.style.color = 'var(--text-3)'; }
+            try {
+                var r = await secureFetch('aceitarContratosAluno', { respostas: window._ctRespostasPerfil });
+                if (r && r.success) {
+                    if (msg) { msg.textContent = '✅ Contratos atualizados!'; msg.style.color = '#4ade80'; }
+                    // Remove aviso de pendente
+                    var av = document.getElementById('avisoContratosPendentes');
+                    if (av) av.remove();
+                    // Atualiza flag do usuário
+                    if (currentUser) currentUser.contratosPendentes = false;
+                    setTimeout(function() { if (msg) msg.textContent = ''; }, 3000);
+                } else {
+                    if (msg) { msg.textContent = '❌ ' + (r ? r.message : 'Erro'); msg.style.color = '#f87171'; }
+                }
+            } catch(e) {
+                if (msg) { msg.textContent = '❌ Erro de conexão'; msg.style.color = '#f87171'; }
+            }
+        }
+
                 function switchAdminTab(tabName, evt) {
             document.querySelectorAll('.adm-tab').forEach(function(t) { t.classList.remove('active'); });
             // Ao abrir Financeiro: mostra pagamentos por padrão
@@ -31388,7 +31555,9 @@
                     counter.textContent = '';
                 } else {
                     counter.textContent = '✅ ' + keys.length + ' horário(s) selecionado(s): ' + keys.map(function(k){
-                        return k.replace(/^[^:]+:/, '');
+                        // Remove prefixo de modalidade (ex: "bjj:seg:20:30" → "seg:20:30")
+                        var parts = k.replace(/^[^:]+:/, '').split(':');
+                        return parts.length >= 2 ? parts[0] + ' ' + parts.slice(1).join(':') : k;
                     }).join(' · ');
                     counter.style.color = 'var(--gold)';
                 }
