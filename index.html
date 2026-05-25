@@ -10054,7 +10054,7 @@
                     <div class="sis-subtab-panel active" id="sis-panel-sistema">
 
                     <!-- AWS REKOGNITION -->
-                    <div id="awsConfigWrapper" style="margin-bottom:20px;">
+                    <div id="awsConfigWrapper" style="margin-bottom:20px;display:none;">
                         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
                             <span style="font-size:20px;">⚡</span>
                             <div><div style="font-size:13px;font-weight:800;color:var(--adm-text-1);">AWS Rekognition</div>
@@ -10745,7 +10745,7 @@
         <!-- ╔══════════════════════════════════════════╗
              ║         ABA: FINANCEIRO                  ║
              ╚══════════════════════════════════════════╝ -->
-        <div id="adm-financeiro" class="adm-tab" style="display:none;">
+        <div id="adm-financeiro" class="adm-tab">
             <div style="padding:0 0 100px;">
 
                 <!-- Sub-nav -->
@@ -10758,7 +10758,7 @@
                 </div>
 
                 <!-- Painel: Pagamentos -->
-                <div id="finPainel_pagamentos" style="padding:16px 16px 0;">
+                <div id="finPainel_pagamentos" style="padding:16px 16px 0;display:block;">
                     <div class="admin-section" id="pagamentosAdminSection">
                         <div class="admin-section-header">
                             <div class="admin-section-title">💳 Pagamentos</div>
@@ -15292,7 +15292,10 @@
                 document.querySelectorAll('.adm-tab').forEach(function(t) { t.classList.remove('active'); });
             // Ao abrir Financeiro: mostra pagamentos por padrão
             if (tabName === 'adm-financeiro') {
-                setTimeout(function() { switchFinSubTab('pagamentos'); }, 50);
+                // Inicializa após a tab estar visível
+                requestAnimationFrame(function() {
+                    switchFinSubTab('pagamentos');
+                });
             }
                 var painelTab = document.getElementById('adm-painel');
                 if (painelTab) painelTab.classList.add('active');
@@ -21600,7 +21603,10 @@
             document.querySelectorAll('.adm-tab').forEach(function(t) { t.classList.remove('active'); });
             // Ao abrir Financeiro: mostra pagamentos por padrão
             if (tabName === 'adm-financeiro') {
-                setTimeout(function() { switchFinSubTab('pagamentos'); }, 50);
+                // Inicializa após a tab estar visível
+                requestAnimationFrame(function() {
+                    switchFinSubTab('pagamentos');
+                });
             }
             document.querySelectorAll('#adminNav .bnav-btn').forEach(function(b) { b.classList.remove('active'); });
             var tab = document.getElementById(tabName);
@@ -29730,6 +29736,9 @@
                 if (saBtn) saBtn.style.display = _isSuperAdmin ? '' : 'none';
                 var newCTSection = document.getElementById('newCTSection');
                 if (newCTSection) newCTSection.style.display = _isSuperAdmin ? '' : 'none';
+                // Painel AWS Rekognition — visível SOMENTE para Super Admin
+                var awsWrapper = document.getElementById('awsConfigWrapper');
+                if (awsWrapper) awsWrapper.style.display = _isSuperAdmin ? '' : 'none';
             } catch(e) { _isSuperAdmin = false; }
         }
 
