@@ -10109,208 +10109,14 @@
                     </div>
 
                     <!-- ██ PAGAMENTOS v2 — 4 ABAS ██ -->
-                    <div class="admin-section" id="pagamentosAdminSection">
-                        <div class="admin-section-header">
-                            <div class="admin-section-title">💳 Pagamentos</div>
-                            <div style="display:flex;gap:6px;align-items:center;">
-                                <button class="admin-refresh-btn" onclick="initPagamentosAdmin()" title="Atualizar">↻</button>
-                                <button onclick="cobrarMensalidadeAgora()" title="Rodar cobrança recorrente agora" style="padding:5px 10px;border-radius:7px;background:rgba(201,162,58,0.12);border:1px solid rgba(201,162,58,0.3);color:var(--adm-primary);font-size:10px;font-weight:700;cursor:pointer;">⚡ Cobrar agora</button>
-                            </div>
-                        </div>
-
-                        <!-- Tabs nav -->
-                        <div style="display:flex;gap:3px;margin-bottom:14px;background:rgba(255,255,255,0.03);border-radius:10px;padding:4px;">
-                            <button class="pag-tab-btn active" id="pagTabBtn1" onclick="switchPagTab(1)" style="flex:1;padding:7px 4px;border:none;border-radius:7px;background:rgba(201,162,58,0.18);color:var(--adm-primary);font-size:10px;font-weight:800;cursor:pointer;">🔑 Config</button>
-                            <button class="pag-tab-btn" id="pagTabBtn2" onclick="switchPagTab(2)" style="flex:1;padding:7px 4px;border:none;border-radius:7px;background:transparent;color:var(--adm-text-3);font-size:10px;font-weight:700;cursor:pointer;">🔗 Vincular</button>
-                            <button class="pag-tab-btn" id="pagTabBtn3" onclick="switchPagTab(3)" style="flex:1;padding:7px 4px;border:none;border-radius:7px;background:transparent;color:var(--adm-text-3);font-size:10px;font-weight:700;cursor:pointer;">📋 Planos</button>
-                            <button class="pag-tab-btn" id="pagTabBtn4" onclick="switchPagTab(4)" style="flex:1;padding:7px 4px;border:none;border-radius:7px;background:transparent;color:var(--adm-text-3);font-size:10px;font-weight:700;cursor:pointer;">💰 Cobranças</button>
-                            <button class="pag-tab-btn" id="pagTabBtn5" onclick="switchPagTab(5)" style="flex:1;padding:7px 4px;border:none;border-radius:7px;background:transparent;color:var(--adm-text-3);font-size:10px;font-weight:700;cursor:pointer;">⚙️ Regras</button>
-                        </div>
-
-                        <!-- ═══ ABA 1: CONFIGURAÇÃO DE GATEWAY ═══ -->
-                        <div id="pagTab1" class="pag-tab-panel">
-                            <div style="background:rgba(201,162,58,0.06);border:1px solid rgba(201,162,58,0.18);border-radius:9px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:var(--adm-text-2);line-height:1.5;">
-                                Cadastre aqui o <strong>Access Token</strong> de cada gateway de pagamento. Um token pode ser reutilizado em vários CTs (próxima aba).
-                            </div>
-
-                            <!-- Formulário novo token -->
-                            <div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;padding:12px;margin-bottom:12px;">
-                                <div style="font-size:11px;font-weight:800;color:var(--adm-text-1);margin-bottom:10px;">+ Novo Gateway</div>
-
-                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">Gateway de Pagamento</label>
-                                <select id="gwGateway" onchange="atualizarInfoGateway()" style="width:100%;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:8px;">
-                                    <option value="mercadopago">🔵 Mercado Pago — Débito automático no cartão</option>
-                                    <option value="infinitepay">🟢 InfinitePay — Link de pagamento mensal</option>
-                                    <option value="pix_manual">📋 PIX Manual — Confirmação manual pelo admin</option>
-                                </select>
-
-                                <!-- Card informativo por gateway -->
-                                <div id="gwInfoCard" style="border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:11px;line-height:1.6;display:none;"></div>
-
-                                <div id="gwTokenRow">
-                                    <label id="gwTokenLabel" style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">Access Token</label>
-                                    <input type="text" id="gwAccessToken" placeholder="APP_USR-..." style="width:100%;box-sizing:border-box;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1.5px solid rgba(201,162,58,0.3);border-radius:8px;font-size:12px;margin-bottom:8px;">
-                                </div>
-
-                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">Label (identificação interna)</label>
-                                <input type="text" id="gwLabel" placeholder="Ex: Mercado Pago — Academia Central" style="width:100%;box-sizing:border-box;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:10px;">
-
-                                <div id="gwMsg" style="font-size:11px;margin-bottom:6px;min-height:16px;"></div>
-                                <button onclick="salvarGatewayToken()" style="width:100%;padding:10px;background:linear-gradient(135deg,#C9A23A,#F8E7A1 55%,#8C6A0A);color:#0D0B08;border:none;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;">💾 Salvar Token</button>
-                                <button onclick="verificarGatewayAdmin()" style="width:100%;padding:9px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);border-radius:9px;color:#93c5fd;font-size:11px;font-weight:700;cursor:pointer;margin-top:6px;">🔍 Verificar token salvo no sistema</button>
-                            </div>
-
-                            <!-- Lista de tokens cadastrados -->
-                            <div style="font-size:10px;color:var(--adm-text-3);font-weight:600;margin-bottom:6px;">Tokens Cadastrados</div>
-                            <div id="gwTokensList"><div class="admin-empty" style="font-size:11px;">Carregando...</div></div>
-                        </div>
-
-                        <!-- ═══ ABA 2: VINCULAÇÃO CT → GATEWAY ═══ -->
-                        <div id="pagTab2" class="pag-tab-panel" style="display:none;">
-                            <div style="background:rgba(201,162,58,0.06);border:1px solid rgba(201,162,58,0.18);border-radius:9px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:var(--adm-text-2);line-height:1.5;">
-                                Selecione um CT e vincule ao gateway cadastrado na Aba 1. Cada CT pode ter apenas um gateway ativo.
-                            </div>
-
-                            <div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;padding:12px;margin-bottom:12px;">
-                                <div style="font-size:11px;font-weight:800;color:var(--adm-text-1);margin-bottom:10px;">Vincular CT ao Gateway</div>
-
-                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">CT</label>
-                                <select id="vinCT" style="width:100%;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:8px;"></select>
-
-                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">Gateway</label>
-                                <select id="vinGateway" style="width:100%;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:8px;"></select>
-
-                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">🔑 Chave PIX estática (opcional para fallback)</label>
-                                <input type="text" id="vinChavePix" placeholder="Ex: seu@email.com ou chave aleatória" style="width:100%;box-sizing:border-box;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:8px;">
-
-                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">Dia padrão de vencimento</label>
-                                <input type="number" id="vinDiaVenc" min="1" max="28" value="10" style="width:100%;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;margin-bottom:10px;">
-
-                                <div id="vinMsg" style="font-size:11px;margin-bottom:6px;min-height:16px;"></div>
-                                <button onclick="vincularGatewayCT()" style="width:100%;padding:10px;background:linear-gradient(135deg,#C9A23A,#F8E7A1 55%,#8C6A0A);color:#0D0B08;border:none;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;">🔗 Vincular</button>
-                            </div>
-
-                            <div style="font-size:10px;color:var(--adm-text-3);font-weight:600;margin-bottom:6px;">CTs Configurados</div>
-                            <div id="vinculosList"><div class="admin-empty" style="font-size:11px;">Carregando...</div></div>
-                        </div>
-
-                        <!-- ═══ ABA 3: PLANOS ═══ -->
-                        <div id="pagTab3" class="pag-tab-panel" style="display:none;">
-                            <div style="background:rgba(201,162,58,0.06);border:1px solid rgba(201,162,58,0.18);border-radius:9px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:var(--adm-text-2);line-height:1.5;">
-                                Só CTs com gateway configurado aparecem aqui. Cada plano fica vinculado ao CT + gateway.
-                            </div>
-
-                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;">Filtrar por CT</label>
-                                <select id="planoCTFiltro" onchange="loadPlanosList()" style="padding:6px 10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:11px;"></select>
-                            </div>
-
-                            <!-- Form novo plano -->
-                            <div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;padding:12px;margin-bottom:12px;">
-                                <div style="font-size:11px;font-weight:800;color:var(--adm-text-1);margin-bottom:10px;">+ Novo Plano</div>
-
-                                <div style="display:grid;grid-template-columns:1fr 90px;gap:6px;margin-bottom:6px;">
-                                    <input type="text" id="mpPlanoNome" placeholder="Nome (ex: Mensal Adulto)" style="padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
-                                    <input type="number" id="mpPlanoValor" placeholder="R$" min="1" style="padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
-                                </div>
-
-                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
-                                    <div>
-                                        <label style="font-size:9px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:3px;">CT</label>
-                                        <select id="mpPlanoCT" style="width:100%;padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;"></select>
-                                    </div>
-                                    <div>
-                                        <label style="font-size:9px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:3px;">Frequência</label>
-                                        <select id="mpPlanoFreq" style="width:100%;padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
-                                            <option value="mensal">Mensal</option>
-                                            <option value="trimestral">Trimestral</option>
-                                            <option value="semestral">Semestral</option>
-                                            <option value="anual">Anual</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <input type="text" id="mpPlanoDesc" placeholder="Descrição (opcional)" style="width:100%;box-sizing:border-box;padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:8px;">
-                                <button onclick="criarPlanoMP()" style="width:100%;padding:9px;background:rgba(201,162,58,0.08);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.25);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✅ Criar plano</button>
-                            </div>
-
-                            <div id="mpPlanosList"><div class="admin-empty" style="font-size:11px;">Carregando...</div></div>
-                        </div>
-
-                        <!-- ═══ ABA 4: COBRANÇAS ═══ -->
-                        <div id="pagTab4" class="pag-tab-panel" style="display:none;">
-                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;">Filtrar por CT</label>
-                                <select id="cobCTFiltro" onchange="loadPagamentosAdmin()" style="padding:6px 10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:11px;"></select>
-                            </div>
-                            <div style="position:relative;margin-bottom:10px;">
-                                <input id="cobNomeFiltro" type="text" placeholder="🔍 Buscar por nome..." oninput="filtrarCobrancasPorNome()"
-                                    style="width:100%;padding:8px 32px 8px 10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;box-sizing:border-box;outline:none;">
-                                <span id="cobNomeFiltroLimpar" onclick="limparFiltroCobNome()" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--adm-text-3);font-size:14px;">✕</span>
-                            </div>
-
-                            <!-- KPIs -->
-                            <div id="cobKPIs" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:10px;"></div>
-
-                            <!-- Filtros de status -->
-                            <div style="display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap;">
-                                <button class="cob-filter-btn active" onclick="filtrarCobrancas('',this)">Todos</button>
-                                <button class="cob-filter-btn" onclick="filtrarCobrancas('PAGO',this)">✅ Pago</button>
-                                <button class="cob-filter-btn" onclick="filtrarCobrancas('PENDENTE',this)">⏳ Pendente</button>
-                                <button class="cob-filter-btn" onclick="filtrarCobrancas('ATRASADO',this)">🔴 Atrasado</button>
-                                <button class="cob-filter-btn" onclick="filtrarCobrancas('VENCENDO',this)">🟡 Vencendo</button>
-                                <button class="cob-filter-btn" onclick="filtrarCobrancas('SEM_PLANO',this)">📋 Sem plano</button>
-                                <button class="cob-filter-btn" onclick="filtrarCobrancas('NUNCA_PAGOU',this)">❗ Nunca pagou</button>
-                            </div>
-
-                            <div id="mpPagamentosAdmin"><div class="admin-empty" style="font-size:11px;">Carregando...</div></div>
-                        </div>
-
-                        <!-- ═══ ABA 5: REGRAS DE COBRANÇA ═══ -->
-                        <div id="pagTab5" class="pag-tab-panel" style="display:none;">
-
-                            <!-- Modo de cobrança -->
-                            <div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;padding:14px;margin-bottom:14px;">
-                                <div style="font-size:11px;font-weight:800;color:var(--adm-text-1);margin-bottom:10px;">📅 Modo de Cobrança</div>
-                                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
-                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;border-radius:8px;border:1px solid var(--adm-border);background:var(--adm-bg-card);">
-                                        <input type="radio" id="billingModeFixed" name="billingMode" value="fixed_day" style="accent-color:var(--adm-primary);">
-                                        <div>
-                                            <div style="font-size:12px;font-weight:700;color:var(--adm-text-1);">Dia fixo do mês</div>
-                                            <div style="font-size:10px;color:var(--adm-text-3);">Todo mês no mesmo dia configurado no CT</div>
-                                        </div>
-                                    </label>
-                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;border-radius:8px;border:1px solid var(--adm-border);background:var(--adm-bg-card);">
-                                        <input type="radio" id="billingModeRolling" name="billingMode" value="rolling_30_days" style="accent-color:var(--adm-primary);">
-                                        <div>
-                                            <div style="font-size:12px;font-weight:700;color:var(--adm-text-1);">30 dias após último pagamento</div>
-                                            <div style="font-size:10px;color:var(--adm-text-3);">Próxima cobrança = última data + 30 dias</div>
-                                        </div>
-                                    </label>
-                                </div>
-                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-                                    <label style="font-size:11px;color:var(--adm-text-3);white-space:nowrap;">Dia padrão:</label>
-                                    <input type="number" id="billingDueDay" min="1" max="28" value="10" style="width:70px;padding:7px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:13px;font-weight:700;">
-                                    <span style="font-size:10px;color:var(--adm-text-3);">Usado quando não há dia definido no CT</span>
-                                </div>
-                                <button onclick="salvarBillingConfig()" style="width:100%;padding:10px;background:var(--adm-primary);color:#000;border:none;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;">💾 Salvar Regras</button>
-                                <div id="billingConfigMsg" style="margin-top:6px;font-size:11px;min-height:14px;text-align:center;"></div>
-                            </div>
-
-                            <!-- Mapeamento Modalidade → Plano -->
-                            <div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;padding:14px;">
-                                <div style="font-size:11px;font-weight:800;color:var(--adm-text-1);margin-bottom:6px;">🎯 Modalidade → Plano automático</div>
-                                <div style="font-size:10px;color:var(--adm-text-3);margin-bottom:10px;line-height:1.5;">
-                                    Quando o aluno tem uma ou mais modalidades, o sistema atribui o plano automaticamente.<br>
-                                    Use vírgula para combos: <code style="color:var(--adm-primary);">bjj,muay_thai</code>
-                                </div>
-                                <div id="modalidadesPlanoMapGrid" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;"></div>
-                                <button onclick="adicionarLinhaMapModal()" style="width:100%;padding:8px;background:rgba(201,162,58,0.08);border:1.5px dashed rgba(201,162,58,0.3);border-radius:8px;color:var(--adm-primary);font-size:11px;font-weight:700;cursor:pointer;">+ Adicionar mapeamento</button>
-                                <button onclick="salvarMapModal()" style="width:100%;padding:10px;background:var(--adm-primary);color:#000;border:none;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;margin-top:8px;">💾 Salvar Mapeamento</button>
-                                <div id="mapModalMsg" style="margin-top:6px;font-size:11px;min-height:14px;text-align:center;"></div>
-                            </div>
-                        </div>
-
+                    <!-- Pagamentos movido para aba Financeiro -->
+                    <div class="admin-section" style="background:rgba(201,162,58,0.04);border:1px solid rgba(201,162,58,0.15);border-radius:14px;padding:20px;text-align:center;">
+                        <div style="font-size:28px;margin-bottom:8px;">💳</div>
+                        <div style="font-size:14px;font-weight:800;color:var(--adm-text-1);margin-bottom:6px;">Pagamentos</div>
+                        <div style="font-size:12px;color:var(--adm-text-3);margin-bottom:14px;">Gestão de cobranças, gateways e planos</div>
+                        <button onclick="switchAdminTab('adm-financeiro', event)" style="padding:10px 24px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;">
+                            Ir para Financeiro →
+                        </button>
                     </div>
                     <!-- ██ FIM PAGAMENTOS v2 ██ -->
 
@@ -10936,7 +10742,280 @@
         </div>
 
         <!-- ADMIN BOTTOM NAV -->
-        <div class="bnav" id="adminNav" style="display:none;">
+        <!-- ╔══════════════════════════════════════════╗
+             ║         ABA: FINANCEIRO                  ║
+             ╚══════════════════════════════════════════╝ -->
+        <div id="adm-financeiro" class="adm-tab" style="display:none;">
+            <div style="padding:0 0 100px;">
+
+                <!-- Sub-nav -->
+                <div style="display:flex;overflow-x:auto;scrollbar-width:none;background:rgba(0,0,0,0.3);border-bottom:1px solid rgba(201,162,58,0.12);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);">
+                    <button onclick="switchFinSubTab('pagamentos')" id="finSubBtn_pagamentos"
+                        style="flex-shrink:0;padding:13px 18px;border:none;background:transparent;color:#C9A23A;font-size:11px;font-weight:800;cursor:pointer;border-bottom:2px solid #C9A23A;letter-spacing:.3px;">
+                        💳 Pagamentos
+                    </button>
+                    <!-- + Cobranças, Relatórios, etc. serão adicionadas aqui -->
+                </div>
+
+                <!-- Painel: Pagamentos -->
+                <div id="finPainel_pagamentos" style="padding:16px 16px 0;">
+                    <div class="admin-section" id="pagamentosAdminSection">
+                        <div class="admin-section-header">
+                            <div class="admin-section-title">💳 Pagamentos</div>
+                            <div style="display:flex;gap:6px;align-items:center;">
+                                <button class="admin-refresh-btn" onclick="initPagamentosAdmin()" title="Atualizar">↻</button>
+                                <button onclick="cobrarMensalidadeAgora()" title="Rodar cobrança recorrente agora" style="padding:5px 10px;border-radius:7px;background:rgba(201,162,58,0.12);border:1px solid rgba(201,162,58,0.3);color:var(--adm-primary);font-size:10px;font-weight:700;cursor:pointer;">⚡ Cobrar agora</button>
+                            </div>
+                        </div>
+
+                        <!-- Tabs nav -->
+                        <div style="display:flex;gap:3px;margin-bottom:14px;background:rgba(255,255,255,0.03);border-radius:10px;padding:4px;">
+                            <button class="pag-tab-btn active" id="pagTabBtn1" onclick="switchPagTab(1)" style="flex:1;padding:7px 4px;border:none;border-radius:7px;background:rgba(201,162,58,0.18);color:var(--adm-primary);font-size:10px;font-weight:800;cursor:pointer;">🔑 Config</button>
+                            <button class="pag-tab-btn" id="pagTabBtn2" onclick="switchPagTab(2)" style="flex:1;padding:7px 4px;border:none;border-radius:7px;background:transparent;color:var(--adm-text-3);font-size:10px;font-weight:700;cursor:pointer;">🔗 Vincular</button>
+                            <button class="pag-tab-btn" id="pagTabBtn3" onclick="switchPagTab(3)" style="flex:1;padding:7px 4px;border:none;border-radius:7px;background:transparent;color:var(--adm-text-3);font-size:10px;font-weight:700;cursor:pointer;">📋 Planos</button>
+                            <button class="pag-tab-btn" id="pagTabBtn4" onclick="switchPagTab(4)" style="flex:1;padding:7px 4px;border:none;border-radius:7px;background:transparent;color:var(--adm-text-3);font-size:10px;font-weight:700;cursor:pointer;">💰 Cobranças</button>
+                            <button class="pag-tab-btn" id="pagTabBtn5" onclick="switchPagTab(5)" style="flex:1;padding:7px 4px;border:none;border-radius:7px;background:transparent;color:var(--adm-text-3);font-size:10px;font-weight:700;cursor:pointer;">⚙️ Regras</button>
+                        </div>
+
+                        <!-- ═══ ABA 1: CONFIGURAÇÃO DE GATEWAY ═══ -->
+                        <div id="pagTab1" class="pag-tab-panel">
+                            <div style="background:rgba(201,162,58,0.06);border:1px solid rgba(201,162,58,0.18);border-radius:9px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:var(--adm-text-2);line-height:1.5;">
+                                Cadastre aqui o <strong>Access Token</strong> de cada gateway de pagamento. Um token pode ser reutilizado em vários CTs (próxima aba).
+                            </div>
+
+                            <!-- Formulário novo token -->
+                            <div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;padding:12px;margin-bottom:12px;">
+                                <div style="font-size:11px;font-weight:800;color:var(--adm-text-1);margin-bottom:10px;">+ Novo Gateway</div>
+
+                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">Gateway de Pagamento</label>
+                                <select id="gwGateway" onchange="atualizarInfoGateway()" style="width:100%;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:8px;">
+                                    <option value="mercadopago">🔵 Mercado Pago — Débito automático no cartão</option>
+                                    <option value="infinitepay">🟢 InfinitePay — Link de pagamento mensal</option>
+                                    <option value="pix_manual">📋 PIX Manual — Confirmação manual pelo admin</option>
+                                </select>
+
+                                <!-- Card informativo por gateway -->
+                                <div id="gwInfoCard" style="border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:11px;line-height:1.6;display:none;"></div>
+
+                                <div id="gwTokenRow">
+                                    <label id="gwTokenLabel" style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">Access Token</label>
+                                    <input type="text" id="gwAccessToken" placeholder="APP_USR-..." style="width:100%;box-sizing:border-box;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1.5px solid rgba(201,162,58,0.3);border-radius:8px;font-size:12px;margin-bottom:8px;">
+                                </div>
+
+                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">Label (identificação interna)</label>
+                                <input type="text" id="gwLabel" placeholder="Ex: Mercado Pago — Academia Central" style="width:100%;box-sizing:border-box;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:10px;">
+
+                                <div id="gwMsg" style="font-size:11px;margin-bottom:6px;min-height:16px;"></div>
+                                <button onclick="salvarGatewayToken()" style="width:100%;padding:10px;background:linear-gradient(135deg,#C9A23A,#F8E7A1 55%,#8C6A0A);color:#0D0B08;border:none;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;">💾 Salvar Token</button>
+                                <button onclick="verificarGatewayAdmin()" style="width:100%;padding:9px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);border-radius:9px;color:#93c5fd;font-size:11px;font-weight:700;cursor:pointer;margin-top:6px;">🔍 Verificar token salvo no sistema</button>
+                            </div>
+
+                            <!-- Lista de tokens cadastrados -->
+                            <div style="font-size:10px;color:var(--adm-text-3);font-weight:600;margin-bottom:6px;">Tokens Cadastrados</div>
+                            <div id="gwTokensList"><div class="admin-empty" style="font-size:11px;">Carregando...</div></div>
+                        </div>
+
+                        <!-- ═══ ABA 2: VINCULAÇÃO CT → GATEWAY ═══ -->
+                        <div id="pagTab2" class="pag-tab-panel" style="display:none;">
+                            <div style="background:rgba(201,162,58,0.06);border:1px solid rgba(201,162,58,0.18);border-radius:9px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:var(--adm-text-2);line-height:1.5;">
+                                Selecione um CT e vincule ao gateway cadastrado na Aba 1. Cada CT pode ter apenas um gateway ativo.
+                            </div>
+
+                            <div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;padding:12px;margin-bottom:12px;">
+                                <div style="font-size:11px;font-weight:800;color:var(--adm-text-1);margin-bottom:10px;">Vincular CT ao Gateway</div>
+
+                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">CT</label>
+                                <select id="vinCT" style="width:100%;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:8px;"></select>
+
+                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">Gateway</label>
+                                <select id="vinGateway" style="width:100%;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:8px;"></select>
+
+                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">🔑 Chave PIX estática (opcional para fallback)</label>
+                                <input type="text" id="vinChavePix" placeholder="Ex: seu@email.com ou chave aleatória" style="width:100%;box-sizing:border-box;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:8px;">
+
+                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">Dia padrão de vencimento</label>
+                                <input type="number" id="vinDiaVenc" min="1" max="28" value="10" style="width:100%;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;margin-bottom:10px;">
+
+                                <div id="vinMsg" style="font-size:11px;margin-bottom:6px;min-height:16px;"></div>
+                                <button onclick="vincularGatewayCT()" style="width:100%;padding:10px;background:linear-gradient(135deg,#C9A23A,#F8E7A1 55%,#8C6A0A);color:#0D0B08;border:none;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;">🔗 Vincular</button>
+                            </div>
+
+                            <div style="font-size:10px;color:var(--adm-text-3);font-weight:600;margin-bottom:6px;">CTs Configurados</div>
+                            <div id="vinculosList"><div class="admin-empty" style="font-size:11px;">Carregando...</div></div>
+                        </div>
+
+                        <!-- ═══ ABA 3: PLANOS ═══ -->
+                        <div id="pagTab3" class="pag-tab-panel" style="display:none;">
+                            <div style="background:rgba(201,162,58,0.06);border:1px solid rgba(201,162,58,0.18);border-radius:9px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:var(--adm-text-2);line-height:1.5;">
+                                Só CTs com gateway configurado aparecem aqui. Cada plano fica vinculado ao CT + gateway.
+                            </div>
+
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;">Filtrar por CT</label>
+                                <select id="planoCTFiltro" onchange="loadPlanosList()" style="padding:6px 10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:11px;"></select>
+                            </div>
+
+                            <!-- Form novo plano -->
+                            <div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;padding:12px;margin-bottom:12px;">
+                                <div style="font-size:11px;font-weight:800;color:var(--adm-text-1);margin-bottom:10px;">+ Novo Plano</div>
+
+                                <div style="display:grid;grid-template-columns:1fr 90px;gap:6px;margin-bottom:6px;">
+                                    <input type="text" id="mpPlanoNome" placeholder="Nome (ex: Mensal Adulto)" style="padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <input type="number" id="mpPlanoValor" placeholder="R$" min="1" style="padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                </div>
+
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+                                    <div>
+                                        <label style="font-size:9px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:3px;">CT</label>
+                                        <select id="mpPlanoCT" style="width:100%;padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;"></select>
+                                    </div>
+                                    <div>
+                                        <label style="font-size:9px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:3px;">Frequência</label>
+                                        <select id="mpPlanoFreq" style="width:100%;padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                            <option value="mensal">Mensal</option>
+                                            <option value="trimestral">Trimestral</option>
+                                            <option value="semestral">Semestral</option>
+                                            <option value="anual">Anual</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <input type="text" id="mpPlanoDesc" placeholder="Descrição (opcional)" style="width:100%;box-sizing:border-box;padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:8px;">
+                                <button onclick="criarPlanoMP()" style="width:100%;padding:9px;background:rgba(201,162,58,0.08);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.25);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✅ Criar plano</button>
+                            </div>
+
+                            <div id="mpPlanosList"><div class="admin-empty" style="font-size:11px;">Carregando...</div></div>
+                        </div>
+
+                        <!-- ═══ ABA 4: COBRANÇAS ═══ -->
+                        <div id="pagTab4" class="pag-tab-panel" style="display:none;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;">Filtrar por CT</label>
+                                <select id="cobCTFiltro" onchange="loadPagamentosAdmin()" style="padding:6px 10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:11px;"></select>
+                            </div>
+                            <div style="position:relative;margin-bottom:10px;">
+                                <input id="cobNomeFiltro" type="text" placeholder="🔍 Buscar por nome..." oninput="filtrarCobrancasPorNome()"
+                                    style="width:100%;padding:8px 32px 8px 10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;box-sizing:border-box;outline:none;">
+                                <span id="cobNomeFiltroLimpar" onclick="limparFiltroCobNome()" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--adm-text-3);font-size:14px;">✕</span>
+                            </div>
+
+                            <!-- KPIs -->
+                            <div id="cobKPIs" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:10px;"></div>
+
+                            <!-- Filtros de status -->
+                            <div style="display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap;">
+                                <button class="cob-filter-btn active" onclick="filtrarCobrancas('',this)">Todos</button>
+                                <button class="cob-filter-btn" onclick="filtrarCobrancas('PAGO',this)">✅ Pago</button>
+                                <button class="cob-filter-btn" onclick="filtrarCobrancas('PENDENTE',this)">⏳ Pendente</button>
+                                <button class="cob-filter-btn" onclick="filtrarCobrancas('ATRASADO',this)">🔴 Atrasado</button>
+                                <button class="cob-filter-btn" onclick="filtrarCobrancas('VENCENDO',this)">🟡 Vencendo</button>
+                                <button class="cob-filter-btn" onclick="filtrarCobrancas('SEM_PLANO',this)">📋 Sem plano</button>
+                                <button class="cob-filter-btn" onclick="filtrarCobrancas('NUNCA_PAGOU',this)">❗ Nunca pagou</button>
+                            </div>
+
+                            <div id="mpPagamentosAdmin"><div class="admin-empty" style="font-size:11px;">Carregando...</div></div>
+                        </div>
+
+                        <!-- ═══ ABA 5: REGRAS DE COBRANÇA ═══ -->
+                        <div id="pagTab5" class="pag-tab-panel" style="display:none;">
+
+                            <!-- Modo de cobrança -->
+                            <div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;padding:14px;margin-bottom:14px;">
+                                <div style="font-size:11px;font-weight:800;color:var(--adm-text-1);margin-bottom:10px;">📅 Modo de Cobrança</div>
+                                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;border-radius:8px;border:1px solid var(--adm-border);background:var(--adm-bg-card);">
+                                        <input type="radio" id="billingModeFixed" name="billingMode" value="fixed_day" style="accent-color:var(--adm-primary);">
+                                        <div>
+                                            <div style="font-size:12px;font-weight:700;color:var(--adm-text-1);">Dia fixo do mês</div>
+                                            <div style="font-size:10px;color:var(--adm-text-3);">Todo mês no mesmo dia configurado no CT</div>
+                                        </div>
+                                    </label>
+                                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;border-radius:8px;border:1px solid var(--adm-border);background:var(--adm-bg-card);">
+                                        <input type="radio" id="billingModeRolling" name="billingMode" value="rolling_30_days" style="accent-color:var(--adm-primary);">
+                                        <div>
+                                            <div style="font-size:12px;font-weight:700;color:var(--adm-text-1);">30 dias após último pagamento</div>
+                                            <div style="font-size:10px;color:var(--adm-text-3);">Próxima cobrança = última data + 30 dias</div>
+                                        </div>
+                                    </label>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                                    <label style="font-size:11px;color:var(--adm-text-3);white-space:nowrap;">Dia padrão:</label>
+                                    <input type="number" id="billingDueDay" min="1" max="28" value="10" style="width:70px;padding:7px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:13px;font-weight:700;">
+                                    <span style="font-size:10px;color:var(--adm-text-3);">Usado quando não há dia definido no CT</span>
+                                </div>
+                                <button onclick="salvarBillingConfig()" style="width:100%;padding:10px;background:var(--adm-primary);color:#000;border:none;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;">💾 Salvar Regras</button>
+                                <div id="billingConfigMsg" style="margin-top:6px;font-size:11px;min-height:14px;text-align:center;"></div>
+                            </div>
+
+                            <!-- Mapeamento Modalidade → Plano -->
+                            <div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;padding:14px;">
+                                <div style="font-size:11px;font-weight:800;color:var(--adm-text-1);margin-bottom:6px;">🎯 Modalidade → Plano automático</div>
+                                <div style="font-size:10px;color:var(--adm-text-3);margin-bottom:10px;line-height:1.5;">
+                                    Quando o aluno tem uma ou mais modalidades, o sistema atribui o plano automaticamente.<br>
+                                    Use vírgula para combos: <code style="color:var(--adm-primary);">bjj,muay_thai</code>
+                                </div>
+                                <div id="modalidadesPlanoMapGrid" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;"></div>
+                                <button onclick="adicionarLinhaMapModal()" style="width:100%;padding:8px;background:rgba(201,162,58,0.08);border:1.5px dashed rgba(201,162,58,0.3);border-radius:8px;color:var(--adm-primary);font-size:11px;font-weight:700;cursor:pointer;">+ Adicionar mapeamento</button>
+                                <button onclick="salvarMapModal()" style="width:100%;padding:10px;background:var(--adm-primary);color:#000;border:none;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;margin-top:8px;">💾 Salvar Mapeamento</button>
+                                <div id="mapModalMsg" style="margin-top:6px;font-size:11px;min-height:14px;text-align:center;"></div>
+                            </div>
+
+                            <!-- ─── JUROS E MULTA POR ATRASO ─────────────────── -->
+                            <div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;padding:14px;margin-top:14px;">
+                                <div style="font-size:11px;font-weight:800;color:var(--adm-text-1);margin-bottom:4px;">⚖️ Juros e Multa por Atraso</div>
+                                <div style="font-size:10px;color:var(--adm-text-3);margin-bottom:12px;line-height:1.5;">
+                                    Aplicados automaticamente sobre mensalidades vencidas.<br>
+                                    Limites legais: multa ≤ 2% · juros ≤ 1% a.m.
+                                </div>
+
+                                <!-- CT selector -->
+                                <div style="margin-bottom:10px;">
+                                    <label style="font-size:10px;font-weight:700;color:var(--adm-text-3);display:block;margin-bottom:4px;">CENTRO DE TREINAMENTO</label>
+                                    <select id="jurosCT" onchange="carregarConfigJuros()" style="width:100%;padding:8px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                        <option value="">— Selecione o CT —</option>
+                                    </select>
+                                </div>
+
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+                                    <div>
+                                        <label style="font-size:10px;font-weight:700;color:var(--adm-text-3);display:block;margin-bottom:4px;">MULTA (%) — aplicada uma vez</label>
+                                        <div style="position:relative;">
+                                            <input type="number" id="jurosMulta" min="0" max="10" step="0.1" value="2"
+                                                style="width:100%;box-sizing:border-box;padding:8px 28px 8px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;font-weight:700;">
+                                            <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--adm-text-3);">%</span>
+                                        </div>
+                                        <div style="font-size:9px;color:var(--adm-text-3);margin-top:3px;">Máx. legal: 2%</div>
+                                    </div>
+                                    <div>
+                                        <label style="font-size:10px;font-weight:700;color:var(--adm-text-3);display:block;margin-bottom:4px;">JUROS (% ao mês)</label>
+                                        <div style="position:relative;">
+                                            <input type="number" id="jurosPerc" min="0" max="3" step="0.1" value="1"
+                                                style="width:100%;box-sizing:border-box;padding:8px 28px 8px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;font-weight:700;">
+                                            <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--adm-text-3);">%</span>
+                                        </div>
+                                        <div style="font-size:9px;color:var(--adm-text-3);margin-top:3px;">Máx. legal: 1% a.m.</div>
+                                    </div>
+                                </div>
+
+                                <!-- Preview de cálculo -->
+                                <div style="background:rgba(201,162,58,0.06);border:1px solid rgba(201,162,58,0.15);border-radius:8px;padding:10px;margin-bottom:12px;">
+                                    <div style="font-size:10px;font-weight:700;color:var(--adm-text-3);margin-bottom:6px;">SIMULAÇÃO — mensalidade de R$ 150 com 30 dias de atraso</div>
+                                    <div id="jurosPreview" style="font-size:12px;color:var(--adm-text-2);"></div>
+                                </div>
+
+                                <button onclick="salvarConfigJuros()" style="width:100%;padding:10px;background:var(--adm-primary);color:#000;border:none;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;">💾 Salvar Juros e Multa</button>
+                                <div id="jurosConfigMsg" style="margin-top:6px;font-size:11px;min-height:14px;text-align:center;"></div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <!-- ██ FIM PAGAMENTOS v2 ██ -->
+                </div>
+
+            </div>
+        </div><!-- fim adm-financeiro -->
+
+                <div class="bnav" id="adminNav" style="display:none;">
             <div class="bnav-inner">
                 <button class="bnav-btn active" onclick="switchAdminTab('adm-painel', event)">
                     <span class="bnav-icon">🏠</span><span class="bnav-label">Painel</span>
@@ -10952,6 +11031,9 @@
                 </button>
                 <button class="bnav-btn" onclick="switchAdminTab('adm-sistema', event)">
                     <span class="bnav-icon">🔧</span><span class="bnav-label">Sistema</span>
+                </button>
+                <button class="bnav-btn" id="bnavFinanceiro" onclick="switchAdminTab('adm-financeiro', event)">
+                    <span class="bnav-icon">💰</span><span class="bnav-label">Financeiro</span>
                 </button>
                 <button class="bnav-btn" id="bnavSuperAdmin" onclick="switchAdminTab('adm-superadmin', event)" style="display:none;">
                     <span class="bnav-icon">🔑</span><span class="bnav-label">Super</span>
@@ -12718,6 +12800,65 @@
                 },
             },
 
+
+
+            kravmaga: {
+                id: 'kravmaga',
+                graduacao: {
+                    tipo:             'nivel',         // Sistema de níveis/patches
+                    hasGraduacao:     true,
+                    hasFaixa:         false,           // Usa patches, não faixa na cintura
+                    hasPrajied:       false,
+                    hasCorda:         false,
+                    labelFaixa:       'Nível',
+                    labelGrau:        'Nível',
+                    labelGrauPlural:  'Níveis',
+                    maxGrausPorFaixa: 0,
+                    simbolo:          'patch',
+                    faixas: [
+                        { id:'P1', label:'P1 — Praticante 1', emoji:'🟡', cor:'#EAB308', cssClass:'km-p1', next:'P2', minMeses:6,  ordemProgresso:1  },
+                        { id:'P2', label:'P2 — Praticante 2', emoji:'🟡', cor:'#F59E0B', cssClass:'km-p2', next:'P3', minMeses:6,  ordemProgresso:2  },
+                        { id:'P3', label:'P3 — Praticante 3', emoji:'🟠', cor:'#F97316', cssClass:'km-p3', next:'P4', minMeses:6,  ordemProgresso:3  },
+                        { id:'P4', label:'P4 — Praticante 4', emoji:'🟠', cor:'#EA580C', cssClass:'km-p4', next:'P5', minMeses:6,  ordemProgresso:4  },
+                        { id:'P5', label:'P5 — Praticante 5', emoji:'🟠', cor:'#C2410C', cssClass:'km-p5', next:'G1', minMeses:6,  ordemProgresso:5  },
+                        { id:'G1', label:'G1 — Graduado 1',   emoji:'🟢', cor:'#16A34A', cssClass:'km-g1', next:'G2', minMeses:8,  ordemProgresso:6  },
+                        { id:'G2', label:'G2 — Graduado 2',   emoji:'🟢', cor:'#15803D', cssClass:'km-g2', next:'G3', minMeses:8,  ordemProgresso:7  },
+                        { id:'G3', label:'G3 — Graduado 3',   emoji:'🔵', cor:'#1D4ED8', cssClass:'km-g3', next:'E1', minMeses:8,  ordemProgresso:8  },
+                        { id:'E1', label:'E1 — Expert 1',     emoji:'🔵', cor:'#1565C0', cssClass:'km-e1', next:'E2', minMeses:12, ordemProgresso:9  },
+                        { id:'E2', label:'E2 — Expert 2',     emoji:'🟣', cor:'#7C3AED', cssClass:'km-e2', next:'E3', minMeses:12, ordemProgresso:10 },
+                        { id:'E3', label:'E3 — Expert 3',     emoji:'🟤', cor:'#5D4037', cssClass:'km-e3', next:'M1', minMeses:12, ordemProgresso:11 },
+                        { id:'M1', label:'Mestre — Nível 1',  emoji:'🔴', cor:'#B91C1C', cssClass:'km-m1', next:'M2', minMeses:24, ordemProgresso:12 },
+                        { id:'M2', label:'Mestre — Nível 2',  emoji:'🔴', cor:'#991B1B', cssClass:'km-m2', next:'M3', minMeses:36, ordemProgresso:13 },
+                        { id:'M3', label:'Grão-Mestre',        emoji:'⚫', cor:'#1a1a1a', cssClass:'km-m3', next:null,  minMeses:0,  ordemProgresso:14 },
+                    ],
+                },
+                nomenclatura: {
+                    treino:        'Treino',
+                    aula:          'Aula',
+                    professor:     'Instrutor',
+                    aluno:         'Praticante',
+                    academia:      'CT / Escola',
+                    faixa:         'Nível',
+                    faixas:        'Níveis',
+                    grau:          'Nível',
+                    graus:         'Níveis',
+                    confirmarBtn:  '🛡️ Treinei',
+                    evolucaoTitulo:'Minha Progressão',
+                    roadmapTitulo: '🛡️ Sistema de Níveis — Krav Maga',
+                    roadmapSub:    'Do P1 (Praticante) ao Grão-Mestre — Sistema IKMF',
+                },
+                ui: {
+                    mostrarFaixa:     false,
+                    mostrarGraus:     false,
+                    mostrarPrajied:   false,
+                    mostrarCorda:     false,
+                    mostrarRoadmap:   true,
+                    mostrarFrequencia:true,
+                    mostrarCriterios: true,
+                    roadmapTipo:      'nivel',
+                    iconeEvo:         '🛡️',
+                },
+            },
 
         };
 
@@ -15149,6 +15290,10 @@
                 document.getElementById('admPerfilInitial').textContent = currentUser.name.charAt(0).toUpperCase();
                 // Reset admin tab to painel
                 document.querySelectorAll('.adm-tab').forEach(function(t) { t.classList.remove('active'); });
+            // Ao abrir Financeiro: mostra pagamentos por padrão
+            if (tabName === 'adm-financeiro') {
+                setTimeout(function() { switchFinSubTab('pagamentos'); }, 50);
+            }
                 var painelTab = document.getElementById('adm-painel');
                 if (painelTab) painelTab.classList.add('active');
                 document.querySelectorAll('#adminNav .bnav-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -21431,8 +21576,32 @@
         let adminSelectedCT = null;
         let adminStudentsCache = [];
 
+        // Sub-tabs da aba Financeiro
+        function switchFinSubTab(sub) {
+            document.querySelectorAll('[id^="finPainel_"]').forEach(function(el) {
+                el.style.display = 'none';
+            });
+            document.querySelectorAll('[id^="finSubBtn_"]').forEach(function(btn) {
+                btn.style.color = 'rgba(255,255,255,0.4)';
+                btn.style.borderBottomColor = 'transparent';
+            });
+            var panel = document.getElementById('finPainel_' + sub);
+            var btn   = document.getElementById('finSubBtn_' + sub);
+            if (panel) panel.style.display = '';
+            if (btn)   { btn.style.color = '#C9A23A'; btn.style.borderBottomColor = '#C9A23A'; }
+
+            // Inicializa pagamentos ao abrir
+            if (sub === 'pagamentos' && typeof initPagamentosAdmin === 'function') {
+                initPagamentosAdmin();
+            }
+        }
+
         function switchAdminTab(tabName, evt) {
             document.querySelectorAll('.adm-tab').forEach(function(t) { t.classList.remove('active'); });
+            // Ao abrir Financeiro: mostra pagamentos por padrão
+            if (tabName === 'adm-financeiro') {
+                setTimeout(function() { switchFinSubTab('pagamentos'); }, 50);
+            }
             document.querySelectorAll('#adminNav .bnav-btn').forEach(function(b) { b.classList.remove('active'); });
             var tab = document.getElementById(tabName);
             if (tab) tab.classList.add('active');
@@ -31909,6 +32078,7 @@
         // ── Navegação entre abas ──────────────────────────────────
 
         function switchPagTab(n) {
+            if (n === 5) { setTimeout(function(){ _popularJurosCT(); atualizarJurosPreview(); }, 100); }
             _pagTabAtual = n;
             [1,2,3,4,5].forEach(function(i) {
                 var panel = document.getElementById('pagTab' + i);
@@ -31932,6 +32102,91 @@
             if (n === 4) { loadPagamentosAdmin(); _initCobWAConfig(); }
             if (n === 5) { loadBillingConfig(); loadMapModal(); }
         }
+
+
+        // ── Juros e Multa por Atraso ─────────────────────────────────────
+
+        function _popularJurosCT() {
+            var sel = document.getElementById('jurosCT');
+            if (!sel || sel.options.length > 1) return;
+            var _MODAL_IDS = ['bjj','bjj_kids','muay_thai','muay_thai_khan','muay_thai_fmce',
+                'kickboxing','judo','taekwondo','wrestling','boxe','luta_livre','capoeira'];
+            if (typeof allCTs !== 'undefined' && Array.isArray(allCTs)) {
+                allCTs.forEach(function(ct) {
+                    var name = typeof ct === 'string' ? ct : (ct.name || ct.nome || '');
+                    if (!name || _MODAL_IDS.indexOf(name.toLowerCase()) !== -1) return;
+                    var opt = document.createElement('option');
+                    opt.value = name; opt.textContent = name;
+                    if (currentUser && name === currentUser.ct) opt.selected = true;
+                    sel.appendChild(opt);
+                });
+            }
+            if (sel.value) carregarConfigJuros();
+        }
+
+        function atualizarJurosPreview() {
+            var multa = parseFloat(document.getElementById('jurosMulta').value || 2);
+            var juros = parseFloat(document.getElementById('jurosPerc').value  || 1);
+            var valor = 150, dias = 30;
+            var multaVal = valor * (multa / 100);
+            var jurosVal = valor * (juros / 100 / 30) * dias;
+            var total    = valor + multaVal + jurosVal;
+            var el = document.getElementById('jurosPreview');
+            if (!el) return;
+            el.innerHTML =
+                '<div style="display:grid;grid-template-columns:1fr auto;gap:2px 8px;">' +
+                '<span style="color:rgba(255,255,255,0.5);">Valor original</span><span style="font-weight:700;color:var(--adm-text-1);">R$ ' + valor.toFixed(2) + '</span>' +
+                '<span style="color:rgba(255,255,255,0.5);">Multa (' + multa + '%)</span><span style="font-weight:700;color:#f87171;">+ R$ ' + multaVal.toFixed(2) + '</span>' +
+                '<span style="color:rgba(255,255,255,0.5);">Juros (' + juros + '% a.m. × 30d)</span><span style="font-weight:700;color:#f87171;">+ R$ ' + jurosVal.toFixed(2) + '</span>' +
+                '<span style="font-weight:800;color:var(--adm-primary);">Total atualizado</span><span style="font-weight:800;color:var(--adm-primary);">R$ ' + total.toFixed(2) + '</span>' +
+                '</div>';
+        }
+
+        async function carregarConfigJuros() {
+            var ct = (document.getElementById('jurosCT')||{}).value || '';
+            if (!ct) return;
+            try {
+                var r = await secureFetch('getConfigJuros', { ct: ct });
+                if (r && r.success) {
+                    var mEl = document.getElementById('jurosMulta');
+                    var jEl = document.getElementById('jurosPerc');
+                    if (mEl) mEl.value = r.multa || 2;
+                    if (jEl) jEl.value = r.juros || 1;
+                    atualizarJurosPreview();
+                }
+            } catch(e) {}
+        }
+
+        async function salvarConfigJuros() {
+            var ct    = (document.getElementById('jurosCT')||{}).value || '';
+            var multa = parseFloat((document.getElementById('jurosMulta')||{}).value || 2);
+            var juros = parseFloat((document.getElementById('jurosPerc')||{}).value  || 1);
+            var msg   = document.getElementById('jurosConfigMsg');
+
+            if (!ct) { if(msg){msg.textContent='Selecione um CT.';msg.style.color='#f87171';} return; }
+            if (multa > 2)  { if(msg){msg.textContent='⚠️ Multa acima do limite legal (2%).';msg.style.color='#f59e0b';} }
+            if (juros > 1)  { if(msg){msg.textContent='⚠️ Juros acima do limite legal (1% a.m.).';msg.style.color='#f59e0b';} }
+
+            if (msg) { msg.textContent = '⏳ Salvando...'; msg.style.color = 'rgba(255,255,255,0.4)'; }
+            try {
+                var r = await secureFetch('saveConfigJuros', { ct: ct, multa: multa, juros: juros });
+                if (r && r.success) {
+                    if (msg) { msg.textContent = '✅ Salvo! Aplicado a partir de agora.'; msg.style.color = '#4ade80'; }
+                    setTimeout(function(){ if(msg) msg.textContent = ''; }, 3000);
+                } else {
+                    if (msg) { msg.textContent = '❌ ' + (r ? r.message : 'Erro'); msg.style.color = '#f87171'; }
+                }
+            } catch(e) {
+                if (msg) { msg.textContent = '❌ Erro de conexão'; msg.style.color = '#f87171'; }
+            }
+        }
+
+        // Atualiza preview ao digitar
+        document.addEventListener('input', function(e) {
+            if (e.target && (e.target.id === 'jurosMulta' || e.target.id === 'jurosPerc')) {
+                atualizarJurosPreview();
+            }
+        });
 
         async function initPagamentosAdmin() {
             // Garante que a lista de CTs está carregada
@@ -32416,7 +32671,7 @@
                 _stuHorariosSelecionados = data.horarioSalvo || {};
 
                 var h = '';
-                var MOD_LABELS = { bjj:'BJJ', muay_thai:'Muay Thai', judo:'Judô', karate:'Karatê', boxing:'Boxe', mma:'MMA', funcional:'Funcional', wrestling:'Wrestling', kickboxing:'Kickboxing' };
+                var MOD_LABELS = { bjj:'BJJ', muay_thai:'Muay Thai', judo:'Judô', karate:'Karatê', boxing:'Boxe', mma:'MMA', funcional:'Funcional', wrestling:'Wrestling', kickboxing:'Kickboxing' , kravmaga:'Krav Maga' };
                 var DAY_LABELS = { seg:'Seg', ter:'Ter', qua:'Qua', qui:'Qui', sex:'Sex', sab:'Sáb', dom:'Dom' };
 
                 data.modalidades.forEach(function(mod) {
@@ -32630,7 +32885,7 @@
                     return;
                 }
                 _stuHorariosSelecionados = data.horarioSalvo || {};
-                var MOD_LABELS = { bjj:'BJJ', muay_thai:'Muay Thai', judo:'Judô', karate:'Karatê', boxing:'Boxe', mma:'MMA', funcional:'Funcional', wrestling:'Wrestling', kickboxing:'Kickboxing', taekwondo:'Taekwondo' };
+                var MOD_LABELS = { bjj:'BJJ', muay_thai:'Muay Thai', judo:'Judô', karate:'Karatê', boxing:'Boxe', mma:'MMA', funcional:'Funcional', wrestling:'Wrestling', kickboxing:'Kickboxing', taekwondo:'Taekwondo' , kravmaga:'Krav Maga' };
                 var DAY_LABELS = { seg:'Segunda', ter:'Terça', qua:'Quarta', qui:'Quinta', sex:'Sexta', sab:'Sábado', dom:'Domingo' };
                 var h = '';
                 data.modalidades.forEach(function(mod) {
