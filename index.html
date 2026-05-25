@@ -15423,13 +15423,6 @@
                 document.getElementById('admPerfilInitial').textContent = currentUser.name.charAt(0).toUpperCase();
                 // Reset admin tab to painel
                 document.querySelectorAll('.adm-tab').forEach(function(t) { t.classList.remove('active'); });
-            // Ao abrir Financeiro: mostra pagamentos por padrão
-            if (tabName === 'adm-financeiro') {
-                // Inicializa após a tab estar visível
-                requestAnimationFrame(function() {
-                    switchFinSubTab('pagamentos');
-                });
-            }
                 var painelTab = document.getElementById('adm-painel');
                 if (painelTab) painelTab.classList.add('active');
                 document.querySelectorAll('#adminNav .bnav-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -21732,6 +21725,41 @@
             }
         }
 
+
+        // ── Pré-carrega turmas do backend para todos os CTs ──────────────────
+        var _aulasData = {}; // cache local: { ctName: { modId: [turma, ...] } }
+
+        async function _preCarregarTurmas() {
+            try {
+                if (!currentUser || !currentUser.ct) return;
+                var ct = currentUser.ct;
+                var r  = await secureFetch('getTurmas', { ct: ct });
+                if (r && r.success && r.turmas) {
+                    r.turmas.forEach(function(turma) {
+                        if (!_aulasData[turma.ct]) _aulasData[turma.ct] = {};
+                        if (!_aulasData[turma.ct][turma.modId]) _aulasData[turma.ct][turma.modId] = [];
+                        // Evita duplicata
+                        var existe = _aulasData[turma.ct][turma.modId].findIndex(function(a){ return a.id === turma.id; }) !== -1;
+                        if (!existe) _aulasData[turma.ct][turma.modId].push(turma);
+                    });
+                }
+            } catch(e) {}
+        }
+
+        async function loadTurmasCT(ctName) {
+            try {
+                var r = await secureFetch('getTurmas', { ct: ctName });
+                if (r && r.success && r.turmas) {
+                    if (!_aulasData[ctName]) _aulasData[ctName] = {};
+                    r.turmas.forEach(function(turma) {
+                        if (!_aulasData[ctName][turma.modId]) _aulasData[ctName][turma.modId] = [];
+                        var existe = _aulasData[ctName][turma.modId].findIndex(function(a){ return a.id === turma.id; }) !== -1;
+                        if (!existe) _aulasData[ctName][turma.modId].push(turma);
+                    });
+                }
+            } catch(e) {}
+        }
+
         function switchAdminTab(tabName, evt) {
             document.querySelectorAll('.adm-tab').forEach(function(t) { t.classList.remove('active'); });
             // Ao abrir Financeiro: mostra pagamentos por padrão
@@ -21768,7 +21796,8 @@
                     }
                 } catch(e) {}
                 loadModulesConfig(); loadSystemHealth(); loadAdminProfile();
-                loadGradConfig(); renderGradSystemAdmin(); loadCTScheduleAdmin(); initAdmAulaForm(); loadAWSConfig();
+                loadGradConfig(); renderGradSystemAdmin(); loadCTScheduleAdmin(); initAdmAulaForm();
+                _preCarregarTurmas(); // pré-carrega turmas de todos os CTs loadAWSConfig();
                 loadAdminTreinos(); loadQRCodes();
                 (async function() {
                     await loadAdminCTs();
@@ -33326,7 +33355,9 @@
 
                     // Receita total dos pagamentos PAGO
                     var pagosFiltro = allPags.filter(function(p){ return (p.status||'').toUpperCase() === 'PAGO'; });
-                    var receitaTotal = pagosFiltro.reduce(function(acc, p){ return acc + parseFloat(p.planoValor||0); }, 0);
+                    var receitaTotal  = pagosFiltro.reduce(function(acc, p){ return acc + parseFloat(p.planoValor||0); }, 0);
+                    var receitaLiquid = pagosFiltro.reduce(function(acc, p){ return acc + (p.valorLiquido ? parseFloat(p.valorLiquido) : parseFloat(p.planoValor||0)); }, 0);
+                    var taxaTotal     = Math.round((receitaTotal - receitaLiquid) * 100) / 100;
 
                     // Separa PIX manual vs Gateway (MP, InfinityPay etc)
                     var isManual = function(p) {
@@ -33356,7 +33387,13 @@
                         '<div class="cob-kpi" style="cursor:pointer;" onclick="_toggleReceitaDetalhes(this)">' +
                             '<span class="cob-kpi-num" style="font-size:11px;">R$' + receitaTotal.toFixed(0) + '</span>' +
                             '<span class="cob-kpi-lbl">Receita ▾</span>' +
-                            '<div class="rec-detalhes" style="display:none;">' + receitaDetalhes + '</div>' +
+                            '<div class="rec-detalhes" style="display:none;">' + receitaDetalhes +
+                            (taxaTotal > 0 ?
+                                '<div style="border-top:1px solid rgba(255,255,255,0.06);margin-top:4px;padding-top:4px;">' +
+                                '<div>💳 Taxas: <strong style="color:#f87171;">-R$' + taxaTotal.toFixed(2) + '</strong></div>' +
+                                '<div>✅ Líquido: <strong style="color:#4ade80;">R$' + receitaLiquid.toFixed(0) + '</strong></div>' +
+                                '</div>' : '') +
+                        '</div>' +
                         '</div>' +
                         '</div>';
 
@@ -33407,8 +33444,19 @@
                     h += '<div style="flex:1;min-width:0;">';
                     h += '<div style="font-size:12px;font-weight:700;color:var(--adm-text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(p.nome || p.email || '—') + '</div>';
                     h += '<div style="font-size:10px;color:var(--adm-text-3);">' + icon + ' ' + escapeHtml(p.ct||'—');
-                    if (p.planoNome) h += ' · <strong style="color:var(--adm-text-2);">' + escapeHtml(p.planoNome) + '</strong> — R$ ' + parseFloat(p.planoValor||0).toFixed(2);
-                    else h += ' · <span style="color:#f87171;">sem plano</span>';
+                    if (p.planoNome) {
+                        h += ' · <strong style="color:var(--adm-text-2);">' + escapeHtml(p.planoNome) + '</strong>';
+                        h += ' — <span style="color:var(--adm-text-2);">R$ ' + parseFloat(p.planoValor||0).toFixed(2) + '</span>';
+                        // Mostra valor líquido (após taxa) quando disponível e status PAGO
+                        if (p.valorLiquido && p.valorLiquido > 0 && st === 'PAGO') {
+                            var _taxa = parseFloat(p.planoValor||0) - p.valorLiquido;
+                            h += ' <span style="font-size:9px;color:#4ade80;font-weight:700;" title="Valor recebido após taxa do gateway">' +
+                                 '→ R$ ' + p.valorLiquido.toFixed(2) + ' líq.</span>';
+                            if (_taxa > 0.01) {
+                                h += '<span style="font-size:9px;color:#f87171;" title="Taxa do gateway"> (-R$ ' + _taxa.toFixed(2) + ')</span>';
+                            }
+                        }
+                    } else h += ' · <span style="color:#f87171;">sem plano</span>';
                     if (p.vencimento) h += ' · 📅 ' + escapeHtml(_formatVencBR(p.vencimento));
                     h += '</div></div>';
                     h += '<span style="flex-shrink:0;padding:3px 9px;border-radius:20px;font-size:9px;font-weight:700;background:' + bg + ';color:' + cor + ';border:1px solid ' + cor + '33;">' + lbl + '</span>';
@@ -34387,6 +34435,11 @@
         // ─── Render abas de CTs ───────────────────────────────────────
 
         async function loadCTScheduleAdmin() {
+            // Carrega turmas de todos os CTs do admin
+            try {
+                var adminCT = currentUser ? currentUser.ct : '';
+                if (adminCT) await loadTurmasCT(adminCT);
+            } catch(e) {}
             var tabsEl   = document.getElementById('adminCTTabs');
             var contentEl= document.getElementById('adminCTContent');
             if (!tabsEl || !contentEl) return;
@@ -34823,7 +34876,7 @@
            GESTÃO DE AULAS — CT / Modalidade
            Estrutura: _aulasData[ctName][modId] = [ {id, nome, horario, professor, dias[], limiteAlunos} ]
         ═══════════════════════════════════════════════════════ */
-        var _aulasData = {};
+        // _aulasData definido abaixo em _preCarregarTurmas
 
         function _getAulas(ctName, modId) {
             if (!_aulasData[ctName]) _aulasData[ctName] = {};
@@ -34970,26 +35023,39 @@
                 criadoEm:    new Date().toISOString()
             };
 
-            _getAulas(ctName, modId).push(aula);
-
-            // Atualiza lista
-            var listEl = document.getElementById('aulasList_' + safeKey);
-            if (listEl) listEl.innerHTML = _renderAulasList(ctName, modId);
-
-            showMsg('✅ Turma cadastrada com sucesso!', true);
-            setTimeout(function() { toggleAulaForm(safeKey); }, 900);
-
-            // Opcional: integração futura com backend
-            // secureFetch('saveAula', { ct: ctName, modId: modId, aula: aula });
+            // Salva no backend
+            showMsg('⏳ Salvando...', true);
+            secureFetch('saveTurma', {
+                ct: ctName, modId: modId,
+                id: aula.id, nome: aula.nome,
+                horario: aula.horario, professor: aula.professor,
+                dias: aula.dias, limite: aula.limiteAlunos || ''
+            }).then(function(r) {
+                if (r && r.success) {
+                    _getAulas(ctName, modId).push(aula);
+                    var listEl = document.getElementById('aulasList_' + safeKey);
+                    if (listEl) listEl.innerHTML = _renderAulasList(ctName, modId);
+                    showMsg('✅ Turma cadastrada!', true);
+                    setTimeout(function() { toggleAulaForm(safeKey); }, 900);
+                } else {
+                    showMsg('❌ ' + (r ? r.message : 'Erro ao salvar'), false);
+                }
+            }).catch(function() {
+                showMsg('❌ Erro de conexão', false);
+            });
         }
 
         function excluirAula(ctName, modId, aulaId, safeKey) {
             if (!confirm('Excluir esta turma?')) return;
-            var list = _getAulas(ctName, modId);
-            var idx  = list.findIndex(function(a){ return a.id === aulaId; });
-            if (idx !== -1) list.splice(idx, 1);
-            var listEl = document.getElementById('aulasList_' + safeKey);
-            if (listEl) listEl.innerHTML = _renderAulasList(ctName, modId);
+            secureFetch('deleteTurma', { ct: ctName, id: aulaId }).then(function(r) {
+                if (r && r.success) {
+                    var list = _getAulas(ctName, modId);
+                    var idx  = list.findIndex(function(a){ return a.id === aulaId; });
+                    if (idx !== -1) list.splice(idx, 1);
+                    var listEl = document.getElementById('aulasList_' + safeKey);
+                    if (listEl) listEl.innerHTML = _renderAulasList(ctName, modId);
+                }
+            }).catch(function() { alert('Erro ao excluir turma'); });
         }
 
         function switchCTModTab(ctName, modId) {
