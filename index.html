@@ -15193,28 +15193,8 @@
          * Adults: show everything, hide kids-specific items
          */
         function applyKidsProfileView() {
-            var isKid = _isKidsMode || (currentUser && currentUser.isKids);
-            
-            // Profile sections: show/hide based on type
-            var adultOnlySections = ['perfilSecContato', 'perfilSecJJ', 'perfilSecSaude', 'perfilSecSenha'];
-            adultOnlySections.forEach(function(id) {
-                var el = document.getElementById(id);
-                if (el) el.style.display = isKid ? 'none' : '';
-            });
-            
-            // Dados Pessoais: for kids only show name/nascimento (read-only)
-            var profissaoField = document.getElementById('perfilProfissao');
-            if (profissaoField) profissaoField.closest('.perfil-row').style.display = isKid ? 'none' : '';
-            var bairroField = document.getElementById('perfilBairro');
-            if (bairroField) bairroField.closest('.perfil-field').style.display = isKid ? 'none' : '';
-            
-            // Hide completeness bar for kids
-            var completeness = document.querySelector('.perfil-completeness');
-            if (completeness) completeness.style.display = isKid ? 'none' : '';
-            
-            // Hide save button for kids (parent manages via their profile)
-            var saveBtn = document.getElementById('perfilSaveBtn');
-            if (saveBtn) saveBtn.style.display = isKid ? 'none' : '';
+            // Kids têm as mesmas opções de preenchimento que adultos
+            // Nenhuma seção é ocultada por idade
         }
 
         /**
