@@ -14365,6 +14365,8 @@
             }
             var body = Object.assign({}, payload || {}, { action: action });
             if (token) body.token = token;
+            // Proteção anti-pirataria: envia origem em toda request (verificada no backend)
+            body._origin = window.location.href.split('?')[0];
             var response = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(body) });
             var data = await response.json();
             if (data.unauthorized === true) { handleSessionExpired(); throw new Error('Sessão expirada'); }
@@ -22243,10 +22245,27 @@
                     if (ct.respostaMinha) window._ctRespostasPerfil[ct.tipo] = ct.respostaMinha;
                 });
 
-                // Aviso se tem pendentes
-                if (temPendente) {
+                // Se todos já assinados e nenhum pendente → mostra resumo compacto direto
+                if (!temPendente && r.contratos.length > 0) {
+                    var aceitos2  = r.contratos.filter(function(ct){ return ct.respostaMinha === 'aceito'; }).length;
+                    var recusados2 = r.contratos.filter(function(ct){ return ct.respostaMinha === 'recusado'; }).length;
+                    lista.innerHTML =
+                        '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;'
+                        + 'background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:10px;">'
+                        + '<div>'
+                        + '<div style="font-size:12px;font-weight:700;color:#4ade80;">✅ Termos em dia</div>'
+                        + '<div style="font-size:10px;color:var(--text-3);margin-top:2px;">'
+                        + aceitos2 + ' aceito' + (aceitos2!==1?'s':'')
+                        + (recusados2 > 0 ? ' · ' + recusados2 + ' não aceito' + (recusados2!==1?'s':'') : '')
+                        + '</div>'
+                        + '</div>'
+                        + '<button onclick="_carregarMeusContratos()" '
+                        + 'style="font-size:10px;padding:5px 10px;background:transparent;color:var(--text-3);'
+                        + 'border:1px solid var(--adm-border);border-radius:7px;cursor:pointer;">✏️ Editar</button>'
+                        + '</div>';
+                } else if (temPendente) {
                     var avEl = document.getElementById('avisoContratosPendentes');
-                    if (avEl) avEl.remove(); // remove o toast antigo
+                    if (avEl) avEl.remove();
                 }
 
             } catch(e) {
@@ -22264,19 +22283,59 @@
             try {
                 var r = await secureFetch('aceitarContratosAluno', { respostas: window._ctRespostasPerfil });
                 if (r && r.success) {
-                    if (msg) { msg.textContent = '✅ Contratos atualizados!'; msg.style.color = '#4ade80'; }
-                    // Remove aviso de pendente
+                    // Remove aviso pendente e atualiza flag
                     var av = document.getElementById('avisoContratosPendentes');
                     if (av) av.remove();
-                    // Atualiza flag do usuário
                     if (currentUser) currentUser.contratosPendentes = false;
-                    setTimeout(function() { if (msg) msg.textContent = ''; }, 3000);
+
+                    // Conta aceitos e recusados
+                    var resp   = window._ctRespostasPerfil;
+                    var aceitos  = Object.keys(resp).filter(function(k){ return resp[k]==='aceito'; }).length;
+                    var total    = Object.keys(resp).length;
+                    var recusados = total - aceitos;
+
+                    // Colapsa a seção mostrando resumo compacto
+                    var lista = document.getElementById('perfilContratosLista');
+                    if (lista) {
+                        lista.innerHTML =
+                            '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;'
+                            + 'background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:10px;">'
+                            + '<div>'
+                            + '<div style="font-size:12px;font-weight:700;color:#4ade80;">✅ Termos atualizados</div>'
+                            + '<div style="font-size:10px;color:var(--text-3);margin-top:2px;">'
+                            + aceitos + ' aceito' + (aceitos!==1?'s':'')
+                            + (recusados > 0 ? ' · ' + recusados + ' não aceito' + (recusados!==1?'s':'') : '')
+                            + '</div>'
+                            + '</div>'
+                            + '<button onclick="_carregarMeusContratos()" '
+                            + 'style="font-size:10px;padding:5px 10px;background:transparent;color:var(--text-3);'
+                            + 'border:1px solid var(--adm-border);border-radius:7px;cursor:pointer;">✏️ Editar</button>'
+                            + '</div>';
+                    }
                 } else {
                     if (msg) { msg.textContent = '❌ ' + (r ? r.message : 'Erro'); msg.style.color = '#f87171'; }
                 }
             } catch(e) {
                 if (msg) { msg.textContent = '❌ Erro de conexão'; msg.style.color = '#f87171'; }
             }
+        }
+
+        
+        // Mapa adulto → kids (espelho do backend)
+        var MODALIDADE_KIDS_MAP_FE = {
+            'bjj': 'bjj_kids',
+            'muay_thai': 'muay_thai_kids'
+        };
+
+        function _normalizarModalidadesKidsFE(modalidades, isKids) {
+            if (!isKids || !modalidades) return modalidades || '';
+            return modalidades.split(',').map(function(m) {
+                m = m.trim().toLowerCase();
+                var kv = MODALIDADE_KIDS_MAP_FE[m];
+                return kv ? kv : m;
+            }).filter(function(m, i, arr) {
+                return m && arr.indexOf(m) === i; // remove duplicatas
+            }).join(',');
         }
 
                 function switchAdminTab(tabName, evt) {
@@ -31330,7 +31389,13 @@
             var slotsPorMod = {}, diasPorSlot = {}, diasOrdenados = {}, modMap = {};
 
             try {
-                var res = await secureFetch('getHorariosCT', { ct: currentUser.ct, modalidades: modalidades });
+                // Usa todas as modalidades do aluno + a principal para garantir que aparece
+                var todasModals = modalidades || '';
+                var modPrincipal = currentUser.modalidadePrincipal || currentUser.modalidade || '';
+                if (modPrincipal && todasModals.indexOf(modPrincipal) === -1) {
+                    todasModals = todasModals ? todasModals + ',' + modPrincipal : modPrincipal;
+                }
+                var res = await secureFetch('getHorariosCT', { ct: currentUser.ct, modalidades: todasModals });
                 if (res && res.success && res.slotsPorMod) {
                     slotsPorMod   = res.slotsPorMod   || {};
                     diasPorSlot   = res.diasPorSlot   || {};
