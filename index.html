@@ -31389,13 +31389,9 @@
             var slotsPorMod = {}, diasPorSlot = {}, diasOrdenados = {}, modMap = {};
 
             try {
-                // Usa todas as modalidades do aluno + a principal para garantir que aparece
-                var todasModals = modalidades || '';
-                var modPrincipal = currentUser.modalidadePrincipal || currentUser.modalidade || '';
-                if (modPrincipal && todasModals.indexOf(modPrincipal) === -1) {
-                    todasModals = todasModals ? todasModals + ',' + modPrincipal : modPrincipal;
-                }
-                var res = await secureFetch('getHorariosCT', { ct: currentUser.ct, modalidades: todasModals });
+                // Busca TODOS os horários do CT (sem filtro de modalidade)
+                // O aluno vê exatamente o que está cadastrado na col K da planilha CTs
+                var res = await secureFetch('getHorariosCT', { ct: currentUser.ct, modalidades: '' });
                 if (res && res.success && res.slotsPorMod) {
                     slotsPorMod   = res.slotsPorMod   || {};
                     diasPorSlot   = res.diasPorSlot   || {};
