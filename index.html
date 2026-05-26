@@ -31369,9 +31369,13 @@
             var slotsPorMod = {}, diasPorSlot = {}, diasOrdenados = {}, modMap = {};
 
             try {
-                // Busca TODOS os horários do CT (sem filtro de modalidade)
-                // O aluno vê exatamente o que está cadastrado na col K da planilha CTs
-                var res = await secureFetch('getHorariosCT', { ct: currentUser.ct, modalidades: '' });
+                // Filtra pelos horários da modalidade do aluno
+                // bjj_kids vê só bjj_kids, bjj vê só bjj, etc.
+                var _modFiltro = currentUser.modalidadePrincipal
+                    || currentUser.modalidade
+                    || (currentUser.modalidades || '').split(',')[0].trim()
+                    || '';
+                var res = await secureFetch('getHorariosCT', { ct: currentUser.ct, modalidades: _modFiltro });
                 if (res && res.success && res.slotsPorMod) {
                     slotsPorMod   = res.slotsPorMod   || {};
                     diasPorSlot   = res.diasPorSlot   || {};
@@ -33644,38 +33648,54 @@
             var container = document.getElementById('horObrigContainer');
             if (!container) return;
             try {
-                var data = await secureFetch('getHorariosDisponiveis', {});
-                if (!data || !data.success || !data.disponivel || !data.modalidades || !data.modalidades.length) {
+                // Usa getHorariosCT (mesmo endpoint do perfil — mais confiável)
+                var ct = currentUser ? currentUser.ct : '';
+                var res = await secureFetch('getHorariosCT', { ct: ct, modalidades: '' });
+
+                if (!res || !res.success || !res.slotsPorMod || !Object.keys(res.slotsPorMod).length) {
                     container.innerHTML = '<div style="text-align:center;font-size:12px;color:rgba(255,255,255,0.35);padding:16px;">Nenhum horário cadastrado ainda.<br>Você será incluído automaticamente quando o professor cadastrar as aulas.</div>';
                     return;
                 }
-                _stuHorariosSelecionados = data.horarioSalvo || {};
-                var MOD_LABELS = { bjj:'BJJ', muay_thai:'Muay Thai', judo:'Judô', karate:'Karatê', boxing:'Boxe', mma:'MMA', funcional:'Funcional', wrestling:'Wrestling', kickboxing:'Kickboxing', taekwondo:'Taekwondo' , kravmaga:'Krav Maga', aikido:'Aikido', karate_shotokan:'Karate Shotokan' };
-                var DAY_LABELS = { seg:'Segunda', ter:'Terça', qua:'Quarta', qui:'Quinta', sex:'Sexta', sab:'Sábado', dom:'Domingo' };
+
+                var MOD_LABELS = { bjj:'BJJ', bjj_kids:'BJJ Kids', muay_thai:'Muay Thai', muay_thai_kids:'Muay Thai Kids', judo:'Judô', karate:'Karatê', boxing:'Boxe', mma:'MMA', funcional:'Funcional', wrestling:'Wrestling', kickboxing:'Kickboxing', taekwondo:'Taekwondo', kravmaga:'Krav Maga', aikido:'Aikido', karate_shotokan:'Karate Shotokan' };
+
                 var h = '';
-                data.modalidades.forEach(function(mod) {
+                var temQualquer = false;
+                var diasOrd = res.diasOrdenados || {};
+
+                Object.keys(diasOrd).forEach(function(modId) {
+                    var grupos = diasOrd[modId];
+                    if (!grupos || !grupos.length) return;
+                    temQualquer = true;
+
                     h += '<div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.06);">';
-                    h += '<div style="font-size:11px;font-weight:700;color:#C9A23A;letter-spacing:0.5px;margin-bottom:10px;">' + (MOD_LABELS[mod.modId]||mod.modId).toUpperCase() + ' · ' + escapeHtml(mod.ctNome||'') + '</div>';
-                    var porDia = {};
-                    mod.slots.forEach(function(s) {
-                        if (!porDia[s.dia]) porDia[s.dia] = { label: DAY_LABELS[s.dia]||s.dia, horarios:[] };
-                        porDia[s.dia].horarios.push(s.horario);
-                    });
-                    var salvo = _stuHorariosSelecionados[mod.modId] || {};
-                    Object.keys(porDia).forEach(function(dia) {
-                        h += '<div style="margin-bottom:8px;"><div style="font-size:10px;color:rgba(255,255,255,0.35);margin-bottom:4px;">' + porDia[dia].label + '</div><div style="display:flex;flex-wrap:wrap;gap:6px;">';
-                        porDia[dia].horarios.forEach(function(hr) {
-                            var ativo = salvo[dia] && salvo[dia].indexOf(hr) !== -1;
-                            var id = 'horob_' + mod.modId + '_' + dia + '_' + hr.replace(':','');
-                            h += '<button type="button" id="' + id + '" data-mod="' + mod.modId + '" data-dia="' + dia + '" data-hr="' + hr + '" onclick="toggleHorario(this)" style="padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid ' + (ativo ? '#C9A23A;background:rgba(201,162,58,0.15);color:#C9A23A' : 'rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.45)') + ';">' + hr + '</button>';
+                    h += '<div style="font-size:11px;font-weight:700;color:#C9A23A;letter-spacing:0.5px;margin-bottom:10px;">'
+                       + (MOD_LABELS[modId] || modId).toUpperCase() + ' · ' + escapeHtml(ct) + '</div>';
+
+                    grupos.forEach(function(grupo) {
+                        if (!grupo.horarios || !grupo.horarios.length) return;
+                        h += '<div style="margin-bottom:8px;">'
+                           + '<div style="font-size:10px;color:rgba(255,255,255,0.35);margin-bottom:4px;">' + (grupo.dias || 'Todos os dias') + '</div>'
+                           + '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+                        grupo.horarios.forEach(function(hr) {
+                            var id    = 'horob_' + modId + '_0_' + hr.replace(':','');
+                            var style = 'border:1.5px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.45);';
+                            h += '<button type="button" id="' + id + '" data-mod="' + modId + '" data-dia="all" data-hr="' + hr + '" onclick="toggleHorario(this)" '
+                               + 'style="padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;' + style + '">' + hr + '</button>';
                         });
                         h += '</div></div>';
                     });
                     h += '</div>';
                 });
+
+                if (!temQualquer) {
+                    container.innerHTML = '<div style="text-align:center;font-size:12px;color:rgba(255,255,255,0.35);padding:16px;">Nenhum horário cadastrado ainda.</div>';
+                    return;
+                }
                 container.innerHTML = h;
             } catch(e) {
                 container.innerHTML = '<div style="font-size:12px;color:rgba(255,255,255,0.3);text-align:center;">Erro ao carregar horários.</div>';
+                console.error('[horarioModal]', e);
             }
         }
 
