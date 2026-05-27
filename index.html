@@ -8734,6 +8734,39 @@
                         </div>
 
 
+                        <!-- ===== CONGELAMENTO DE MATRÍCULA ===== -->
+                        <div class="perfil-section" id="perfilSecCongelamento" style="margin-top:16px;">
+                            <div class="perfil-section-title"><span>❄️</span> Congelamento de Matrícula</div>
+                            <div id="congelamentoStatus" style="font-size:12px;color:var(--text-3);margin-bottom:10px;">
+                                Pausa temporária. Mín. 15 dias · Máx. 90 dias · Até 2x por ano.
+                            </div>
+                            <div id="congelamentoAtivo" style="display:none;background:rgba(99,179,237,0.08);border:1px solid rgba(99,179,237,0.25);border-radius:10px;padding:12px;margin-bottom:10px;">
+                                <div style="font-size:13px;font-weight:700;color:#63b3ed;">❄️ Matrícula Congelada</div>
+                                <div id="congelamentoAtivoInfo" style="font-size:11px;color:var(--text-3);margin-top:4px;"></div>
+                                <button onclick="cancelarCongelamento()" style="margin-top:8px;width:100%;padding:8px;background:transparent;border:1px solid rgba(248,113,113,0.3);border-radius:8px;color:#f87171;font-size:11px;font-weight:600;cursor:pointer;">✕ Cancelar Congelamento</button>
+                            </div>
+                            <div id="congelamentoPendente" style="display:none;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:10px;padding:12px;margin-bottom:10px;">
+                                <div style="font-size:12px;font-weight:700;color:#fbbf24;">⏳ Aguardando aprovação do professor</div>
+                                <div id="congelamentoPendenteInfo" style="font-size:11px;color:var(--text-3);margin-top:4px;"></div>
+                                <button onclick="cancelarCongelamento()" style="margin-top:8px;width:100%;padding:8px;background:transparent;border:1px solid rgba(251,191,36,0.3);border-radius:8px;color:#fbbf24;font-size:11px;cursor:pointer;">✕ Cancelar Solicitação</button>
+                            </div>
+                            <div id="congelamentoForm">
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                                    <div>
+                                        <label style="font-size:10px;color:var(--text-3);font-weight:600;">INÍCIO</label>
+                                        <input type="date" id="congInicio" style="width:100%;padding:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:12px;">
+                                    </div>
+                                    <div>
+                                        <label style="font-size:10px;color:var(--text-3);font-weight:600;">RETORNO</label>
+                                        <input type="date" id="congFim" style="width:100%;padding:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:12px;">
+                                    </div>
+                                </div>
+                                <input id="congMotivo" placeholder="Motivo (ex: férias, viagem, cirurgia...)" style="width:100%;padding:8px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:12px;margin-bottom:8px;">
+                                <div id="congDiasPreview" style="font-size:11px;color:var(--text-3);margin-bottom:8px;"></div>
+                                <button onclick="solicitarCongelamento()" style="width:100%;padding:10px;background:rgba(99,179,237,0.1);border:1px solid rgba(99,179,237,0.3);border-radius:10px;color:#63b3ed;font-size:12px;font-weight:700;cursor:pointer;">❄️ Solicitar Congelamento</button>
+                            </div>
+                        </div>
+
                         <button class="perfil-logout-btn" onclick="handleLogout()">🚪 Sair da Conta</button>
                         <button onclick="requestDeactivateAccount()" style="width:100%;padding:10px;background:transparent;border:1px solid rgba(248,113,113,0.3);border-radius:10px;color:#f87171;font-size:11px;font-weight:600;cursor:pointer;margin-top:8px;">⛔ Desabilitar minha conta</button>
                     </div>
@@ -9009,6 +9042,17 @@
 
                         <!-- adminApprovedBadge mantido invisível para contagem -->
                         <span id="adminApprovedBadge" style="display:none">0</span>
+
+                        <!-- ── Tab: Congelamentos Pendentes ────────────────── -->
+                        <div id="admCongelamentosPanel" style="display:none;padding:12px;background:var(--adm-bg-card);border-radius:12px;margin-bottom:12px;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                                <div style="font-size:13px;font-weight:700;color:#63b3ed;">❄️ Congelamentos Pendentes</div>
+                                <button onclick="loadCongelamentosPendentes()" style="padding:4px 10px;border-radius:6px;background:var(--adm-bg-elevated);border:1px solid var(--adm-border);color:var(--adm-text-2);font-size:11px;cursor:pointer;">↻ Atualizar</button>
+                            </div>
+                            <div id="congelamentosAdminList">
+                                <div style="font-size:12px;color:var(--text-3);padding:10px;">Carregando...</div>
+                            </div>
+                        </div>
 
                         <!-- ── Tab 4: Alunos Inativos ─────────────────────── -->
                         <div id="admPainelTab4" class="adm-painel-tab-panel" style="display:none;padding:12px;">
@@ -20306,6 +20350,8 @@
         function loadProfile() {
             if (!currentUser) return;
             document.getElementById('perfilAvatarInitial').textContent = (currentUser.name || '?')[0].toUpperCase();
+            // Inicializa card de congelamento
+            setTimeout(initCongelamentoForm, 100);
             document.getElementById('perfilNome').textContent = currentUser.name || '—';
             
             // Kids vs Adult faixa tag
@@ -21428,6 +21474,143 @@
         }
 
 
+        // ===== CONGELAMENTO DE MATRÍCULA =====
+
+        function _fmtDateInput(ddmmyyyy) {
+            if (!ddmmyyyy) return '';
+            var p = ddmmyyyy.split('/');
+            return p.length === 3 ? p[2] + '-' + p[1] + '-' + p[0] : ddmmyyyy;
+        }
+        function _inputToddmm(yyyy_mm_dd) {
+            if (!yyyy_mm_dd) return '';
+            var p = yyyy_mm_dd.split('-');
+            return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : yyyy_mm_dd;
+        }
+
+        function initCongelamentoForm() {
+            var u = currentUser;
+            if (!u) return;
+            var ativo   = document.getElementById('congelamentoAtivo');
+            var pend    = document.getElementById('congelamentoPendente');
+            var form    = document.getElementById('congelamentoForm');
+            var stInfo  = document.getElementById('congelamentoAtivoInfo');
+            var pInfo   = document.getElementById('congelamentoPendenteInfo');
+            if (!ativo || !pend || !form) return;
+
+            if (u.congelado) {
+                ativo.style.display = 'block';
+                pend.style.display  = 'none';
+                form.style.display  = 'none';
+                if (stInfo) stInfo.textContent = u.congelamentoFim ? 'Retorno previsto: ' + u.congelamentoFim + (u.congelamentoMotivo ? ' · ' + u.congelamentoMotivo : '') : '';
+            } else {
+                // Define datas mínimas no form
+                var today = new Date();
+                var minInicio = today.toISOString().split('T')[0];
+                var ci = document.getElementById('congInicio');
+                if (ci) { ci.min = minInicio; ci.value = minInicio; }
+                // Preview de dias
+                ['congInicio','congFim'].forEach(function(id) {
+                    var el = document.getElementById(id);
+                    if (el) el.addEventListener('change', function() {
+                        var ini = document.getElementById('congInicio').value;
+                        var fim = document.getElementById('congFim').value;
+                        var prev = document.getElementById('congDiasPreview');
+                        if (ini && fim && prev) {
+                            var dias = Math.ceil((new Date(fim) - new Date(ini)) / 86400000);
+                            if (dias < 1) { prev.textContent = ''; return; }
+                            var cor = dias < 15 ? '#f87171' : dias > 90 ? '#f87171' : '#4ade80';
+                            prev.innerHTML = '<span style="color:' + cor + ';font-weight:700;">' + dias + ' dias</span>' +
+                                (dias < 15 ? ' · mínimo 15 dias' : dias > 90 ? ' · máximo 90 dias' : ' · ✅ período válido');
+                        }
+                    });
+                });
+                ativo.style.display = 'none';
+                pend.style.display  = 'none';
+                form.style.display  = 'block';
+            }
+        }
+
+        async function solicitarCongelamento() {
+            var inicio = _inputToddmm(document.getElementById('congInicio').value);
+            var fim    = _inputToddmm(document.getElementById('congFim').value);
+            var motivo = (document.getElementById('congMotivo').value || '').trim();
+            if (!inicio || !fim) { alert('Preencha as datas'); return; }
+            if (!motivo) { alert('Informe o motivo'); return; }
+            try {
+                var r = await secureFetch('solicitarCongelamento', { inicio: inicio, fim: fim, motivo: motivo });
+                if (r.success) {
+                    alert('✅ Solicitação enviada! Aguarde aprovação do professor.');
+                    var pend = document.getElementById('congelamentoPendente');
+                    var form = document.getElementById('congelamentoForm');
+                    var pInfo = document.getElementById('congelamentoPendenteInfo');
+                    if (pend) pend.style.display = 'block';
+                    if (form) form.style.display  = 'none';
+                    if (pInfo) pInfo.textContent  = inicio + ' → ' + fim + ' · ' + motivo;
+                } else { alert('❌ ' + (r.message || 'Erro ao solicitar')); }
+            } catch(e) { alert('Erro: ' + e.message); }
+        }
+
+        async function cancelarCongelamento() {
+            if (!confirm('Cancelar o congelamento?')) return;
+            try {
+                var r = await secureFetch('cancelarCongelamento', {});
+                if (r.success) {
+                    alert('✅ Congelamento cancelado.');
+                    var ativo = document.getElementById('congelamentoAtivo');
+                    var pend  = document.getElementById('congelamentoPendente');
+                    var form  = document.getElementById('congelamentoForm');
+                    if (ativo) ativo.style.display = 'none';
+                    if (pend)  pend.style.display  = 'none';
+                    if (form)  form.style.display  = 'block';
+                } else { alert('❌ ' + (r.message || 'Erro')); }
+            } catch(e) { alert('Erro: ' + e.message); }
+        }
+
+        // Painel admin: lista solicitações pendentes de congelamento
+        async function loadCongelamentosPendentes() {
+            try {
+                var r = await secureFetch('getCongelamentos', {});
+                if (!r.success) return;
+                var lista = r.congelamentos || [];
+                var el = document.getElementById('congelamentosAdminList');
+                if (!el) return;
+                if (lista.length === 0) {
+                    el.innerHTML = '<div style="font-size:12px;color:var(--text-3);padding:10px;">Nenhuma solicitação pendente ✅</div>';
+                    return;
+                }
+                el.innerHTML = lista.map(function(c) {
+                    return '<div style="background:var(--bg-card);border:1px solid rgba(99,179,237,0.25);border-radius:10px;padding:12px;margin-bottom:8px;">' +
+                        '<div style="font-size:13px;font-weight:700;color:var(--text-1);">❄️ ' + escapeHtml(c.nome) + '</div>' +
+                        '<div style="font-size:11px;color:var(--text-3);margin:4px 0;">' + escapeHtml(c.inicio) + ' → ' + escapeHtml(c.fim) + ' · ' + escapeHtml(c.motivo) + '</div>' +
+                        '<div style="display:flex;gap:6px;margin-top:8px;">' +
+                            '<button onclick="aprovarCongelamentoAdmin(\'' + escapeHtml(c.email) + '\',\'' + escapeHtml(c.inicio) + '\',\'' + escapeHtml(c.fim) + '\')" ' +
+                            'style="flex:1;padding:7px;background:rgba(99,179,237,0.1);border:1px solid rgba(99,179,237,0.3);border-radius:8px;color:#63b3ed;font-size:11px;font-weight:700;cursor:pointer;">✅ Aprovar</button>' +
+                            '<button onclick="rejeitarCongelamentoAdmin(\'' + escapeHtml(c.email) + '\')" ' +
+                            'style="flex:1;padding:7px;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);border-radius:8px;color:#f87171;font-size:11px;cursor:pointer;">✕ Rejeitar</button>' +
+                        '</div>' +
+                    '</div>';
+                }).join('');
+            } catch(e) { console.error('loadCongelamentos:', e); }
+        }
+
+        async function aprovarCongelamentoAdmin(email, inicio, fim) {
+            if (!confirm('Aprovar congelamento de ' + email + '?\n' + inicio + ' → ' + fim)) return;
+            try {
+                var r = await secureFetch('aprovarCongelamento', { targetEmail: email, inicio: inicio, fim: fim });
+                if (r.success) { alert('✅ ' + r.message); loadCongelamentosPendentes(); }
+                else { alert('❌ ' + (r.message || 'Erro')); }
+            } catch(e) { alert('Erro: ' + e.message); }
+        }
+
+        async function rejeitarCongelamentoAdmin(email) {
+            if (!confirm('Rejeitar congelamento de ' + email + '?')) return;
+            try {
+                var r = await secureFetch('cancelarCongelamento', { targetEmail: email });
+                if (r.success) { alert('✅ Solicitação rejeitada.'); loadCongelamentosPendentes(); }
+                else { alert('❌ ' + (r.message || 'Erro')); }
+            } catch(e) { alert('Erro: ' + e.message); }
+        }
+
         async function changePassword() {
             if (!currentUser) return;
             var atual = document.getElementById('perfilSenhaAtual').value;
@@ -22504,7 +22687,16 @@
             // Carrega cronograma e aniversariantes sempre (não estão nas tabs)
             loadAdminCronograma();
             loadBirthdays();
-            loadPendingGraduacoes(); // atualiza o contador de "Graduações" nos stats do Painel
+            loadPendingGraduacoes();
+            // Carrega congelamentos pendentes e mostra painel se houver
+            loadCongelamentosPendentes().then(function() {
+                var panel = document.getElementById('admCongelamentosPanel');
+                var list  = document.getElementById('congelamentosAdminList');
+                if (panel && list && list.children.length > 0 &&
+                    !list.querySelector('[style*="Nenhuma"]')) {
+                    panel.style.display = 'block';
+                }
+            }).catch(function(){});
             // Carrega o conteúdo da aba ativa (padrão: tab 1)
             switchAdmPainelTab(_admPainelTabAtual || 1);
             // Atualiza silenciosamente os contadores das demais abas (badges nos stats)
