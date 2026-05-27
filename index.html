@@ -35242,7 +35242,8 @@
 
                 // ── Botão salvar grade horária ──
                 html += '<div style="margin-top:14px;">';
-                html += '<button onclick="saveCTFull2(\'' + ctName.replace(/'/g,"\\\'")+'\'\',\'' + mod.id + '\')"';
+                var _saveBtnId = 'ctSaveBtn_' + encodeURIComponent(ctName) + '_' + mod.id;
+                html += '<button id="'+_saveBtnId+'" onclick="saveCTFull2(\'' + ctName.replace(/'/g,"\\\'")+'\'\',\'' + mod.id + '\')"';
                 html += ' style="width:100%;padding:11px;background:linear-gradient(135deg,'+mod.cor+','+mod.cor+'aa);';
                 html += 'color:#000;border:none;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;">';
                 html += '💾 Salvar Horários — '+mod.icon+' '+mod.nome;
@@ -35825,69 +35826,61 @@
                 || (_ctModsSelected[ctName] && _ctModsSelected[ctName][0])
                 || 'bjj';
 
-            // ── 1. Coleta chips do DOM para o modId ativo ────────────────────
+            // ── 1. Coleta TODOS os chips — inclusive de dias desativados ──────
             var safeKey  = encodeURIComponent(ctName) + '_' + activeModId;
             var DAY_KEYS = ['seg','ter','qua','qui','sex','sab','dom'];
             var modData  = {};
             DAY_KEYS.forEach(function(dk) {
                 var container = document.getElementById('ctDayTimes2_' + safeKey + '_' + dk);
                 if (!container) return;
+                // Coleta chips mesmo se container estiver hidden
                 var chips = container.querySelectorAll('.ct-time-chip');
                 var times = [];
                 chips.forEach(function(chip){ var t = chip.getAttribute('data-time'); if(t) times.push(t); });
                 if (times.length > 0) { times.sort(); modData[dk] = times.join(','); }
+                // Se dia tem container mas não tem chips → não inclui (dia sem horário)
             });
 
-            // ── 2. Status: salvando ──────────────────────────────────────────
-            var btn = document.querySelector('[onclick*="saveCTFull2"]');
-            var btnOrigText = btn ? btn.textContent : '';
-            if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvando...'; btn.style.opacity='0.7'; }
+            // ── 2. Encontra o botão pelo ID do CT para feedback preciso ───────
+            var btnId = 'ctSaveBtn_' + encodeURIComponent(ctName) + '_' + activeModId;
+            var btn   = document.getElementById(btnId)
+                     || document.querySelector('button[onclick*="saveCTFull2"][onclick*="' + activeModId + '"]');
+            var btnOrigText = btn ? btn.textContent.trim() : '';
+            var btnOrigBg   = btn ? btn.style.background : '';
 
-            // ── 3. Envia ao backend (merge feito pelo backend) ───────────────
+            function _setBtnState(txt, bg, disabled, color) {
+                if (!btn) return;
+                btn.textContent      = txt;
+                btn.style.background = bg  || '';
+                btn.style.color      = color || '';
+                btn.style.opacity    = '1';
+                btn.disabled         = !!disabled;
+            }
+
+            _setBtnState('⏳ Salvando...', '#555', true, '#fff');
+
+            // ── 3. Envia ao backend ──────────────────────────────────────────
             try {
-                var payload = {
-                    action:    'saveCTDetails',
-                    ctName:    ctName,
-                    modId:     activeModId,
-                    modHpd:    JSON.stringify(modData),  // só a modalidade ativa
-                    horarios:  '',                        // será preenchido pelo backend com merge
-                    token:     getSessionToken()
-                };
-
-                var r = await secureFetch('saveCTDetails', payload);
+                var r = await secureFetch('saveCTDetails', {
+                    ctName:  ctName,
+                    modId:   activeModId,
+                    modHpd:  JSON.stringify(modData), // {} = limpa os horários desta mod
+                    clearMod: Object.keys(modData).length === 0 ? '1' : '0'
+                });
 
                 if (r && r.success) {
-                    // ── Feedback visual: botão fica verde por 3s ─────────────
-                    if (btn) {
-                        btn.style.background  = '#22c55e';
-                        btn.style.color       = '#000';
-                        btn.style.opacity     = '1';
-                        btn.textContent       = '✅ Horários salvos!';
-                        btn.disabled          = false;
-                        setTimeout(function() {
-                            btn.textContent      = btnOrigText;
-                            btn.style.background = '';
-                            btn.style.color      = '';
-                        }, 3000);
-                    }
+                    _setBtnState('✅ Horários salvos!', '#22c55e', false, '#000');
+                    setTimeout(function() { _setBtnState(btnOrigText, btnOrigBg, false, ''); }, 3000);
                     var badge = document.getElementById('ctStatusBadge');
                     if (badge) { badge.textContent='salvo ✓'; badge.className='ct-schedule-status saved'; }
                 } else {
                     var errMsg = (r && r.message) ? r.message : 'Erro ao salvar';
-                    if (btn) {
-                        btn.disabled   = false;
-                        btn.textContent = '❌ ' + errMsg;
-                        btn.style.opacity = '1';
-                        setTimeout(function(){ btn.textContent = btnOrigText; }, 4000);
-                    }
+                    _setBtnState('❌ ' + errMsg, '#EF4444', false, '#fff');
+                    setTimeout(function() { _setBtnState(btnOrigText, btnOrigBg, false, ''); }, 4000);
                 }
             } catch(err) {
-                if (btn) {
-                    btn.disabled    = false;
-                    btn.textContent = '❌ Erro de conexão';
-                    btn.style.opacity = '1';
-                    setTimeout(function(){ btn.textContent = btnOrigText; }, 4000);
-                }
+                _setBtnState('❌ Sem conexão', '#EF4444', false, '#fff');
+                setTimeout(function() { _setBtnState(btnOrigText, btnOrigBg, false, ''); }, 4000);
             }
         }
 
