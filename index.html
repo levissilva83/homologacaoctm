@@ -35083,11 +35083,6 @@
         // ─── Render abas de CTs ───────────────────────────────────────
 
         async function loadCTScheduleAdmin() {
-            // Carrega turmas de todos os CTs do admin
-            try {
-                var adminCT = currentUser ? currentUser.ct : '';
-                if (adminCT) await loadTurmasCT(adminCT);
-            } catch(e) {}
             var tabsEl   = document.getElementById('adminCTTabs');
             var contentEl= document.getElementById('adminCTContent');
             if (!tabsEl || !contentEl) return;
@@ -35245,7 +35240,13 @@
                 html += '<div class="ct-mod-section-label">📅 Grade Horária</div>';
                 html += _renderDayRows(ctName, mod.id, schedule, modHpd);
 
-                // Gestão de Turmas e botão Salvar Horários removidos (sem funcionalidade ativa)
+                // ── Botão salvar grade horária ──
+                html += '<div style="margin-top:14px;">';
+                html += '<button onclick="saveCTFull2(\'' + ctName.replace(/'/g,"\\\'")+'\'\',\'' + mod.id + '\')"';
+                html += ' style="width:100%;padding:11px;background:linear-gradient(135deg,'+mod.cor+','+mod.cor+'aa);';
+                html += 'color:#000;border:none;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;">';
+                html += '💾 Salvar Horários — '+mod.icon+' '+mod.nome;
+                html += '</button></div>';
 
                 html += '</div>'; // ct-mod-panel-v3
             });
@@ -35736,7 +35737,10 @@
         }
 
         function removeCTTime2(btn, ctName, modId, dayKey) {
-            btn.parentElement.remove(); markCTUnsaved2();
+            // Remove o chip do DOM imediatamente
+            var chip = btn.closest('.ct-time-chip') || btn.parentElement;
+            if (chip) chip.remove();
+            markCTUnsaved2();
         }
 
         function markCTUnsaved2() {
