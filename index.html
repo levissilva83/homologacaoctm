@@ -35821,64 +35821,73 @@
         }
 
         async function saveCTFull2(ctName, modId) {
-            // Coleta horários APENAS do modId ativo (evita sobrescrever outras mods)
             var activeModId = modId || _ctActiveModId[ctName]
                 || (_ctModsSelected[ctName] && _ctModsSelected[ctName][0])
                 || 'bjj';
 
-            // Coleta chips do DOM para o modId ativo
+            // ── 1. Coleta chips do DOM para o modId ativo ────────────────────
             var safeKey  = encodeURIComponent(ctName) + '_' + activeModId;
             var DAY_KEYS = ['seg','ter','qua','qui','sex','sab','dom'];
             var modData  = {};
             DAY_KEYS.forEach(function(dk) {
                 var container = document.getElementById('ctDayTimes2_' + safeKey + '_' + dk);
-                if (!container || container.classList.contains('hidden')) return;
+                if (!container) return;
                 var chips = container.querySelectorAll('.ct-time-chip');
                 var times = [];
                 chips.forEach(function(chip){ var t = chip.getAttribute('data-time'); if(t) times.push(t); });
                 if (times.length > 0) { times.sort(); modData[dk] = times.join(','); }
             });
 
-            // Busca JSON existente na col K para não sobrescrever outras modalidades
-            var existingJSON = {};
+            // ── 2. Status: salvando ──────────────────────────────────────────
+            var btn = document.querySelector('[onclick*="saveCTFull2"]');
+            var btnOrigText = btn ? btn.textContent : '';
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvando...'; btn.style.opacity='0.7'; }
+
+            // ── 3. Envia ao backend (merge feito pelo backend) ───────────────
             try {
-                var rGet = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'getHorariosCT', ct:ctName, modalidades:'', token:getSessionToken() }) });
-                var dGet = await rGet.json();
-                if (dGet && dGet.rawHpd) {
-                    existingJSON = JSON.parse(dGet.rawHpd);
-                }
-            } catch(_e) {}
+                var payload = {
+                    action:    'saveCTDetails',
+                    ctName:    ctName,
+                    modId:     activeModId,
+                    modHpd:    JSON.stringify(modData),  // só a modalidade ativa
+                    horarios:  '',                        // será preenchido pelo backend com merge
+                    token:     getSessionToken()
+                };
 
-            // Merge: atualiza só o modId ativo
-            if (Object.keys(modData).length > 0) {
-                existingJSON[activeModId] = modData;
-            } else {
-                delete existingJSON[activeModId]; // Remove se ficou vazio
-            }
+                var r = await secureFetch('saveCTDetails', payload);
 
-            var hpdJSON = JSON.stringify(existingJSON);
-
-            // Atualiza também o schedule de dias (cols C-I) baseado nos dias com horário
-            var schedule = {};
-            DAY_KEYS.forEach(function(dk){ schedule[dk] = !!modData[dk]; });
-
-            try {
-                // Salva schedule de dias
-                await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'saveCTSchedule', ctName:ctName, schedule:schedule, token:getSessionToken() }) });
-
-                // Salva horariosPorDia (col K)
-                var r2   = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'saveCTDetails', ctName:ctName, horarios:hpdJSON, token:getSessionToken() }) });
-                var data = await r2.json();
-
-                if (data.success) {
+                if (r && r.success) {
+                    // ── Feedback visual: botão fica verde por 3s ─────────────
+                    if (btn) {
+                        btn.style.background  = '#22c55e';
+                        btn.style.color       = '#000';
+                        btn.style.opacity     = '1';
+                        btn.textContent       = '✅ Horários salvos!';
+                        btn.disabled          = false;
+                        setTimeout(function() {
+                            btn.textContent      = btnOrigText;
+                            btn.style.background = '';
+                            btn.style.color      = '';
+                        }, 3000);
+                    }
                     var badge = document.getElementById('ctStatusBadge');
                     if (badge) { badge.textContent='salvo ✓'; badge.className='ct-schedule-status saved'; }
-                    showAdminToast('✅ Horários salvos!', 'success');
                 } else {
-                    showAdminToast('❌ ' + (data.message || 'Erro ao salvar'), 'error');
+                    var errMsg = (r && r.message) ? r.message : 'Erro ao salvar';
+                    if (btn) {
+                        btn.disabled   = false;
+                        btn.textContent = '❌ ' + errMsg;
+                        btn.style.opacity = '1';
+                        setTimeout(function(){ btn.textContent = btnOrigText; }, 4000);
+                    }
                 }
             } catch(err) {
-                showAdminToast('❌ Erro de conexão', 'error');
+                if (btn) {
+                    btn.disabled    = false;
+                    btn.textContent = '❌ Erro de conexão';
+                    btn.style.opacity = '1';
+                    setTimeout(function(){ btn.textContent = btnOrigText; }, 4000);
+                }
             }
         }
 
