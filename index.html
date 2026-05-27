@@ -36988,17 +36988,34 @@
         }
 
         async function deleteStuFromModal() {
-            if (!stuModalEmail) return;
+            if (!stuModalEmail) { alert('Email do aluno não identificado'); return; }
             if (stuModalEmail === currentUser.email) { alert('Você não pode excluir a si mesmo!'); return; }
-            if (!confirm('Remover ' + stuModalEmail + '? Esta ação não pode ser desfeita.')) return;
+
+            var nomeStu = stuModalEmail;
+            try { nomeStu = document.getElementById('stuName').value || stuModalEmail; } catch(e) {}
+            if (!confirm('⚠️ Excluir permanentemente:\n\n' + nomeStu + '\n(' + stuModalEmail + ')\n\nEsta ação não pode ser desfeita.')) return;
+
+            var btn = document.getElementById('stuDeleteBtn');
+            var orig = btn ? btn.textContent : '';
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Excluindo...'; }
 
             try {
-                var data = await secureFetch('deleteStudent', { email: stuModalEmail });
-                if (data.success) {
-                    closeStuModal();
-                    loadStudentsList();
-                } else { alert(data.message || 'Erro'); }
-            } catch (err) { alert('Erro de conexão'); }
+                var r = await secureFetch('deleteStudent', { email: stuModalEmail });
+                if (r && r.success) {
+                    if (btn) btn.textContent = '✅ Excluído!';
+                    setTimeout(function() {
+                        closeStuModal();
+                        loadStudentsList();
+                    }, 800);
+                } else {
+                    var msg = r ? (r.message || JSON.stringify(r)) : 'Sem resposta';
+                    alert('❌ Erro ao excluir: ' + msg);
+                    if (btn) { btn.disabled = false; btn.textContent = orig; }
+                }
+            } catch(err) {
+                alert('❌ Erro de conexão: ' + err.message);
+                if (btn) { btn.disabled = false; btn.textContent = orig; }
+            }
         }
 
         // CT selecionado no filtro de alunos (null = todos)
