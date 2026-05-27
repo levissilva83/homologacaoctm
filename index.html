@@ -15853,9 +15853,14 @@
                     })();
                     // Armazenar schedules
                     ctSchedules = {};
+                    window._ctHpdCache = window._ctHpdCache || {};
                     data.cts.forEach(ct => {
                         if (typeof ct === 'object' && ct.schedule) {
                             ctSchedules[ct.name] = ct.schedule;
+                        }
+                        // Cache do horariosPorDia (col K) para o calendário de presenças
+                        if (typeof ct === 'object' && ct.horariosPorDia && ct.name) {
+                            window._ctHpdCache[ct.name] = ct.horariosPorDia;
                         }
                     });
                     // Populate admin selectors if admin
@@ -17734,9 +17739,37 @@
                 }
             }
 
-            // Student's training days
+            // Dias de treino: usa horariosPorDia do CT (col K) como fonte de verdade
+            // Fallback para diasTreino do perfil se CT não tiver schedule configurado
             var stuDiasTreino = [];
-            if (currentUser && currentUser.diasTreino) {
+            var _ctDiasFromHpd = {};
+
+            // Constrói set de dias baseado no horariosPorDia dos CTs do aluno
+            try {
+                var _userCTs = currentUser ? (currentUser.ctsList || [currentUser.ct]) : [];
+                var _userMod = currentUser ? (currentUser.modalidadePrincipal || currentUser.modalidade || 'bjj') : 'bjj';
+
+                _userCTs.forEach(function(ctNome) {
+                    var ctObj = (typeof ctSchedules !== 'undefined') &&
+                        Object.keys(ctSchedules).map(function(k){
+                            return { name: k, data: ctSchedules[k] };
+                        }).find(function(x){ return x.name === ctNome; });
+                    // Também verifica horariosPorDia armazenado na lista de CTs
+                    if (window._ctHpdCache && window._ctHpdCache[ctNome]) {
+                        var hpd = window._ctHpdCache[ctNome];
+                        // Extrai dias com horário para a modalidade do aluno
+                        var modKeys = Object.keys(hpd);
+                        var isPerMod = modKeys.length > 0 && !({seg:1,ter:1,qua:1,qui:1,sex:1,sab:1,dom:1,_global:1})[modKeys[0]];
+                        var modData = isPerMod ? (hpd[_userMod] || hpd[_userMod.replace('_kids','')] || hpd['_global'] || {}) : hpd;
+                        Object.keys(modData).forEach(function(dk){ if (modData[dk]) _ctDiasFromHpd[dk] = true; });
+                    }
+                });
+            } catch(_e) {}
+
+            var _temHpdDias = Object.keys(_ctDiasFromHpd).length > 0;
+            if (_temHpdDias) {
+                stuDiasTreino = Object.keys(_ctDiasFromHpd);
+            } else if (currentUser && currentUser.diasTreino) {
                 stuDiasTreino = currentUser.diasTreino.split(',');
             } else {
                 try {
