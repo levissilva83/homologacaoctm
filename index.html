@@ -8950,7 +8950,7 @@
                     </div>
 
                     <!-- Stats -->
-                    <div class="admin-stats" style="grid-template-columns: repeat(5, 1fr);">
+                    <div class="admin-stats" style="grid-template-columns: repeat(6, 1fr);">
                         <div class="admin-stat warn">
                             <div class="admin-stat-num" id="adminPendingAccountsCount">0</div>
                             <div class="admin-stat-label">Cadastros</div>
@@ -8966,6 +8966,10 @@
                         <div class="admin-stat warn">
                             <div class="admin-stat-num" id="adminPendingGradCount">0</div>
                             <div class="admin-stat-label">Graduações</div>
+                        </div>
+                        <div class="admin-stat warn" id="admStatCongelCard" style="cursor:pointer;" onclick="toggleCongelamentosPanel()">
+                            <div class="admin-stat-num" id="adminPendingCongelCount" style="color:#63b3ed;">0</div>
+                            <div class="admin-stat-label">❄️ Congelam.</div>
                         </div>
                         <div class="admin-stat ok">
                             <div class="admin-stat-num" id="adminTodayCheckinsCount">0</div>
@@ -21567,13 +21571,36 @@
         }
 
         // Painel admin: lista solicitações pendentes de congelamento
+        function toggleCongelamentosPanel() {
+            var panel = document.getElementById('admCongelamentosPanel');
+            if (!panel) return;
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            if (panel.style.display === 'block') loadCongelamentosPendentes();
+        }
+
         async function loadCongelamentosPendentes() {
             try {
                 var r = await secureFetch('getCongelamentos', {});
                 if (!r.success) return;
                 var lista = r.congelamentos || [];
+
+                // Atualiza badge no stat card
+                var badge = document.getElementById('adminPendingCongelCount');
+                var card  = document.getElementById('admStatCongelCard');
+                if (badge) badge.textContent = lista.length;
+                if (card) {
+                    card.className = lista.length > 0
+                        ? 'admin-stat warn'
+                        : 'admin-stat ok';
+                }
+
                 var el = document.getElementById('congelamentosAdminList');
                 if (!el) return;
+
+                // Mostra/oculta o painel automaticamente
+                var panel = document.getElementById('admCongelamentosPanel');
+                if (panel) panel.style.display = lista.length > 0 ? 'block' : 'none';
+
                 if (lista.length === 0) {
                     el.innerHTML = '<div style="font-size:12px;color:var(--text-3);padding:10px;">Nenhuma solicitação pendente ✅</div>';
                     return;
@@ -22705,12 +22732,12 @@
 
         // Atualiza APENAS os badge/count das abas que não estão ativas no momento
         async function _loadAdmPainelBadges() {
-            // Cada função já atualiza seus próprios badges/counters ao rodar
-            // Chamamos com um pequeno delay para não travar o carregamento inicial
             setTimeout(function() {
                 if (_admPainelTabAtual !== 2) loadPendingResets();
                 if (_admPainelTabAtual !== 3) loadPendingCheckins();
                 if (_admPainelTabAtual !== 4) loadInactiveStudents();
+                // Badge de congelamentos — sempre atualiza em background
+                loadCongelamentosPendentes();
             }, 800);
         }
 
