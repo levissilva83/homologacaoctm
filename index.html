@@ -35826,61 +35826,80 @@
                 || (_ctModsSelected[ctName] && _ctModsSelected[ctName][0])
                 || 'bjj';
 
-            // ── 1. Coleta TODOS os chips — inclusive de dias desativados ──────
+            // ── 1. Coleta chips ───────────────────────────────────────────────
             var safeKey  = encodeURIComponent(ctName) + '_' + activeModId;
             var DAY_KEYS = ['seg','ter','qua','qui','sex','sab','dom'];
             var modData  = {};
+            var totalChips = 0;
             DAY_KEYS.forEach(function(dk) {
                 var container = document.getElementById('ctDayTimes2_' + safeKey + '_' + dk);
                 if (!container) return;
-                // Coleta chips mesmo se container estiver hidden
                 var chips = container.querySelectorAll('.ct-time-chip');
                 var times = [];
-                chips.forEach(function(chip){ var t = chip.getAttribute('data-time'); if(t) times.push(t); });
+                chips.forEach(function(chip){ var t = chip.getAttribute('data-time'); if(t) { times.push(t); totalChips++; } });
                 if (times.length > 0) { times.sort(); modData[dk] = times.join(','); }
-                // Se dia tem container mas não tem chips → não inclui (dia sem horário)
             });
 
-            // ── 2. Encontra o botão pelo ID do CT para feedback preciso ───────
-            var btnId = 'ctSaveBtn_' + encodeURIComponent(ctName) + '_' + activeModId;
-            var btn   = document.getElementById(btnId)
-                     || document.querySelector('button[onclick*="saveCTFull2"][onclick*="' + activeModId + '"]');
-            var btnOrigText = btn ? btn.textContent.trim() : '';
+            // ── 2. Encontra botão ─────────────────────────────────────────────
+            var btnId = 'ctSaveBtn_' + safeKey;
+            var btn = document.getElementById(btnId);
+            if (!btn) btn = document.querySelector('button[onclick*="saveCTFull2"]');
+            var btnOrigText = btn ? btn.innerHTML : '';
             var btnOrigBg   = btn ? btn.style.background : '';
+            var btnOrigColor = btn ? btn.style.color : '';
 
-            function _setBtnState(txt, bg, disabled, color) {
+            function _ui(html, bg, disabled, color) {
                 if (!btn) return;
-                btn.textContent      = txt;
-                btn.style.background = bg  || '';
-                btn.style.color      = color || '';
-                btn.style.opacity    = '1';
-                btn.disabled         = !!disabled;
+                btn.innerHTML  = html;
+                btn.style.background = bg || '';
+                btn.style.color = color || '#000';
+                btn.disabled   = !!disabled;
             }
 
-            _setBtnState('⏳ Salvando...', '#555', true, '#fff');
+            // Log visual no botão
+            _ui('⏳ Coletando... ' + totalChips + ' horários | mod:' + activeModId, '#444', true, '#fff');
+            await new Promise(function(r){ setTimeout(r, 400); });
 
-            // ── 3. Envia ao backend ──────────────────────────────────────────
+            // ── 3. Envia ──────────────────────────────────────────────────────
+            _ui('⏳ Enviando...', '#555', true, '#fff');
             try {
-                var r = await secureFetch('saveCTDetails', {
-                    ctName:  ctName,
-                    modId:   activeModId,
-                    modHpd:  JSON.stringify(modData), // {} = limpa os horários desta mod
-                    clearMod: Object.keys(modData).length === 0 ? '1' : '0'
+                var token = getSessionToken();
+                var payload = JSON.stringify({
+                    action:   'saveCTDetails',
+                    ctName:   ctName,
+                    modId:    activeModId,
+                    modHpd:   JSON.stringify(modData),
+                    clearMod: Object.keys(modData).length === 0 ? '1' : '0',
+                    token:    token,
+                    _origin:  window.location.href.split('?')[0]
                 });
 
+                _ui('⏳ Aguardando resposta...', '#555', true, '#fff');
+                var resp = await fetch(SCRIPT_URL, { method: 'POST', body: payload });
+                var r    = await resp.json();
+
+                _ui('📦 R: ' + JSON.stringify(r).substring(0,60), '#333', true, '#ff0');
+                await new Promise(function(res){ setTimeout(res, 2000); });
+
                 if (r && r.success) {
-                    _setBtnState('✅ Horários salvos!', '#22c55e', false, '#000');
-                    setTimeout(function() { _setBtnState(btnOrigText, btnOrigBg, false, ''); }, 3000);
+                    _ui('✅ Salvo!', '#22c55e', false, '#000');
                     var badge = document.getElementById('ctStatusBadge');
                     if (badge) { badge.textContent='salvo ✓'; badge.className='ct-schedule-status saved'; }
+                } else if (r && r.forbidden) {
+                    _ui('🔒 Sem permissão (forbidden)', '#dc2626', false, '#fff');
+                } else if (r && r.unauthorized) {
+                    _ui('🔒 Sessão expirada', '#dc2626', false, '#fff');
                 } else {
-                    var errMsg = (r && r.message) ? r.message : 'Erro ao salvar';
-                    _setBtnState('❌ ' + errMsg, '#EF4444', false, '#fff');
-                    setTimeout(function() { _setBtnState(btnOrigText, btnOrigBg, false, ''); }, 4000);
+                    _ui('❌ ' + (r ? (r.message||JSON.stringify(r)) : 'null'), '#dc2626', false, '#fff');
                 }
+                setTimeout(function() {
+                    if (btn) { btn.innerHTML = btnOrigText; btn.style.background = btnOrigBg; btn.style.color = btnOrigColor; btn.disabled = false; }
+                }, 4000);
             } catch(err) {
-                _setBtnState('❌ Sem conexão', '#EF4444', false, '#fff');
-                setTimeout(function() { _setBtnState(btnOrigText, btnOrigBg, false, ''); }, 4000);
+                _ui('❌ CATCH: ' + err.message, '#dc2626', false, '#fff');
+                setTimeout(function() {
+                    if (btn) { btn.innerHTML = btnOrigText; btn.style.background = btnOrigBg; btn.style.color = btnOrigColor; btn.disabled = false; }
+                }, 5000);
             }
         }
 
