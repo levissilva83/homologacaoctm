@@ -15382,6 +15382,9 @@
                 // Professor não vê aba Campeonato admin
                 var _campBtn = document.querySelector('[onclick*=\'adm-campeonato\']');
                 if (_campBtn) _campBtn.style.display = isProfessor() ? 'none' : '';
+                // Professor não vê aba Financeiro (somente admin)
+                var _finBtn = document.querySelector('[onclick*=\'adm-financeiro\']');
+                if (_finBtn) _finBtn.style.display = isProfessor() ? 'none' : '';
                 // Admin header colors
                 if (hdr) { hdr.style.background = 'var(--adm-bg-card)'; hdr.style.borderBottomColor = 'var(--adm-border)'; }
                 if (hdrTitle) { hdrTitle.style.background = 'linear-gradient(135deg, var(--adm-primary-bright), var(--adm-primary))'; hdrTitle.style.webkitBackgroundClip = 'text'; hdrTitle.style.webkitTextFillColor = 'transparent'; }
