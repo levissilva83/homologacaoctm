@@ -35243,7 +35243,9 @@
                 // ── Botão salvar grade horária ──
                 html += '<div style="margin-top:14px;">';
                 var _saveBtnId = 'ctSaveBtn_' + encodeURIComponent(ctName) + '_' + mod.id;
-                html += '<button id="'+_saveBtnId+'" onclick="saveCTFull2(\'' + ctName.replace(/'/g,"\\\'")+'\'\',\'' + mod.id + '\')"';
+                html += '<button id="'+_saveBtnId+'"';
+                html += ' data-ctname="'+escapeHtml(ctName)+'" data-modid="'+escapeHtml(mod.id)+'"';
+                html += ' class="ct-save-horarios-btn"';
                 html += ' style="width:100%;padding:11px;background:linear-gradient(135deg,'+mod.cor+','+mod.cor+'aa);';
                 html += 'color:#000;border:none;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;">';
                 html += '💾 Salvar Horários — '+mod.icon+' '+mod.nome;
@@ -35253,6 +35255,12 @@
             });
 
             contentEl.innerHTML = html;
+
+            contentEl.querySelectorAll('.ct-save-horarios-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    saveCTFull2(btn.getAttribute('data-ctname'), btn.getAttribute('data-modid'));
+                });
+            });
             _attachTimeListeners(ctName);
         }
 
