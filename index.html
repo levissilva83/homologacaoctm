@@ -11696,6 +11696,24 @@
             if (!urlParam || urlParam.trim().toLowerCase() === 'matrix') return;
             var ctmToCheck = urlParam.trim().toLowerCase();
 
+            // Função central para aplicar o nome em todos os elementos
+            function _aplicarNomeCT(nome) {
+                if (!nome) return;
+                var titleEl = document.getElementById('loginTitle');
+                var subEl   = document.querySelector('.login-sub');
+                var hdr     = document.getElementById('hdrTitle');
+                if (titleEl) titleEl.textContent = nome;
+                if (subEl)   subEl.textContent   = 'Bem-vindos!';
+                if (hdr)     hdr.textContent      = nome;
+                document.title = nome + ' · CTM App';
+            }
+
+            // ── PASSO 1: exibe ctmId formatado IMEDIATAMENTE (sem esperar backend) ──
+            // Converte "levisbrazilianjiujitsu" → "Levisbrazilianjiujitsu" como placeholder
+            var placeholderNome = ctmToCheck.charAt(0).toUpperCase() + ctmToCheck.slice(1);
+            _aplicarNomeCT(placeholderNome);
+
+            // ── PASSO 2: busca nome real no backend (usa cache PropertiesService) ──
             function _carregarInfoCT() {
                 fetch(SCRIPT_URL, {
                     method: 'POST',
@@ -11703,32 +11721,17 @@
                 })
                 .then(function(r){ return r.json(); })
                 .then(function(d) {
-                    // Se endpoint não existe ainda (não deployado), usa checkClient como fallback
-                    if (!d || !d.success) {
-                        _checkClientFallback();
-                        return;
-                    }
+                    if (!d || !d.success) { _checkClientFallback(); return; }
                     if (d.exists === false) { _showClientNotFound(ctmToCheck); return; }
-
-                    // Atualiza título da tela de login com nome do CT
-                    var titleEl = document.getElementById('loginTitle');
-                    var subEl   = document.querySelector('.login-sub');
-                    if (titleEl) titleEl.textContent = d.nome || ctmToCheck;
-                    if (subEl)   subEl.textContent   = 'Bem-vindos!';
-
-                    var hdr = document.getElementById('hdrTitle');
-                    if (hdr) hdr.textContent = d.nome;
-                    document.title = (d.nome || 'CT Manager') + ' · CTM App';
-
-
+                    // Aplica nome real (substitui o placeholder)
+                    _aplicarNomeCT(d.nome || ctmToCheck);
                 })
                 .catch(function(e){
                     console.warn('[getCTPublicInfo]', e);
-                    _checkClientFallback(); // fallback se der erro
+                    _checkClientFallback();
                 });
             }
 
-            // Fallback: verifica existência sem buscar nome (comportamento anterior)
             function _checkClientFallback() {
                 fetch(SCRIPT_URL, {
                     method: 'POST',
@@ -11736,21 +11739,15 @@
                 })
                 .then(function(r){ return r.json(); })
                 .then(function(d) {
-                    if (d && d.success && d.exists === false) {
-                        _showClientNotFound(ctmToCheck);
-                    }
+                    if (d && d.success && d.exists === false) _showClientNotFound(ctmToCheck);
                 })
                 .catch(function(e){ console.warn('[checkClient]', e); });
             }
 
-            function _checkClientExists() {
-                _carregarInfoCT();
-            }
-
             if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', _checkClientExists);
+                document.addEventListener('DOMContentLoaded', _carregarInfoCT);
             } else {
-                _checkClientExists();
+                _carregarInfoCT();
             }
         })();
 
@@ -34412,19 +34409,19 @@
             var ctmId = window._ctmIdGlobal || '';
 
             // 2. Fallback: lê diretamente da URL atual (?ctm=levisbrazilianjiujitsu)
-            //    Funciona sempre que o app está rodando em ctapp.online/?ctm=XXX
             if (!ctmId) {
                 try {
                     var _urlP = new URLSearchParams(window.location.search);
                     ctmId = _urlP.get('ctm') || '';
-                    if (ctmId) window._ctmIdGlobal = ctmId; // guarda para próximas chamadas
+                    if (ctmId) window._ctmIdGlobal = ctmId;
                 } catch(e) {}
             }
 
             if (ctmId) {
-                return 'https://ctapp.online/?ctm=' + encodeURIComponent(ctmId) + '&acao=checkin';
+                // Inclui &ct= para pré-selecionar a filial correta no check-in
+                var ctParam = ctName ? '&qr=' + encodeURIComponent(ctName) : '';
+                return 'https://ctapp.online/?ctm=' + encodeURIComponent(ctmId) + '&acao=checkin' + ctParam;
             }
-            // 3. Último fallback: campo editável vai mostrar e o usuário edita
             return 'https://ctapp.online/?ctm=SEU_CTM_ID&acao=checkin';
         }
 
