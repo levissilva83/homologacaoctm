@@ -8767,6 +8767,28 @@
                             </div>
                         </div>
 
+                        <!-- ===== MINHA FAMÍLIA ===== -->
+                        <div class="perfil-section" id="perfilSecFamilia" style="display:none;margin-top:16px;">
+                            <div class="perfil-section-title"><span>👨‍👩‍👧‍👦</span> Minha Família</div>
+                            <div id="familiaStatusBillingBanner" style="display:none;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:11px;color:#4ade80;"></div>
+                            <div id="familiaPlanoResumo" style="font-size:11px;color:var(--text-3);margin-bottom:10px;"></div>
+                            <div id="familiaMembrosLista"></div>
+                            <button onclick="abrirCheckinFamilia()" id="btnCheckinFamilia" style="width:100%;margin-top:10px;padding:11px;background:rgba(201,162,58,0.1);border:1px solid rgba(201,162,58,0.3);border-radius:10px;color:#C9A23A;font-size:12px;font-weight:700;cursor:pointer;">🥋 Check-in da Família</button>
+                        </div>
+
+                        <!-- Modal check-in família -->
+                        <div id="modalCheckinFamilia" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:flex-end;justify-content:center;">
+                            <div style="background:var(--bg-card);border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto;">
+                                <div style="font-size:15px;font-weight:800;color:var(--text-1);margin-bottom:4px;">🥋 Check-in da Família</div>
+                                <div style="font-size:11px;color:var(--text-3);margin-bottom:14px;">Selecione quem está presente hoje</div>
+                                <div id="checkinFamiliaMembros" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                    <button onclick="fecharCheckinFamilia()" style="padding:11px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;color:var(--text-2);font-size:12px;font-weight:700;cursor:pointer;">Cancelar</button>
+                                    <button onclick="confirmarCheckinFamilia()" style="padding:11px;background:var(--primary);border:none;border-radius:10px;color:#000;font-size:12px;font-weight:800;cursor:pointer;">✅ Confirmar</button>
+                                </div>
+                            </div>
+                        </div>
+
                         <button class="perfil-logout-btn" onclick="handleLogout()">🚪 Sair da Conta</button>
                         <button onclick="requestDeactivateAccount()" style="width:100%;padding:10px;background:transparent;border:1px solid rgba(248,113,113,0.3);border-radius:10px;color:#f87171;font-size:11px;font-weight:600;cursor:pointer;margin-top:8px;">⛔ Desabilitar minha conta</button>
                     </div>
@@ -11548,9 +11570,33 @@
                     </div>
                 </div>
 
+                <!-- Família -->
+                <div id="stuFamiliaSection" style="margin-top:14px;padding:12px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                        <div style="font-size:12px;font-weight:700;color:var(--text-1);">👨‍👩‍👧‍👦 Família / Dependentes</div>
+                        <button onclick="abrirModalCriarDependente()" style="padding:5px 10px;background:rgba(201,162,58,0.1);border:1px solid rgba(201,162,58,0.3);border-radius:7px;color:#C9A23A;font-size:10px;font-weight:700;cursor:pointer;">+ Adicionar</button>
+                    </div>
+                    <div id="stuDependentesList" style="font-size:11px;color:var(--text-3);">Carregando...</div>
+                </div>
+
                 <!-- Danger Zone -->
                 <div class="stu-danger-zone">
                     <button class="stu-delete-btn" id="stuDeleteBtn" onclick="deleteStuFromModal()">🗑️ Excluir Aluno</button>
+                </div>
+
+                <!-- Modal criar dependente -->
+                <div id="modalCriarDependente" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:10000;align-items:center;justify-content:center;padding:16px;">
+                    <div style="background:var(--bg-card);border-radius:16px;padding:20px;width:100%;max-width:400px;">
+                        <div style="font-size:14px;font-weight:800;color:var(--text-1);margin-bottom:14px;">➕ Cadastrar Dependente</div>
+                        <input id="depNome" placeholder="Nome completo *" style="width:100%;padding:9px 11px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:12px;margin-bottom:8px;">
+                        <input id="depNascimento" type="date" placeholder="Nascimento *" style="width:100%;padding:9px 11px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:12px;margin-bottom:8px;">
+                        <input id="depModalidades" placeholder="Modalidades (ex: bjj, kickboxing)" style="width:100%;padding:9px 11px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:12px;margin-bottom:4px;">
+                        <div style="font-size:10px;color:var(--text-3);margin-bottom:12px;">Senha da conta = email do responsável</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                            <button onclick="fecharModalDependente()" style="padding:10px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:9px;color:var(--text-2);font-size:12px;font-weight:700;cursor:pointer;">Cancelar</button>
+                            <button onclick="salvarDependente()" style="padding:10px;background:var(--primary);border:none;border-radius:9px;color:#000;font-size:12px;font-weight:800;cursor:pointer;">✅ Cadastrar</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -12091,11 +12137,26 @@
                 _lockByPlan('cobBatchBtn', '⚡ Cobrar em lote', 'profissional');
             }
             if (_planLimits.fotoCheckin === false) {
-                _lockByPlan('admPainelTab6', '📸 Checkin por Foto', 'premium');
+                _lockByPlan('admPainelTab6', '📸 Checkin por Foto', 'profissional');
             }
             // Filiais (somente Premium)
             if (_planLimits.filiais < 3) {
                 _lockByPlan('addCTSection', '🏠 Criar Filiais / CTs', 'premium');
+            }
+            // Dependentes (Profissional ou superior)
+            if (_planId !== 'premium' && _planId !== 'profissional') {
+                _lockByPlan('stuFamiliaSection', '👨‍👩‍👧‍👦 Dependentes', 'profissional');
+                _lockByPlan('perfilSecFamilia',  '👨‍👩‍👧‍👦 Dependentes', 'profissional');
+            }
+            // Plano Família com cobrança unificada (somente Premium)
+            if (_planId !== 'premium') {
+                _lockByPlan('familiaPlanoResumo',       '💰 Plano Família Unificado', 'premium');
+                _lockByPlan('familiaStatusBillingBanner','💰 Plano Família Unificado', 'premium');
+            }
+            // Congelamento de Matrícula (Profissional ou superior)
+            if (_planId !== 'premium' && _planId !== 'profissional') {
+                _lockByPlan('perfilSecCongelamento', '❄️ Congelamento de Matrícula', 'profissional');
+                _lockByPlan('admCongelamentosPanel', '❄️ Congelamentos',             'profissional');
             }
         }
 
@@ -20356,6 +20417,8 @@
             document.getElementById('perfilAvatarInitial').textContent = (currentUser.name || '?')[0].toUpperCase();
             // Inicializa card de congelamento
             setTimeout(initCongelamentoForm, 100);
+            // Carrega seção família
+            setTimeout(loadFamiliaSection, 200);
             document.getElementById('perfilNome').textContent = currentUser.name || '—';
             
             // Kids vs Adult faixa tag
@@ -21554,6 +21617,136 @@
             } catch(e) { alert('Erro: ' + e.message); }
         }
 
+        // ════════════════════════════════════════════════
+        // MÓDULO: MINHA FAMÍLIA
+        // ════════════════════════════════════════════════
+
+        var _familiaCache = null; // cache dos dependentes
+
+        async function loadFamiliaSection() {
+            try {
+                var r = await secureFetch('getDependentes', {});
+                if (!r.success) return;
+                _familiaCache = r.dependentes || [];
+
+                var sec     = document.getElementById('perfilSecFamilia');
+                var lista   = document.getElementById('familiaMembrosLista');
+                var resumo  = document.getElementById('familiaPlanoResumo');
+                var banner  = document.getElementById('familiaStatusBillingBanner');
+                if (!sec || !lista) return;
+
+                // Só mostra a seção se tiver dependentes
+                sec.style.display = _familiaCache.length > 0 ? 'block' : 'none';
+                if (_familiaCache.length === 0) return;
+
+                // Banner do plano familiar
+                try {
+                    var pf = await secureFetch('getPlanoFamiliar', {});
+                    if (pf.success && pf.financeiro) {
+                        var fin = pf.financeiro;
+                        if (resumo) {
+                            resumo.innerHTML =
+                                '<span style="color:var(--text-1);font-weight:700;">' + pf.totalMembros + ' membros</span>' +
+                                (fin.plano && fin.plano.nome ? ' · ' + escapeHtml(fin.plano.nome) : '') +
+                                (fin.economia > 0 ? ' · <span style="color:#4ade80;">💰 economia R$ ' + fin.economia.toFixed(2) + '/mês</span>' : '') +
+                                '<br><span style="font-size:10px;">Total: R$ ' + fin.totalComDesc.toFixed(2) + '/mês</span>';
+                        }
+                        if (banner && fin.statusPagamento) {
+                            var stMap = { PAGO:'✅ Mensalidade em dia — todos os membros cobertos',
+                                          PENDENTE:'⏳ Mensalidade pendente — regularize para manter dependentes ativos',
+                                          ATRASADO:'⚠️ Mensalidade em atraso — dependentes podem ser bloqueados' };
+                            var stColor = { PAGO:'rgba(74,222,128,0.08)', PENDENTE:'rgba(251,191,36,0.08)', ATRASADO:'rgba(248,113,113,0.08)' };
+                            var stBord  = { PAGO:'rgba(74,222,128,0.2)',  PENDENTE:'rgba(251,191,36,0.2)',  ATRASADO:'rgba(248,113,113,0.3)' };
+                            var stTxt   = { PAGO:'#4ade80', PENDENTE:'#fbbf24', ATRASADO:'#f87171' };
+                            var st = fin.statusPagamento.toUpperCase();
+                            if (stMap[st]) {
+                                banner.style.display     = 'block';
+                                banner.style.background  = stColor[st] || '';
+                                banner.style.borderColor = stBord[st]  || '';
+                                banner.style.color       = stTxt[st]   || '';
+                                banner.textContent       = stMap[st];
+                            }
+                        }
+                    }
+                } catch(_ep) {}
+
+                // Lista de membros
+                lista.innerHTML = _familiaCache.map(function(dep) {
+                    var inicialBg = 'rgba(201,162,58,0.15)';
+                    return '<div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;">' +
+                        '<div style="width:36px;height:36px;border-radius:50%;background:' + inicialBg + ';display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#C9A23A;flex-shrink:0;">' +
+                            escapeHtml((dep.nome || '?')[0].toUpperCase()) +
+                        '</div>' +
+                        '<div style="flex:1;min-width:0;">' +
+                            '<div style="font-size:13px;font-weight:700;color:var(--text-1);">' + escapeHtml(dep.nome) + '</div>' +
+                            '<div style="font-size:10px;color:var(--text-3);">' +
+                                escapeHtml(dep.faixa) + (dep.grau > 0 ? ' · ' + dep.grau + 'º grau' : '') +
+                                ' · ' + dep.treinos + ' treinos' +
+                            '</div>' +
+                        '</div>' +
+                        '<div style="font-size:10px;padding:3px 8px;border-radius:20px;background:rgba(74,222,128,0.1);color:#4ade80;font-weight:700;">' +
+                            escapeHtml(dep.status || 'ATIVO') +
+                        '</div>' +
+                    '</div>';
+                }).join('');
+
+            } catch(e) { console.error('loadFamiliaSection:', e); }
+        }
+
+        function abrirCheckinFamilia() {
+            if (!_familiaCache || _familiaCache.length === 0) {
+                alert('Nenhum dependente cadastrado.'); return;
+            }
+            var modal   = document.getElementById('modalCheckinFamilia');
+            var listEl  = document.getElementById('checkinFamiliaMembros');
+            if (!modal || !listEl) return;
+
+            // Monta lista com checkboxes — responsável sempre pré-selecionado
+            var itens = [{ email: currentUser.email, nome: currentUser.name || 'Você', self: true }]
+                .concat(_familiaCache);
+
+            listEl.innerHTML = itens.map(function(m) {
+                return '<label style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;cursor:pointer;">' +
+                    '<input type="checkbox" data-email="' + escapeHtml(m.email) + '" ' + (m.self ? 'checked' : '') +
+                    ' style="width:18px;height:18px;accent-color:#C9A23A;flex-shrink:0;">' +
+                    '<div>' +
+                        '<div style="font-size:13px;font-weight:700;color:var(--text-1);">' + escapeHtml(m.nome) + (m.self ? ' (você)' : '') + '</div>' +
+                        '<div style="font-size:10px;color:var(--text-3);">' + (m.faixa ? escapeHtml(m.faixa) : '') + '</div>' +
+                    '</div>' +
+                '</label>';
+            }).join('');
+
+            modal.style.display = 'flex';
+        }
+
+        function fecharCheckinFamilia() {
+            var modal = document.getElementById('modalCheckinFamilia');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function confirmarCheckinFamilia() {
+            var checks = document.querySelectorAll('#checkinFamiliaMembros input[type=checkbox]:checked');
+            var emails = Array.from(checks).map(function(c){ return c.getAttribute('data-email'); });
+            if (emails.length === 0) { alert('Selecione ao menos 1 membro'); return; }
+
+            var ct = (currentUser && currentUser.ct) || '';
+            if (!ct && typeof selectedCT !== 'undefined' && selectedCT) ct = selectedCT;
+
+            try {
+                var r = await secureFetch('checkinFamilia', {
+                    emails:     emails,
+                    ct:         ct,
+                    modalidade: (typeof activeModality !== 'undefined' ? activeModality : 'bjj')
+                });
+                fecharCheckinFamilia();
+                if (r.success) {
+                    alert('✅ ' + r.message);
+                } else {
+                    alert('❌ ' + (r.message || 'Erro'));
+                }
+            } catch(e) { alert('Erro: ' + e.message); }
+        }
+
         async function cancelarCongelamento() {
             if (!confirm('Cancelar o congelamento?')) return;
             try {
@@ -21618,6 +21811,76 @@
                     '</div>';
                 }).join('');
             } catch(e) { console.error('loadCongelamentos:', e); }
+        }
+
+        // ════════════════════════════════════════════════
+        // ADMIN — DEPENDENTES
+        // ════════════════════════════════════════════════
+
+        async function loadStuDependentes(email) {
+            var el = document.getElementById('stuDependentesList');
+            if (!el) return;
+            try {
+                var r = await secureFetch('getDependentes', { targetEmail: email });
+                if (!r.success) { el.textContent = 'Erro ao carregar'; return; }
+                var deps = r.dependentes || [];
+                if (deps.length === 0) {
+                    el.innerHTML = '<span style="color:var(--text-3);">Nenhum dependente vinculado.</span>';
+                    return;
+                }
+                el.innerHTML = deps.map(function(d) {
+                    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">' +
+                        '<div>' +
+                            '<div style="font-size:12px;font-weight:700;color:var(--text-1);">' + escapeHtml(d.nome) + '</div>' +
+                            '<div style="font-size:10px;color:var(--text-3);">' + escapeHtml(d.faixa) + (d.grau > 0 ? ' · ' + d.grau + 'º grau' : '') + ' · ' + d.treinos + ' treinos</div>' +
+                        '</div>' +
+                        '<button onclick="desvincularDep(\'' + escapeHtml(d.email) + '\')" style="padding:3px 8px;border-radius:6px;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);color:#f87171;font-size:10px;cursor:pointer;">✕</button>' +
+                    '</div>';
+                }).join('');
+            } catch(e) { if (el) el.textContent = 'Erro'; }
+        }
+
+        function abrirModalCriarDependente() {
+            var modal = document.getElementById('modalCriarDependente');
+            if (modal) modal.style.display = 'flex';
+            ['depNome','depNascimento','depModalidades'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+        }
+
+        function fecharModalDependente() {
+            var modal = document.getElementById('modalCriarDependente');
+            if (modal) modal.style.display = 'none';
+        }
+
+        async function salvarDependente() {
+            var nome       = (document.getElementById('depNome')?.value || '').trim();
+            var nasc       = (document.getElementById('depNascimento')?.value || '').trim();
+            var mods       = (document.getElementById('depModalidades')?.value || 'bjj').trim();
+            if (!nome) { alert('Nome obrigatório'); return; }
+            if (!nasc) { alert('Data de nascimento obrigatória'); return; }
+            if (!stuModalEmail) { alert('Erro: responsável não identificado'); return; }
+            try {
+                var r = await secureFetch('criarDependente', {
+                    responsavelEmail: stuModalEmail,
+                    nome: nome, nascimento: nasc, modalidades: mods
+                });
+                if (r.success) {
+                    fecharModalDependente();
+                    alert('✅ ' + r.message + '\nEmail virtual: ' + r.emailDep);
+                    loadStuDependentes(stuModalEmail);
+                } else { alert('❌ ' + (r.message || 'Erro')); }
+            } catch(e) { alert('Erro: ' + e.message); }
+        }
+
+        async function desvincularDep(emailDep) {
+            if (!confirm('Remover vínculo com ' + emailDep + '?')) return;
+            try {
+                var r = await secureFetch('desvincularDependente', { dependenteEmail: emailDep });
+                if (r.success) { alert('✅ Vínculo removido'); loadStuDependentes(stuModalEmail); }
+                else { alert('❌ ' + r.message); }
+            } catch(e) { alert('Erro: ' + e.message); }
         }
 
         async function aprovarCongelamentoAdmin(email, inicio, fim) {
@@ -26576,6 +26839,106 @@
             {q:'Quem trouxe o artes marciais ao Brasil?',o:['Carlos Gracie','Mitsuyo Maeda','Hélio Gracie','Jigoro Kano'],c:1,e:'Mitsuyo Maeda em 1914.'},
             {q:'O que é "mat burn"?',o:['Queimadura de fricção pelo ','Finalização','Aquecimento','Exercício'],c:0,e:'Abrasão na pele pelo atrito com  — muito comum.'},
             {q:'O artes marciais é chamado de "xadrez humano" por quê?',o:['Aspecto estratégico','Jogado em quadrado','Cor das faixas','Número de peças'],c:0,e:'Exige pensar vários movimentos à frente.'}
+          ],
+
+          // ══════════ MUAY THAI / KICKBOXING ══════════
+          muaythai: [
+            {q:'Muay Thai é conhecido como a arte de quantos membros?',o:['4 membros','6 membros','8 membros','10 membros'],c:2,e:'Muay Thai usa punhos, cotovelos, joelhos e canelas — 8 pontos de contato.'},
+            {q:'Como se chama o chute circular do Muay Thai?',o:['Teep','Roundhouse','Jab','Overhand'],c:1,e:'O roundhouse (teep = chute frontal) é o golpe mais característico do Muay Thai.'},
+            {q:'O que é o "Teep" no Muay Thai?',o:['Cotovelada diagonal','Chute frontal de empurrão','Joelhada voadora','Giro de quadril'],c:1,e:'Teep = chute de impulsão frontal, usado para manter distância e pontuar.'},
+            {q:'Qual a duração de um round no Muay Thai profissional?',o:['2 minutos','3 minutos','4 minutos','5 minutos'],c:1,e:'3 minutos por round, com 2 minutos de intervalo.'},
+            {q:'Quantos rounds tem uma luta de Muay Thai profissional?',o:['3 rounds','5 rounds','8 rounds','10 rounds'],c:1,e:'5 rounds de 3 minutos é o padrão no Muay Thai profissional.'},
+            {q:'O que é o "Clinch" no Muay Thai?',o:['Derrubada','Posição de corpo a corpo para joelhos/cotovelos','Guarda aberta','Esquiva lateral'],c:1,e:'No Clinch (plum) o lutador controla a nuca do oponente para aplicar joelhos.'},
+            {q:'Como se chama a cotovelada de cima para baixo?',o:['Elbow slash','Spinning elbow','Downward elbow','Horizontal elbow'],c:2,e:'Downward elbow (Sok kratong) é cortante e extremamente perigosa.'},
+            {q:'Qual país é o berço do Muay Thai?',o:['Camboja','Myanmar','Tailândia','Laos'],c:2,e:'O Muay Thai surgiu na Tailândia há séculos como arte marcial militar.'},
+            {q:'O que é o "Wai Kru Ram Muay"?',o:['Treinamento de sombra','Ritual de dança antes da luta','Aquecimento físico','Técnica de esquiva'],c:1,e:'Ritual de respeito ao mestre realizado antes de cada luta — honra a tradição tailandesa.'},
+            {q:'Qual golpe é proibido no Muay Thai tradicional?',o:['Cotovelada','Joelhada na cabeça','Pegar na virilha','Clinch'],c:2,e:'Golpes na virilha são proibidos — assim como na maioria das artes marciais.'},
+            {q:'O que é "Saenchai" famoso por?',o:['Força bruta','Jogo de pernas e esquivas acrobáticas','Chutes baixos','Ganchos de direita'],c:1,e:'Saenchai é lendário pelo seu footwork ilusório e esquivas impossíveis.'},
+            {q:'No Kickboxing, o que diferencia do Muay Thai?',o:['Não usa luvas','Não permite cotoveladas e joelhos em algumas regras','Sem árbitro','Lutas em ringue diferente'],c:1,e:'O Kickboxing ocidental tipicamente não permite cotoveladas — algumas versões também restringem joelhos.'},
+            {q:'O que é "Kao Loi"?',o:['Chute giratório','Joelhada voadora','Cotovelada em queda','Rasteira'],c:1,e:'Kao Loi = joelhada saltada — o lutador pula para aplicar o joelho com mais força e alcance.'},
+            {q:'Qual material é tradicional da bandagem tailandesa?',o:['Couro','Algodão','Fibra de carbono','Borracha'],c:1,e:'Bandagem de algodão protege os punhos e pulsos — usada há séculos antes das luvas modernas.'},
+            {q:'O "Superman Punch" surgiu de qual arte marcial?',o:['Karatê','Muay Thai','Boxe','Taekwondo'],c:1,e:'O Superman Punch é originário do Muay Thai — adaptado pelo MMA como golpe surpresa.'}
+          ],
+
+          kickboxing: [
+            {q:'No Kickboxing K-1, qual golpe é sempre permitido?',o:['Cotovelada','Joelhada no corpo','Rasteira','Jab'],c:3,e:'O Jab é golpe padrão de boxe e sempre permitido em qualquer modalidade de Kickboxing.'},
+            {q:'Qual é a pontuação base no Kickboxing?',o:['Sistema de rounds','10-Point Must System','Apenas KO vale','Pontos por golpe'],c:1,e:'O sistema 10-9 (10-Point Must) é usado na maioria dos eventos de Kickboxing.'},
+            {q:'O que é "Full Contact Karate"?',o:['Karatê sem proteção','Precursor do Kickboxing moderno','Luta de rua','Treino de resistência'],c:1,e:'Full Contact Karate dos anos 70 nos EUA foi o embrião do Kickboxing ocidental.'},
+            {q:'Rico Verhoeven é campeão mundial de qual organização?',o:['K-1','Glory','ONE Championship','Bellator Kickboxing'],c:1,e:'Rico Verhoeven é multicampeão do Glory Kickboxing — considerado o melhor pesado da história.'},
+            {q:'O "Spinning Back Kick" acerta com qual parte do pé?',o:['Ponta dos dedos','Calcanhar','Peito do pé','Lateral'],c:1,e:'O calcanhar é o ponto de impacto do Spinning Back Kick — um dos chutes mais poderosos.'}
+          ],
+
+          // ══════════ JUDÔ ══════════
+          judo: [
+            {q:'O que significa "Judo" em japonês?',o:['Caminho da luta','Caminho suave/flexível','Arte da queda','Técnica do corpo'],c:1,e:'Ju = suave/flexível | Do = caminho. Judo = "O Caminho Suave".'},
+            {q:'O que é "Ippon" no Judô?',o:['Meio ponto','Ponto total — vence a luta','Penalidade','Posição de guarda'],c:1,e:'Ippon é o máximo: lançamento com controle, imobilização por 25s ou finalização — vitória imediata.'},
+            {q:'Quem criou o Judô?',o:['Sakuraba','Jigoro Kano','Mitsuyo Maeda','Kimura'],c:1,e:'Jigoro Kano criou o Judô em 1882 no Japão, baseado no Jujutsu.'},
+            {q:'O que é "Waza-ari"?',o:['Ponto inteiro','Meio ponto — 2 waza-ari = ippon','Penalidade','Queda fora do tatame'],c:1,e:'Waza-ari vale meio ponto. Dois waza-ari equivalem a um Ippon.'},
+            {q:'Como se chama o grupo de imobilizações no Judô?',o:['Nage-waza','Osaekomi-waza','Kansetsu-waza','Shime-waza'],c:1,e:'Osaekomi-waza = técnicas de imobilização no solo.'},
+            {q:'O que é "O-Goshi"?',o:['Estrangulamento','Arremesso de quadril','Imobilização lateral','Chave de ombro'],c:1,e:'O-Goshi (grande arremesso de quadril) é um dos primeiros e mais clássicos arremessos do Judô.'},
+            {q:'Qual a cor da faixa mais alta no Judô?',o:['Preta','Vermelha e branca','Vermelha','Dourada'],c:2,e:'A faixa vermelha (9º e 10º Dan) é a mais alta — extremamente rara, apenas poucos a possuem.'},
+            {q:'O que significa "Uke"?',o:['Aquele que ataca','Aquele que recebe a técnica','Árbitro','Treinador'],c:1,e:'Uke = aquele que recebe o arremesso. Tori = aquele que executa.'},
+            {q:'Kansetsu-waza é proibido para quais categorias na competição?',o:['Sênior','Sub-21','Juvenil e abaixo','Apenas sub-15'],c:2,e:'Chaves articulares (kansetsu-waza) são proibidas para juvenis — só são permitidas para adultos.'},
+            {q:'O que é "Shido" no Judô moderno?',o:['Ponto por arremesso','Penalidade leve','Técnica de perna','Imobilização'],c:1,e:'Shido é a penalidade mais leve — evitar a luta, pegada proibida. 3 shidos = derrota.'},
+            {q:'Masahiko Kimura ficou famoso por derrotar qual lutador de BJJ?',o:['Hélio Gracie','Carlos Gracie','Rickson Gracie','Oswaldo Fávelo'],c:0,e:'Em 1951, Kimura quebrou o braço de Hélio Gracie com o armlock que hoje leva seu nome.'},
+            {q:'O que é "Seoi-nage"?',o:['Arremesso de quadril','Arremesso de ombro','Arremesso de perna','Rasteira'],c:1,e:'Seoi-nage = arremesso sobre os ombros — um dos mais utilizados em competições.'},
+            {q:'Quanto tempo dura uma luta de Judô adulto em competição?',o:['3 min','4 min','5 min','6 min'],c:2,e:'5 minutos para adultos. Em caso de empate, vai para Golden Score (tempo ilimitado).'},
+            {q:'O que é "Tatami"?',o:['Uniforme do judoca','Cinturão do vencedor','Superfície de luta em mat','Kata de iniciantes'],c:2,e:'Tatami é o mat de espuma coberto usado nas lutas de Judô — absorve o impacto das quedas.'},
+            {q:'O Judô foi incluído nas Olimpíadas em que ano?',o:['1952','1964','1972','1980'],c:1,e:'O Judô estreou nos Jogos Olímpicos de Tóquio 1964 — justo no país criador da modalidade.'}
+          ],
+
+          // ══════════ WRESTLING ══════════
+          wrestling: [
+            {q:'Quanto vale um takedown no Wrestling estilo americano?',o:['1 ponto','2 pontos','3 pontos','4 pontos'],c:1,e:'Takedown = 2 pontos. É a ação mais valorizada no Wrestling.'},
+            {q:'O que é "sprawl" no Wrestling?',o:['Ataque de perna','Defesa de queda — recuar quadril','Chave no braço','Queda voluntária'],c:1,e:'Sprawl = recuar o quadril e pressionar o oponente para baixo quando ele tenta uma queda.'},
+            {q:'O que diferencia o Greco-Romano do Wrestling livre?',o:['Duração','Proibido usar as pernas para atacar','Peso dos atletas','Pontuação'],c:1,e:'No Greco-Romano são proibidos ataques abaixo da cintura — só lances de tronco e braços.'},
+            {q:'Quanto vale um "reversal" no Wrestling?',o:['1 ponto','2 pontos','3 pontos','4 pontos'],c:1,e:'Reversal = 2 pontos. Ocorre quando o atleta embaixo reverte e passa a controlar.'},
+            {q:'O que é "pinfall" (ippon equivalente)?',o:['Ponto por fuga','Manter os dois ombros do oponente no mat','Sair do ringue','Queda fora dos limites'],c:1,e:'Pin = segurar os dois ombros do oponente no mat por 2 segundos — vitória imediata.'},
+            {q:'Quanto vale um "near-fall" de 5 segundos?',o:['1 ponto','2 pontos','3 pontos','4 pontos'],c:2,e:'Near-fall por 5 segundos = 3 pontos. Por 2 segundos = 2 pontos.'},
+            {q:'Henry Cejudo ficou famoso por derrotar qual campeão usando Wrestling?',o:['Conor McGregor','Demetrious Johnson','Khabib Nurmagomedov','Jon Jones'],c:1,e:'Henry Cejudo usou seu ouro olímpico em Wrestling para derrotar Demetrious Johnson no UFC.'},
+            {q:'O que é "double leg takedown"?',o:['Chave nas duas pernas','Entrada agarrando as duas pernas','Viagem de perna dupla','Defesa de queda'],c:1,e:'Double leg = entrada baixa agarrando as duas pernas do oponente para derrubá-lo.'},
+            {q:'Qual estilo de Wrestling é mais usado no MMA?',o:['Greco-Romano','Freestyle','Folkstyle','Catch'],c:1,e:'Freestyle Wrestling é o mais adaptável ao MMA — permite ataques nas pernas.'},
+            {q:'O que é "Suplex"?',o:['Chave de pescoço','Arremesso arqueado para trás','Viagem de perna','Queda frontal'],c:1,e:'Suplex = pegar o oponente por trás ou pela cintura e arremessá-lo arqueando as costas.'},
+            {q:'Qual lutador ficou famoso pelo apelido "The Eagle" e seu Wrestling devastador?',o:['Georges St-Pierre','Khabib Nurmagomedov','Daniel Cormier','Kamaru Usman'],c:1,e:'Khabib Nurmagomedov usou Wrestling e Sambo para dominar todos os oponentes — aposentado invicto 29-0.'},
+            {q:'O que é "underhook"?',o:['Chave por baixo do braço','Passar o braço por baixo do braço do oponente','Pegar a tornozelo','Gancho de perna'],c:1,e:'Underhook = posicionar seu braço por baixo do braço do adversário — posição de controle crucial.'}
+          ],
+
+          // ══════════ MMA ══════════
+          mma: [
+            {q:'O que significa MMA?',o:['Mixed Martial Attacks','Mixed Martial Arts','Multiple Martial Arts','Modern Martial Arts'],c:1,e:'MMA = Mixed Martial Arts (Artes Marciais Mistas) — combina striking, grappling e luta no chão.'},
+            {q:'Qual foi o primeiro UFC?',o:['UFC 1 — 1990','UFC 1 — 1993','UFC 1 — 1995','UFC 1 — 1998'],c:1,e:'UFC 1 foi em novembro de 1993 em Denver, Colorado — Royce Gracie foi o campeão.'},
+            {q:'Quanto dura um round de MMA no UFC (luta comum)?',o:['3 minutos','5 minutos','7 minutos','10 minutos'],c:1,e:'5 minutos por round. Lutas comuns têm 3 rounds; disputas de título e main events têm 5 rounds.'},
+            {q:'O que é "ground and pound"?',o:['Técnica de guarda','Atingir o oponente com socos no chão','Defesa de rasteira','Posição de montada'],c:1,e:'G&P = posicionar em vantagem no chão e desferir golpes — Chuck Liddell e T. Silva foram mestres.'},
+            {q:'Qual posição de grappling é mais pontuada no MMA?',o:['Guarda aberta','Back control (tomar as costas)','Half guard','De La Riva'],c:1,e:'Back control com ganchos = posição dominante mais valiosa — quase impossível de escapar.'},
+            {q:'Anderson Silva é considerado o melhor de todos os tempos em qual divisão?',o:['Meio-médio','Médio','Meio-pesado','Pesado'],c:1,e:'Anderson Silva dominou o peso médio por 7 anos — 16 defesas de cinturão, recorde histórico do UFC.'},
+            {q:'O que é "Anaconda choke"?',o:['Triângulo dos braços','Estrangulamento com o braço envolto pelo pescoço e axila','Chave de tornozelo','Guilhotina invertida'],c:1,e:'Anaconda = guilhotina invertida com o braço passando pela axila do oponente — muito perigoso.'},
+            {q:'Georges St-Pierre ficou famoso por qual habilidade dominante?',o:['Knock out power','Wrestling e controle de luta','Jiu-Jitsu agressivo','Muay Thai pesado'],c:1,e:'GSP era mestre no wrestling, controle de distância e cardio — considerado o mais completo de todos.'},
+            {q:'O que é "cage control" no MMA?',o:['Segurar a grade','Dominar a posição na jaula para vantagem e fuga','Golpe na grade','Proibido nas regras'],c:1,e:'Cage control = usar a grade para vantagem de distância, fuga de quedas e domínio de posição.'},
+            {q:'Qual finalização Khabib Nurmagomedov usou mais vezes?',o:['Rear naked choke','Armbar','Triangle choke','Mata leão'],c:0,e:'Khabib finalizou a maioria de seus adversários com o Rear Naked Choke após dominar no grappling.'},
+            {q:'O que é "dirty boxing"?',o:['Boxe sem luvas','Socos curtos em clínch, usando o corpo como proteção','Bater na nuca','Golpes ilegais'],c:1,e:'Dirty boxing = socos curtos em posição de corpo a corpo, adaptando o boxe para o contexto do MMA.'},
+            {q:'Qual lutador popularizou o "spinning back elbow"?',o:['Jon Jones','Anderson Silva','Lyoto Machida','Conor McGregor'],c:0,e:'Jon Jones ficou famoso pela cotovelada giratória — golpe incomum e devastador no MMA.'},
+            {q:'O que é "southpaw" em luta?',o:['Guarda esqueda/invertida (canhoto)','Golpe de direita','Defesa de chute','Posição deitada'],c:0,e:'Southpaw = posição de guarda com o lado direito à frente — característica de lutadores canhotos.'},
+            {q:'Qual modalidade Conor McGregor usa como base?',o:['Wrestling','Jiu-Jitsu','Boxe e Kickboxing (striking)','Judô'],c:2,e:'McGregor tem base em striking — famoso pelo timing preciso e o left hand poderoso.'},
+            {q:'O que é "rear naked choke" (mata leão)?',o:['Chave de pescoço com as mãos','Estrangulamento pelas costas com o braço no pescoço','Guilhotina','Triângulo dos braços'],c:1,e:'RNC = estrangulamento com o braço em torno do pescoço pelo dorso — a finalização mais comum do MMA.'}
+          ],
+
+          // ══════════ KARATÊ ══════════
+          karate: [
+            {q:'O que significa "Karate" em japonês?',o:['Mão veloz','Mão vazia','Punho forte','Arte da palma'],c:1,e:'Kara = vazio | Te = mão. Karate = "Mão Vazia" — arte sem armas.'},
+            {q:'O que é "Kata" no Karatê?',o:['Luta livre','Sequência de movimentos pré-definidos','Treino de resistência','Competição em duplas'],c:1,e:'Kata = forma — sequência codificada de técnicas contra oponentes imaginários. Base do Karatê tradicional.'},
+            {q:'O que é "Kumite"?',o:['Treinamento de kata','Combate/luta no Karatê','Cinturão sênior','Treino de impacto'],c:1,e:'Kumite = combate — a aplicação das técnicas do Karatê contra um oponente real.'},
+            {q:'Qual a pontuação máxima em uma técnica de Kumite WKF?',o:['Ippon (1 ponto)','Waza-ari (2 pontos)','Sanbon (3 pontos)','Yonhon (4 pontos)'],c:2,e:'Sanbon = 3 pontos — conquistado com chutes giratórios na cabeça ou varreduras seguidas de socos.'},
+            {q:'Como se chama a postura mais básica do Karatê?',o:['Kiba-dachi','Zenkutsu-dachi','Kokutsu-dachi','Heiko-dachi'],c:1,e:'Zenkutsu-dachi (postura frontal) é a mais usada — peso distribuído 70% na perna da frente.'},
+            {q:'O "Gyaku-zuki" é qual técnica?',o:['Soco direto','Soco reverso (mão oposta à perna da frente)','Chute lateral','Bloqueio'],c:1,e:'Gyaku-zuki = soco reverso — o golpe mais pontuado no Kumite. Usa rotação do quadril para potência.'},
+            {q:'O Karatê foi incluído nas Olimpíadas em que ano?',o:['2012','2016','2020 (Tóquio)','2024'],c:2,e:'O Karatê estreou nas Olimpíadas de Tóquio 2020 (realizadas em 2021) — mas foi removido de Paris 2024.'},
+            {q:'Qual o significado de "Kiai"?',o:['Posição de ataque','Grito de espírito — concentração de energia','Técnica de chute','Saudação'],c:1,e:'Kiai = grito ao executar uma técnica — libera energia, tensiona o core e intimida o oponente.'},
+            {q:'Antonio Diaz é famoso em qual categoria do Karatê?',o:['Kumite pesado','Kata masculino','Kumite leve','Kata feminino'],c:1,e:'Antonio Diaz (Venezuela) é multicampeão mundial de Kata — considerado um dos melhores da história.'},
+            {q:'O que é "Mawashi-geri"?',o:['Chute frontal','Chute circular (roundhouse)','Chute lateral','Chute traseiro'],c:1,e:'Mawashi-geri = chute circular — muito versátil, pode ser executado no corpo (chudan) ou cabeça (jodan).'},
+            {q:'O Shotokan é qual tipo de Karatê?',o:['Estilo okinawano','Estilo japonês moderno','Estilo coreano','Estilo chinês'],c:1,e:'Shotokan é o estilo mais difundido no mundo — criado por Gichin Funakoshi no Japão.'},
+            {q:'O que é "Dojo"?',o:['Uniforme de treino','Local de treinamento','Conjunto de regras','Cinturão de mestre'],c:1,e:'Dojo = "lugar do caminho" — o espaço sagrado de treinamento das artes marciais japonesas.'},
+            {q:'O que é "Osu" no contexto do Karatê?',o:['Técnica de defesa','Expressão de esforço, respeito e confirmação','Posição de guarda','Nome de um kata'],c:1,e:'Osu (ou Oss) é uma expressão de perseverança, respeito e confirmação — muito usada nas artes marciais japonesas.'},
+            {q:'Qual a diferença entre Karatê e Taekwondo?',o:['São a mesma arte','TKD foca 70% em chutes; Karatê equilibra socos e chutes','Karatê é coreano','TKD não tem kata'],c:1,e:'Taekwondo enfatiza chutes altos e giratórios. Karatê tem abordagem mais equilibrada entre membros superiores e inferiores.'},
+            {q:'O que significa a faixa preta no Karatê?',o:['Fim da jornada','Início da verdadeira aprendizagem','Mestre absoluto','Aposentado'],c:1,e:'A faixa preta marca o início — o praticante aprendeu os fundamentos e agora começa a estudar de verdade.'}
           ]
         };
 
@@ -26609,7 +26972,38 @@
           'A faixa coral (7º grau) leva 31+ anos de faixa preta.',
           'Rickson Gracie é considerado invicto em centenas de lutas.',
           'Na montada, chance de finalizar é 3x maior que outras posições.',
-          'Mitsuyo Maeda lutou mais de 2.000 lutas pelo mundo.'
+          'Mitsuyo Maeda lutou mais de 2.000 lutas pelo mundo.',
+          // Muay Thai
+          '🥊 No Muay Thai, os lutadores amarram suas mãos com bandagem de algodão antes das luvas — tradição de centenas de anos.',
+          '🇹🇭 O Muay Thai é esporte nacional da Tailândia — celebrado com feriado próprio no país.',
+          '🦵 A canela do lutador de Muay Thai fica tão densa que pode quebrar bastões de madeira — de tanto treino de condicionamento.',
+          '🏆 Buakaw Banchamek é considerado o lutador de Muay Thai mais popular do mundo moderno.',
+          '⚡ Um roundhouse de Muay Thai bem executado gera mais de 2.000 newtons de força — equivale a uma colisão de carro.',
+          '🙏 O Wai Kru é dançado ao som do Pi Java — instrumento tailandês tradicional que toca durante toda a luta.',
+          // Judô
+          '🏅 O Judô foi a primeira arte marcial asiática a se tornar esporte olímpico — Tóquio 1964.',
+          '📚 Jigoro Kano era educador antes de criar o Judô — ele via as artes marciais como ferramenta de desenvolvimento humano.',
+          '⚖️ Masahiko Kimura treinava 9 horas por dia em jejum — considerado o judoca mais forte da história.',
+          '🤝 O aperto de mão (Rei) é obrigatório no Judô — símbolo de respeito mútuo entre os lutadores.',
+          '🌍 O Judô é praticado em mais de 200 países — mais do que qualquer outra arte marcial.',
+          // Wrestling
+          '🏛️ A luta greco-romana está presente nos Jogos Olímpicos desde 1896 — a primeira olimpíada moderna.',
+          '💪 Kurt Angle ganhou ouro olímpico no Wrestling com um pescoço quebrado — literalmente.',
+          '🦅 Khabib Nurmagomedov lutava ursos quando criança para desenvolver Wrestling — por orientação do pai.',
+          '🎯 No Wrestling universitário americano, um atleta pode ganhar a luta com 0 a 0 apenas pelo domínio de posição.',
+          '🔗 O Wrestling é a base técnica de mais campeões do UFC do que qualquer outra arte marcial.',
+          // MMA
+          '🔴 No UFC, o vermelho sempre representa o campeão ou atleta mais bem ranqueado — tradição desde o início.',
+          '👊 A luta mais curta da história do UFC durou apenas 5 segundos — Jorge Masvidal vs Ben Askren.',
+          '🌟 Jon Jones nunca perdeu uma luta por nocaute ou finalização na sua carreira regular.',
+          '📊 Estatisticamente, 1/3 das lutas do UFC terminam por finalização — artes marciais é o esporte que mais influencia.',
+          '🏋️ Os lutadores de MMA são considerados os atletas mais completos do mundo — precisam dominar striking, grappling e luta no chão.',
+          // Karatê
+          '✋ O Karatê foi desenvolvido em Okinawa, Japão, por camponeses sem acesso a armas — daí o foco nas "mãos vazias".',
+          '🥋 Gichin Funakoshi, criador do Shotokan, nunca assistiu a uma competição de Kumite — ele era contra a prática competitiva.',
+          '🌸 Os 20 preceitos do Karatê de Funakoshi começam com: "O Karatê começa e termina com respeito".',
+          '🎭 O Kata mais antigo ainda praticado tem mais de 600 anos de história.',
+          '🔢 Existem mais de 100 estilos diferentes de Karatê reconhecidos no mundo.'
         ];
 
         // === MEMORY GAME PAIRS ===
@@ -26646,7 +27040,47 @@
           {w:'GANCHO',h:'Hook — pé enganchado para controle'},
           {w:'POSTURA',h:'Manter coluna ereta dentro da guarda'},
           {w:'CHAVE',h:'Lock — técnica de articulação'},
-          {w:'GRAVATA',h:'Estrangulamento pela lateral do pescoço'}
+          {w:'GRAVATA',h:'Estrangulamento pela lateral do pescoço'},
+          // Muay Thai / Kickboxing
+          {w:'TEEP',h:'Chute frontal de impulsão — Muay Thai'},
+          {w:'CLINCH',h:'Corpo a corpo — posição de joelhos no Muay Thai'},
+          {w:'COTOVELADA',h:'Golpe com o cotovelo — exclusivo do Muay Thai'},
+          {w:'JOELHADA',h:'Golpe com o joelho — poderoso no clinch'},
+          {w:'WAIKRU',h:'Ritual de dança e respeito antes da luta tailandesa'},
+          {w:'ROUNDHOUSE',h:'Chute circular — o chute mais versátil das artes marciais'},
+          {w:'SUPERMAN',h:'Golpe surpresa — chute e soco simultâneos'},
+          {w:'PLUM',h:'Posição de clinch com mãos atrás da nuca — Muay Thai'},
+          // Judô
+          {w:'IPPON',h:'Ponto total no Judô — vitória imediata'},
+          {w:'OGOSHI',h:'Arremesso de quadril clássico do Judô'},
+          {w:'TATAMI',h:'Superfície de luta do Judô — mat de espuma'},
+          {w:'SEOINAGUE',h:'Arremesso sobre os ombros — Judô'},
+          {w:'WAZAARI',h:'Meio ponto no Judô — dois equivalem a ippon'},
+          {w:'KIMURA',h:'Chave de ombro invertida — Judô e BJJ'},
+          {w:'OSAEKOMI',h:'Imobilização no Judô — segurar por 25 segundos'},
+          // Wrestling
+          {w:'SPRAWL',h:'Defesa de queda recuando o quadril — Wrestling'},
+          {w:'TAKEDOWN',h:'Derrubada controlada — 2 pontos no Wrestling'},
+          {w:'SUPLEX',h:'Arremesso arqueado para trás — Wrestling e Judô'},
+          {w:'REVERSAL',h:'Reversão de controle — 2 pontos no Wrestling'},
+          {w:'UNDERHOOK',h:'Braço por baixo do braço do oponente — controle'},
+          {w:'PINFALL',h:'Vitória imediata por imobilização no Wrestling'},
+          {w:'SPRAWL',h:'Defesa de queda — recuar quadril no Wrestling'},
+          // MMA
+          {w:'OCTOGONO',h:'O ringue do UFC — oito lados de batalha'},
+          {w:'GUILHOTINA',h:'Estrangulamento pelo pescoço de frente — MMA'},
+          {w:'ANACONDA',h:'Estrangulamento com braço pela axila — devastador'},
+          {w:'CAGEFIGHT',h:'Luta na jaula — formato clássico do MMA'},
+          {w:'KNOCKOUT',h:'KO — vitória por nocaute'},
+          {w:'SUBMISSION',h:'Finalização — vencer por desistência do oponente'},
+          // Karatê
+          {w:'KATA',h:'Forma — sequência de técnicas contra inimigos imaginários'},
+          {w:'KUMITE',h:'Combate no Karatê — aplicação real das técnicas'},
+          {w:'KIAI',h:'Grito de espírito ao executar técnica — Karatê'},
+          {w:'DOJO',h:'Local sagrado de treinamento das artes marciais'},
+          {w:'KARATEKA',h:'Praticante de Karatê'},
+          {w:'SENSEI',h:'Professor/mestre nas artes marciais japonesas'},
+          {w:'ZANSHIN',h:'Estado de alerta total após executar uma técnica'}
         ];
 
         // === ASSOCIAÇÃO PAIRS (golpe PT → descrição) ===
@@ -26683,7 +27117,47 @@
           {t:'Queda',d:'Derrubar o oponente da posição de pé — 2 pontos'},
           {t:'Ponte',d:'Elevar quadril para escapar ou derrubar'},
           {t:'Fuga de quadril',d:'Mover quadril lateralmente para criar espaço'},
-          {t:'Berimbolo',d:'Inversão giratória para tomar as costas'}
+          {t:'Berimbolo',d:'Inversão giratória para tomar as costas'},
+          // Muay Thai
+          {t:'Teep',d:'Chute frontal de empurrão — mantém distância'},
+          {t:'Plum',d:'Clinch com controle da nuca para joelhos'},
+          {t:'Kao Loi',d:'Joelhada voadora saltada'},
+          {t:'Sok Kratong',d:'Cotovelada de cima para baixo — cortante'},
+          {t:'Roundhouse Kick',d:'Chute circular com a canela — versátil'},
+          {t:'Superman Punch',d:'Fintar chute e soltar soco surpresa'},
+          {t:'Spinning Back Elbow',d:'Cotovelada giratória costas — surpresa'},
+          {t:'Low Kick',d:'Chute nas pernas para enfraquecer a base'},
+          // Judô
+          {t:'O-Goshi',d:'Arremesso de quadril — clássico e eficaz'},
+          {t:'Seoi-Nage',d:'Arremesso sobre os ombros — muito competitivo'},
+          {t:'Ippon-Seoi-Nage',d:'Seoi-nage com um braço — mais veloz'},
+          {t:'Uchi-Mata',d:'Arremesso pela coxa interna — espetacular'},
+          {t:'Tai-Otoshi',d:'Queda do corpo — projeção com bloqueio de perna'},
+          {t:'Osaekomi',d:'Imobilização no solo — 25s = Ippon'},
+          {t:'Sankaku-Jime',d:'Triângulo dos braços — estrangulamento no Judô'},
+          // Wrestling
+          {t:'Double Leg',d:'Entrada baixa agarrando as duas pernas'},
+          {t:'Single Leg',d:'Agarrar uma perna e derrubar o oponente'},
+          {t:'Sprawl',d:'Recuar o quadril — defesa de queda'},
+          {t:'Suplex',d:'Arremesso arqueado para trás com as costas'},
+          {t:'Fireman Carry',d:'Carregamento nos ombros para arremesso'},
+          {t:'Arm Drag',d:'Puxar o braço para entrada nas costas'},
+          {t:'Granby Roll',d:'Rolamento para escapar do controle inferior'},
+          // MMA
+          {t:'Rear Naked Choke',d:'Mata leão — estrangulamento pelas costas'},
+          {t:'Ground and Pound',d:'Socos e cotoveladas no oponente no chão'},
+          {t:'Thai Clinch',d:'Controle da nuca para joelhos no MMA'},
+          {t:'Sprawl and Brawl',d:'Defender quedas e trocar na pé'},
+          {t:'Rubber Guard',d:'Guarda alta flexível — criação de Eddie Bravo'},
+          {t:'Dirty Boxing',d:'Socos curtos em clinch no MMA'},
+          // Karatê
+          {t:'Gyaku-Zuki',d:'Soco reverso — mão oposta à perna da frente'},
+          {t:'Mawashi-Geri',d:'Chute circular — jodan (cabeça) ou chudan (corpo)'},
+          {t:'Mae-Geri',d:'Chute frontal reto — básico e eficaz'},
+          {t:'Oi-Zuki',d:'Soco direto avançando — lunge punch'},
+          {t:'Gedan-Barai',d:'Bloqueio descendente — protege a região baixa'},
+          {t:'Shuto-Uke',d:'Bloqueio com a mão espada — mão aberta'},
+          {t:'Kizami-Zuki',d:'Jab rápido do lado da frente — Kumite'}
         ];
 
         // === CROSSWORD PUZZLES ===
@@ -26708,108 +27182,54 @@
 
         // === CT ENGLISH VOCABULARY ===
         var ENGLISH_BANK = [
-          // --- Finalizações ---
-          {en:'Rear Naked Choke',pt:'Mata-leão',pron:'rír nêi-kid tchôuk',
-           ctx:'He got the rear naked choke from back mount.',trad:'Ele pegou o mata-leão das costas.',cat:'Finalização'},
-          {en:'Guillotine',pt:'Guilhotina',pron:'gí-lo-tín',
-           ctx:'Watch out for the guillotine when you shoot!',trad:'Cuidado com a guilhotina quando entrar na queda!',cat:'Finalização'},
-          {en:'Triangle Choke',pt:'Triângulo',pron:'trái-ân-gol tchôuk',
-           ctx:'She locked a tight triangle choke from closed guard.',trad:'Ela travou um triângulo apertado da guarda fechada.',cat:'Finalização'},
-          {en:'Armbar',pt:'Chave de braço',pron:'árm-bar',
-           ctx:'The armbar is one of the first submissions you learn.',trad:'A chave de braço é uma das primeiras finalizações que você aprende.',cat:'Finalização'},
-          {en:'Kimura',pt:'Kimura (chave de ombro)',pron:'ki-mú-ra',
-           ctx:'I caught the kimura from half guard.',trad:'Peguei a kimura da meia-guarda.',cat:'Finalização'},
-          {en:'Americana',pt:'Americana (chave de ombro)',pron:'ame-ri-ká-na',
-           ctx:'Americana works great from mount and side control.',trad:'A americana funciona bem da montada e do cem-quilos.',cat:'Finalização'},
-          {en:'Omoplata',pt:'Omoplata',pron:'omo-plá-ta',
-           ctx:'The omoplata is a shoulder lock using your legs.',trad:'A omoplata é uma chave de ombro usando as pernas.',cat:'Finalização'},
-          {en:'Ankle Lock',pt:'Chave de tornozelo',pron:'ân-kol lók',
-           ctx:'Straight ankle lock is legal at white belt.',trad:'A chave de tornozelo reta é permitida na faixa branca.',cat:'Finalização'},
-          {en:'Heel Hook',pt:'Chave de calcanhar',pron:'ríl rúk',
-           ctx:"The heel hook attacks the knee — be careful!",trad:'A chave de calcanhar ataca o joelho — cuidado!',cat:'Finalização'},
-          {en:'Knee Bar',pt:'Chave de joelho',pron:'ní bar',
-           ctx:'Knee bar is only allowed from brown belt in gi.',trad:'A chave de joelho só é permitida da marrom no gi.',cat:'Finalização'},
-          {en:'Wrist Lock',pt:'Chave de punho',pron:'ríst lók',
-           ctx:'He surprised me with a sneaky wrist lock.',trad:'Ele me surpreendeu com uma chave de punho sorrateira.',cat:'Finalização'},
-          {en:'Ezekiel Choke',pt:'Ezequiel',pron:'i-zí-ki-el tchôuk',
-           ctx:'The Ezekiel choke uses the sleeve of the gi.',trad:'O ezequiel usa a manga do kimono.',cat:'Finalização'},
-          {en:'Cross Collar Choke',pt:'Estrangulamento cruzado',pron:'króss kó-lar tchôuk',
-           ctx:'Roger Gracie is famous for his cross collar choke from mount.',trad:'Roger Gracie é famoso pelo estrangulamento cruzado da montada.',cat:'Finalização'},
-          {en:'Bow and Arrow Choke',pt:'Estrangulamento arco e flecha',pron:'bôu end á-rou tchôuk',
-           ctx:'Bow and arrow is one of the strongest chokes from the back.',trad:'O arco e flecha é um dos estrangulamentos mais fortes das costas.',cat:'Finalização'},
-          // --- Posições ---
-          {en:'Closed Guard',pt:'Guarda fechada',pron:'klôuzd gárd',
-           ctx:'Keep your posture when inside the closed guard.',trad:'Mantenha a postura dentro da guarda fechada.',cat:'Posição'},
-          {en:'Open Guard',pt:'Guarda aberta',pron:'ôu-pen gárd',
-           ctx:'There are many types of open guard in modern artes marciais.',trad:'Existem muitos tipos de guarda aberta no artes marciais moderno.',cat:'Posição'},
-          {en:'Half Guard',pt:'Meia-guarda',pron:'ráf gárd',
-           ctx:'From half guard, fight for the underhook.',trad:'Da meia-guarda, lute pelo underhook.',cat:'Posição'},
-          {en:'Mount',pt:'Montada',pron:'máunt',
-           ctx:'Mount is worth 4 points in IBJJF rules.',trad:'A montada vale 4 pontos nas regras da IBJJF.',cat:'Posição'},
-          {en:'Side Control',pt:'Cem-quilos / Controle lateral',pron:'sáid kon-trôul',
-           ctx:'Maintain heavy pressure in side control.',trad:'Mantenha pressão pesada no cem-quilos.',cat:'Posição'},
-          {en:'Back Mount',pt:'Costas / Pegada de costas',pron:'bék máunt',
-           ctx:'Back mount with hooks is the strongest position.',trad:'As costas com ganchos é a posição mais forte.',cat:'Posição'},
-          {en:'Knee on Belly',pt:'Joelho na barriga',pron:'ní on bé-li',
-           ctx:'Knee on belly is worth 2 points and creates a lot of pressure.',trad:'Joelho na barriga vale 2 pontos e cria muita pressão.',cat:'Posição'},
-          {en:'North-South',pt:'Norte-sul',pron:'nórth sáuth',
-           ctx:'In north-south, your chest is on his chest but inverted.',trad:'No norte-sul, seu peito está no peito dele, mas invertido.',cat:'Posição'},
-          {en:'Turtle',pt:'Tartaruga / Quatro apoios',pron:'târ-tol',
-           ctx:'When someone is in turtle, attack the neck or take the back.',trad:'Quando alguém está de quatro apoios, ataque o pescoço ou pegue as costas.',cat:'Posição'},
-          {en:'Spider Guard',pt:'Guarda aranha',pron:'spái-der gárd',
-           ctx:'Spider guard controls distance with feet on the biceps.',trad:'A guarda aranha controla distância com os pés nos bíceps.',cat:'Posição'},
-          {en:'Butterfly Guard',pt:'Guarda borboleta',pron:'bâ-ter-flái gárd',
-           ctx:'Butterfly guard is great for sweeps.',trad:'A guarda borboleta é ótima para raspagens.',cat:'Posição'},
-          {en:'De La Riva Guard',pt:'Guarda De La Riva',pron:'de-la-rí-va gárd',
-           ctx:'Hook the outside of his leg for De La Riva guard.',trad:'Ganche do lado de fora da perna dele para a guarda De La Riva.',cat:'Posição'},
-          // --- Movimentos ---
-          {en:'Sweep',pt:'Raspagem',pron:'suíp',
-           ctx:'A sweep is when you reverse from bottom to top — 2 points.',trad:'Uma raspagem é quando você inverte de baixo para cima — 2 pontos.',cat:'Movimento'},
-          {en:'Guard Pass',pt:'Passagem de guarda',pron:'gárd péss',
-           ctx:'Guard passing is one of the most important skills.',trad:'Passagem de guarda é uma das habilidades mais importantes.',cat:'Movimento'},
-          {en:'Takedown',pt:'Queda',pron:'têik-dáun',
-           ctx:'A clean takedown scores 2 points.',trad:'Uma queda limpa vale 2 pontos.',cat:'Movimento'},
-          {en:'Bridge',pt:'Ponte / Upa',pron:'brídj',
-           ctx:'Use the bridge to escape from mount.',trad:'Use a ponte para escapar da montada.',cat:'Movimento'},
-          {en:'Hip Escape',pt:'Fuga de quadril',pron:'ríp es-kêip',
-           ctx:'Hip escape is the most fundamental artes marciais movement.',trad:'A fuga de quadril é o movimento mais fundamental do artes marciais.',cat:'Movimento'},
-          {en:'Shrimp',pt:'Fuga de quadril (camarão)',pron:'shrímp',
-           ctx:'Shrimping is the first drill every white belt learns.',trad:'O camarão é o primeiro exercício que todo faixa branca aprende.',cat:'Movimento'},
-          {en:'Pull Guard',pt:'Puxar guarda',pron:'pul gárd',
-           ctx:'Many competitors prefer to pull guard instead of wrestling.',trad:'Muitos competidores preferem puxar guarda em vez de lutar em pé.',cat:'Movimento'},
-          {en:'Back Take',pt:'Pegada de costas',pron:'bék têik',
-           ctx:'The back take from turtle scores 4 points.',trad:'A pegada de costas da tartaruga vale 4 pontos.',cat:'Movimento'},
-          {en:'Berimbolo',pt:'Berimbolo',pron:'be-rim-bô-lo',
-           ctx:'The berimbolo is an inversion to take the back.',trad:'O berimbolo é uma inversão para pegar as costas.',cat:'Movimento'},
-          // --- Conceitos ---
-          {en:'Submission',pt:'Finalização',pron:'sub-mí-shon',
-           ctx:'A submission ends the fight immediately.',trad:'Uma finalização encerra a luta imediatamente.',cat:'Conceito'},
-          {en:'Tap / Tap Out',pt:'Bater / Desistir',pron:'tép / tép áut',
-           ctx:"If you're caught in a submission, tap before you get hurt.",trad:'Se pegaram você numa finalização, bata antes de se machucar.',cat:'Conceito'},
-          {en:'Roll / Sparring',pt:'Rolar / Treino livre',pron:'rôul / spá-ring',
-           ctx:"Let's roll for 5 minutes.",trad:'Vamos rolar 5 minutos.',cat:'Conceito'},
-          {en:'Drill',pt:'Repetição / Exercício técnico',pron:'dríl',
-           ctx:'Drill the technique 10 times on each side.',trad:'Repita a técnica 10 vezes de cada lado.',cat:'Conceito'},
-          {en:'Grip',pt:'Pegada',pron:'gríp',
-           ctx:'A strong grip on the collar controls the fight.',trad:'Uma pegada forte na gola controla a luta.',cat:'Conceito'},
-          {en:'Underhook',pt:'Gancho por baixo',pron:'ân-der-rúk',
-           ctx:'The underhook is key in half guard.',trad:'O underhook é fundamental na meia-guarda.',cat:'Conceito'},
-          {en:'Frame',pt:'Enquadramento / Bloqueio',pron:'frêim',
-           ctx:'Use frames to create distance and prevent pressure.',trad:'Use enquadramentos para criar distância e evitar pressão.',cat:'Conceito'},
-          {en:'Hooks',pt:'Ganchos',pron:'rúks',
-           ctx:'You need hooks to score back mount points.',trad:'Você precisa dos ganchos para pontuar posição de costas.',cat:'Conceito'},
-          {en:'Posture',pt:'Postura',pron:'pós-tcher',
-           ctx:'Keep your posture up inside the guard.',trad:'Mantenha sua postura dentro da guarda.',cat:'Conceito'},
-          {en:'Pressure',pt:'Pressão',pron:'pré-sher',
-           ctx:'Top pressure is essential for a good guard pass.',trad:'Pressão por cima é essencial para uma boa passagem.',cat:'Conceito'},
-          {en:'Scramble',pt:'Disputa caótica',pron:'skrém-bol',
-           ctx:'In a scramble, the fastest athlete usually wins position.',trad:'Numa disputa caótica, o atleta mais rápido geralmente ganha posição.',cat:'Conceito'},
-          {en:'Transition',pt:'Transição',pron:'tran-zí-shon',
-           ctx:'Smooth transitions between positions are the mark of a good fighter.',trad:'Transições suaves entre posições são a marca de um bom lutador.',cat:'Conceito'},
-          {en:'Open Mat',pt:'Treino livre',pron:'ôu-pen mét',
-           ctx:'Open mat on Saturday — come train whatever you want.',trad:'Treino livre no sábado — venha treinar o que quiser.',cat:'Conceito'},
-          {en:'Warm-up',pt:'Aquecimento',pron:'uórm-âp',
-           ctx:"We always start class with a warm-up.",trad:'Sempre começamos a aula com aquecimento.',cat:'Conceito'}
+          // BJJ
+          {pt:'Raspagem',en:'Sweep',d:'Inverter a posição de baixo para cima'},
+          {pt:'Guarda',en:'Guard',d:'Posição de defesa com as pernas'},
+          {pt:'Montada',en:'Mount',d:'Posição de dominância em cima'},
+          {pt:'Costas',en:'Back',d:'Posição mais dominante no grappling'},
+          {pt:'Finalização',en:'Submission',d:'Técnica que força desistência'},
+          {pt:'Estrangulamento',en:'Choke',d:'Técnica que corta circulação'},
+          {pt:'Triângulo',en:'Triangle',d:'Finalização com as pernas no pescoço'},
+          {pt:'Mata Leão',en:'Rear Naked Choke',d:'RNC — estrangulamento pelas costas'},
+          {pt:'Faixa',en:'Belt',d:'Nível do praticante'},
+          {pt:'Tatame',en:'Mat',d:'Superfície de treino'},
+          // Muay Thai
+          {pt:'Joelhada',en:'Knee Strike',d:'Golpe com o joelho'},
+          {pt:'Cotovelada',en:'Elbow Strike',d:'Golpe devastador com o cotovelo'},
+          {pt:'Chute frontal',en:'Teep / Front Kick',d:'Chute de impulsão para manter distância'},
+          {pt:'Chute circular',en:'Roundhouse Kick',d:'Chute girando o quadril'},
+          {pt:'Corpo a corpo',en:'Clinch',d:'Posição de contato próximo'},
+          {pt:'Protetor bucal',en:'Mouthguard',d:'Proteção para os dentes'},
+          {pt:'Canela',en:'Shin',d:'Parte usada para chutes no Muay Thai'},
+          {pt:'Ringue',en:'Ring',d:'Local de combate quadrado'},
+          {pt:'Árbitro',en:'Referee',d:'Juiz que controla a luta'},
+          {pt:'Nocaute',en:'Knockout (KO)',d:'Vitória por incapacitação'},
+          // Judô / Wrestling
+          {pt:'Arremesso',en:'Throw',d:'Projetar o oponente ao chão'},
+          {pt:'Imobilização',en:'Pin / Hold',d:'Manter oponente no chão'},
+          {pt:'Queda',en:'Takedown',d:'Derrubar o oponente'},
+          {pt:'Rasteira',en:'Leg sweep / Trip',d:'Desequilibrar pelas pernas'},
+          {pt:'Desistência',en:'Tap out',d:'Bater para indicar derrota'},
+          {pt:'Campeão',en:'Champion',d:'Vencedor do título'},
+          {pt:'Treinador',en:'Coach / Corner',d:'Responsável pelo treino e estratégia'},
+          {pt:'Adversário',en:'Opponent',d:'Quem você enfrenta na luta'},
+          {pt:'Categoria',en:'Weight class',d:'Divisão por peso'},
+          // MMA / Geral
+          {pt:'Jaula',en:'Cage / Octagon',d:'Arena do MMA — gradil metálico'},
+          {pt:'Nocaute técnico',en:'TKO',d:'Árbitro para luta por superioridade'},
+          {pt:'Esquiva',en:'Slip / Dodge',d:'Desviar do golpe sem bloqueio'},
+          {pt:'Guarda aberta',en:'Open Guard',d:'Guarda com pernas abertas'},
+          {pt:'Soco',en:'Punch',d:'Golpe com o punho'},
+          {pt:'Defesa',en:'Defense',d:'Ação de se proteger de golpes'},
+          // Karatê
+          {pt:'Mestre',en:'Sensei',d:'Professor de artes marciais japonesas'},
+          {pt:'Escola',en:'Dojo',d:'Local de treinamento'},
+          {pt:'Forma',en:'Kata',d:'Sequência coreografada de técnicas'},
+          {pt:'Combate',en:'Kumite / Sparring',d:'Prática de luta real ou controlada'},
+          {pt:'Reverência',en:'Bow / Rei',d:'Saudação de respeito'},
+          {pt:'Cinturão',en:'Belt / Obi',d:'Faixa que indica nível no Karatê'},
+          {pt:'Kiai',en:'Spirit shout',d:'Grito ao executar técnica'},
+          {pt:'Bloqueio',en:'Block / Uke',d:'Defesa de um ataque'}
         ];
 
         // ═══ STATE ═══
@@ -33795,52 +34215,64 @@
         var _profEmailAtual = '';
         var _profModsSelecionadas = [];
 
-        function _renderModalidadesProfessorSection(profEmail, modsSalvas) {
+        async function _renderModalidadesProfessorSection(profEmail, modsSalvas) {
             var section = document.getElementById('profModalidadesSection');
             var grid    = document.getElementById('profModalidadesGrid');
             if (!section || !grid) return;
 
-            _profEmailAtual      = profEmail;
-            _profModsSelecionadas = modsSalvas ? modsSalvas.split(',').map(function(m){ return m.trim(); }).filter(Boolean) : [];
+            _profEmailAtual       = profEmail;
+            _profModsSelecionadas = modsSalvas
+                ? modsSalvas.split(',').map(function(m){ return m.trim(); }).filter(Boolean)
+                : [];
 
             section.style.display = 'block';
+            grid.innerHTML = '<div style="font-size:11px;color:var(--adm-text-3);padding:8px;">⏳ Carregando modalidades do sistema...</div>';
+
+            // ── Sempre busca do backend — mesma fonte do cadastro de aluno ──────
+            var MODS = [];
+            try {
+                var res = await secureFetch('getModalidades', {});
+                if (res && res.modalidades && res.modalidades.length > 0) {
+                    MODS = res.modalidades.map(function(m) {
+                        return { id: m.id, icon: m.icon || '🥋', nome: m.nome || m.id };
+                    });
+                }
+            } catch(_e) {}
+
+            // Fallback: MODALIDADES_CATALOG se fetch falhar
+            if (MODS.length === 0 && typeof MODALIDADES_CATALOG !== 'undefined' && MODALIDADES_CATALOG.length > 0) {
+                MODS = MODALIDADES_CATALOG;
+            }
+
+            if (MODS.length === 0) {
+                grid.innerHTML = '<div style="font-size:11px;color:var(--coral);">Nenhuma modalidade cadastrada. Adicione em Sistema → Modalidades.</div>';
+                return;
+            }
+
             grid.innerHTML = '';
-
-            var MODS = typeof MODALIDADES_CATALOG !== 'undefined' ? MODALIDADES_CATALOG : [
-                { id:'bjj',         icon:'🥋', nome:'BJJ' },
-                { id:'muay_thai',   icon:'🥊', nome:'Muay Thai' },
-                { id:'judo',        icon:'🥋', nome:'Judô' },
-                { id:'karate',      icon:'🥋', nome:'Karatê' },
-                { id:'boxing',      icon:'🥊', nome:'Boxe' },
-                { id:'mma',         icon:'⚔️',  nome:'MMA' },
-                { id:'kickboxing',  icon:'🥊', nome:'Kickboxing' },
-                { id:'wrestling',   icon:'🤼', nome:'Wrestling' },
-                { id:'funcional',   icon:'💪', nome:'Funcional' },
-                { id:'taekwondo',   icon:'🦵', nome:'Taekwondo' }
-            ];
-
             MODS.forEach(function(mod) {
                 var ativo = _profModsSelecionadas.indexOf(mod.id) !== -1;
                 var btn   = document.createElement('button');
                 btn.type  = 'button';
                 btn.setAttribute('data-modid', mod.id);
                 btn.style.cssText = 'padding:8px 14px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid;transition:all 0.15s;' +
-                    (ativo ? 'background:rgba(201,162,58,0.15);border-color:var(--adm-primary);color:var(--adm-primary);'
-                           : 'background:var(--adm-bg-elevated);border-color:var(--adm-border);color:var(--adm-text-3);');
+                    (ativo
+                        ? 'background:rgba(201,162,58,0.15);border-color:var(--adm-primary);color:var(--adm-primary);'
+                        : 'background:var(--adm-bg-elevated);border-color:var(--adm-border);color:var(--adm-text-3);');
                 btn.textContent = mod.icon + ' ' + mod.nome;
                 btn.onclick = function() {
                     var id  = btn.getAttribute('data-modid');
                     var idx = _profModsSelecionadas.indexOf(id);
                     if (idx !== -1) {
                         _profModsSelecionadas.splice(idx, 1);
-                        btn.style.background   = 'var(--adm-bg-elevated)';
-                        btn.style.borderColor  = 'var(--adm-border)';
-                        btn.style.color        = 'var(--adm-text-3)';
+                        btn.style.background  = 'var(--adm-bg-elevated)';
+                        btn.style.borderColor = 'var(--adm-border)';
+                        btn.style.color       = 'var(--adm-text-3)';
                     } else {
                         _profModsSelecionadas.push(id);
-                        btn.style.background   = 'rgba(201,162,58,0.15)';
-                        btn.style.borderColor  = 'var(--adm-primary)';
-                        btn.style.color        = 'var(--adm-primary)';
+                        btn.style.background  = 'rgba(201,162,58,0.15)';
+                        btn.style.borderColor = 'var(--adm-primary)';
+                        btn.style.color       = 'var(--adm-primary)';
                     }
                 };
                 grid.appendChild(btn);
@@ -36641,6 +37073,9 @@
             var modal = document.getElementById('stuModal');
             modal.style.display = 'block';
             document.body.style.overflow = 'hidden';
+
+            // Carrega dependentes desta conta
+            setTimeout(function() { loadStuDependentes(email); }, 300);
 
             // Hero
             document.getElementById('stuAvatar').textContent = (s.name || '?').charAt(0).toUpperCase();
