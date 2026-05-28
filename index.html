@@ -8805,8 +8805,11 @@
                                     </div>
                                     <div>
                                         <label style="font-size:10px;color:var(--text-3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px;">Modalidades</label>
-                                        <input id="depModsPerfil" placeholder="Ex: bjj, muay_thai" style="width:100%;padding:10px 12px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:13px;">
-                                        <div style="font-size:10px;color:var(--text-3);margin-top:3px;">Separadas por vírgula. Deixe em branco para usar a sua modalidade.</div>
+                                        <div id="depModsGrid" style="display:flex;flex-wrap:wrap;gap:6px;min-height:36px;">
+                                            <div style="font-size:11px;color:var(--text-3);padding:8px 0;">⏳ Carregando...</div>
+                                        </div>
+                                        <input type="hidden" id="depModsPerfil">
+                                        <div style="font-size:10px;color:var(--text-3);margin-top:4px;">Selecione uma ou mais modalidades.</div>
                                     </div>
                                 </div>
                                 <div id="depMsgPerfil" style="font-size:11px;color:var(--text-3);min-height:16px;margin-bottom:8px;"></div>
@@ -11631,7 +11634,10 @@
                         <div style="font-size:14px;font-weight:800;color:var(--text-1);margin-bottom:14px;">➕ Cadastrar Dependente</div>
                         <input id="depNome" placeholder="Nome completo *" style="width:100%;padding:9px 11px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:12px;margin-bottom:8px;">
                         <input id="depNascimento" type="date" placeholder="Nascimento *" style="width:100%;padding:9px 11px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:12px;margin-bottom:8px;">
-                        <input id="depModalidades" placeholder="Modalidades (ex: bjj, kickboxing)" style="width:100%;padding:9px 11px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:12px;margin-bottom:4px;">
+                        <div id="depModalidadesGrid" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;min-height:36px;">
+                            <div style="font-size:11px;color:var(--text-3);padding:6px 0;">⏳ Carregando...</div>
+                        </div>
+                        <input type="hidden" id="depModalidades">
                         <div style="font-size:10px;color:var(--text-3);margin-bottom:12px;">Senha da conta = email do responsável</div>
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                             <button onclick="fecharModalDependente()" style="padding:10px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:9px;color:var(--text-2);font-size:12px;font-weight:700;cursor:pointer;">Cancelar</button>
@@ -15625,12 +15631,21 @@
                             _brd = '1px solid rgba(248,113,113,0.3)';
                             _clr = '#f87171';
                         }
+                        // Em dia (6+ dias) — exibe banner verde
+                        if (!_txt && _mv && !_mv.atrasado && !_mv.venceHoje && !_mv.venceEmBreve &&
+                            (_mv.status === 'PAGO' || _mv.status === 'COBERTORESPONSAVEL' || (_mv.diasRestantes !== null && _mv.diasRestantes > 5))) {
+                            _txt = '✅ Mensalidade em dia' + (_mv.data ? ' · vence em ' + _mv.data : '') + '.';
+                            _bg  = 'rgba(74,222,128,0.08)';
+                            _brd = '1px solid rgba(74,222,128,0.2)';
+                            _clr = '#4ade80';
+                        }
+
                         if (_txt) {
                             _alr.textContent = _txt;
                             _alr.style.display     = 'block';
                             _alr.style.background  = _bg;
                             _alr.style.border      = _brd;
-                            _alr.style.color        = _clr;
+                            _alr.style.color       = _clr;
                         }
                     }
                 } catch(_eMv) {}
@@ -21845,6 +21860,71 @@
         }
 
         // ── Adicionar dependente pelo responsável (Premium) ─────────────
+        // ── Popula grid de modalidades dinamicamente ─────────────────────
+        var _depModsSelecionadas = []; // para ambos os modais
+
+        async function _carregarModsDepGrid(gridId, hiddenId, modPrincipal) {
+            var grid   = document.getElementById(gridId);
+            var hidden = document.getElementById(hiddenId);
+            if (!grid) return;
+
+            _depModsSelecionadas = modPrincipal ? [modPrincipal] : [];
+
+            var MODS = [];
+            try {
+                var res = await secureFetch('getModalidades', {});
+                if (res && res.modalidades && res.modalidades.length > 0) {
+                    MODS = res.modalidades.map(function(m) {
+                        return { id: m.id, icon: m.icon || '🥋', nome: m.nome || m.id };
+                    });
+                }
+            } catch(_e) {}
+
+            // Fallback para MODALIDADES_CATALOG
+            if (MODS.length === 0 && typeof MODALIDADES_CATALOG !== 'undefined' && MODALIDADES_CATALOG.length > 0) {
+                MODS = MODALIDADES_CATALOG;
+            }
+
+            if (MODS.length === 0) {
+                grid.innerHTML = '<div style="font-size:11px;color:var(--coral);">Nenhuma modalidade cadastrada.</div>';
+                return;
+            }
+
+            grid.innerHTML = '';
+            MODS.forEach(function(mod) {
+                var ativo = _depModsSelecionadas.indexOf(mod.id) !== -1;
+                var btn   = document.createElement('button');
+                btn.type  = 'button';
+                btn.setAttribute('data-modid', mod.id);
+                btn.style.cssText = 'padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid;transition:all 0.15s;' +
+                    (ativo
+                        ? 'background:rgba(201,162,58,0.15);border-color:#C9A23A;color:#C9A23A;'
+                        : 'background:var(--bg-elevated);border-color:var(--border);color:var(--text-3);');
+                btn.textContent = mod.icon + ' ' + mod.nome;
+                btn.onclick = function() {
+                    var id  = btn.getAttribute('data-modid');
+                    var idx = _depModsSelecionadas.indexOf(id);
+                    if (idx !== -1) {
+                        _depModsSelecionadas.splice(idx, 1);
+                        btn.style.background   = 'var(--bg-elevated)';
+                        btn.style.borderColor  = 'var(--border)';
+                        btn.style.color        = 'var(--text-3)';
+                    } else {
+                        _depModsSelecionadas.push(id);
+                        btn.style.background   = 'rgba(201,162,58,0.15)';
+                        btn.style.borderColor  = '#C9A23A';
+                        btn.style.color        = '#C9A23A';
+                    }
+                    // Atualiza hidden input
+                    if (hidden) hidden.value = _depModsSelecionadas.join(',');
+                };
+                grid.appendChild(btn);
+            });
+
+            // Atualiza hidden com seleção inicial
+            if (hidden) hidden.value = _depModsSelecionadas.join(',');
+        }
+
         function abrirModalAdicionarDependente() {
             // Verifica plano Premium
             if (typeof _planId !== 'undefined' && _planId !== 'premium' && _planId !== 'trial') {
@@ -21860,10 +21940,10 @@
             var msg = document.getElementById('depMsgPerfil');
             if (msg) msg.textContent = '';
             // Pré-preenche modalidade com a do responsável
-            var modEl = document.getElementById('depModsPerfil');
-            if (modEl && currentUser && currentUser.modalidadePrincipal) {
-                modEl.value = currentUser.modalidadePrincipal;
-            }
+            // Carrega modalidades do sistema
+            _depModsSelecionadas = [];
+            var _modPrinc = currentUser && currentUser.modalidadePrincipal ? currentUser.modalidadePrincipal : '';
+            _carregarModsDepGrid('depModsGrid', 'depModsPerfil', _modPrinc);
             modal.style.display = 'flex';
         }
 
@@ -21875,7 +21955,7 @@
         async function salvarDependentePerfil() {
             var nome  = (document.getElementById('depNomePerfil')?.value  || '').trim();
             var nasc  = (document.getElementById('depNascPerfil')?.value  || '').trim();
-            var mods  = (document.getElementById('depModsPerfil')?.value  || '').trim();
+            var mods  = (document.getElementById('depModsPerfil')?.value || _depModsSelecionadas.join(',') || '').trim();
             var msg   = document.getElementById('depMsgPerfil');
 
             if (!nome) { if (msg) msg.textContent = '⚠️ Nome obrigatório.'; return; }
@@ -22059,10 +22139,13 @@
         function abrirModalCriarDependente() {
             var modal = document.getElementById('modalCriarDependente');
             if (modal) modal.style.display = 'flex';
-            ['depNome','depNascimento','depModalidades'].forEach(function(id) {
+            ['depNome','depNascimento'].forEach(function(id) {
                 var el = document.getElementById(id);
                 if (el) el.value = '';
             });
+            // Carrega modalidades dinamicamente
+            _depModsSelecionadas = [];
+            _carregarModsDepGrid('depModalidadesGrid', 'depModalidades', '');
         }
 
         function fecharModalDependente() {
@@ -22073,7 +22156,7 @@
         async function salvarDependente() {
             var nome       = (document.getElementById('depNome')?.value || '').trim();
             var nasc       = (document.getElementById('depNascimento')?.value || '').trim();
-            var mods       = (document.getElementById('depModalidades')?.value || 'bjj').trim();
+            var mods       = (document.getElementById('depModalidades')?.value || _depModsSelecionadas.join(',') || 'bjj').trim();
             if (!nome) { alert('Nome obrigatório'); return; }
             if (!nasc) { alert('Data de nascimento obrigatória'); return; }
             if (!stuModalEmail) { alert('Erro: responsável não identificado'); return; }
