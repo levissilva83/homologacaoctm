@@ -7930,13 +7930,22 @@
                     <!-- HERO: Tema da aula de hoje (CT do aluno) -->
                     <div id="checkinTemaHoje" style="display:none;"></div>
 
-                    <div class="checkin-profile">
-                        <!-- Banner de vencimento de mensalidade -->
-                        <div id="checkinMensalidadeAlert" style="display:none;width:100%;margin-bottom:10px;padding:10px 12px;border-radius:12px;font-size:12px;font-weight:600;text-align:center;"></div>
-
-                        <div class="checkin-avatar" id="checkinInitial" style="position:relative;overflow:hidden;">L
-                            <img id="checkinAvatarPhoto" src="" alt="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%;">
+                    <!-- Card boas-vindas com foto em destaque -->
+                    <div id="welcomePhotoCard" style="display:none;text-align:center;padding:20px 16px 16px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);margin-bottom:16px;">
+                        <div id="welcomeAvatarWrap" style="position:relative;width:88px;height:88px;border-radius:50%;margin:0 auto 12px;overflow:hidden;background:linear-gradient(135deg,#C9A23A,#8C6A0A);display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:800;color:#000;border:3px solid rgba(201,162,58,0.4);">
+                            <span id="welcomeInitial">?</span>
+                            <img id="welcomeAvatarPhoto" src="" alt="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">
                         </div>
+                        <div style="font-size:18px;font-weight:800;color:var(--text-1);margin-bottom:2px;" id="welcomeName">-</div>
+                        <div style="font-size:12px;color:var(--text-3);margin-bottom:10px;" id="welcomeFaixa">-</div>
+                        <div id="welcomeMensalidadeAlert" style="display:none;padding:7px 12px;border-radius:10px;font-size:11px;font-weight:600;margin-bottom:4px;"></div>
+                    </div>
+
+                    <div class="checkin-profile">
+                        <!-- Inputs ocultos para compatibilidade com código existente -->
+                        <span id="checkinInitial" style="display:none;">L</span>
+                        <img id="checkinAvatarPhoto" src="" alt="" style="display:none;">
+
                         <div class="checkin-info">
                             <div class="checkin-name" id="displayName">-</div>
                             <div class="checkin-meta"><span id="displayFaixa">-</span></div>
@@ -11730,6 +11739,7 @@
             <div class="motiv-title" id="motivTitle">Sentimos sua falta!</div>
             <div class="motiv-days" id="motivDays"></div>
             <div class="motiv-msg" id="motivMsg"></div>
+            <div id="motivMensalidadeAlert" style="display:none;width:100%;margin:8px 0;padding:8px 12px;border-radius:10px;font-size:11px;font-weight:600;text-align:center;"></div>
             <div class="motiv-quote" id="motivQuote"></div>
             <div class="motiv-stat" id="motivStat">
                 <div class="motiv-stat-num" id="motivStatNum">0</div>
@@ -15603,6 +15613,63 @@
                 if (modeAdmin) { modeAdmin.classList.remove('active', 'admin-active'); }
                 // Load student data
                 document.getElementById('checkinInitial').textContent = currentUser.name.charAt(0).toUpperCase();
+
+                // ── Card de boas-vindas com foto ──────────────────────────
+                (function() {
+                    var card  = document.getElementById('welcomePhotoCard');
+                    if (!card) return;
+
+                    // Nome e faixa
+                    var wName = document.getElementById('welcomeName');
+                    var wFaixa = document.getElementById('welcomeFaixa');
+                    var wInit  = document.getElementById('welcomeInitial');
+                    if (wName)  wName.textContent  = currentUser.name || '';
+                    if (wFaixa) wFaixa.textContent = (currentUser.faixa || 'Branca') + (currentUser.grau ? ' · ' + currentUser.grau + 'º grau' : '');
+                    if (wInit)  wInit.textContent   = (currentUser.name || '?').charAt(0).toUpperCase();
+
+                    // Mensalidade
+                    var _mv3 = currentUser.mensalidadeVenc;
+                    var _alr3 = document.getElementById('welcomeMensalidadeAlert');
+                    if (_alr3 && _mv3) {
+                        var _t3='', _b3='', _br3='', _c3='';
+                        if (_mv3.atrasado) {
+                            _t3='⚠️ Mensalidade atrasada há '+Math.abs(_mv3.diasRestantes)+' dia'+(Math.abs(_mv3.diasRestantes)>1?'s':'')+'. Regularize com seu professor.';
+                            _b3='rgba(248,113,113,0.12)'; _br3='1px solid rgba(248,113,113,0.4)'; _c3='#f87171';
+                        } else if (_mv3.venceHoje) {
+                            _t3='📅 Mensalidade vence hoje!';
+                            _b3='rgba(251,191,36,0.12)'; _br3='1px solid rgba(251,191,36,0.4)'; _c3='#fbbf24';
+                        } else if (_mv3.venceEmBreve) {
+                            _t3='📅 Mensalidade vence em '+_mv3.diasRestantes+' dia'+(_mv3.diasRestantes>1?'s':'')+'.';
+                            _b3='rgba(251,191,36,0.08)'; _br3='1px solid rgba(251,191,36,0.25)'; _c3='#fbbf24';
+                        } else if (_mv3.status==='PENDENTE'||_mv3.status==='ATRASADO') {
+                            _t3='⚠️ Mensalidade pendente. Fale com seu professor.';
+                            _b3='rgba(248,113,113,0.08)'; _br3='1px solid rgba(248,113,113,0.3)'; _c3='#f87171';
+                        } else {
+                            _t3='✅ Mensalidade em dia'+(_mv3.data?' · '+_mv3.data:'')+'.';
+                            _b3='rgba(74,222,128,0.08)'; _br3='1px solid rgba(74,222,128,0.2)'; _c3='#4ade80';
+                        }
+                        if (_t3) {
+                            _alr3.textContent=_t3; _alr3.style.display='block';
+                            _alr3.style.background=_b3; _alr3.style.border=_br3; _alr3.style.color=_c3;
+                        }
+                    }
+
+                    // Foto — busca em todas as fontes disponíveis
+                    var _emailK = currentUser.email ? currentUser.email.toLowerCase().trim() : '';
+                    var _foto   = _currentRealPhoto
+                        || (_emailK ? localStorage.getItem('bjjAvatarFoto_' + _emailK) : '')
+                        || localStorage.getItem('bjjAvatarFoto')
+                        || (currentUser.avatar && currentUser.avatar.startsWith('data:image') ? currentUser.avatar : '');
+
+                    if (_foto && _foto.startsWith('data:image')) {
+                        var _wPhoto = document.getElementById('welcomeAvatarPhoto');
+                        var _wInit  = document.getElementById('welcomeInitial');
+                        if (_wPhoto) { _wPhoto.src = _foto; _wPhoto.style.display = 'block'; }
+                        if (_wInit)  _wInit.style.display = 'none';
+                    }
+
+                    card.style.display = 'block';
+                })();
                 // ── Aviso de vencimento de mensalidade ──────────────────
                 try {
                     var _mv  = currentUser.mensalidadeVenc;
@@ -20985,21 +21052,58 @@
 
             document.getElementById('motivMsg').textContent = msg;
 
-            // Aplica foto no modal se disponível
+            // ── Foto de perfil no modal ─────────────────────────────────
             try {
-                var _emailKey = currentUser && currentUser.email ? currentUser.email.toLowerCase().trim() : 'default';
-                var _fotoMot  = localStorage.getItem('bjjAvatarFoto_' + _emailKey) || localStorage.getItem('bjjAvatarFoto') || (currentUser && currentUser.avatar) || '';
-                if (_fotoMot && _fotoMot.startsWith('data:')) {
-                    var _motivAv    = document.getElementById('motivAvatar');
-                    var _motivPhoto = document.getElementById('motivAvatarPhoto');
-                    var _motivEmoji = document.getElementById('motivEmoji');
-                    if (_motivAv && _motivPhoto) {
-                        _motivPhoto.src = _fotoMot;
-                        _motivAv.style.display    = 'block';
-                        if (_motivEmoji) _motivEmoji.style.display = 'none';
-                    }
+                var _emailKey = currentUser && currentUser.email ? currentUser.email.toLowerCase().trim() : '';
+                var _fotoMot  = _currentRealPhoto // variável global — mais confiável
+                    || (_emailKey ? localStorage.getItem('bjjAvatarFoto_' + _emailKey) : '')
+                    || localStorage.getItem('bjjAvatarFoto')
+                    || (currentUser && currentUser.avatar && currentUser.avatar.startsWith('data:') ? currentUser.avatar : '');
+
+                var _motivAv    = document.getElementById('motivAvatar');
+                var _motivPhoto = document.getElementById('motivAvatarPhoto');
+                var _motivEmoji = document.getElementById('motivEmoji');
+                if (_fotoMot && _fotoMot.startsWith('data:image') && _motivAv && _motivPhoto) {
+                    _motivPhoto.src           = _fotoMot;
+                    _motivAv.style.display    = 'block';
+                    if (_motivEmoji) _motivEmoji.style.display = 'none';
+                } else {
+                    // sem foto — mostra emoji da modalidade
+                    if (_motivAv)  _motivAv.style.display    = 'none';
+                    if (_motivEmoji) _motivEmoji.style.display = '';
                 }
             } catch(_em) {}
+
+            // ── Banner de mensalidade no modal ───────────────────────────
+            try {
+                var _mv2  = currentUser && currentUser.mensalidadeVenc;
+                var _alr2 = document.getElementById('motivMensalidadeAlert');
+                if (_alr2) {
+                    var _t2='', _b2='', _br2='', _c2='';
+                    if (_mv2) {
+                        if (_mv2.atrasado) {
+                            var _dd = Math.abs(_mv2.diasRestantes);
+                            _t2='⚠️ Mensalidade atrasada há '+_dd+' dia'+(_dd>1?'s':'')+'. Regularize com seu professor.';
+                            _b2='rgba(248,113,113,0.12)'; _br2='1px solid rgba(248,113,113,0.4)'; _c2='#f87171';
+                        } else if (_mv2.venceHoje) {
+                            _t2='📅 Mensalidade vence hoje!'; _b2='rgba(251,191,36,0.12)'; _br2='1px solid rgba(251,191,36,0.4)'; _c2='#fbbf24';
+                        } else if (_mv2.venceEmBreve) {
+                            _t2='📅 Mensalidade vence em '+_mv2.diasRestantes+' dia'+(_mv2.diasRestantes>1?'s':'')+'.';
+                            _b2='rgba(251,191,36,0.08)'; _br2='1px solid rgba(251,191,36,0.25)'; _c2='#fbbf24';
+                        } else if (_mv2.status==='PENDENTE'||_mv2.status==='ATRASADO') {
+                            _t2='⚠️ Mensalidade pendente. Fale com seu professor.';
+                            _b2='rgba(248,113,113,0.08)'; _br2='1px solid rgba(248,113,113,0.3)'; _c2='#f87171';
+                        } else {
+                            _t2='✅ Mensalidade em dia'+(_mv2.data?' · '+_mv2.data:'')+'.';
+                            _b2='rgba(74,222,128,0.08)'; _br2='1px solid rgba(74,222,128,0.2)'; _c2='#4ade80';
+                        }
+                    }
+                    if (_t2) {
+                        _alr2.textContent=_t2; _alr2.style.display='block';
+                        _alr2.style.background=_b2; _alr2.style.border=_br2; _alr2.style.color=_c2;
+                    } else { _alr2.style.display='none'; }
+                }
+            } catch(_em2) {}
             document.getElementById('motivQuote').textContent = quote;
 
             document.getElementById('motivStatNum').textContent = treinos;
@@ -21268,11 +21372,20 @@
             wrap.style.display = 'block';
             if (ini) ini.style.display = 'none';
             if (svg) svg.style.display = 'none';
+            // Disponibiliza para o modal motivacional
+            if (dataUrl && dataUrl.startsWith('data:image')) _currentRealPhoto = dataUrl;
             // Propaga para check-in e header também
             applyRealPhotoToHeader(dataUrl);
         }
 
         function applyRealPhotoToHeader(dataUrl) {
+            // Welcome card com foto em destaque
+            var _wPhoto = document.getElementById('welcomeAvatarPhoto');
+            var _wInit  = document.getElementById('welcomeInitial');
+            if (_wPhoto && dataUrl && dataUrl.startsWith('data:image')) {
+                _wPhoto.src = dataUrl; _wPhoto.style.display = 'block';
+                if (_wInit) _wInit.style.display = 'none';
+            }
             // Navbar
             var hdr = document.getElementById('userInitial');
             if (hdr) hdr.innerHTML = '<img class="real-photo" src="' + dataUrl + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">';
@@ -21672,6 +21785,7 @@
             // Foto real (data URL)
             if (dataStr.startsWith('data:image') && !dataStr.includes('svg')) {
                 _applyAvatar(dataStr, 'photo');
+                _currentRealPhoto = dataStr; // ← disponível para qualquer modal
                 if (emailKey && !localStorage.getItem('bjjAvatarFoto_' + emailKey)) {
                     localStorage.setItem('bjjAvatarFoto_' + emailKey, dataStr);
                     localStorage.setItem('bjjAvatarFoto', dataStr);
@@ -21784,7 +21898,8 @@
         // MÓDULO: MINHA FAMÍLIA
         // ════════════════════════════════════════════════
 
-        var _familiaCache = null; // cache dos dependentes
+        var _familiaCache    = null; // cache dos dependentes
+        var _currentRealPhoto = '';  // foto real do usuário atual (data:image...)
 
         async function loadFamiliaSection() {
             try {
