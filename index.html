@@ -7931,6 +7931,9 @@
                     <div id="checkinTemaHoje" style="display:none;"></div>
 
                     <div class="checkin-profile">
+                        <!-- Banner de vencimento de mensalidade -->
+                        <div id="checkinMensalidadeAlert" style="display:none;width:100%;margin-bottom:10px;padding:10px 12px;border-radius:12px;font-size:12px;font-weight:600;text-align:center;"></div>
+
                         <div class="checkin-avatar" id="checkinInitial" style="position:relative;overflow:hidden;">L
                             <img id="checkinAvatarPhoto" src="" alt="" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:50%;">
                         </div>
@@ -12184,10 +12187,14 @@
             if (_planLimits.filiais < 3) {
                 _lockByPlan('addCTSection', '🏠 Criar Filiais / CTs', 'premium');
             }
-            // Dependentes (Profissional ou superior)
+            // Dependentes no painel admin (Profissional ou superior)
             if (_planId !== 'premium' && _planId !== 'profissional') {
                 _lockByPlan('stuFamiliaSection', '👨‍👩‍👧‍👦 Dependentes', 'profissional');
-                _lockByPlan('perfilSecFamilia',  '👨‍👩‍👧‍👦 Dependentes', 'profissional');
+            }
+            // Seção Minha Família no perfil do aluno — mostrar para ver lista (Profissional)
+            // Botão cadastrar dependente — somente Premium (já tratado abaixo)
+            if (_planId !== 'premium' && _planId !== 'profissional') {
+                _lockByPlan('perfilSecFamilia', '👨‍👩‍👧‍👦 Minha Família', 'profissional');
             }
             // Plano Família com cobrança unificada (somente Premium)
             if (_planId !== 'premium') {
@@ -12198,10 +12205,11 @@
                 if (_btnDep) {
                     _btnDep.disabled = true;
                     _btnDep.style.opacity = '0.35';
-                    _btnDep.title = '🔒 Exclusivo do plano Premium';
+                    _btnDep.textContent = '🔒 Premium';
+                    _btnDep.title = 'Disponível no plano Premium';
                     _btnDep.onclick = function(e) {
                         e.preventDefault();
-                        alert('🔒 Adicionar dependentes pelo app é exclusivo do plano Premium.');
+                        alert('Cadastrar dependentes pelo app requer o plano Premium. Fale com seu professor!');
                     };
                 }
             }
@@ -15589,6 +15597,44 @@
                 if (modeAdmin) { modeAdmin.classList.remove('active', 'admin-active'); }
                 // Load student data
                 document.getElementById('checkinInitial').textContent = currentUser.name.charAt(0).toUpperCase();
+                // ── Aviso de vencimento de mensalidade ──────────────────
+                try {
+                    var _mv  = currentUser.mensalidadeVenc;
+                    var _alr = document.getElementById('checkinMensalidadeAlert');
+                    if (_mv && _alr) {
+                        var _txt = '', _bg = '', _brd = '', _clr = '';
+                        if (_mv.atrasado) {
+                            var _d = Math.abs(_mv.diasRestantes);
+                            _txt = '⚠️ Mensalidade atrasada há ' + _d + ' dia' + (_d>1?'s':'') + '! Fale com seu professor.';
+                            _bg  = 'rgba(248,113,113,0.12)';
+                            _brd = '1px solid rgba(248,113,113,0.4)';
+                            _clr = '#f87171';
+                        } else if (_mv.venceHoje) {
+                            _txt = '📅 Sua mensalidade vence hoje! Renove para continuar treinando.';
+                            _bg  = 'rgba(251,191,36,0.12)';
+                            _brd = '1px solid rgba(251,191,36,0.4)';
+                            _clr = '#fbbf24';
+                        } else if (_mv.venceEmBreve) {
+                            _txt = '📅 Mensalidade vence em ' + _mv.diasRestantes + ' dia' + (_mv.diasRestantes>1?'s':'') + '. (' + _mv.data + ')';
+                            _bg  = 'rgba(251,191,36,0.08)';
+                            _brd = '1px solid rgba(251,191,36,0.25)';
+                            _clr = '#fbbf24';
+                        } else if (_mv.status === 'PENDENTE' || _mv.status === 'ATRASADO') {
+                            _txt = '⚠️ Mensalidade pendente. Entre em contato com seu professor.';
+                            _bg  = 'rgba(248,113,113,0.08)';
+                            _brd = '1px solid rgba(248,113,113,0.3)';
+                            _clr = '#f87171';
+                        }
+                        if (_txt) {
+                            _alr.textContent = _txt;
+                            _alr.style.display     = 'block';
+                            _alr.style.background  = _bg;
+                            _alr.style.border      = _brd;
+                            _alr.style.color        = _clr;
+                        }
+                    }
+                } catch(_eMv) {}
+
                 // Aplica foto no check-in se disponível
                 try {
                     var _ck_emailKey = currentUser.email ? currentUser.email.toLowerCase().trim() : 'default';
@@ -21737,9 +21783,12 @@
                 var banner  = document.getElementById('familiaStatusBillingBanner');
                 if (!sec || !lista) return;
 
-                // Só mostra a seção se tiver dependentes
-                sec.style.display = _familiaCache.length > 0 ? 'block' : 'none';
-                if (_familiaCache.length === 0) return;
+                // Mostra seção sempre (Premium) — mesmo sem dependentes cadastrados ainda
+                sec.style.display = 'block';
+                if (_familiaCache.length === 0) {
+                    lista.innerHTML = '<div style="font-size:12px;color:var(--color-text-secondary);text-align:center;padding:10px 0;">Nenhum dependente cadastrado.<br>Clique em <b>+ Dependente</b> para adicionar.</div>';
+                    return;
+                }
 
                 // Banner do plano familiar
                 try {
@@ -29001,7 +29050,7 @@
                     try {
                         var res = await secureFetch('cobrarAgora', { targetEmail: c.email });
 
-                        if (res.success && res.data && res.data.metodo === 'pix') {
+                        if (res.success && res.metodo === 'pix') {
                             // PIX gerado — exibe modal com QR Code
                             var d = res.data;
                             var qrHtml = d.qrBase64 ? '<img src="data:image/png;base64,' + d.qrBase64 + '" style="width:160px;height:160px;border-radius:8px;margin:10px auto;display:block;">' : '';
@@ -29027,7 +29076,7 @@
                             ui.showMsg('🟢 PIX gerado — envie para o cliente', '#22c55e');
 
                         } else if (res.success) {
-                            ui.showMsg('✅ Cobrança aprovada! R$ ' + parseFloat(res.data.valor||0).toFixed(2), '#4ade80');
+                            ui.showMsg('✅ Cobrança aprovada! R$ ' + parseFloat(res.valor||0).toFixed(2), '#4ade80');
                             setTimeout(function(){ data.carregar(); }, 1500);
                         } else {
                             ui.showMsg('❌ ' + (res.message || 'Erro'), '#f87171');
@@ -34633,13 +34682,13 @@
                 var chavePix = '';
                 var valorFmt = 'R\$ ' + parseFloat(valor||0).toFixed(2);
 
-                if (res.success && res.data) {
-                    var d = res.data;
-                    pixCode  = d.pixCode  || '';
-                    pixQR    = d.qrBase64 || '';
-                    chavePix = d.chavePix || ''; // PIX manual (chave estática)
+                if (res.success) {
+                    // jsonResponse retorna tudo no nível raiz (não aninhado em .data)
+                    pixCode  = res.pixCode  || '';
+                    pixQR    = res.qrBase64 || '';
+                    chavePix = res.chavePix || ''; // PIX manual (chave estática)
                     if (!pixCode && chavePix) pixCode = chavePix; // usa chave estática se não gerou dinâmico
-                    valorFmt = 'R\$ ' + parseFloat(d.valor||valor||0).toFixed(2);
+                    valorFmt = 'R\$ ' + parseFloat(res.valor||valor||0).toFixed(2);
                 }
 
                 // Monta mensagem WhatsApp
@@ -40508,4 +40557,5 @@
     </script>
 
 </body>
->
+
+</html>
