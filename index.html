@@ -14255,9 +14255,40 @@
          * chamado ao abrir o modal de edição de aluno
          */
         // v4.9 — usa faixas/níveis do schema de cada modalidade; não mistura BJJ com Muay Thai
+
+        // ── Atualiza hero do stuModal com faixa/grau dos selects ──────────
+        function _syncHeroModalidade() {
+            if (typeof stuModalEmail === 'undefined' || !stuModalEmail) return;
+            var _stu = typeof adminStudentsCache !== 'undefined'
+                ? adminStudentsCache.find(function(s){ return s.email === stuModalEmail; })
+                : null;
+            var _mp = (document.getElementById('stuModalidadePrincipal') || {}).value
+                   || (_stu && _stu.modalidadePrincipal) || '';
+            if (!_mp) return;
+            var _mod = typeof MODALIDADES_CATALOG !== 'undefined'
+                ? MODALIDADES_CATALOG.find(function(m){ return m.id === _mp; }) : null;
+            if (!_mod) return;
+
+            var _faixaEl = document.getElementById('stuFaixa_' + _mp);
+            var _grauEl  = document.getElementById('stuGrau_'  + _mp);
+            var _faixa   = _faixaEl ? _faixaEl.options[_faixaEl.selectedIndex].text : '';
+            var _grau    = _grauEl  ? parseInt(_grauEl.value) || 0 : 0;
+
+            var _label = _faixa;
+            if (_grau > 0 && !_mp.includes('muay') && !_mp.includes('capoeira')) {
+                _label = _faixa + ' ' + _grau + '°';
+            }
+            var _heroEl = document.getElementById('stuHeroModalidade');
+            if (_heroEl) _heroEl.textContent = _mod.icon + ' ' + _mod.nome + (_label ? ' · ' + _label : '');
+        }
+
         function renderStuModalidadesGrid(currentMods, principalMod, modalidadesGrad) {
             var grid = document.getElementById('stuModalidadesGrid');
             var principalSel = document.getElementById('stuModalidadePrincipal');
+            if (principalSel && !principalSel._heroListenerAdded) {
+                principalSel.addEventListener('change', function() { _syncHeroModalidade(); });
+                principalSel._heroListenerAdded = true;
+            }
             if (!grid) return;
             grid.innerHTML = '';
             if (principalSel) principalSel.innerHTML = '<option value="">— Selecione a principal —</option>';
@@ -14436,6 +14467,7 @@
                             for (var g = 0; g <= maxGraus; g++) { var go = document.createElement('option'); go.value = g; go.textContent = g + 'º'; if (g === grauSalvo) go.selected = true; gs.appendChild(go); }
                             gw.appendChild(gl); gw.appendChild(gs); gradBlock.appendChild(gw);
 
+                            gs.addEventListener('change', function() { _syncHeroModalidade(); });
                             // ── Atualiza graus dinamicamente ao trocar a faixa ──────
                             // Faixas intermediárias: 0°–4°  |  Faixa mais alta: 1°–6°
                             // Kids BJJ: Branca = 0°–4°, demais faixas coloridas = sem grau
@@ -14474,6 +14506,7 @@
                                     if (valAtual < novoMin) grauSel.value = novoMin;
                                 }
                                 faixasSel.addEventListener('change', _updateGrauRange);
+                                faixasSel.addEventListener('change', function() { _syncHeroModalidade(); });
                                 // Trigger inicial para esconder grau quando faixa colorida já está selecionada
                                 _updateGrauRange();
                             })(fs, gs, faixasArr, mod.id);
@@ -37457,6 +37490,10 @@
                     var _cObj = _faixasCap.find(function(f){ return f.id === _nivelRaw || f.cordao === _nivelRaw; });
                     if (_cObj) _nivelLabel = _cObj.cordao;
                     else if (_gp && _gp.cordao) _nivelLabel = _gp.cordao;
+                }
+                // Para faixa cintura (BJJ, Judô, Karatê...): inclui grau no hero
+                if (_mod && !_mod.id.includes('muay') && !_mod.id.includes('capoeira') && _gp && _gp.grau !== undefined && parseInt(_gp.grau) > 0) {
+                    _nivelLabel = (_nivelLabel || _nivelRaw || 'Branca') + ' ' + parseInt(_gp.grau) + '°';
                 }
                 var _modEl = document.getElementById('stuHeroModalidade');
                 if (_modEl) _modEl.textContent = _mod ? (_mod.icon + ' ' + _mod.nome + (_nivelLabel ? ' · ' + _nivelLabel : '')) : (s.modalidades || '—');
