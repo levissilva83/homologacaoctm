@@ -18314,6 +18314,7 @@
             try {
                 var result = await secureFetch('rejectGraduacao', { rowIndex: rowIndex });
                 if (result.success) {
+                    _atualizarCacheGrad(result); // ← reverte cache para última graduação aprovada
                     loadGraduacoes(stuModalEmail);
                 } else {
                     alert(result.message || 'Erro');
@@ -23727,6 +23728,7 @@
                 var data = await secureFetch('rejectGraduacao', { rowIndex: rowIndex });
                 if (data.success) {
                     if (card) { card.style.background = 'rgba(232,93,93,0.1)'; card.innerHTML = '<div class="admin-empty" style="color:var(--coral)">❌ Graduação rejeitada</div>'; }
+                    _atualizarCacheGrad(data); // ← reverte para última graduação aprovada
                     setTimeout(loadPendingGraduacoes, 1500);
                 } else { alert(data.message || 'Erro'); if (card) card.style.opacity = '1'; }
             } catch (err) { alert('Erro de conexão'); if (card) card.style.opacity = '1'; }
