@@ -18293,15 +18293,28 @@
             } catch(_eC) {}
         }
 
+        // ═══════════════════════════════════════════════════════════
+        // SYNC CENTRAL — chamado após QUALQUER aprovação de graduação
+        // ═══════════════════════════════════════════════════════════
+        function _syncAllAfterGraduacao(data) {
+            _atualizarCacheGrad(data);
+            if (typeof stuModalEmail !== 'undefined' && stuModalEmail) {
+                loadGraduacoes(stuModalEmail);
+            }
+            _gradTabData = null;
+            loadGradTab();
+            if (typeof loadPendingGraduacoes === 'function') loadPendingGraduacoes();
+            if (typeof loadStudentsList === 'function') setTimeout(loadStudentsList, 800);
+            setTimeout(function() {
+                if (typeof loadMyGraduacoes === 'function') loadMyGraduacoes();
+            }, 800);
+        }
+
         async function approveGraduacaoRow(rowIndex) {
             try {
                 var result = await secureFetch('addGraduacao', { rowIndex: rowIndex });
                 if (result.success) {
-                    _atualizarCacheGrad(result); // ← atualiza cache + re-renderiza modal
-                    loadGraduacoes(stuModalEmail);
-                    setTimeout(function() {
-                        if (typeof loadMyGraduacoes === 'function') loadMyGraduacoes();
-                    }, 800);
+                    _syncAllAfterGraduacao(result);
                 } else {
                     alert(result.message || 'Erro');
                 }
@@ -23708,11 +23721,7 @@
                 var data = await secureFetch('addGraduacao', { rowIndex: rowIndex });
                 if (data.success) {
                     if (card) { card.style.background = 'rgba(45,138,78,0.1)'; card.innerHTML = '<div class="admin-empty" style="color:#16A34A">✅ Graduação aprovada!</div>'; }
-                    _atualizarCacheGrad(data); // ← atualiza cache + re-renderiza modal se aberto
-                    setTimeout(loadPendingGraduacoes, 1500);
-                    setTimeout(function() {
-                        if (typeof loadMyGraduacoes === 'function') loadMyGraduacoes();
-                    }, 800);
+                    _syncAllAfterGraduacao(data);
                 } else {
                     alert(data.message || 'Erro ao aprovar');
                     if (card) card.style.opacity = '1';
@@ -23766,52 +23775,8 @@
                     document.body.appendChild(toast);
                     setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3000);
 
-                    // ── Atualiza adminStudentsCache para refletir nova graduação ──
-                    (function() {
-                        try {
-                            var _stuIdx = adminStudentsCache.findIndex(function(s) { return s.email === email; });
-                            if (_stuIdx !== -1) {
-                                var _s = adminStudentsCache[_stuIdx];
-                                var _mp = _s.modalidadePrincipal || 'bjj';
-                                if (!_s.modalidadesGrad) _s.modalidadesGrad = {};
-                                if (!_s.modalidadesGrad[_mp]) _s.modalidadesGrad[_mp] = {};
-                                _s.modalidadesGrad[_mp].nivel = faixa;
-                                _s.modalidadesGrad[_mp].faixa = faixa;
-                                _s.modalidadesGrad[_mp].grau  = parseInt(novoGrau) || 0;
-                                _s.faixa = faixa;
-                                _s.grau  = String(novoGrau);
-                                adminStudentsCache[_stuIdx] = _s;
-                                // Re-renderiza o grid de modalidades se o modal estiver aberto
-                                if (stuModalEmail === email) {
-                                    renderStuModalidadesGrid(
-                                        _s.modalidades || '',
-                                        _s.modalidadePrincipal || '',
-                                        _s.modalidadesGrad
-                                    );
-                                    // Atualiza também o hero do modal
-                                    var _heroMod = document.getElementById('stuHeroModalidade');
-                                    if (_heroMod) {
-                                        var _mpHero = _s.modalidadePrincipal || '';
-                                        var _modObj = MODALIDADES_CATALOG.find(function(m){ return m.id === _mpHero; });
-                                        var _gpHero = (_s.modalidadesGrad || {})[_mpHero];
-                                        var _nivelH = _gpHero ? (_gpHero.nivel || _gpHero.faixa || '') : faixa;
-                                        _heroMod.textContent = _modObj
-                                            ? (_modObj.icon + ' ' + _modObj.nome + (_nivelH ? ' · ' + _nivelH : ''))
-                                            : (_s.modalidades || '—');
-                                    }
-                                }
-                            }
-                        } catch(_eCache) {}
-                    })();
-
-                    // Recarrega aba
-                    _gradTabData = null;
-                    loadGradTab();
-                    loadPendingGraduacoes();
-                    // Recarrega timeline do aluno
-                    setTimeout(function() {
-                        if (typeof loadMyGraduacoes === 'function') loadMyGraduacoes();
-                    }, 800);
+                    // Sync central — atualiza TODAS as telas com dados do servidor
+                    _syncAllAfterGraduacao(data);
                 } else {
                     alert(data.message || 'Erro ao aprovar graduação');
                     if (btn) { btn.disabled = false; btn.textContent = '✅ Aprovar Graduação Atual'; }
