@@ -18271,7 +18271,7 @@
                     : -1;
                 if (_idx === -1) return;
                 var _s = adminStudentsCache[_idx];
-                if (data.modalidadesGrad) _s.modalidadesGrad = data.modalidadesGrad;
+                if (data.modalidadesGrad && Object.keys(data.modalidadesGrad).length > 0) _s.modalidadesGrad = data.modalidadesGrad;
                 if (data.faixa)  _s.faixa = data.faixa;
                 if (data.grau !== undefined) _s.grau = String(data.grau);
                 if (data.modalidadePrincipal) _s.modalidadePrincipal = data.modalidadePrincipal;
