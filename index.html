@@ -18144,7 +18144,7 @@
                 html += '<div style="margin-top:8px;padding:10px 12px;background:rgba(248,113,113,0.06);border:1px dashed rgba(248,113,113,0.2);border-radius:8px;font-size:12px;color:var(--text-2);margin-bottom:10px;">' +
                     '❌ Sem check-in registrado neste dia de treino.' +
                     '</div>';
-                html += '<button onclick="abrirModalEsquecimento(\'' + dateISO + '\',\'\')" ' +
+                html += '<button onclick="abrirModalEsquecimento(\'' + dateISO + '\',\'\',\'\')" ' +
                     'style="width:100%;padding:11px;background:rgba(201,162,58,0.08);color:var(--accent);border:1px solid rgba(201,162,58,0.25);border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;">' +
                     '✋ Esqueci de fazer check-in — Solicitar presença' +
                     '</button>';
@@ -18228,12 +18228,44 @@
         }
 
         // Admin: approve a pending event by rowIndex
+
+        // ── Atualiza adminStudentsCache + re-renderiza modal após aprovar graduação ─
+        function _atualizarCacheGrad(data) {
+            if (!data || !data.email) return;
+            try {
+                var _idx = typeof adminStudentsCache !== 'undefined'
+                    ? adminStudentsCache.findIndex(function(s){ return s.email === data.email; })
+                    : -1;
+                if (_idx === -1) return;
+                var _s = adminStudentsCache[_idx];
+                if (data.modalidadesGrad) _s.modalidadesGrad = data.modalidadesGrad;
+                if (data.faixa)  _s.faixa = data.faixa;
+                if (data.grau !== undefined) _s.grau = String(data.grau);
+                if (data.modalidadePrincipal) _s.modalidadePrincipal = data.modalidadePrincipal;
+                adminStudentsCache[_idx] = _s;
+                // Re-renderiza se o modal deste aluno estiver aberto
+                if (typeof stuModalEmail !== 'undefined' && stuModalEmail === data.email) {
+                    if (typeof renderStuModalidadesGrid === 'function') {
+                        renderStuModalidadesGrid(_s.modalidades || '', _s.modalidadePrincipal || '', _s.modalidadesGrad || {});
+                    }
+                    var _heroMod = document.getElementById('stuHeroModalidade');
+                    if (_heroMod && typeof MODALIDADES_CATALOG !== 'undefined') {
+                        var _mp = _s.modalidadePrincipal || '';
+                        var _mo = MODALIDADES_CATALOG.find(function(m){ return m.id === _mp; });
+                        var _gp = (_s.modalidadesGrad || {})[_mp];
+                        var _nv = _gp ? (_gp.nivel || _gp.faixa || '') : (data.faixa || '');
+                        _heroMod.textContent = _mo ? (_mo.icon + ' ' + _mo.nome + (_nv ? ' · ' + _nv : '')) : (_s.modalidades || '—');
+                    }
+                }
+            } catch(_eC) {}
+        }
+
         async function approveGraduacaoRow(rowIndex) {
             try {
                 var result = await secureFetch('addGraduacao', { rowIndex: rowIndex });
                 if (result.success) {
+                    _atualizarCacheGrad(result); // ← atualiza cache + re-renderiza modal
                     loadGraduacoes(stuModalEmail);
-                    // Recarrega timeline do aluno atual
                     setTimeout(function() {
                         if (typeof loadMyGraduacoes === 'function') loadMyGraduacoes();
                     }, 800);
@@ -23642,8 +23674,8 @@
                 var data = await secureFetch('addGraduacao', { rowIndex: rowIndex });
                 if (data.success) {
                     if (card) { card.style.background = 'rgba(45,138,78,0.1)'; card.innerHTML = '<div class="admin-empty" style="color:#16A34A">✅ Graduação aprovada!</div>'; }
+                    _atualizarCacheGrad(data); // ← atualiza cache + re-renderiza modal se aberto
                     setTimeout(loadPendingGraduacoes, 1500);
-                    // Recarrega a timeline do aluno logado se estiver na aba evolução
                     setTimeout(function() {
                         if (typeof loadMyGraduacoes === 'function') loadMyGraduacoes();
                     }, 800);
@@ -23698,6 +23730,45 @@
                     toast.textContent = '✅ Graduação aprovada! Perfil atualizado.';
                     document.body.appendChild(toast);
                     setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3000);
+
+                    // ── Atualiza adminStudentsCache para refletir nova graduação ──
+                    (function() {
+                        try {
+                            var _stuIdx = adminStudentsCache.findIndex(function(s) { return s.email === email; });
+                            if (_stuIdx !== -1) {
+                                var _s = adminStudentsCache[_stuIdx];
+                                var _mp = _s.modalidadePrincipal || 'bjj';
+                                if (!_s.modalidadesGrad) _s.modalidadesGrad = {};
+                                if (!_s.modalidadesGrad[_mp]) _s.modalidadesGrad[_mp] = {};
+                                _s.modalidadesGrad[_mp].nivel = faixa;
+                                _s.modalidadesGrad[_mp].faixa = faixa;
+                                _s.modalidadesGrad[_mp].grau  = parseInt(novoGrau) || 0;
+                                _s.faixa = faixa;
+                                _s.grau  = String(novoGrau);
+                                adminStudentsCache[_stuIdx] = _s;
+                                // Re-renderiza o grid de modalidades se o modal estiver aberto
+                                if (stuModalEmail === email) {
+                                    renderStuModalidadesGrid(
+                                        _s.modalidades || '',
+                                        _s.modalidadePrincipal || '',
+                                        _s.modalidadesGrad
+                                    );
+                                    // Atualiza também o hero do modal
+                                    var _heroMod = document.getElementById('stuHeroModalidade');
+                                    if (_heroMod) {
+                                        var _mpHero = _s.modalidadePrincipal || '';
+                                        var _modObj = MODALIDADES_CATALOG.find(function(m){ return m.id === _mpHero; });
+                                        var _gpHero = (_s.modalidadesGrad || {})[_mpHero];
+                                        var _nivelH = _gpHero ? (_gpHero.nivel || _gpHero.faixa || '') : faixa;
+                                        _heroMod.textContent = _modObj
+                                            ? (_modObj.icon + ' ' + _modObj.nome + (_nivelH ? ' · ' + _nivelH : ''))
+                                            : (_s.modalidades || '—');
+                                    }
+                                }
+                            }
+                        } catch(_eCache) {}
+                    })();
+
                     // Recarrega aba
                     _gradTabData = null;
                     loadGradTab();
@@ -25222,7 +25293,7 @@
                 if (a.tema) h += '<div class="crono-tema">' + escapeHtml(a.tema) + '</div>';
                 if (a.descricao) h += '<div class="crono-desc">' + escapeHtml(a.descricao) + '</div>';
                 if (a.status==='hoje'||a.status==='futuro') h += '<div style="margin-top:8px;padding:8px 10px;background:rgba(56,189,248,0.06);border:1px dashed rgba(56,189,248,0.15);border-radius:8px;font-size:11px;color:#C9A23A;">📖 <strong>Prepare-se!</strong> Revise o conteúdo antes da aula</div>';
-                if (a.status==='ausente') h += '<button class="crono-contestar-btn" onclick="abrirModalEsquecimento(\'' + escapeHtml(a.data) + '\',\'' + escapeHtml(a.horario||'') + '\')">✋ Esqueci de fazer check-in — Solicitar presença</button>';
+                if (a.status==='ausente') h += '<button class="crono-contestar-btn" onclick="abrirModalEsquecimento(\'' + escapeHtml(a.data) + '\',\'' + escapeHtml(a.horario||'') + '\',\'' + escapeHtml(a.ct||'') + '\')">✋ Esqueci de fazer check-in — Solicitar presença</button>';
                 if (a.status==='pendente_esquecimento') h += '<div style="margin-top:8px;padding:8px 10px;background:rgba(251,191,36,0.06);border:1px dashed rgba(251,191,36,0.2);border-radius:8px;font-size:11px;color:#fbbf24;">⏳ Solicitação enviada. Aguardando aprovação do professor.</div>';
                 h += '</div>';
             });
@@ -38347,12 +38418,16 @@
 
         // ===== SOLICITAR PRESENÇA POR ESQUECIMENTO =====
 
-        function abrirModalEsquecimento(dataAula, horario) {
+        function abrirModalEsquecimento(dataAula, horario, ctAula) {
             var old = document.getElementById('esqModal');
             if (old) old.remove();
             var horRawM = (horario || '').toString();
             var hmMod = horRawM.match(/(\d{1,2}):(\d{2})/);
             var horValue = hmMod ? hmMod[1].padStart(2,'0') + ':' + hmMod[2] : '';
+            var ctVal = (ctAula || '').toString().trim();
+            // Fallback: usa CT principal do aluno se não veio o CT da aula
+            if (!ctVal && currentUser && currentUser.ct) ctVal = currentUser.ct;
+            var ctLabel = ctVal ? ('<div class="esq-field"><label>📍 CT</label><input type="text" value="' + ctVal + '" disabled style="opacity:.6;cursor:default;"></div>') : '';
             var overlay = document.createElement('div');
             overlay.className = 'esq-modal-overlay';
             overlay.id = 'esqModal';
@@ -38362,7 +38437,9 @@
                     '<div class="esq-modal-sub">Esqueceu de fazer check-in? Informe o horário que treinou e envie para aprovação do professor.</div>' +
                     '<div class="esq-field"><label>📅 Data da aula</label>' +
                         '<input type="text" value="' + formatDateBR(dataAula) + '" disabled style="opacity:.6;cursor:default;">' +
-                        '<input type="hidden" id="esqDataISO" value="' + dataAula + '"></div>' +
+                        '<input type="hidden" id="esqDataISO" value="' + dataAula + '">' +
+                        '<input type="hidden" id="esqCT" value="' + ctVal + '"></div>' +
+                    ctLabel +
                     '<div class="esq-field"><label>🕐 Horário que treinou</label>' +
                         '<input type="time" id="esqHorario" value="' + horValue + '"></div>' +
                     '<div class="esq-field"><label>💬 Observação (opcional)</label>' +
@@ -38561,7 +38638,8 @@
             sendBtn.disabled = true;
             sendBtn.textContent = 'Enviando...';
             try {
-                var result = await secureFetch('solicitarPresencaEsquecimento', { dataAula: dataISO, horario: horario, observacao: obs });
+                var ctEnvio = document.getElementById('esqCT') ? document.getElementById('esqCT').value : '';
+                var result = await secureFetch('solicitarPresencaEsquecimento', { dataAula: dataISO, horario: horario, observacao: obs, ct: ctEnvio });
                 if (result.success) {
                     fecharModalEsquecimento();
                     _prsData = null; // força reload do calendário de presenças
