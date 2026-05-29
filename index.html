@@ -11605,6 +11605,7 @@
                         <select id="gradGrau" style="display:none;">
                             <!-- populated by buildGradAddForm() -->
                         </select>
+                        <input type="date" id="gradDataEvento" title="Data do evento (deixe vazio para hoje)" style="padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;min-width:130px;">
                         <input type="text" id="gradObs" placeholder="Obs (opcional)" style="min-width:100px;">
                         <button class="grad-add-btn" onclick="addGraduacao()">✅ Aprovar</button>
                     </div>
@@ -18214,6 +18215,14 @@
             if (tipo === 'faixa') tipo = 'nivel'; // normaliza legado
             var modId = (typeof stuModalModality !== 'undefined' && stuModalModality) || activeModality || 'bjj';
 
+            // Data do evento: usa campo se preenchido, senão hoje
+            var _dataEl = document.getElementById('gradDataEvento');
+            var _dataVal = _dataEl && _dataEl.value ? _dataEl.value : '';
+            var _dataFmt = '';
+            if (_dataVal) {
+                var _dp = _dataVal.split('-'); // yyyy-MM-dd
+                _dataFmt = _dp[2] + '/' + _dp[1] + '/' + _dp[0]; // dd/MM/yyyy
+            }
             var payload = {
                 alunoEmail: stuModalEmail,
                 tipo:       tipo,
@@ -18221,13 +18230,16 @@
                 faixa:      document.getElementById('gradFaixa') ? document.getElementById('gradFaixa').value : '',
                 nivel:      document.getElementById('gradFaixa') ? document.getElementById('gradFaixa').value : '',
                 grau:       document.getElementById('gradGrau')  ? document.getElementById('gradGrau').value  : 0,
-                obs:        document.getElementById('gradObs')   ? document.getElementById('gradObs').value.trim() : ''
+                obs:        document.getElementById('gradObs')   ? document.getElementById('gradObs').value.trim() : '',
+                data:       _dataFmt  // dd/MM/yyyy ou '' para usar hoje
             };
 
             try {
                 var result = await secureFetch('addGraduacao', payload);
                 if (result.success) {
                     if (document.getElementById('gradObs')) document.getElementById('gradObs').value = '';
+                    if (document.getElementById('gradDataEvento')) document.getElementById('gradDataEvento').value = '';
+                    _syncAllAfterGraduacao(result);
                     loadGraduacoes(stuModalEmail);
                 } else {
                     alert(result.message || 'Erro');
@@ -23750,6 +23762,22 @@
         async function aprovarGraduacaoAluno(email, faixa, novoGrau, btn) {
             if (btn) { btn.disabled = true; btn.textContent = '⏳ Aprovando...'; }
             try {
+                // ── Proteção: verifica grau real do aluno antes de aprovar ──
+                var _stuCache = typeof adminStudentsCache !== 'undefined'
+                    ? adminStudentsCache.find(function(s){ return s.email === email; })
+                    : null;
+                if (_stuCache) {
+                    var _mp  = _stuCache.modalidadePrincipal || 'bjj';
+                    var _mg  = _stuCache.modalidadesGrad || {};
+                    var _gp  = _mg[_mp] || {};
+                    var _grauReal = parseInt(_gp.grau) || 0;
+                    var _grauCard = parseInt(novoGrau) - 1; // novoGrau = próximo, grauCard = atual
+                    if (_grauReal !== _grauCard) {
+                        if (btn) { btn.disabled = false; btn.textContent = '🎖️'; }
+                        alert('⚠️ Dados desatualizados!\n\nO card mostra ' + _grauCard + 'º grau mas o perfil real é ' + _grauReal + 'º grau.\n\nClique ↻ para atualizar a lista e tente novamente.');
+                        return;
+                    }
+                }
                 // Verifica se existe uma solicitação pendente para este aluno
                 var pendingRowIndex = null;
                 try {
@@ -34680,10 +34708,21 @@
             try {
                 // Usa getHorariosCT (mesmo endpoint do perfil — mais confiável)
                 var ct = currentUser ? currentUser.ct : '';
+                if (!ct) {
+                    container.innerHTML = '<div style="text-align:center;font-size:12px;color:#f87171;padding:16px;">⚠️ CT não identificado. Contate o professor.</div>';
+                    return;
+                }
                 var res = await secureFetch('getHorariosCT', { ct: ct, modalidades: '' });
 
-                if (!res || !res.success || !res.slotsPorMod || !Object.keys(res.slotsPorMod).length) {
-                    container.innerHTML = '<div style="text-align:center;font-size:12px;color:rgba(255,255,255,0.35);padding:16px;">Nenhum horário cadastrado ainda.<br>Você será incluído automaticamente quando o professor cadastrar as aulas.</div>';
+                if (!res || !res.success) {
+                    var motivo = (res && res.message) || 'sem resposta';
+                    container.innerHTML = '<div style="text-align:center;font-size:12px;color:rgba(255,255,255,0.35);padding:16px;">Nenhum horário cadastrado ainda para <strong style="color:rgba(255,255,255,0.55);">' + escapeHtml(ct) + '</strong>.<br>Você será incluído automaticamente quando o professor cadastrar as aulas.</div>';
+                    console.warn('[horarioModal] getHorariosCT falhou — ct="' + ct + '" motivo=' + motivo);
+                    return;
+                }
+                if (!res.slotsPorMod || !Object.keys(res.slotsPorMod).length) {
+                    container.innerHTML = '<div style="text-align:center;font-size:12px;color:rgba(255,255,255,0.35);padding:16px;">Nenhum horário cadastrado ainda para <strong style="color:rgba(255,255,255,0.55);">' + escapeHtml(ct) + '</strong>.<br>Você será incluído automaticamente quando o professor cadastrar as aulas.</div>';
+                    console.warn('[horarioModal] slotsPorMod vazio — ct="' + ct + '" diasOrdenados=' + JSON.stringify(res.diasOrdenados));
                     return;
                 }
 
