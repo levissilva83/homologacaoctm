@@ -18453,7 +18453,22 @@
                     : -1;
                 if (_idx === -1) return;
                 var _s = adminStudentsCache[_idx];
-                if (data.modalidadesGrad && Object.keys(data.modalidadesGrad).length > 0) _s.modalidadesGrad = data.modalidadesGrad;
+                if (data.modalidadesGrad && Object.keys(data.modalidadesGrad).length > 0) {
+                    _s.modalidadesGrad = data.modalidadesGrad;
+                } else if (data.faixa !== undefined && data.grau !== undefined) {
+                    // Backend retornou modalidadesGrad vazio (leitura stale pré-flush)
+                    // Sintetiza a partir de faixa+grau que vieram do fallback col C+D (sempre correto)
+                    var _mpSynth = _s.modalidadePrincipal || data.modalidadePrincipal || 'bjj';
+                    if (!_s.modalidadesGrad) _s.modalidadesGrad = {};
+                    var _grauSynth = parseInt(data.grau) || 0;
+                    var _existing  = _s.modalidadesGrad[_mpSynth];
+                    // Só atualiza se o grau sintetizado é maior ou igual ao existente (evita regressão)
+                    if (!_existing || _grauSynth >= (parseInt(_existing.grau) || 0)) {
+                        _s.modalidadesGrad[_mpSynth] = {
+                            nivel: data.faixa, faixa: data.faixa, grau: _grauSynth
+                        };
+                    }
+                }
                 if (data.faixa)  _s.faixa = data.faixa;
                 if (data.grau !== undefined) _s.grau = String(data.grau);
                 if (data.modalidadePrincipal) _s.modalidadePrincipal = data.modalidadePrincipal;
