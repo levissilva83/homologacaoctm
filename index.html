@@ -17383,7 +17383,9 @@
             if (!ModalidadeGuard.hasCorda(modId)) return;
             var schema    = ModalidadeGuard.getSchema(modId);
             var faixasCap = schema ? schema.graduacao.faixas : [];
-            var cObj = faixasCap.find(function(f){ return f.id === cordaoAtual || f.cordao === cordaoAtual; }) || faixasCap[0];
+            var cObj      = faixasCap.find(function(f){ return f.id === cordaoAtual || f.cordao === cordaoAtual; }) || faixasCap[0];
+
+            // Atualiza hero
             var titleEl = document.getElementById('evoHeroTitle');
             var subEl   = document.getElementById('evoHeroSub');
             if (titleEl && cObj) titleEl.textContent = cObj.cordao;
@@ -17391,6 +17393,67 @@
                 var proxC = cObj.next ? faixasCap.find(function(f){ return f.id === cObj.next; }) : null;
                 subEl.textContent = cObj.nivel + (proxC ? ' · Próximo: ' + proxC.cordao : ' · 🏆 Mestre');
             }
+
+            // Monta lista de progressão com datas na evoTimelineContent
+            var container = document.getElementById('evoTimelineContent');
+            if (!container) return;
+
+            // Detecta índice atual
+            var idxAtual = faixasCap.findIndex(function(f){ return f.id === cordaoAtual || f.cordao === cordaoAtual; });
+            if (idxAtual < 0) idxAtual = 0;
+
+            // Monta histMap a partir do cache
+            var histCorda = {}; // cordao.id → { data, pending }
+            if (_myGraduacoesCache) {
+                _myGraduacoesCache.forEach(function(ev) {
+                    var key = ev.faixa || ev.nivel || '';
+                    if (!key) return;
+                    var isPend = (ev.status === 'PENDENTE');
+                    if (!histCorda[key]) histCorda[key] = { data: null, pending: false };
+                    if (!isPend && ev.data) histCorda[key].data = ev.data;
+                    if (isPend) histCorda[key].pending = true;
+                });
+            }
+
+            var html = '<div style="display:flex;flex-direction:column;gap:6px;padding:4px 0;">';
+            faixasCap.forEach(function(cord, idx) {
+                var isPast    = idx < idxAtual;
+                var isCurrent = idx === idxAtual;
+                var isNext    = idx === idxAtual + 1;
+                var hist      = histCorda[cord.id] || histCorda[cord.cordao] || null;
+                var dataStr   = hist && hist.data ? hist.data : null;
+                var pending   = hist && hist.pending;
+
+                var dotColor = isPast ? '#C9A23A' : isCurrent ? '#f59e0b' : 'rgba(255,255,255,0.15)';
+                var labelColor = (isPast || isCurrent) ? 'var(--text-1)' : 'var(--text-3)';
+                var _cid = 'corda_req_' + modId + '_' + idx;
+
+                var dateHtml = '';
+                if (dataStr)   dateHtml = '<span style="font-size:10px;color:var(--accent);margin-left:auto;">' + dataStr + '</span>';
+                else if (pending) dateHtml = '<span style="font-size:10px;color:rgba(255,255,255,0.35);margin-left:auto;">⏳ Aguardando</span>';
+                else if (isNext)  dateHtml = '<span style="font-size:10px;color:rgba(255,255,255,0.25);margin-left:auto;">Próximo</span>';
+                else if (!isPast && !isCurrent) dateHtml = '<span style="font-size:10px;color:rgba(255,255,255,0.15);margin-left:auto;">—</span>';
+
+                var btnHtml = '';
+                if ((isPast || isCurrent) && !dataStr && !pending) {
+                    btnHtml = '<form id="' + _cid + '_form" style="display:none;margin-top:3px;align-items:center;gap:4px;">'
+                            + '<input type="date" id="' + _cid + '_dt" style="font-size:11px;padding:3px 5px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:var(--text-1);">'
+                            + '<button type="button" data-faixa="' + escapeHtml(cord.cordao||cord.id) + '" data-grau="0" data-pid="' + _cid + '" onclick="_submeterGrauBtn(this)" style="font-size:10px;padding:3px 8px;background:rgba(201,162,58,0.15);border:1px solid rgba(201,162,58,0.4);border-radius:6px;color:#C9A23A;cursor:pointer;">Enviar</button>'
+                            + '<button type="button" onclick="_toggleGrauForm(\'' + _cid + '\')" style="font-size:10px;padding:3px 6px;background:transparent;border:none;color:rgba(255,255,255,0.3);cursor:pointer;">✕</button>'
+                            + '</form>'
+                            + '<button type="button" id="' + _cid + '_btn" onclick="_toggleGrauForm(\'' + _cid + '\')" style="font-size:10px;padding:2px 8px;background:rgba(201,162,58,0.08);border:1px solid rgba(201,162,58,0.25);border-radius:6px;color:#C9A23A;cursor:pointer;margin-top:3px;">📅 Informar data</button>';
+                }
+
+                html += '<div class="ibjjf-grau-entry">'
+                      + '<div class="ibjjf-grau-entry-dot ' + (isPast||isCurrent ? 'filled' : '') + '" style="background:' + dotColor + ';border-color:' + dotColor + ';flex-shrink:0;"></div>'
+                      + '<div class="ibjjf-grau-entry-info" style="flex:1;">'
+                      + '<span class="ibjjf-grau-entry-label" style="color:' + labelColor + ';">' + (cord.emoji||'🪢') + ' ' + (cord.cordao||cord.id) + '</span>'
+                      + dateHtml
+                      + btnHtml
+                      + '</div></div>';
+            });
+            html += '</div>';
+            container.innerHTML = html;
         }
 
         /**
@@ -17491,16 +17554,54 @@
             if (!row || !seals) return;
 
             seals.style.display = '';
-            // Troca título da seção
             var title = seals.querySelector('.evo-seals-title');
             if (title) title.textContent = '🥷 Níveis de Prajied';
+
+            // Monta histMap a partir do cache de graduações
+            var histPrajied = {}; // nivel.id → { data, pending }
+            if (_myGraduacoesCache) {
+                _myGraduacoesCache.forEach(function(ev) {
+                    var key = ev.faixa || ev.nivel || '';
+                    if (!key) return;
+                    var isPend = (ev.status === 'PENDENTE');
+                    if (!histPrajied[key]) histPrajied[key] = { data: null, pending: false };
+                    if (!isPend && ev.data) histPrajied[key].data = ev.data;
+                    if (isPend) histPrajied[key].pending = true;
+                });
+            }
 
             row.innerHTML = '';
             row.style.gridTemplateColumns = 'repeat(3, 1fr)';
 
+            // Detecta índice atual para determinar passado/atual/futuro
             var faixas = schema.graduacao.faixas;
+            var idxAtual = -1;
+            faixas.forEach(function(n, i) {
+                if (nivelAtual && (n.id === nivelAtual || n.label === nivelAtual)) idxAtual = i;
+            });
+
             faixas.forEach(function(nivel, idx) {
-                var unlocked = (idx === 0) || (nivelAtual && (nivel.id === nivelAtual || nivel.label === nivelAtual));
+                var isPast    = idx < idxAtual;
+                var isCurrent = idx === idxAtual;
+                var unlocked  = isPast || isCurrent || idx === 0;
+                var hist      = histPrajied[nivel.id] || histPrajied[nivel.label] || null;
+                var dataStr   = hist && hist.data ? hist.data : null;
+                var pending   = hist && hist.pending;
+
+                var _pid  = 'prajied_req_' + modId + '_' + idx;
+                var dateHtml = '';
+                if (dataStr)   dateHtml = '<div style="font-size:10px;color:var(--accent);margin-top:2px;">' + dataStr + '</div>';
+                else if (pending) dateHtml = '<div style="font-size:9px;color:rgba(255,255,255,0.4);margin-top:2px;">⏳ Aguardando</div>';
+
+                var btnHtml = '';
+                if (unlocked && !dataStr && !pending) {
+                    btnHtml = '<form id="' + _pid + '_form" style="display:none;margin-top:4px;flex-direction:column;gap:3px;">'
+                            + '<input type="date" id="' + _pid + '_dt" style="font-size:10px;padding:3px 5px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:var(--text-1);width:100%;">'
+                            + '<button type="button" data-faixa="' + escapeHtml(nivel.label) + '" data-grau="0" data-pid="' + _pid + '" onclick="_submeterGrauBtn(this)" style="font-size:10px;padding:3px;background:rgba(201,162,58,0.15);border:1px solid rgba(201,162,58,0.4);border-radius:6px;color:#C9A23A;cursor:pointer;">Enviar</button>'
+                            + '</form>'
+                            + '<button type="button" id="' + _pid + '_btn" onclick="_toggleGrauForm(\'' + _pid + '\')" style="font-size:9px;padding:2px 6px;background:rgba(201,162,58,0.08);border:1px solid rgba(201,162,58,0.2);border-radius:5px;color:#C9A23A;cursor:pointer;margin-top:3px;">📅</button>';
+                }
+
                 var seal = document.createElement('div');
                 seal.className = 'evo-seal';
                 seal.innerHTML =
@@ -17508,7 +17609,8 @@
                         (unlocked ? 'background:' + nivel.cor + ';border-color:' + nivel.cor + ';' : '') + '">' +
                         (unlocked ? nivel.emoji : '🔒') +
                     '</div>' +
-                    '<div class="evo-seal-label ' + (unlocked ? 'unlocked' : '') + '">' + nivel.label + '</div>';
+                    '<div class="evo-seal-label ' + (unlocked ? 'unlocked' : '') + '">' + nivel.label + '</div>' +
+                    dateHtml + btnHtml;
                 row.appendChild(seal);
             });
         }
@@ -17834,15 +17936,27 @@
                                 var dotCls  = (isReached || ghDate) ? 'filled' : '';
                                 var lblCls  = (isReached || ghDate) ? 'filled' : '';
                                 var dateHtml;
+                                var _grauId = 'grau_req_' + belt.id + '_' + gh;
                                 if (ghDate)        dateHtml = '<span class="ibjjf-grau-entry-date">' + ghDate + '</span>';
                                 else if (ghPend)   dateHtml = '<span class="ibjjf-grau-entry-date empty">⏳ Aguardando aprovação</span>';
-                                else if (isReached) dateHtml = '<span class="ibjjf-grau-entry-date empty">Data não registrada</span>';
-                                else                dateHtml = '<span class="ibjjf-grau-entry-date empty">—</span>';
+                                else if (isReached) dateHtml = '<span class="ibjjf-grau-entry-date empty" style="color:rgba(255,255,255,0.3);">Data não registrada</span>';
+                                else               dateHtml = '';
+                                var _btnGrau = '';
+                                if (!ghDate && !ghPend) {
+                                    _btnGrau = '<form id="' + _grauId + '_form" style="display:none;margin-top:4px;align-items:center;gap:4px;">'
+                                             + '<input type="date" id="' + _grauId + '_dt" style="font-size:11px;padding:4px 6px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:var(--text-1);">'
+                                     + '<button type="button" data-faixa="' + escapeHtml(belt.name) + '" data-grau="' + gh + '" data-pid="' + _grauId + '" onclick="_submeterGrauBtn(this)" style="font-size:11px;padding:4px 8px;background:rgba(201,162,58,0.15);border:1px solid rgba(201,162,58,0.4);border-radius:6px;color:#C9A23A;cursor:pointer;">Enviar</button>'
+                                             + '<button type="button" onclick="_toggleGrauForm(\'' + _grauId + '\')" style="font-size:11px;padding:4px 6px;background:transparent;border:none;color:rgba(255,255,255,0.3);cursor:pointer;">✕</button>'
+                                             + '</form>'
+                                             + '<button type="button" id="' + _grauId + '_btn" onclick="_toggleGrauForm(\'' + _grauId + '\')" '
+                                             + 'style="font-size:10px;padding:3px 8px;background:rgba(201,162,58,0.08);border:1px solid rgba(201,162,58,0.25);border-radius:6px;color:#C9A23A;cursor:pointer;margin-top:3px;">📅 Informar data</button>';
+                                }
                                 h += '<div class="ibjjf-grau-entry">'
                                    + '<div class="ibjjf-grau-entry-dot ' + dotCls + '"></div>'
-                                   + '<div class="ibjjf-grau-entry-info">'
+                                   + '<div class="ibjjf-grau-entry-info" style="flex:1;">'
                                    + '<span class="ibjjf-grau-entry-label ' + lblCls + '">🏅 ' + gh + 'º Grau · ' + belt.name + '</span>'
                                    + dateHtml
+                                   + _btnGrau
                                    + '</div></div>';
                             }
                             // Promoção de faixa
@@ -17887,6 +18001,62 @@
             overallPct = Math.min(overallPct, 100);
             document.getElementById('ibjjfOverallPct').textContent = overallPct + '%';
             setTimeout(function() { document.getElementById('ibjjfOverallFill').style.width = overallPct + '%'; }, 300);
+        }
+
+        function _toggleGrauForm(id) {
+            var form = document.getElementById(id + '_form');
+            var btn  = document.getElementById(id + '_btn');
+            if (!form) return;
+            var open = form.style.display !== 'none';
+            form.style.display = open ? 'none' : 'flex';
+            form.style.alignItems = 'center';
+            form.style.gap = '4px';
+            if (btn) btn.style.display = open ? '' : 'none';
+        }
+
+        function _submeterGrauBtn(btn) {
+            var faixa = btn.getAttribute('data-faixa') || '';
+            var grau  = parseInt(btn.getAttribute('data-grau')) || 0;
+            var pid   = btn.getAttribute('data-pid') || '';
+            _submeterGrau(faixa, grau, pid);
+        }
+
+        async function _submeterGrau(faixaNome, grauNum, id) {
+            var dtEl  = document.getElementById(id + '_dt');
+            var btn   = document.getElementById(id + '_btn');
+            if (!dtEl || !dtEl.value) { alert('Informe a data'); return; }
+            var modId = activeModality || (userModalidades && userModalidades[0]) || 'bjj';
+            // Converte yyyy-MM-dd para dd/MM/yyyy
+            var dp = dtEl.value.split('-');
+            var dataFmt = dp[2] + '/' + dp[1] + '/' + dp[0];
+            try {
+                var res = await secureFetch('requestGraduacao', {
+                    tipo:  'grau',
+                    faixa: faixaNome,
+                    nivel: faixaNome,
+                    grau:  grauNum,
+                    data:  dataFmt,
+                    obs:   '',
+                    modId: modId
+                });
+                if (res.success) {
+                    // Fecha form e mostra pendente
+                    var form = document.getElementById(id + '_form');
+                    if (form) form.style.display = 'none';
+                    if (btn)  btn.style.display = 'none';
+                    // Substitui botão por "aguardando"
+                    var info = dtEl ? dtEl.closest('.ibjjf-grau-entry-info') : null;
+                    if (info) {
+                        var pending = document.createElement('span');
+                        pending.className = 'ibjjf-grau-entry-date empty';
+                        pending.textContent = '⏳ Aguardando aprovação';
+                        info.appendChild(pending);
+                    }
+                    loadMyGraduacoes();
+                } else {
+                    alert(res.message || 'Erro ao enviar');
+                }
+            } catch(e) { alert('Erro de conexão'); }
         }
 
         // Helper: linha de requisito no dropdown de faixa futura
@@ -18752,8 +18922,16 @@
             var nivelVal = nivelEl.value;
             var grauVal  = (grauEl && grauEl.style.display !== 'none') ? (parseInt(grauEl.value) || 0) : 0;
 
-            // Define tipo de payload conforme schema
-            var tipo = (tipoGrad === 'prajied' || tipoGrad === 'corda') ? 'grau' : 'nivel';
+            // Define tipo: 'grau' quando é avanço de grau dentro da faixa
+            //              'nivel' quando é promoção de faixa/belt/cordão
+            var tipo;
+            if (tipoGrad === 'prajied' || tipoGrad === 'corda') {
+                tipo = 'grau';
+            } else if (grauVal > 0) {
+                tipo = 'grau';   // aluno declarando grau dentro da faixa
+            } else {
+                tipo = 'nivel';  // aluno declarando faixa/belt
+            }
 
             var payload = {
                 tipo:  tipo,
