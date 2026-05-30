@@ -34874,12 +34874,12 @@
                 '<div style="background:#111a27;border:1px solid rgba(201,162,58,0.35);border-radius:20px;padding:28px 22px;max-width:420px;width:100%;max-height:88vh;overflow-y:auto;">' +
                     '<div style="text-align:center;margin-bottom:20px;">' +
                         '<div style="font-size:40px;margin-bottom:10px;">🕐</div>' +
-                        '<div style="font-size:18px;font-weight:800;color:#C9A23A;margin-bottom:8px;">Defina seu horário de treino</div>' +
-                        '<div style="font-size:12px;color:rgba(255,255,255,0.45);line-height:1.6;">Para aparecer na lista de chamada, selecione os dias e horários que você costuma treinar. O professor saberá quando te esperar!</div>' +
+                        '<div style="font-size:18px;font-weight:800;color:#C9A23A;margin-bottom:8px;">Seus horários de treino</div>' +
+                        '<div style="font-size:12px;color:rgba(255,255,255,0.45);line-height:1.6;">Selecione os horários que você costuma frequentar. O professor saberá quando te esperar!</div>' +
                     '</div>' +
                     '<div id="horObrigContainer"><div style="text-align:center;padding:20px;color:rgba(255,255,255,0.3);font-size:12px;">Carregando horários disponíveis...</div></div>' +
                     '<button onclick="_salvarHorarioObrigatorio()" style="width:100%;padding:14px;background:#C9A23A;border:none;border-radius:12px;color:#000;font-size:14px;font-weight:800;cursor:pointer;margin-top:18px;letter-spacing:0.5px;">✅ Confirmar meus horários</button>' +
-                    '<button onclick="_pularHorarioObrigatorio()" style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,0.25);font-size:11px;cursor:pointer;margin-top:6px;">Pular agora — serei adicionado em todos os horários automaticamente</button>' +
+                    '<button onclick="_pularHorarioObrigatorio()" style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,0.25);font-size:11px;cursor:pointer;margin-top:6px;">Deixar para depois</button>' +
                 '</div>';
             document.body.appendChild(overlay);
             _carregarHorariosNoModal();
@@ -34897,15 +34897,10 @@
                 }
                 var res = await secureFetch('getHorariosCT', { ct: ct, modalidades: '' });
 
-                if (!res || !res.success) {
-                    var motivo = (res && res.message) || 'sem resposta';
-                    container.innerHTML = '<div style="text-align:center;font-size:12px;color:rgba(255,255,255,0.35);padding:16px;">Nenhum horário cadastrado ainda para <strong style="color:rgba(255,255,255,0.55);">' + escapeHtml(ct) + '</strong>.<br>Você será incluído automaticamente quando o professor cadastrar as aulas.</div>';
-                    console.warn('[horarioModal] getHorariosCT falhou — ct="' + ct + '" motivo=' + motivo);
-                    return;
-                }
-                if (!res.slotsPorMod || !Object.keys(res.slotsPorMod).length) {
-                    container.innerHTML = '<div style="text-align:center;font-size:12px;color:rgba(255,255,255,0.35);padding:16px;">Nenhum horário cadastrado ainda para <strong style="color:rgba(255,255,255,0.55);">' + escapeHtml(ct) + '</strong>.<br>Você será incluído automaticamente quando o professor cadastrar as aulas.</div>';
-                    console.warn('[horarioModal] slotsPorMod vazio — ct="' + ct + '" diasOrdenados=' + JSON.stringify(res.diasOrdenados));
+                if (!res || !res.success || !res.slotsPorMod || !Object.keys(res.slotsPorMod).length) {
+                    // Nenhum horário cadastrado pelo professor ainda — fecha o modal silenciosamente
+                    console.warn('[horarioModal] sem horários disponíveis — ct="' + ct + '" — modal fechado');
+                    _pularHorarioObrigatorio();
                     return;
                 }
 
