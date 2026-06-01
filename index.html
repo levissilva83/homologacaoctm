@@ -11436,45 +11436,29 @@
                         <label>CT Principal</label>
                         <select id="stuCT" onchange="onStuCTChange()"></select>
                     </div>
-                    <!-- ── ABAS: Dias de Treino | Horários por CT ─────────────── -->
-                    <div class="stu-field" style="padding:0;">
-                        <!-- Tab Nav -->
-                        <div id="stuHorTabNav" style="display:flex;border-bottom:1px solid var(--adm-border);margin-bottom:12px;">
-                            <button type="button" id="stuHorTab1" onclick="stuHorSwitchTab(1)"
-                                style="flex:1;padding:8px 4px;font-size:12px;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:2px solid #C9A23A;color:#C9A23A;">
-                                📅 Dias de Treino
-                            </button>
-                            <button type="button" id="stuHorTab2" onclick="stuHorSwitchTab(2)"
-                                style="flex:1;padding:8px 4px;font-size:12px;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:var(--adm-text-3);">
-                                🕐 Horários por CT
-                            </button>
+                    <!-- ── HORÁRIOS DE TREINO (dias + slots unificados) ───────── -->
+                    <div class="stu-field" style="padding:0;" id="stuScheduleBlock">
+                        <label style="display:flex;align-items:center;justify-content:space-between;">
+                            <span>🕐 Dias &amp; Horários de Treino</span>
+                            <span id="stuHorSlotsCount" style="font-size:10px;color:var(--adm-text-3);font-weight:400;"></span>
+                        </label>
+                        <div style="font-size:10px;color:var(--adm-text-3);margin-bottom:10px;">
+                            Toque nos horários que o aluno costuma frequentar.
                         </div>
-
-                        <!-- Aba 1: Dias de Treino -->
-                        <div id="stuHorPane1">
-                            <div class="stu-days-row" id="stuDiasGrid">
-                                <button type="button" class="stu-day-btn" data-day="seg" onclick="this.classList.toggle('on')">S</button>
-                                <button type="button" class="stu-day-btn" data-day="ter" onclick="this.classList.toggle('on')">T</button>
-                                <button type="button" class="stu-day-btn" data-day="qua" onclick="this.classList.toggle('on')">Q</button>
-                                <button type="button" class="stu-day-btn" data-day="qui" onclick="this.classList.toggle('on')">Q</button>
-                                <button type="button" class="stu-day-btn" data-day="sex" onclick="this.classList.toggle('on')">S</button>
-                                <button type="button" class="stu-day-btn" data-day="sab" onclick="this.classList.toggle('on')">S</button>
-                                <button type="button" class="stu-day-btn" data-day="dom" onclick="this.classList.toggle('on')">D</button>
-                            </div>
-                            <div class="stu-days-hint" id="stuDiasHint" style="margin-top:6px;"></div>
+                        <div id="stuHorariosContainer">
+                            <div style="text-align:center;padding:16px;color:var(--adm-text-3);font-size:12px;">Carregando...</div>
                         </div>
-
-                        <!-- Aba 2: Horários por CT -->
-                        <div id="stuHorPane2" style="display:none;">
-                            <div style="font-size:10px;color:var(--adm-text-3);margin-bottom:8px;">Selecione os horários que o aluno costuma treinar em cada CT.</div>
-                            <div id="stuHorariosContainer">
-                                <div style="text-align:center;padding:12px;color:var(--adm-text-3);font-size:12px;">Carregando horários...</div>
-                            </div>
-                            <div id="stuHorarioMsg" style="font-size:11px;text-align:center;margin-top:6px;"></div>
-                            <button type="button" onclick="salvarHorariosAluno()" style="width:100%;padding:9px;background:var(--adm-primary);border:none;border-radius:10px;color:#000;font-size:13px;font-weight:800;cursor:pointer;margin-top:8px;">💾 Salvar horários</button>
-                        </div>
+                        <div id="stuHorarioMsg" style="font-size:11px;text-align:center;margin-top:6px;"></div>
+                        <button type="button" onclick="salvarHorariosAluno()" id="stuHorSaveBtn"
+                            style="width:100%;padding:10px;background:var(--adm-primary);border:none;border-radius:10px;color:#000;font-size:13px;font-weight:800;cursor:pointer;margin-top:10px;display:none;">
+                            💾 Salvar horários
+                        </button>
                     </div>
+                    <!-- stuDiasGrid hidden — derivado dos slots selecionados -->
+                    <div id="stuDiasGrid" style="display:none;"></div>
+                    <div id="stuDiasHint"  style="display:none;"></div>
                     <div id="stuHorariosSection" style="display:none;"></div>
+                    <div id="stuHorPane2"  style="display:none;"></div>
 
                     <!-- AVISO ADMIN SEM HORÁRIO -->
                     <div id="stuAvisoSemHorario" style="display:none;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:10px;padding:12px;margin-bottom:8px;">
@@ -35045,25 +35029,17 @@
 
 
         // ─── Horários de Treino do Aluno ─────────────────────────────────
-        // ── Abas de horário no modal do aluno ──────────────────────────
-        function stuHorSwitchTab(n) {
-            var t1 = document.getElementById('stuHorTab1');
-            var t2 = document.getElementById('stuHorTab2');
-            var p1 = document.getElementById('stuHorPane1');
-            var p2 = document.getElementById('stuHorPane2');
-            if (!t1 || !t2 || !p1 || !p2) return;
-            t1.style.borderBottomColor = n === 1 ? '#C9A23A' : 'transparent';
-            t1.style.color             = n === 1 ? '#C9A23A' : 'var(--adm-text-3)';
-            t2.style.borderBottomColor = n === 2 ? '#C9A23A' : 'transparent';
-            t2.style.color             = n === 2 ? '#C9A23A' : 'var(--adm-text-3)';
-            p1.style.display = n === 1 ? '' : 'none';
-            p2.style.display = n === 2 ? '' : 'none';
-            // Carrega horários ao abrir aba 2
-            if (n === 2 && stuModalEmail) {
-                var container = document.getElementById('stuHorariosContainer');
-                if (container && container.children.length === 1 && container.children[0].textContent.includes('Carregando')) {
-                    loadHorariosAluno(stuModalEmail);
-                }
+        function stuHorSwitchTab() {} // compatibilidade
+
+        function stuHorCtTab(n) {
+            var container = document.getElementById('stuHorariosContainer');
+            var total = container ? (container._stuHorTabCount || 0) : 0;
+            for (var i = 0; i < total; i++) {
+                var btn  = document.getElementById('stuHorTabBtn_' + i);
+                var pane = document.getElementById('stuHorCtPane_' + i);
+                var active = i === n;
+                if (btn)  { btn.style.borderBottomColor = active ? '#C9A23A' : 'transparent'; btn.style.color = active ? '#C9A23A' : 'rgba(255,255,255,0.3)'; }
+                if (pane) pane.style.display = active ? 'block' : 'none';
             }
         }
 
@@ -35099,58 +35075,64 @@
                 var MOD_LABELS = { bjj:'BJJ', muay_thai:'Muay Thai', judo:'Judô', karate:'Karatê', boxing:'Boxe', mma:'MMA', funcional:'Funcional', wrestling:'Wrestling', kickboxing:'Kickboxing' , kravmaga:'Krav Maga', aikido:'Aikido', karate_shotokan:'Karate Shotokan' };
                 var DAY_LABELS = { seg:'Seg', ter:'Ter', qua:'Qua', qui:'Qui', sex:'Sex', sab:'Sáb', dom:'Dom' };
 
-                data.modalidades.forEach(function(mod) {
-                    h += '<div style="margin-bottom:12px;">';
-                    h += '<div style="font-size:11px;font-weight:700;color:var(--adm-text-2);margin-bottom:6px;">' + (MOD_LABELS[mod.modId] || mod.modId).toUpperCase() + ' · ' + mod.ctNome + '</div>';
+                var DIA_ORD  = ['seg','ter','qua','qui','sex','sab','dom'];
+                var modsValidas = data.modalidades.filter(function(m){ return m.slots && m.slots.length; });
+                if (!modsValidas.length) {
+                    container.innerHTML = '<div style="font-size:12px;color:var(--adm-text-3);text-align:center;padding:12px;">Nenhum horário disponível.</div>';
+                    return;
+                }
 
-                    // Agrupa slots por dia
+                // ── Tab nav (uma aba por mod·CT) ────────────────────────────
+                var tabNav = '<div style="display:flex;overflow-x:auto;border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:12px;gap:0;">';
+                modsValidas.forEach(function(mod, idx) {
+                    var label = (MOD_LABELS[mod.modId]||mod.modId) + ' · ' + (mod.ctNome||'');
+                    tabNav += '<button type="button" id="stuHorTabBtn_' + idx + '" onclick="stuHorCtTab(' + idx + ')"'
+                            + ' style="flex-shrink:0;padding:7px 12px;font-size:11px;font-weight:700;border:none;cursor:pointer;white-space:nowrap;'
+                            + 'border-bottom:2px solid ' + (idx===0 ? '#C9A23A' : 'transparent') + ';'
+                            + 'color:' + (idx===0 ? '#C9A23A' : 'rgba(255,255,255,0.3)') + ';background:none;">'
+                            + escapeHtml(label) + '</button>';
+                });
+                tabNav += '</div>';
+
+                // ── Painéis de cada aba ────────────────────────────────────
+                var panes = '';
+                modsValidas.forEach(function(mod, idx) {
+                    var salvo  = _stuHorariosSelecionados[mod.modId] || {};
                     var porDia = {};
-                    mod.slots.forEach(function(s) {
-                        if (!porDia[s.dia]) porDia[s.dia] = { label: s.diaLabel, horarios: [] };
-                        porDia[s.dia].horarios.push(s.horario);
+                    mod.slots.forEach(function(s){
+                        if (!porDia[s.dia]) porDia[s.dia] = [];
+                        porDia[s.dia].push(s.horario);
                     });
+                    var diasOrd = DIA_ORD.filter(function(d){ return porDia[d]; });
 
-                    var salvo = _stuHorariosSelecionados[mod.modId] || {};
-
-                    Object.keys(porDia).forEach(function(dia) {
-                        h += '<div style="margin-bottom:6px;">';
-                        h += '<div style="font-size:10px;color:var(--adm-text-3);margin-bottom:3px;">' + (DAY_LABELS[dia] || dia) + '</div>';
-                        h += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
-                        porDia[dia].horarios.forEach(function(hr) {
-                            var ativo = salvo[dia] && (salvo[dia] === hr || (salvo[dia] && salvo[dia].indexOf(hr) !== -1));
-                            var id = 'hr_' + mod.modId + '_' + dia + '_' + hr.replace(':','');
-                            h += '<button type="button" id="' + id + '" data-mod="' + mod.modId + '" data-dia="' + dia + '" data-hr="' + hr + '"' +
-                                 ' onclick="toggleHorario(this)"' +
-                                 ' style="padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid ' +
-                                 (ativo ? 'var(--adm-primary);background:rgba(201,162,58,0.15);color:var(--adm-primary)' : 'var(--adm-border);background:var(--adm-bg-elevated);color:var(--adm-text-3)') + ';">' +
-                                 hr + '</button>';
+                    panes += '<div id="stuHorCtPane_' + idx + '" style="display:' + (idx===0?'block':'none') + ';">';
+                    diasOrd.forEach(function(dia) {
+                        panes += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">';
+                        panes += '<span style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.35);width:30px;flex-shrink:0;text-align:right;">' + (DAY_LABELS[dia]||dia) + '</span>';
+                        panes += '<div style="display:flex;flex-wrap:wrap;gap:5px;">';
+                        porDia[dia].forEach(function(hr) {
+                            var ativo = salvo[dia] && (salvo[dia] === hr || salvo[dia].indexOf(hr) !== -1);
+                            var id    = 'hr_' + mod.modId + '_' + dia + '_' + hr.replace(':','');
+                            panes += '<button type="button" id="' + id + '"'
+                                   + ' data-mod="' + mod.modId + '" data-dia="' + dia + '" data-hr="' + hr + '"'
+                                   + ' onclick="toggleHorario(this)"'
+                                   + ' style="padding:5px 12px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;border:1.5px solid;'
+                                   + (ativo ? 'background:#C9A23A;color:#000;border-color:#C9A23A;'
+                                            : 'background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.45);border-color:rgba(255,255,255,0.1);')
+                                   + '">' + hr + '</button>';
                         });
-                        h += '</div></div>';
+                        panes += '</div></div>';
                     });
-                    h += '</div>';
+                    panes += '</div>';
                 });
 
-                h += '<button onclick="salvarHorariosAluno()" style="width:100%;padding:10px;background:var(--adm-primary);border:none;border-radius:10px;color:#000;font-size:13px;font-weight:800;cursor:pointer;margin-top:4px;">💾 Salvar horários</button>';
-                // stuHorarioMsg is outside the container now
-
+                h = tabNav + panes;
+                h += '<div id="stuHorarioMsg" style="font-size:11px;text-align:center;margin-top:6px;"></div>';
+                h += '<button onclick="salvarHorariosAluno()" style="width:100%;padding:10px;background:var(--adm-primary);border:none;border-radius:10px;color:#000;font-size:13px;font-weight:800;cursor:pointer;margin-top:8px;">💾 Salvar horários</button>';
                 container.innerHTML = h;
 
-                // Restaura seleção salva
-                Object.keys(_stuHorariosSelecionados).forEach(function(modId) {
-                    var salvo = _stuHorariosSelecionados[modId];
-                    Object.keys(salvo).forEach(function(dia) {
-                        var hrs = salvo[dia].toString().split(',');
-                        hrs.forEach(function(hr) {
-                            var id = 'hr_' + modId + '_' + dia + '_' + hr.trim().replace(':','');
-                            var btn = document.getElementById(id);
-                            if (btn) {
-                                btn.style.borderColor = 'var(--adm-primary)';
-                                btn.style.background  = 'rgba(201,162,58,0.15)';
-                                btn.style.color       = 'var(--adm-primary)';
-                            }
-                        });
-                    });
-                });
+                // Guarda referência de quantas abas existem
+                container._stuHorTabCount = modsValidas.length;
 
             } catch(e) {
                 if (section) section.style.display = 'none';
@@ -35785,39 +35767,117 @@
         }
 
         // Define ou remove o dia de cobrança individual do aluno
-        async function definirDiaCobrancaAluno(email, diaAtual) {
-            var _diaAtualStr = diaAtual ? ' (atual: dia ' + diaAtual + ')' : ' (usando padrão do CT)';
-            var resp = prompt(
-                'Dia de cobrança para ' + email + _diaAtualStr + '\n\n' +
-                'Digite um número de 1 a 28 para definir um dia específico\n' +
-                'ou deixe em branco para usar o padrão do CT:\n',
-                diaAtual || ''
-            );
-            if (resp === null) return; // cancelou
+                function _fecharVencSheet() { var s = document.getElementById('vencSheet'); if (s) s.remove(); }
 
-            var limpar = resp.trim() === '';
-            var dia    = limpar ? 0 : parseInt(resp.trim());
+        // ── Seletor de data de cobrança (bottom sheet) ───────────────────────
+        function definirDiaCobrancaAluno(email, diaAtual) {
+            // Remove sheet anterior se existir
+            var old = document.getElementById('vencSheet');
+            if (old) old.remove();
 
-            if (!limpar && (isNaN(dia) || dia < 1 || dia > 28)) {
-                alert('Dia inválido. Use um número de 1 a 28.');
-                return;
+            var today = new Date();
+            var yyyy  = today.getFullYear();
+            var mm    = String(today.getMonth()+1).padStart(2,'0');
+            var dd    = String(today.getDate()).padStart(2,'0');
+            var todayStr = yyyy + '-' + mm + '-' + dd;
+
+            var sheet = document.createElement('div');
+            sheet.id  = 'vencSheet';
+            sheet.innerHTML =
+                '<div onclick="_fecharVencSheet()" style="position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9998;"></div>'
+              + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:#1a1f2e;border-radius:20px 20px 0 0;padding:24px 20px 40px;z-index:9999;box-shadow:0 -8px 40px rgba(0,0,0,0.5);">'
+              + '<div style="width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 20px;"></div>'
+              + '<div style="font-size:15px;font-weight:800;color:var(--text-1);margin-bottom:4px;text-align:center;">📅 Data de cobrança</div>'
+              + '<div style="font-size:11px;color:rgba(255,255,255,0.4);text-align:center;margin-bottom:20px;">' + escapeHtml(email) + '</div>'
+
+              // Dois modos
+              + '<div style="display:flex;gap:8px;margin-bottom:16px;">'
+              + '<button id="vencModo1" onclick="vencSetModo(1)" style="flex:1;padding:10px 6px;border-radius:10px;border:1.5px solid #C9A23A;background:rgba(201,162,58,0.12);color:#C9A23A;font-size:12px;font-weight:700;cursor:pointer;">📆 Próximo pagamento</button>'
+              + '<button id="vencModo2" onclick="vencSetModo(2)" style="flex:1;padding:10px 6px;border-radius:10px;border:1.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.4);font-size:12px;font-weight:700;cursor:pointer;">✅ Já pagou nesta data</button>'
+              + '</div>'
+
+              + '<div id="vencModoDesc" style="font-size:11px;color:rgba(255,255,255,0.4);text-align:center;margin-bottom:12px;min-height:32px;">Define quando será o <strong style="color:rgba(255,255,255,0.7);">próximo vencimento</strong>.<br>Ideal para acordos futuros.</div>'
+
+              + '<input type="date" id="vencData" value="' + todayStr + '" min="2020-01-01"'
+              + ' style="width:100%;padding:14px;background:rgba(255,255,255,0.07);border:1.5px solid rgba(201,162,58,0.4);border-radius:12px;color:var(--text-1);font-size:18px;font-weight:700;box-sizing:border-box;text-align:center;margin-bottom:6px;">'
+
+              + '<div id="vencPreview" style="font-size:11px;color:rgba(255,255,255,0.4);text-align:center;min-height:18px;margin-bottom:14px;"></div>'
+
+              + '<button data-email="' + escapeHtml(email) + '" onclick="vencConfirmar(this.getAttribute(\'data-email\'))" style="width:100%;padding:13px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">✅ Confirmar</button>'
+              + '<button onclick="_fecharVencSheet()" style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,0.25);font-size:12px;cursor:pointer;margin-top:6px;">Cancelar</button>'
+              + '</div>';
+
+            document.body.appendChild(sheet);
+
+            // Estado interno
+            sheet._modo = 1;
+            document.getElementById('vencData').addEventListener('input', function(){ vencAtualizarPreview(); });
+            vencAtualizarPreview();
+        }
+
+        function vencSetModo(n) {
+            var sheet = document.getElementById('vencSheet');
+            if (!sheet) return;
+            sheet._modo = n;
+            var b1    = document.getElementById('vencModo1');
+            var b2    = document.getElementById('vencModo2');
+            var desc  = document.getElementById('vencModoDesc');
+            var ativo = 'border:1.5px solid #C9A23A;background:rgba(201,162,58,0.12);color:#C9A23A;';
+            var inativo= 'border:1.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.4);';
+            b1.style.cssText = b1.style.cssText.replace(/border[^;]+;/g,'').replace(/background[^;]+;/g,'').replace(/color[^;]+;/g,'') + (n===1 ? ativo : inativo);
+            b2.style.cssText = b2.style.cssText.replace(/border[^;]+;/g,'').replace(/background[^;]+;/g,'').replace(/color[^;]+;/g,'') + (n===2 ? ativo : inativo);
+            if (n===1) desc.innerHTML = 'Define quando será o <strong style="color:rgba(255,255,255,0.7);">próximo vencimento</strong>.<br>Ideal para acordos futuros.';
+            else       desc.innerHTML = 'O aluno <strong style="color:rgba(255,255,255,0.7);">já pagou</strong> nesta data.<br>Próximo vencimento = +1 mês.';
+            vencAtualizarPreview();
+        }
+
+        function vencAtualizarPreview() {
+            var sheet = document.getElementById('vencSheet');
+            var dtEl  = document.getElementById('vencData');
+            var prev  = document.getElementById('vencPreview');
+            if (!sheet || !dtEl || !prev) return;
+            if (!dtEl.value) { prev.textContent = ''; return; }
+            var parts = dtEl.value.split('-');
+            var dt    = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+            var fmt   = function(d){ return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear(); };
+
+            if (sheet._modo === 1) {
+                prev.innerHTML = '⏭ Próximo vencimento: <strong style="color:#C9A23A;">' + fmt(dt) + '</strong>';
+            } else {
+                var prox = new Date(dt); prox.setMonth(prox.getMonth()+1);
+                prev.innerHTML = '✅ Último pagamento: <strong style="color:#4ade80;">' + fmt(dt) + '</strong>'
+                               + '  →  ⏭ Próximo: <strong style="color:#C9A23A;">' + fmt(prox) + '</strong>';
+            }
+        }
+
+        async function vencConfirmar(email) {
+            var sheet = document.getElementById('vencSheet');
+            var dtEl  = document.getElementById('vencData');
+            if (!sheet || !dtEl || !dtEl.value) { alert('Selecione uma data.'); return; }
+
+            var parts    = dtEl.value.split('-');
+            var dt       = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+            var fmt      = function(d){ return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear(); };
+            var proxVenc;
+
+            if (sheet._modo === 1) {
+                // Próximo pagamento = data escolhida
+                proxVenc = fmt(dt);
+            } else {
+                // Já pagou = data escolhida; próximo = +1 mês
+                var prox = new Date(dt); prox.setMonth(prox.getMonth()+1);
+                proxVenc = fmt(prox);
             }
 
             try {
-                var res = await secureFetch('setDiaCobrancaAluno', {
-                    email:  email,
-                    dia:    dia,
-                    limpar: limpar
-                });
+                var res = await secureFetch('setProxVencimentoAluno', { email: email, proxVencimento: proxVenc });
                 if (res.success) {
-                    alert('✅ ' + res.message);
+                    sheet.remove();
                     loadPagamentosAdmin();
                 } else {
                     alert('❌ ' + (res.message || 'Erro'));
                 }
-            } catch(e) {
-                alert('Erro de conexão: ' + e.message);
-            }
+            } catch(e) { alert('Erro: ' + e.message); }
         }
 
         function atribuirPlanoModal(email) {
