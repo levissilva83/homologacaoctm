@@ -10300,6 +10300,27 @@
                 </div>
                 <!-- ██ FIM CATRACA ██ -->
 
+                <!-- ██ TAXA DE MATRÍCULA ██ -->
+                <div class="admin-section" id="taxaMatriculaSection">
+                    <div class="stu-section-title">🎓 Taxa de Matrícula</div>
+                    <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:12px;">
+                        Cobrada automaticamente quando uma nova conta é aprovada. O admin pode isentar individualmente no momento da aprovação.
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <label style="font-size:11px;color:var(--adm-text-3);white-space:nowrap;">Ativa:</label>
+                            <input type="checkbox" id="taxaMatrAtivo" style="width:16px;height:16px;accent-color:#C9A23A;cursor:pointer;">
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <input type="number" id="taxaMatrValor" placeholder="R$ valor" min="0" step="0.01" style="flex:1;min-width:100px;padding:7px 10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;">
+                            <input type="text" id="taxaMatrDesc" placeholder="Descrição (ex: Taxa de Matrícula)" style="flex:2;padding:7px 10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                        </div>
+                        <button onclick="salvarTaxaMatricula()" style="padding:7px 14px;background:rgba(201,162,58,0.15);border:1px solid rgba(201,162,58,0.4);border-radius:8px;color:#C9A23A;font-size:12px;font-weight:700;cursor:pointer;align-self:flex-start;">💾 Salvar</button>
+                        <div id="taxaMatrMsg" style="font-size:11px;"></div>
+                    </div>
+                </div>
+                <!-- ██ FIM TAXA DE MATRÍCULA ██ -->
+
                 <!-- ██ TAXAS DE GRADUAÇÃO ██ -->
                 <div class="admin-section" id="taxaGradSection">
                     <div class="stu-section-title">🎖️ Taxas de Graduação</div>
@@ -11943,16 +11964,40 @@
         (function() {
             try {
                 var p = new URLSearchParams(window.location.search).get('ctm');
-                if (p) {
+                if (p && p.trim()) {
+                    // Parâmetro presente na URL → salva e usa
                     localStorage.setItem('ctm_id', p.trim().toLowerCase());
                 } else {
-                    // URL limpa: força matrix (ignora localStorage)
-                    localStorage.setItem('ctm_id', 'matrix');
+                    // Sem parâmetro → mantém o último CT usado (não sobrescreve)
+                    // Se nunca acessou com ?ctm=, permanece 'matrix' como fallback
+                    var _stored = localStorage.getItem('ctm_id');
+                    if (!_stored || _stored === 'matrix') {
+                        localStorage.setItem('ctm_id', 'matrix');
+                    }
+                    // Se tem CT salvo → redireciona para a URL correta com ?ctm=
+                    if (_stored && _stored !== 'matrix' && !window.location.search.includes('ctm=')) {
+                        window.history.replaceState(null, '', '?ctm=' + encodeURIComponent(_stored));
+                    }
                 }
             } catch(e) {}
         })();
         var _ctmId = (function() {
-            try { return localStorage.getItem('ctm_id') || 'matrix'; } catch(e) { return 'matrix'; }
+            try {
+                // Suporta ?ctm=, #ctm= e hash fragment #ctm=xxx
+                var _urlCtm = new URLSearchParams(window.location.search).get('ctm');
+                if (!_urlCtm) {
+                    // Tenta ler do hash: #ctm=levisbrazilianjiujitsu
+                    var _hash = window.location.hash.replace('#','');
+                    var _hashParams = new URLSearchParams(_hash);
+                    _urlCtm = _hashParams.get('ctm');
+                }
+                if (_urlCtm && _urlCtm.trim().toLowerCase() !== 'matrix') {
+                    var _c = _urlCtm.trim().toLowerCase();
+                    localStorage.setItem('ctm_id', _c);
+                    return _c;
+                }
+                return localStorage.getItem('ctm_id') || 'matrix';
+            } catch(e) { return 'matrix'; }
         })();
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyWwOSEW2dw2EioooNWWd62VMDCmBl9A271jejNJTXeTfSt94_eyIttNJseDQvTW10u/exec'
                          + '?ctm=' + _ctmId;
@@ -11960,6 +12005,10 @@
         // ── Carrega nome do CT e exibe na tela de login ────────────
         (function() {
             var urlParam = new URLSearchParams(window.location.search).get('ctm');
+            if (!urlParam) {
+                var _h = window.location.hash.replace('#','');
+                urlParam = new URLSearchParams(_h).get('ctm');
+            }
             if (!urlParam || urlParam.trim().toLowerCase() === 'matrix') return;
             var ctmToCheck = urlParam.trim().toLowerCase();
 
@@ -23989,6 +24038,84 @@
                     btn.style.borderBottom = (i === n) ? '2px solid var(--adm-primary)' : '2px solid transparent';
                 }
             });
+        // ─── Novos Cadastros Pendentes ────────────────────────────────────────
+        async function loadPendingAccounts() {
+            var el = document.getElementById('adminAccountsList');
+            if (!el) return;
+            el.innerHTML = '<div class="admin-empty" style="font-size:10px;">⏳ Carregando...</div>';
+            try {
+                var data = await secureFetch('getPendingAccounts', {});
+                if (!data.success || !data.accounts || !data.accounts.length) {
+                    el.innerHTML = '<div class="admin-empty" style="font-size:11px;">✅ Nenhum cadastro pendente</div>';
+                    return;
+                }
+                var h = '';
+                data.accounts.forEach(function(p) {
+                    var safeEmail = escapeHtml(p.email||'');
+                    var safeName  = escapeHtml(p.nome ||p.email||'—');
+                    var chkId     = 'isento_' + safeEmail.replace(/[^a-z0-9]/gi,'_');
+                    h += '<div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;padding:12px;margin-bottom:8px;">';
+                    // Header
+                    h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">';
+                    h += '<div style="width:32px;height:32px;border-radius:50%;background:rgba(201,162,58,0.1);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#C9A23A;flex-shrink:0;">' + ((p.nome||p.email||'?')[0]).toUpperCase() + '</div>';
+                    h += '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;color:var(--adm-text-1);">' + safeName + '</div>';
+                    h += '<div style="font-size:10px;color:var(--adm-text-3);">' + safeEmail + '</div></div>';
+                    h += '<span style="font-size:9px;padding:2px 7px;border-radius:8px;background:rgba(251,191,36,0.1);color:#fbbf24;border:1px solid rgba(251,191,36,0.2);">⏳ Pendente</span>';
+                    h += '</div>';
+                    // Dados
+                    if (p.faixa || p.modalidade) {
+                        h += '<div style="font-size:10px;color:var(--adm-text-3);margin-bottom:8px;">';
+                        if (p.faixa) h += '🥋 ' + escapeHtml(p.faixa) + (p.grau?'  '+p.grau+'° grau':'') + '  ';
+                        if (p.modalidade) h += '· ' + escapeHtml(p.modalidade);
+                        h += '</div>';
+                    }
+                    // Select CT
+                    h += '<div style="margin-bottom:8px;">';
+                    h += '<select id="ct_' + chkId + '" style="width:100%;padding:6px 8px;background:var(--adm-bg);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">';
+                    (data.cts||[]).forEach(function(ct){ h += '<option value="' + escapeHtml(ct) + '">' + escapeHtml(ct) + '</option>'; });
+                    h += '</select></div>';
+
+                    // Botões
+                    h += '<div style="display:flex;gap:6px;">';
+                    h += '<button data-email="' + safeEmail + '" data-chk="' + chkId + '" onclick="_aprovarContaBtn(this)" style="flex:1;padding:7px;background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.25);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">✅ Aprovar</button>';
+                    h += '<button data-email="' + safeEmail + '" onclick="_rejeitarContaBtn(this)" style="flex:1;padding:7px;background:rgba(248,113,113,0.08);color:#f87171;border:1px solid rgba(248,113,113,0.2);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">❌ Rejeitar</button>';
+                    h += '</div></div>';
+                });
+                el.innerHTML = h;
+            } catch(e) {
+                el.innerHTML = '<div class="admin-empty" style="font-size:10px;color:#f87171;">❌ Erro: ' + e.message + '</div>';
+            }
+        }
+
+        async function _aprovarContaBtn(btn) {
+            var email = btn.getAttribute('data-email');
+            var chkId = btn.getAttribute('data-chk');
+            var ctEl  = document.getElementById('ct_' + chkId);
+            var ct    = ctEl ? ctEl.value : '';
+            if (!ct) { alert('Selecione o CT.'); return; }
+            btn.disabled = true; btn.textContent = '⏳...';
+            var res = await secureFetch('approveAccount', { email: email, ct: ct });
+            if (res && res.success) {
+                loadPendingAccounts();
+                // Atualiza contador
+                var cnt = document.getElementById('adminPendingAccountsCount');
+                if (cnt) cnt.textContent = Math.max(0, parseInt(cnt.textContent||'0') - 1);
+            } else {
+                btn.disabled = false; btn.textContent = '✅ Aprovar';
+                alert('❌ ' + ((res&&res.message)||'Erro'));
+            }
+        }
+
+        async function _rejeitarContaBtn(btn) {
+            var email = btn.getAttribute('data-email');
+            if (!confirm('Rejeitar cadastro de ' + email + '?')) return;
+            btn.disabled = true;
+            var res = await secureFetch('rejectAccount', { email: email });
+            if (res && res.success) loadPendingAccounts();
+            else { btn.disabled = false; alert('❌ ' + ((res&&res.message)||'Erro')); }
+        }
+
+
             if (n === 1) loadPendingAccounts();
             if (n === 2) loadPendingResets();
             if (n === 3) loadPendingCheckins();
@@ -35797,6 +35924,7 @@
                     h += '<button onclick="atribuirPlanoModal(\'' + escapeHtml(p.email) + '\')" style="padding:4px 10px;border-radius:7px;background:rgba(201,162,58,0.08);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.2);font-size:9px;font-weight:700;cursor:pointer;">📋 Atribuir plano</button>';
                     h += '<button onclick="definirDiaCobrancaAluno(\'' + escapeHtml(p.email) + '\',' + (p.diaCobranca||0) + ')" style="padding:4px 10px;border-radius:7px;background:rgba(37,99,235,0.08);color:#60a5fa;border:1px solid rgba(37,99,235,0.2);font-size:9px;font-weight:700;cursor:pointer;">📅 Dia ' + (p.diaCobranca ? p.diaCobranca : 'padrão') + '</button>';
                     h += '<button onclick="abrirCobrancaAvulsa(\'' + escapeHtml(p.email) + '\',\'' + escapeHtml(p.nome||p.email) + '\')" style="padding:4px 10px;border-radius:7px;background:rgba(168,85,247,0.1);color:#a855f7;border:1px solid rgba(168,85,247,0.25);font-size:9px;font-weight:700;cursor:pointer;">💰 Cobrança avulsa</button>';
+                    h += '<button onclick="abrirTaxaMatricula(\'' + escapeHtml(p.email) + '\',\'' + escapeHtml(p.nome||p.email) + '\')" style="padding:4px 10px;border-radius:7px;background:rgba(99,102,241,0.1);color:#818cf8;border:1px solid rgba(99,102,241,0.25);font-size:9px;font-weight:700;cursor:pointer;">🎓 Taxa de matrícula</button>';
                     h += '</div>';
                     // Cobranças avulsas pendentes deste aluno
                     if (p.cobrancasAvulsas && p.cobrancasAvulsas.length) {
@@ -35924,6 +36052,49 @@
             var res = await secureFetch('deleteTaxaGraduacao', { row: row });
             if (res && res.success) loadTaxasGrad();
             else alert('❌ ' + (res&&res.message||'Erro'));
+        }
+
+        // ── Taxa de Matrícula (config) ────────────────────────────────────────
+        async function loadTaxaMatricula() {
+            var res = await secureFetch('getTaxaMatricula', {});
+            if (!res || !res.success || !res.taxa) return;
+            var t = res.taxa;
+            var el = document.getElementById('taxaMatrAtivo');
+            var vl = document.getElementById('taxaMatrValor');
+            var dl = document.getElementById('taxaMatrDesc');
+            if (el) el.checked     = !!t.ativo;
+            if (vl) vl.value       = t.valor || '';
+            if (dl) dl.value       = t.descricao || '';
+        }
+        async function salvarTaxaMatricula() {
+            var ativo = document.getElementById('taxaMatrAtivo').checked;
+            var valor = parseFloat(document.getElementById('taxaMatrValor').value) || 0;
+            var desc  = (document.getElementById('taxaMatrDesc').value||'').trim() || 'Taxa de Matrícula';
+            var msg   = document.getElementById('taxaMatrMsg');
+            var res   = await secureFetch('saveTaxaMatricula', { ativo: ativo, valor: valor, descricao: desc });
+            if (msg) {
+                msg.style.color = res && res.success ? '#4ade80' : '#f87171';
+                msg.textContent = res && res.success ? '✅ Salvo!' : '❌ '+(res&&res.message||'Erro');
+                setTimeout(function(){ msg.textContent=''; }, 3000);
+            }
+        }
+
+        async function abrirTaxaMatricula(email, nome) {
+            // Busca taxa configurada e pré-preenche a cobrança avulsa
+            var cfg = null;
+            try {
+                var res = await secureFetch('getTaxaMatricula', {});
+                if (res && res.success && res.taxa) cfg = res.taxa;
+            } catch(_) {}
+            abrirCobrancaAvulsa(email, nome);
+            // Pré-preenche após o sheet abrir
+            setTimeout(function() {
+                var descEl = document.getElementById('avulsaDesc');
+                var valEl  = document.getElementById('avulsaValor');
+                if (descEl && cfg && cfg.descricao) descEl.value = cfg.descricao;
+                else if (descEl) descEl.value = 'Taxa de Matrícula';
+                if (valEl  && cfg && cfg.valor)    valEl.value  = cfg.valor;
+            }, 200);
         }
 
         function _fecharAvulsaSheet(){ var s=document.getElementById('avulsaSheet'); if(s) s.remove(); }
@@ -36077,27 +36248,36 @@
             var dtEl  = document.getElementById('vencData');
             if (!sheet || !dtEl || !dtEl.value) { alert('Selecione uma data.'); return; }
 
-            var parts    = dtEl.value.split('-');
-            var dt       = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
-            var fmt      = function(d){ return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear(); };
-            var proxVenc;
+            var parts = dtEl.value.split('-');
+            var dt    = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+            var fmt   = function(d){ return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + d.getFullYear(); };
+
+            var proxVenc, dataPag = '', modo;
 
             if (sheet._modo === 1) {
                 // Próximo pagamento = data escolhida
                 proxVenc = fmt(dt);
+                modo     = 'proximo';
             } else {
-                // Já pagou = data escolhida; próximo = +1 mês
+                // Já pagou = data escolhida → registra PAGO + próximo = +1 mês
+                dataPag  = fmt(dt);
                 var prox = new Date(dt); prox.setMonth(prox.getMonth()+1);
                 proxVenc = fmt(prox);
+                modo     = 'jaPagou';
             }
 
             try {
-                var res = await secureFetch('setProxVencimentoAluno', { email: email, proxVencimento: proxVenc });
-                if (res.success) {
+                var res = await secureFetch('setProxVencimentoAluno', {
+                    email:           email,
+                    proxVencimento:  proxVenc,
+                    dataPagamento:   dataPag,
+                    modo:            modo
+                });
+                if (res && res.success) {
                     sheet.remove();
                     loadPagamentosAdmin();
                 } else {
-                    alert('❌ ' + (res.message || 'Erro'));
+                    alert('❌ ' + ((res&&res.message) || 'Erro'));
                 }
             } catch(e) { alert('Erro: ' + e.message); }
         }
