@@ -35143,10 +35143,19 @@
 
         async function salvarHorariosAluno() {
             var msg = document.getElementById('stuHorarioMsg');
+            if (!stuModalEmail) return;
             try {
-                var res = await secureFetch('saveHorarioAluno', { horarios: _stuHorariosSelecionados });
+                // Passa targetEmail para que o backend salve no aluno, não no admin
+                var res = await secureFetch('saveHorarioAluno', {
+                    horarios:    _stuHorariosSelecionados,
+                    targetEmail: stuModalEmail
+                });
                 if (res.success) {
                     if (msg) { msg.style.color = 'var(--green)'; msg.textContent = '✅ Horários salvos!'; }
+                    // Atualiza cache do aluno para que o modal de login não apareça mais
+                    var cached = adminStudentsCache ? adminStudentsCache[stuModalEmail] : null;
+                    if (cached) cached.horarioDefinido = true;
+                    setTimeout(function(){ if (msg) msg.textContent = ''; }, 3000);
                 } else {
                     if (msg) { msg.style.color = 'var(--red)'; msg.textContent = '❌ ' + (res.message || 'Erro'); }
                 }
