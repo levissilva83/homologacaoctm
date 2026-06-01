@@ -35697,7 +35697,14 @@
                 };
                 var gwIcon = { mercadopago:'🔵', infinitypay:'🟣', pix_manual:'🟢', manual:'🖐' };
 
-                var h = '';
+                // ── Barra de seleção múltipla ─────────────────────────────
+                var selBar = '<div id="cobSelBar" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(201,162,58,0.06);border:1px solid rgba(201,162,58,0.15);border-radius:10px;margin-bottom:8px;">'
+                           + '<input type="checkbox" id="cobChkAll" onchange="_cobSelAll(this)" style="width:15px;height:15px;cursor:pointer;accent-color:#C9A23A;">'
+                           + '<span style="font-size:11px;color:var(--adm-text-3);flex:1;" id="cobSelCount">Selecionar todos</span>'
+                           + '<button id="cobBulkBtn" onclick="_cobBulkAction()" style="display:none;padding:5px 12px;background:#C9A23A;color:#000;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">📋 Atribuir plano</button>'
+                           + '</div>';
+
+                var h = selBar;
                 pags.forEach(function(p) {
                     var st   = (p.status || 'PENDENTE').toUpperCase();
                     var cor  = statusColor[st] || '#94a3b8';
@@ -35711,7 +35718,9 @@
                     h += '<div style="background:' + bg + ';border:1px solid rgba(255,255,255,0.04);border-radius:10px;padding:10px 12px;margin-bottom:6px;">';
 
                     // Linha 1: avatar + nome + badge
+                    var safeEmail = escapeHtml(p.email||'');
                     h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">';
+                    h += '<input type="checkbox" class="cobChk" data-email="' + safeEmail + '" onchange="_cobSelChange()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;accent-color:#C9A23A;">';
                     h += '<div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;">' + escapeHtml(((p.nome||p.email||'?')[0]).toUpperCase()) + '</div>';
                     h += '<div style="flex:1;min-width:0;">';
                     h += '<div style="font-size:12px;font-weight:700;color:var(--adm-text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(p.nome || p.email || '—') + '</div>';
@@ -35878,6 +35887,41 @@
                     alert('❌ ' + (res.message || 'Erro'));
                 }
             } catch(e) { alert('Erro: ' + e.message); }
+        }
+
+        // ── Seleção múltipla ────────────────────────────────
+        var _cobSelecionados = new Set();
+
+        function _cobSelChange() {
+            _cobSelecionados = new Set();
+            document.querySelectorAll('.cobChk:checked').forEach(function(cb){ _cobSelecionados.add(cb.getAttribute('data-email')); });
+            _cobAtualizarBarraSel();
+        }
+        function _cobSelAll(chk) {
+            document.querySelectorAll('.cobChk').forEach(function(cb){ cb.checked = chk.checked; });
+            _cobSelChange();
+        }
+        function _cobAtualizarBarraSel() {
+            var n = _cobSelecionados.size, total = document.querySelectorAll('.cobChk').length;
+            var cnt = document.getElementById('cobSelCount'), btn = document.getElementById('cobBulkBtn'), all = document.getElementById('cobChkAll');
+            if (cnt) cnt.textContent = n > 0 ? n + ' aluno' + (n>1?'s':'') + ' selecionado' + (n>1?'s':'') : 'Selecionar todos';
+            if (btn) btn.style.display = n > 0 ? '' : 'none';
+            if (all) { all.indeterminate = n > 0 && n < total; all.checked = total > 0 && n === total; }
+        }
+        async function _cobBulkAction() {
+            if (!_cobSelecionados.size) return;
+            if (!_mpPlanos || !_mpPlanos.length) { alert('Nenhum plano cadastrado.'); return; }
+            var opts = _mpPlanos.map(function(p,i){ return (i+1)+'. '+(p.nome||p.id)+' — R$ '+parseFloat(p.valor||0).toFixed(2); }).join('\n');
+            var resp = prompt('Atribuir plano para ' + _cobSelecionados.size + ' aluno(s):\n\n' + opts + '\n\nNúmero:', '1');
+            if (!resp) return;
+            var idx = parseInt(resp) - 1;
+            if (isNaN(idx) || idx < 0 || idx >= _mpPlanos.length) { alert('Opção inválida.'); return; }
+            var plano = _mpPlanos[idx], emails = Array.from(_cobSelecionados), ok = 0, fail = 0;
+            for (var i = 0; i < emails.length; i++) {
+                try { var r = await secureFetch('atribuirPlanoAluno', { email: emails[i], planoId: plano.id }); if (r&&r.success) ok++; else fail++; } catch(_) { fail++; }
+            }
+            alert('✅ ' + ok + ' plano(s) atribuído(s)' + (fail ? '\n❌ ' + fail + ' falha(s)' : '') + '.');
+            _cobSelecionados.clear(); loadPagamentosAdmin();
         }
 
         function atribuirPlanoModal(email) {
