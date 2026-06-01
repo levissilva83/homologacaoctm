@@ -7649,11 +7649,13 @@
 
     <script>
     // Dynamic PWA manifest — uses CT logo as app icon
-    function _injectPWAManifest(iconDataUrl) {
-        var iconUrl = iconDataUrl || '';
+    function _injectPWAManifest(iconDataUrl, ctNome) {
+        var iconUrl  = iconDataUrl || '';
+        var appName  = ctNome || document.title || 'CT Manager';
+        var shortName = appName.length > 14 ? appName.split(' ').slice(0,2).join(' ') : appName;
         var manifest = {
-            name: 'CT Manager',
-            short_name: 'CT Manager',
+            name: appName,
+            short_name: shortName,
             start_url: window.location.href,
             display: 'standalone',
             background_color: '#0f1729',
@@ -7673,8 +7675,8 @@
     }
 
     // Called after logo is loaded — updates PWA manifest
-    window._onLogoLoaded = function(src) {
-        if (src) _injectPWAManifest(src);
+    window._onLogoLoaded = function(src, ctName) {
+        if (src) _injectPWAManifest(src, ctName);
     };
     </script>
 
@@ -7699,6 +7701,32 @@
             }
         }, { passive: true });
     })();
+    </script>
+    <!-- OneSignal Push Notifications -->
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId:             "550bdde2-ae7e-4929-8edd-5e966c5b2416",
+          notifyButton:      { enable: false },
+          serviceWorkerPath: "/OneSignalSDKWorker.js",
+          allowLocalhostAsSecureOrigin: true,
+          promptOptions: {
+            slidedown: {
+              prompts: [{
+                type:           "push",
+                autoPrompt:     false,
+                text: {
+                  actionMessage:       "Ative as notificações para receber avisos de presença, graduação e mensalidade.",
+                  acceptButton:        "Ativar",
+                  cancelButton:        "Agora não"
+                }
+              }]
+            }
+          }
+        });
+      });
     </script>
 </head>
 <body>
@@ -10231,6 +10259,47 @@
 
                     <!-- card Pagamentos removido — acesso via aba Financeiro na navbar -->
 
+                <!-- ██ CATRACA ██ -->
+                <div class="admin-section" id="catracaConfigSection">
+                    <div class="stu-section-title">🚧 Integração com Catraca</div>
+                    <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:14px;">
+                        Libera a catraca automaticamente quando um check-in é aprovado.
+                    </div>
+                    <div id="catracaStatus" style="font-size:12px;color:var(--adm-text-3);margin-bottom:12px;">Carregando...</div>
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <label style="font-size:11px;color:var(--adm-text-3);width:80px;">Tipo:</label>
+                            <select id="catracaTipo" onchange="catracaTipoChange()" style="flex:1;padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                <option value="webhook">🔗 Webhook Genérico</option>
+                                <option value="controlid">🏢 Control ID (iDFlex/iDAccess)</option>
+                                <option value="zkteco">🔐 ZKTeco (ZKBioSecurity)</option>
+                                <option value="henry">🇧🇷 Henry (Orion/Super Fácil)</option>
+                                <option value="polling">📡 IoT / ESP32 / Raspberry Pi</option>
+                                <option value="qrcode">📱 QR Code (sem hardware extra)</option>
+                            </select>
+                        </div>
+                        <div id="catracaUrlRow" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <label style="font-size:11px;color:var(--adm-text-3);width:80px;" id="catracaUrlLabel">URL:</label>
+                            <input type="text" id="catracaUrl" placeholder="http://192.168.1.100" style="flex:1;padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                        </div>
+                        <div id="catracaCredRow" style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <input type="text"     id="catracaUsuario" placeholder="Usuário / Token" style="flex:1;padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                            <input type="password" id="catracaSenha"   placeholder="Senha" style="flex:1;padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <label style="font-size:11px;color:var(--adm-text-3);">Ativo:</label>
+                            <input type="checkbox" id="catracaAtivo" checked style="width:16px;height:16px;cursor:pointer;">
+                        </div>
+                        <div style="display:flex;gap:8px;">
+                            <button onclick="salvarCatracaConfig()" style="flex:1;padding:8px;background:rgba(201,162,58,0.15);border:1px solid rgba(201,162,58,0.4);border-radius:8px;color:#C9A23A;font-size:12px;font-weight:700;cursor:pointer;">💾 Salvar</button>
+                            <button onclick="testarCatraca()" style="flex:1;padding:8px;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:8px;color:#4ade80;font-size:12px;font-weight:700;cursor:pointer;">🔓 Testar</button>
+                        </div>
+                        <div id="catracaMsg" style="font-size:11px;margin-top:4px;"></div>
+                        <div id="catracaPollingInfo" style="display:none;font-size:11px;color:rgba(255,255,255,0.4);background:rgba(255,255,255,0.03);border-radius:8px;padding:10px;margin-top:4px;"></div>
+                    </div>
+                </div>
+                <!-- ██ FIM CATRACA ██ -->
+
                     <!-- ── CONTRATOS DO ALUNO ─────────────────────────────────── -->
                     <div class="admin-section" id="contratosAdminSection">
                         <div class="admin-section-header">
@@ -11580,6 +11649,30 @@
                     </div>
                 </div>
 
+                <!-- Saldo de Aulas Importadas -->
+                <div class="stu-section" id="saldoAulasSection">
+                    <div class="stu-section-title">📥 Aulas Importadas (migração)</div>
+                    <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:10px;">
+                        Alunos vindos de outra plataforma. O saldo soma ao total de treinos para fins de graduação.
+                    </div>
+                    <div id="saldoAulasList" style="margin-bottom:10px;"></div>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                        <select id="saldoModId" style="flex:1;min-width:110px;">
+                            <option value="bjj">BJJ</option>
+                            <option value="muay_thai">Muay Thai</option>
+                            <option value="muaythai">Muay Thai (prajied)</option>
+                            <option value="muay_thai_khan">Muay Thai Khan</option>
+                            <option value="judo">Judô</option>
+                            <option value="karate">Karatê</option>
+                            <option value="kickboxing">Kickboxing</option>
+                            <option value="capoeira">Capoeira</option>
+                        </select>
+                        <input type="number" id="saldoQtd" min="0" max="9999" placeholder="Qtd aulas" style="width:100px;padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                        <button onclick="salvarSaldoAulas()" style="padding:6px 14px;background:rgba(201,162,58,0.15);border:1px solid rgba(201,162,58,0.4);border-radius:8px;color:#C9A23A;font-size:12px;font-weight:700;cursor:pointer;">💾 Salvar</button>
+                    </div>
+                    <div id="saldoAulasMsg" style="font-size:11px;margin-top:6px;"></div>
+                </div>
+
                 <!-- Graduation Timeline -->
                 <div class="stu-section">
                     <div class="stu-section-title">🏆 Linha do Tempo · Graduação</div>
@@ -11837,6 +11930,10 @@
                 if (subEl)   subEl.textContent   = 'Bem-vindos!';
                 if (hdr)     hdr.textContent      = nome;
                 document.title = nome + ' · CTM App';
+                // Salva nome para o manifest PWA
+                if (typeof _salvarNomeCT === 'function' && typeof ctmToCheck !== 'undefined') {
+                    _salvarNomeCT(ctmToCheck, nome);
+                }
             }
 
             // ── PASSO 1: exibe ctmId formatado IMEDIATAMENTE (sem esperar backend) ──
@@ -13998,7 +14095,7 @@
                         if (_inicioSaved) _inicioSaved.style.display = 'none';
                         if (_inicioLabel) _inicioLabel.style.display = 'block';
                         if (_inicioDate)  _inicioDate.value = '';
-                        loadMyGraduacoes();
+                        setTimeout(loadMyGraduacoes, 1200);
                     }
                 }
                 // Reconstrói formulário de declaração conforme nova modalidade
@@ -14790,6 +14887,8 @@
                         if (typeof _checkHorarioObrigatorio === 'function') {
                             _checkHorarioObrigatorio(userData);
                         }
+                    // Inicializa push após login
+                    setTimeout(function(){ _initPushNotifications(); }, 3000);
                     }, 1000);
                     // Carrega jornada/timeline após modalidade ser definida
                     setTimeout(function() {
@@ -17993,15 +18092,118 @@
             setTimeout(function() { document.getElementById('ibjjfOverallFill').style.width = overallPct + '%'; }, 300);
         }
 
+        // Bottom sheet para informar data de graduação (mobile-friendly)
         function _toggleGrauForm(id) {
-            var form = document.getElementById(id + '_form');
-            var btn  = document.getElementById(id + '_btn');
-            if (!form) return;
-            var open = form.style.display !== 'none';
-            form.style.display = open ? 'none' : 'flex';
-            form.style.alignItems = 'center';
-            form.style.gap = '4px';
-            if (btn) btn.style.display = open ? '' : 'none';
+            var dtEl  = document.getElementById(id + '_dt');
+            var faixa = dtEl ? dtEl.getAttribute('data-faixa') || '' : '';
+            var grau  = dtEl ? dtEl.getAttribute('data-grau')  || '' : '';
+
+            // Lê data-* do botão se não encontrou no input
+            if (!faixa) {
+                var btn = document.getElementById(id + '_btn');
+                if (btn) { faixa = btn.getAttribute('data-faixa') || ''; grau = btn.getAttribute('data-grau') || ''; }
+            }
+
+            var label = grau > 0 ? (grau + 'º Grau · ' + faixa) : faixa;
+
+            // Cria ou reutiliza bottom sheet
+            var sheet = document.getElementById('grauDateSheet');
+            if (!sheet) {
+                sheet = document.createElement('div');
+                sheet.id = 'grauDateSheet';
+                sheet.innerHTML =
+                    '<div id="grauDateOverlay" onclick="fecharGrauSheet()" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9998;"></div>'
+                  + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:#1a1f2e;border-radius:20px 20px 0 0;padding:24px 20px 40px;z-index:9999;box-shadow:0 -8px 40px rgba(0,0,0,0.5);">'
+                  + '<div style="width:40px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:0 auto 20px;"></div>'
+                  + '<div id="grauSheetLabel" style="font-size:16px;font-weight:800;color:var(--text-1);margin-bottom:6px;text-align:center;"></div>'
+                  + '<div style="font-size:12px;color:rgba(255,255,255,0.4);text-align:center;margin-bottom:20px;">Informe quando você recebeu esta graduação</div>'
+                  + '<input type="date" id="grauSheetDate" style="width:100%;padding:14px;background:rgba(255,255,255,0.07);border:1.5px solid rgba(201,162,58,0.4);border-radius:12px;color:var(--text-1);font-size:16px;margin-bottom:16px;box-sizing:border-box;">'
+                  + '<button type="button" onclick="enviarGrauSheet()" style="width:100%;padding:14px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">✅ Enviar solicitação</button>'
+                  + '<button type="button" onclick="fecharGrauSheet()" style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,0.3);font-size:13px;cursor:pointer;margin-top:8px;">Cancelar</button>'
+                  + '</div>';
+                document.body.appendChild(sheet);
+            }
+
+            // Configura o sheet com os dados do grau
+            document.getElementById('grauSheetLabel').textContent = '🏅 ' + label;
+            sheet._currentId = id;
+            sheet.style.display = 'block';
+
+            // Foca o campo de data após animação
+            setTimeout(function(){
+                var d = document.getElementById('grauSheetDate');
+                if (d) { d.value = ''; d.focus(); }
+            }, 100);
+        }
+
+        function fecharGrauSheet() {
+            var sheet = document.getElementById('grauDateSheet');
+            if (sheet) sheet.style.display = 'none';
+        }
+
+        async function enviarGrauSheet() {
+            var sheet  = document.getElementById('grauDateSheet');
+            var dtEl   = document.getElementById('grauSheetDate');
+            if (!sheet || !dtEl || !dtEl.value) {
+                alert('Informe a data'); return;
+            }
+            var id    = sheet._currentId;
+            var btn   = document.getElementById(id + '_btn');
+            var faixa = btn ? (btn.getAttribute('data-faixa') || '') : '';
+            var grau  = btn ? (parseInt(btn.getAttribute('data-grau')) || 0) : 0;
+
+            // Converte yyyy-MM-dd → dd/MM/yyyy
+            var dp = dtEl.value.split('-');
+            var dataFmt = dp[2] + '/' + dp[1] + '/' + dp[0];
+
+            fecharGrauSheet();
+            await _submeterGrau(faixa, grau, id);
+        }
+
+        // ── Push Notifications (OneSignal) ──────────────────────────────────
+        async function _initPushNotifications() {
+            try {
+                if (typeof OneSignal === 'undefined' || !OneSignal) return;
+
+                // Verifica se push está habilitado para o plano deste CT
+                var _planAtivo = typeof _planId !== 'undefined' ? _planId : '';
+                var _pushHabilitado = _planAtivo === 'premium' || _planAtivo === 'push_trial';
+                if (!_pushHabilitado) {
+                    console.log('[push] não habilitado para o plano:', _planAtivo);
+                    return;
+                }
+
+                var permission = await OneSignal.Notifications.permissionNative;
+                if (permission === 'denied') return; // usuário bloqueou
+
+                // Pede permissão se ainda não concedida
+                if (!OneSignal.Notifications.permission) {
+                    // Aguarda 5s para não interromper o fluxo de login
+                    await OneSignal.Notifications.requestPermission();
+                }
+
+                // Tag o usuário com email e CT para segmentação
+                if (currentUser && currentUser.email) {
+                    await OneSignal.User.addTags({
+                        email: currentUser.email,
+                        ct:    currentUser.ct    || '',
+                        plano: currentUser.plano || ''
+                    });
+                    await OneSignal.login(currentUser.email); // vincula email ao device
+                }
+
+                // Salva o Player ID no backend para envio direto
+                var playerId = await OneSignal.User.PushSubscription.id;
+                if (playerId && currentUser) {
+                    // Envia também o ctmId para URL correta nas notificações
+                    var _ctmParam = (new URLSearchParams(window.location.search)).get('ctm') || '';
+                    secureFetch('saveOnesignalId', { playerId: playerId, ctmId: _ctmParam }).catch(function(){});
+                }
+
+                console.log('[push] Inicializado — playerId:', playerId);
+            } catch(e) {
+                console.warn('[push] Erro ao inicializar:', e);
+            }
         }
 
         function _submeterGrauBtn(btn) {
@@ -18012,12 +18214,16 @@
         }
 
         async function _submeterGrau(faixaNome, grauNum, id) {
-            var dtEl  = document.getElementById(id + '_dt');
             var btn   = document.getElementById(id + '_btn');
-            if (!dtEl || !dtEl.value) { alert('Informe a data'); return; }
             var modId = activeModality || (userModalidades && userModalidades[0]) || 'bjj';
+            // Lê a data do sheet input (bottom sheet mobile) ou do input inline
+            var sheetDateEl = document.getElementById('grauSheetDate');
+            var dtEl        = document.getElementById(id + '_dt');
+            var rawDate     = (sheetDateEl && sheetDateEl.value) ? sheetDateEl.value
+                            : (dtEl && dtEl.value ? dtEl.value : '');
+            if (!rawDate) { alert('Informe a data'); return; }
             // Converte yyyy-MM-dd para dd/MM/yyyy
-            var dp = dtEl.value.split('-');
+            var dp = rawDate.split('-');
             var dataFmt = dp[2] + '/' + dp[1] + '/' + dp[0];
             try {
                 var res = await secureFetch('requestGraduacao', {
@@ -18495,6 +18701,159 @@
             setTimeout(function() {
                 if (typeof loadMyGraduacoes === 'function') loadMyGraduacoes();
             }, 800);
+        }
+
+        // ── Saldo de Aulas Importadas ──────────────────────────────────────
+        // ── Catraca ────────────────────────────────────────────────────────
+        async function loadCatracaConfig() {
+            var section  = document.getElementById('catracaConfigSection');
+            var res = await secureFetch('getCatracaConfig', {});
+            var statusEl = document.getElementById('catracaStatus');
+
+            // Plano Enterprise requerido
+            if (res && res.config === null && res.plano === 'enterprise_required') {
+                if (section) section.innerHTML =
+                    '<div class="stu-section-title">🚧 Integração com Catraca</div>'
+                  + '<div style="text-align:center;padding:16px 0;">'
+                  + '<div style="font-size:28px;margin-bottom:8px;">🏢</div>'
+                  + '<div style="font-size:13px;font-weight:700;color:var(--adm-text-1);margin-bottom:6px;">Plano Enterprise</div>'
+                  + '<div style="font-size:11px;color:var(--adm-text-3);">A integração com catraca está disponível no plano Enterprise.<br>Entre em contato para fazer upgrade.</div>'
+                  + '</div>';
+                return;
+            }
+            if (!res || !res.success || !res.config) {
+                if (statusEl) statusEl.innerHTML = '<span style="color:rgba(255,255,255,0.3);">Não configurada</span>';
+                return;
+            }
+            var c = res.config;
+            document.getElementById('catracaTipo').value    = c.tipo    || 'webhook';
+            document.getElementById('catracaUrl').value     = c.url     || '';
+            document.getElementById('catracaUsuario').value = c.usuario || '';
+            document.getElementById('catracaSenha').value   = c.senha   || '';
+            document.getElementById('catracaAtivo').checked = c.ativo !== false;
+            var tipoLabel = { webhook:'Webhook', controlid:'Control ID', zkteco:'ZKTeco', henry:'Henry', polling:'IoT/ESP32', qrcode:'QR Code' };
+            if (statusEl) statusEl.innerHTML = c.ativo
+                ? '<span style="color:#4ade80;">✅ Ativa — ' + (tipoLabel[c.tipo]||c.tipo) + '</span>'
+                : '<span style="color:rgba(255,100,100,0.7);">⏸ Desativada</span>';
+            catracaTipoChange();
+        }
+
+        function catracaTipoChange() {
+            var tipo = document.getElementById('catracaTipo').value;
+            var urlRow   = document.getElementById('catracaUrlRow');
+            var credRow  = document.getElementById('catracaCredRow');
+            var polInfo  = document.getElementById('catracaPollingInfo');
+            var urlLabel = document.getElementById('catracaUrlLabel');
+            var urlInput = document.getElementById('catracaUrl');
+
+            if (tipo === 'polling') {
+                if (urlRow)  urlRow.style.display  = 'none';
+                if (credRow) credRow.style.display = 'none';
+                var gasUrl = typeof GAS_URL !== 'undefined' ? GAS_URL : '(URL do GAS)';
+                if (polInfo) {
+                    polInfo.style.display = 'block';
+                    polInfo.innerHTML = '📡 <strong>Endpoint para o dispositivo IoT:</strong><br>'
+                        + '<code style="font-size:10px;word-break:break-all;">' + gasUrl + '?action=pollingCatraca&email={EMAIL}</code><br><br>'
+                        + 'O dispositivo (ESP32/Raspberry Pi) deve chamar esse endpoint a cada 2s.<br>'
+                        + 'Quando <code>abrir: true</code>, acionar o relé da catraca.';
+                }
+            } else if (tipo === 'qrcode') {
+                if (urlRow)  urlRow.style.display  = 'none';
+                if (credRow) credRow.style.display = 'none';
+                if (polInfo) {
+                    polInfo.style.display = 'block';
+                    polInfo.innerHTML = '📱 <strong>QR Code temporário (60s)</strong><br>'
+                        + 'O aluno gera um QR no app. A leitora chama:<br>'
+                        + '<code style="font-size:10px;word-break:break-all;">' + (typeof GAS_URL !== 'undefined' ? GAS_URL : '(URL do GAS)') + '?action=validarQRCatraca&token={TOKEN}</code>';
+                }
+            } else {
+                if (urlRow)  urlRow.style.display  = '';
+                if (credRow) credRow.style.display = tipo !== 'webhook' ? '' : 'none';
+                if (polInfo) polInfo.style.display = 'none';
+                if (urlLabel) {
+                    var labels = { webhook:'URL webhook:', controlid:'IP/URL Control ID:', zkteco:'IP/URL ZKTeco:', henry:'IP/URL Henry:' };
+                    urlLabel.textContent = labels[tipo] || 'URL:';
+                }
+                if (urlInput) urlInput.placeholder = tipo === 'webhook' ? 'https://meuservidor.com/webhook' : 'http://192.168.1.100';
+            }
+        }
+
+        async function salvarCatracaConfig() {
+            var msg = document.getElementById('catracaMsg');
+            var res = await secureFetch('saveCatracaConfig', {
+                tipo:    document.getElementById('catracaTipo').value,
+                url:     document.getElementById('catracaUrl').value.trim(),
+                usuario: document.getElementById('catracaUsuario').value.trim(),
+                senha:   document.getElementById('catracaSenha').value,
+                ativo:   document.getElementById('catracaAtivo').checked
+            });
+            if (msg) {
+                msg.style.color = res && res.success ? '#4ade80' : '#f87171';
+                msg.textContent = res && res.success ? '✅ Configuração salva!' : '❌ ' + (res && res.message || 'Erro');
+                setTimeout(function(){ msg.textContent = ''; }, 3000);
+            }
+            if (res && res.success) loadCatracaConfig();
+        }
+
+        async function testarCatraca() {
+            var msg = document.getElementById('catracaMsg');
+            if (msg) msg.textContent = '⏳ Testando...';
+            var res = await secureFetch('testarCatraca', {});
+            if (msg) {
+                msg.style.color = res && res.success ? '#4ade80' : '#f87171';
+                msg.textContent = res && res.message || '';
+                setTimeout(function(){ msg.textContent = ''; }, 5000);
+            }
+        }
+
+        async function loadSaldoAulas() {
+            var section = document.getElementById('saldoAulasSection');
+            // Funcionalidade exclusiva do plano Premium
+            if (typeof _planId === 'undefined' || _planId !== 'premium') {
+                if (section) section.style.display = 'none';
+                return;
+            }
+            if (section) section.style.display = '';
+            var lista  = document.getElementById('saldoAulasList');
+            if (!lista || !stuModalEmail) return;
+            var res = await secureFetch('getSaldoAulas', { email: stuModalEmail });
+            if (!res || !res.success) return;
+            var saldo = res.saldo || {};
+            var MOD_LABELS = { bjj:'BJJ', muay_thai:'Muay Thai', muaythai:'Muay Thai', muay_thai_khan:'Muay Thai Khan', judo:'Judô', karate:'Karatê', kickboxing:'Kickboxing', capoeira:'Capoeira' };
+            if (!Object.keys(saldo).length) {
+                lista.innerHTML = '<span style="font-size:11px;color:var(--adm-text-3);">Nenhum saldo cadastrado.</span>';
+                return;
+            }
+            var h = '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+            Object.keys(saldo).forEach(function(mod) {
+                h += '<div style="padding:4px 10px;background:rgba(201,162,58,0.1);border:1px solid rgba(201,162,58,0.3);border-radius:8px;font-size:11px;color:#C9A23A;">'
+                   + (MOD_LABELS[mod]||mod) + ': <strong>' + saldo[mod] + ' aulas</strong>'
+                   + ' <button data-mod="' + escapeHtml(mod) + '" onclick="removerSaldoMod(this.getAttribute(\"data-mod\"))" style="background:none;border:none;color:rgba(255,100,100,0.7);cursor:pointer;font-size:10px;margin-left:4px;">✕</button>'
+                   + '</div>';
+            });
+            h += '</div>';
+            lista.innerHTML = h;
+        }
+
+        async function salvarSaldoAulas() {
+            var modEl = document.getElementById('saldoModId');
+            var qtdEl = document.getElementById('saldoQtd');
+            var msg   = document.getElementById('saldoAulasMsg');
+            if (!modEl || !qtdEl || !stuModalEmail) return;
+            var qtd = parseInt(qtdEl.value) || 0;
+            if (qtd < 0) { if (msg) msg.textContent = '❌ Quantidade inválida'; return; }
+            var res = await secureFetch('setSaldoAulas', { email: stuModalEmail, modId: modEl.value, quantidade: qtd });
+            if (msg) {
+                msg.style.color = res && res.success ? '#4ade80' : '#f87171';
+                msg.textContent = res && res.success ? '✅ Saldo salvo!' : '❌ ' + (res && res.message || 'Erro');
+                setTimeout(function(){ msg.textContent = ''; }, 3000);
+            }
+            if (res && res.success) { qtdEl.value = ''; loadSaldoAulas(); }
+        }
+
+        async function removerSaldoMod(modId) {
+            var res = await secureFetch('setSaldoAulas', { email: stuModalEmail, modId: modId, quantidade: 0 });
+            if (res && res.success) loadSaldoAulas();
         }
 
         async function approveGraduacaoRow(rowIndex) {
@@ -28652,15 +29011,28 @@
 
         // Carrega e exibe logo do CT (salva em localStorage por ctmId)
         function _carregarLogoCT(ctmId) {
-            var key = 'ctLogo_' + ctmId;
-            var salvo = localStorage.getItem(key);
-            var src   = salvo || _CTM_DEFAULT_LOGO;
+            var key    = 'ctLogo_' + ctmId;
+            var keyNome = 'ctNome_' + ctmId;
+            var salvo  = localStorage.getItem(key);
+            var src    = salvo || _CTM_DEFAULT_LOGO;
+            // Nome do CT: lê do localStorage ou do h1/título da página
+            var ctNome = localStorage.getItem(keyNome)
+                      || (document.getElementById('loginTitulo') ? document.getElementById('loginTitulo').textContent.trim() : '')
+                      || document.title.replace(' - Checkin','').trim()
+                      || 'CT Manager';
             ['ctLogoImg', 'loginLogoImg'].forEach(function(id) {
                 var el = document.getElementById(id);
                 if (el) { el.src = src; el.style.display = 'block'; }
             });
-            // Atualiza manifest PWA com o logo
-            if (typeof _onLogoLoaded === 'function') _onLogoLoaded(src);
+            // Atualiza manifest PWA com logo E nome do CT
+            if (typeof _onLogoLoaded === 'function') _onLogoLoaded(src, ctNome);
+        }
+
+        // Salva nome do CT para o manifest PWA
+        function _salvarNomeCT(ctmId, nome) {
+            if (ctmId && nome) {
+                try { localStorage.setItem('ctNome_' + ctmId, nome); } catch(_) {}
+            }
         }
 
         // Abre seletor de arquivo para o admin trocar o logo
@@ -33768,21 +34140,37 @@
                     h += '<div style="font-size:11px;font-weight:800;color:#4ade80;">PRONTO ✅</div>';
                     if (a.diasAguardando > 0) h += '<div style="font-size:9px;color:var(--adm-text-3);">' + a.diasAguardando + 'd aguardando</div>';
                     h += '</div></div>';
-                    h += '<div style="display:flex;gap:6px;">';
-                    h += '<div style="flex:1;background:rgba(74,222,128,0.08);border-radius:8px;padding:6px 10px;">';
-                    h += '<div style="font-size:9px;color:var(--adm-text-3);font-weight:600;">🏠 CT PRINCIPAL</div>';
-                    h += '<div style="font-size:16px;font-weight:800;color:#4ade80;">' + (a.treinosCTPrincipal||0) + '</div>';
+                    // ── Barra cumulativa de graus ─────────────────────────────
+                    var _apg  = a.aulasPorGrau || a.minTreinos || 30;
+                    var _max4 = 4 * _apg;
+                    var _cum  = Math.min(a.treinosCumulativos || (a.grau * _apg + (a.totalPonderado||0)), _max4);
+                    var _pct  = Math.min(Math.round((_cum / _max4) * 100), 100);
+                    h += '<div style="margin:8px 0;">';
+                    // Labels de grau
+                    h += '<div style="display:flex;justify-content:space-between;font-size:9px;color:var(--adm-text-3);margin-bottom:3px;padding:0 1px;">';
+                    h += '<span>0°</span><span>1°<br><span style="opacity:.5;">' + _apg + '</span></span><span>2°<br><span style="opacity:.5;">' + (2*_apg) + '</span></span><span>3°<br><span style="opacity:.5;">' + (3*_apg) + '</span></span><span>4°<br><span style="opacity:.5;">' + (4*_apg) + '</span></span>';
                     h += '</div>';
-                    if ((a.treinosOutrosCTs||0) > 0) {
-                        h += '<div style="flex:1;background:rgba(56,189,248,0.08);border-radius:8px;padding:6px 10px;">';
-                        h += '<div style="font-size:9px;color:var(--adm-text-3);font-weight:600;">🌍 OUTROS</div>';
-                        h += '<div style="font-size:16px;font-weight:800;color:#C9A23A;">' + (a.treinosOutrosCTs||0) + '</div>';
-                        h += '</div>';
-                    }
-                    h += '<div style="flex:1;background:rgba(201,162,58,0.06);border-radius:8px;padding:6px 10px;">';
-                    h += '<div style="font-size:9px;color:var(--adm-text-3);font-weight:600;">⚖️ PONDERADO</div>';
-                    h += '<div style="font-size:16px;font-weight:800;color:var(--adm-primary);">' + (a.totalPonderado||a.totalTreinos) + '<span style="font-size:10px;opacity:0.6;">/' + a.minTreinos + '</span></div>';
-                    h += '</div></div>';
+                    // Trilha
+                    h += '<div style="position:relative;height:10px;background:rgba(255,255,255,0.08);border-radius:6px;overflow:visible;">';
+                    // Marcadores de grau
+                    [1,2,3].forEach(function(g) {
+                        var mp = (g / 4) * 100;
+                        h += '<div style="position:absolute;left:' + mp + '%;top:-2px;width:2px;height:14px;background:rgba(255,255,255,0.2);border-radius:1px;"></div>';
+                    });
+                    // Preenchimento até o grau atual (garantido)
+                    var _basePct = Math.min((a.grau / 4) * 100, 100);
+                    h += '<div style="position:absolute;left:0;top:0;height:10px;width:' + _basePct + '%;background:rgba(74,222,128,0.5);border-radius:6px 0 0 6px;"></div>';
+                    // Preenchimento do grau atual em andamento
+                    h += '<div style="position:absolute;left:0;top:0;height:10px;width:' + _pct + '%;background:linear-gradient(90deg,rgba(74,222,128,0.7),#4ade80);border-radius:6px;"></div>';
+                    // Marcador de posição atual
+                    h += '<div style="position:absolute;left:' + Math.min(_pct,98) + '%;top:-3px;width:4px;height:16px;background:#4ade80;border-radius:2px;box-shadow:0 0 6px #4ade80;"></div>';
+                    h += '</div>';
+                    // Contador
+                    h += '<div style="display:flex;justify-content:space-between;margin-top:4px;font-size:10px;">';
+                    h += '<span style="color:var(--adm-text-3);">🏠 ' + (a.treinosCTPrincipal||0) + ' principal' + ((a.treinosOutrosCTs||0) > 0 ? ' &nbsp;🌍 ' + (a.treinosOutrosCTs||0) + ' outros' : '') + '</span>';
+                    h += '<span style="color:#4ade80;font-weight:700;">' + _cum + '<span style="opacity:.5;font-weight:400;">/' + _max4 + '</span></span>';
+                    h += '</div>';
+                    h += '</div>';
                     h += '<div style="margin-top:8px;display:flex;justify-content:flex-end;">';
                     h += '<button onclick="openStuModal(\'' + escapeHtml(a.email) + '\')" style="width:36px;height:36px;background:rgba(255,255,255,0.05);color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:8px;font-size:14px;cursor:pointer;" title="Ver perfil completo">👤</button>';
                     h += '<button onclick="aprovarGraduacaoAluno(\'' + escapeHtml(a.email) + '\',\'' + escapeHtml(a.faixa||a.nivel||'') + '\',' + (a.proximoGrau||0) + ',this)" style="width:36px;height:36px;background:rgba(74,222,128,0.08);color:#4ade80;border:1px solid rgba(74,222,128,0.2);border-radius:8px;font-size:14px;cursor:pointer;" title="Aprovar graduação">🎖️</button>';
@@ -34889,56 +35277,49 @@
             var container = document.getElementById('horObrigContainer');
             if (!container) return;
             try {
-                // Usa getHorariosCT (mesmo endpoint do perfil — mais confiável)
-                var ct = currentUser ? currentUser.ct : '';
-                if (!ct) {
-                    container.innerHTML = '<div style="text-align:center;font-size:12px;color:#f87171;padding:16px;">⚠️ CT não identificado. Contate o professor.</div>';
-                    return;
-                }
-                var res = await secureFetch('getHorariosCT', { ct: ct, modalidades: '' });
+                // Usa getHorariosDisponiveis — resolve CT pelo email da sessão (mais confiável)
+                var res = await secureFetch('getHorariosDisponiveis', {});
 
-                if (!res || !res.success || !res.slotsPorMod || !Object.keys(res.slotsPorMod).length) {
-                    // Nenhum horário cadastrado pelo professor ainda — fecha o modal silenciosamente
-                    console.warn('[horarioModal] sem horários disponíveis — ct="' + ct + '" — modal fechado');
+                if (!res || !res.success || !res.disponivel || !res.modalidades || !res.modalidades.length) {
+                    // Professor ainda não cadastrou horários — fecha o modal silenciosamente
+                    console.warn('[horarioModal] sem horários disponíveis — modal fechado');
                     _pularHorarioObrigatorio();
                     return;
                 }
 
-                var MOD_LABELS = { bjj:'BJJ', bjj_kids:'BJJ Kids', muay_thai:'Muay Thai', muay_thai_kids:'Muay Thai Kids', judo:'Judô', karate:'Karatê', boxing:'Boxe', mma:'MMA', funcional:'Funcional', wrestling:'Wrestling', kickboxing:'Kickboxing', taekwondo:'Taekwondo', kravmaga:'Krav Maga', aikido:'Aikido', karate_shotokan:'Karate Shotokan' };
+                var MOD_LABELS = { bjj:'BJJ', bjj_kids:'BJJ Kids', muay_thai:'Muay Thai', muaythai:'Muay Thai', muay_thai_khan:'Muay Thai Khan', muay_thai_kids:'Muay Thai Kids', judo:'Judô', karate:'Karatê', boxing:'Boxe', mma:'MMA', funcional:'Funcional', wrestling:'Wrestling', kickboxing:'Kickboxing', taekwondo:'Taekwondo', kravmaga:'Krav Maga', aikido:'Aikido', capoeira:'Capoeira' };
+                var DAY_LABELS  = { seg:'Seg', ter:'Ter', qua:'Qua', qui:'Qui', sex:'Sex', sab:'Sáb', dom:'Dom' };
 
                 var h = '';
-                var temQualquer = false;
-                var diasOrd = res.diasOrdenados || {};
+                res.modalidades.forEach(function(mod) {
+                    if (!mod.slots || !mod.slots.length) return;
 
-                Object.keys(diasOrd).forEach(function(modId) {
-                    var grupos = diasOrd[modId];
-                    if (!grupos || !grupos.length) return;
-                    temQualquer = true;
+                    // Agrupa slots por dia
+                    var porDia = {};
+                    mod.slots.forEach(function(s) {
+                        if (!porDia[s.dia]) porDia[s.dia] = [];
+                        porDia[s.dia].push(s.horario);
+                    });
 
                     h += '<div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,0.06);">';
                     h += '<div style="font-size:11px;font-weight:700;color:#C9A23A;letter-spacing:0.5px;margin-bottom:10px;">'
-                       + (MOD_LABELS[modId] || modId).toUpperCase() + ' · ' + escapeHtml(ct) + '</div>';
+                       + escapeHtml((MOD_LABELS[mod.modId] || mod.modId).toUpperCase()) + ' · ' + escapeHtml(mod.ctNome || '') + '</div>';
 
-                    grupos.forEach(function(grupo) {
-                        if (!grupo.horarios || !grupo.horarios.length) return;
+                    Object.keys(porDia).forEach(function(dia) {
                         h += '<div style="margin-bottom:8px;">'
-                           + '<div style="font-size:10px;color:rgba(255,255,255,0.35);margin-bottom:4px;">' + (grupo.dias || 'Todos os dias') + '</div>'
+                           + '<div style="font-size:10px;color:rgba(255,255,255,0.35);margin-bottom:4px;">' + (DAY_LABELS[dia] || dia) + '</div>'
                            + '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
-                        grupo.horarios.forEach(function(hr) {
-                            var id    = 'horob_' + modId + '_0_' + hr.replace(':','');
-                            var style = 'border:1.5px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.45);';
-                            h += '<button type="button" id="' + id + '" data-mod="' + modId + '" data-dia="all" data-hr="' + hr + '" onclick="toggleHorario(this)" '
-                               + 'style="padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;' + style + '">' + hr + '</button>';
+                        porDia[dia].forEach(function(hr) {
+                            var id = 'horob_' + mod.modId + '_' + dia + '_' + hr.replace(':','');
+                            h += '<button type="button" id="' + id + '" data-mod="' + mod.modId + '" data-dia="' + dia + '" data-hr="' + hr + '" onclick="toggleHorario(this)" '
+                               + 'style="padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.45);">' + hr + '</button>';
                         });
                         h += '</div></div>';
                     });
                     h += '</div>';
                 });
 
-                if (!temQualquer) {
-                    container.innerHTML = '<div style="text-align:center;font-size:12px;color:rgba(255,255,255,0.35);padding:16px;">Nenhum horário cadastrado ainda.</div>';
-                    return;
-                }
+                if (!h) { _pularHorarioObrigatorio(); return; }
                 container.innerHTML = h;
             } catch(e) {
                 container.innerHTML = '<div style="font-size:12px;color:rgba(255,255,255,0.3);text-align:center;">Erro ao carregar horários.</div>';
@@ -37801,6 +38182,7 @@
 
             // Load graduation timeline
             loadGraduacoes(email);
+            loadSaldoAulas();
 
             // ── Renderiza seção de modalidades atribuídas ──
             renderStuModalidadesGrid(s.modalidades || s.tipoPerfil || '', s.modalidadePrincipal || '', s.modalidadesGrad || {});
