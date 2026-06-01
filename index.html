@@ -11436,28 +11436,45 @@
                         <label>CT Principal</label>
                         <select id="stuCT" onchange="onStuCTChange()"></select>
                     </div>
-                    <div class="stu-field">
-                        <label>📅 Dias de Treino</label>
-                        <div class="stu-days-row" id="stuDiasGrid">
-                            <button type="button" class="stu-day-btn" data-day="seg" onclick="this.classList.toggle('on')">S</button>
-                            <button type="button" class="stu-day-btn" data-day="ter" onclick="this.classList.toggle('on')">T</button>
-                            <button type="button" class="stu-day-btn" data-day="qua" onclick="this.classList.toggle('on')">Q</button>
-                            <button type="button" class="stu-day-btn" data-day="qui" onclick="this.classList.toggle('on')">Q</button>
-                            <button type="button" class="stu-day-btn" data-day="sex" onclick="this.classList.toggle('on')">S</button>
-                            <button type="button" class="stu-day-btn" data-day="sab" onclick="this.classList.toggle('on')">S</button>
-                            <button type="button" class="stu-day-btn" data-day="dom" onclick="this.classList.toggle('on')">D</button>
+                    <!-- ── ABAS: Dias de Treino | Horários por CT ─────────────── -->
+                    <div class="stu-field" style="padding:0;">
+                        <!-- Tab Nav -->
+                        <div id="stuHorTabNav" style="display:flex;border-bottom:1px solid var(--adm-border);margin-bottom:12px;">
+                            <button type="button" id="stuHorTab1" onclick="stuHorSwitchTab(1)"
+                                style="flex:1;padding:8px 4px;font-size:12px;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:2px solid #C9A23A;color:#C9A23A;">
+                                📅 Dias de Treino
+                            </button>
+                            <button type="button" id="stuHorTab2" onclick="stuHorSwitchTab(2)"
+                                style="flex:1;padding:8px 4px;font-size:12px;font-weight:700;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:var(--adm-text-3);">
+                                🕐 Horários por CT
+                            </button>
                         </div>
-                        <div class="stu-days-hint" id="stuDiasHint"></div>
-                    </div>
 
-                    <!-- HORÁRIOS DE TREINO POR MODALIDADE -->
-                    <div class="stu-field" id="stuHorariosSection" style="display:none;">
-                        <label>🕐 Meus Horários de Treino</label>
-                        <div style="font-size:10px;color:var(--adm-text-3);margin-bottom:8px;">Selecione os horários que você vai treinar. Isso facilita o registro de presença.</div>
-                        <div id="stuHorariosContainer">
-                            <div style="text-align:center;padding:12px;color:var(--adm-text-3);font-size:12px;">Carregando horários...</div>
+                        <!-- Aba 1: Dias de Treino -->
+                        <div id="stuHorPane1">
+                            <div class="stu-days-row" id="stuDiasGrid">
+                                <button type="button" class="stu-day-btn" data-day="seg" onclick="this.classList.toggle('on')">S</button>
+                                <button type="button" class="stu-day-btn" data-day="ter" onclick="this.classList.toggle('on')">T</button>
+                                <button type="button" class="stu-day-btn" data-day="qua" onclick="this.classList.toggle('on')">Q</button>
+                                <button type="button" class="stu-day-btn" data-day="qui" onclick="this.classList.toggle('on')">Q</button>
+                                <button type="button" class="stu-day-btn" data-day="sex" onclick="this.classList.toggle('on')">S</button>
+                                <button type="button" class="stu-day-btn" data-day="sab" onclick="this.classList.toggle('on')">S</button>
+                                <button type="button" class="stu-day-btn" data-day="dom" onclick="this.classList.toggle('on')">D</button>
+                            </div>
+                            <div class="stu-days-hint" id="stuDiasHint" style="margin-top:6px;"></div>
+                        </div>
+
+                        <!-- Aba 2: Horários por CT -->
+                        <div id="stuHorPane2" style="display:none;">
+                            <div style="font-size:10px;color:var(--adm-text-3);margin-bottom:8px;">Selecione os horários que o aluno costuma treinar em cada CT.</div>
+                            <div id="stuHorariosContainer">
+                                <div style="text-align:center;padding:12px;color:var(--adm-text-3);font-size:12px;">Carregando horários...</div>
+                            </div>
+                            <div id="stuHorarioMsg" style="font-size:11px;text-align:center;margin-top:6px;"></div>
+                            <button type="button" onclick="salvarHorariosAluno()" style="width:100%;padding:9px;background:var(--adm-primary);border:none;border-radius:10px;color:#000;font-size:13px;font-weight:800;cursor:pointer;margin-top:8px;">💾 Salvar horários</button>
                         </div>
                     </div>
+                    <div id="stuHorariosSection" style="display:none;"></div>
 
                     <!-- AVISO ADMIN SEM HORÁRIO -->
                     <div id="stuAvisoSemHorario" style="display:none;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:10px;padding:12px;margin-bottom:8px;">
@@ -35028,10 +35045,32 @@
 
 
         // ─── Horários de Treino do Aluno ─────────────────────────────────
+        // ── Abas de horário no modal do aluno ──────────────────────────
+        function stuHorSwitchTab(n) {
+            var t1 = document.getElementById('stuHorTab1');
+            var t2 = document.getElementById('stuHorTab2');
+            var p1 = document.getElementById('stuHorPane1');
+            var p2 = document.getElementById('stuHorPane2');
+            if (!t1 || !t2 || !p1 || !p2) return;
+            t1.style.borderBottomColor = n === 1 ? '#C9A23A' : 'transparent';
+            t1.style.color             = n === 1 ? '#C9A23A' : 'var(--adm-text-3)';
+            t2.style.borderBottomColor = n === 2 ? '#C9A23A' : 'transparent';
+            t2.style.color             = n === 2 ? '#C9A23A' : 'var(--adm-text-3)';
+            p1.style.display = n === 1 ? '' : 'none';
+            p2.style.display = n === 2 ? '' : 'none';
+            // Carrega horários ao abrir aba 2
+            if (n === 2 && stuModalEmail) {
+                var container = document.getElementById('stuHorariosContainer');
+                if (container && container.children.length === 1 && container.children[0].textContent.includes('Carregando')) {
+                    loadHorariosAluno(stuModalEmail);
+                }
+            }
+        }
+
         var _stuHorariosSelecionados = {};
 
         async function loadHorariosAluno() {
-            var section   = document.getElementById('stuHorariosSection');
+            var section   = document.getElementById('stuHorPane2');
             var aviso     = document.getElementById('stuAvisoSemHorario');
             var container = document.getElementById('stuHorariosContainer');
             if (!section || !container) return;
@@ -35092,7 +35131,7 @@
                 });
 
                 h += '<button onclick="salvarHorariosAluno()" style="width:100%;padding:10px;background:var(--adm-primary);border:none;border-radius:10px;color:#000;font-size:13px;font-weight:800;cursor:pointer;margin-top:4px;">💾 Salvar horários</button>';
-                h += '<div id="stuHorarioMsg" style="font-size:11px;text-align:center;margin-top:6px;"></div>';
+                // stuHorarioMsg is outside the container now
 
                 container.innerHTML = h;
 
