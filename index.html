@@ -35825,18 +35825,11 @@
                         '<div class="cob-kpi cob-kpi-red"><span class="cob-kpi-num">' + kAtrasado + '</span><span class="cob-kpi-lbl">Atrasados</span></div>' +
                         '<div class="cob-kpi cob-kpi-yellow"><span class="cob-kpi-num">' + kSemPlano + '</span><span class="cob-kpi-lbl">Sem plano</span></div>' +
                         '<div class="cob-kpi cob-kpi-red" style="cursor:pointer;" onclick="_filtrarNuncaPagou()"><span class="cob-kpi-num">' + kNuncaPagou + '</span><span class="cob-kpi-lbl">Nunca pagou</span></div>' +
-                        '<div class="cob-kpi" style="cursor:pointer;" onclick="_toggleReceitaDetalhes(this)">' +
+                        '<div class="cob-kpi" id="receitaMensalKpi" style="cursor:pointer;" onclick="abrirReceitaMensal()">' +
                             '<span class="cob-kpi-num" style="font-size:11px;">R$' + receitaTotal.toFixed(0) + '</span>' +
-                            '<span class="cob-kpi-lbl">Receita ▾</span>' +
-                            '<div class="rec-detalhes" style="display:none;">' + receitaDetalhes +
-                            (taxaTotal > 0 ?
-                                '<div style="border-top:1px solid rgba(255,255,255,0.06);margin-top:4px;padding-top:4px;">' +
-                                '<div>💳 Taxas: <strong style="color:#f87171;">-R$' + taxaTotal.toFixed(2) + '</strong></div>' +
-                                '<div>✅ Líquido: <strong style="color:#4ade80;">R$' + receitaLiquid.toFixed(0) + '</strong></div>' +
-                                '</div>' : '') +
-                        '</div>' +
-                        '</div>' +
+                            '<span class="cob-kpi-lbl">Receita <span style="font-size:8px;opacity:.5;">▸ mês</span></span>' +
                         '</div>';
+                    _carregarReceitaKpi(receitaTotal);
 
                     kpiEl.style.gridTemplateColumns = 'repeat(3,1fr)';
                 }
