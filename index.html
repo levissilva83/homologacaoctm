@@ -10909,6 +10909,19 @@
                             style="flex-shrink:0;padding:13px 18px;border:none;background:transparent;color:rgba(255,255,255,0.4);font-size:11px;font-weight:800;cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.3px;">
                             📊 Faturamento
                         </button>
+                        <button onclick="switchFinSubTab('eventos')" id="finSubBtn_eventos"
+                            style="flex-shrink:0;padding:13px 18px;border:none;background:transparent;color:rgba(255,255,255,0.4);font-size:11px;font-weight:800;cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.3px;">
+                            🎫 Eventos
+                        </button>
+                    </div>
+
+                    <!-- Painel: Eventos -->
+                    <div id="finPainel_eventos" style="padding:16px;display:none;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                            <div style="font-size:15px;font-weight:800;color:var(--adm-text-1);">🎫 Eventos Internos</div>
+                            <button onclick="abrirNovoEvento()" style="padding:8px 14px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;">+ Novo evento</button>
+                        </div>
+                        <div id="eventosList"><div style="text-align:center;padding:30px 0;color:rgba(255,255,255,0.4);font-size:12px;">Carregando...</div></div>
                     </div>
 
                     <!-- Painel: Faturamento -->
@@ -22949,6 +22962,7 @@
                 initPagamentosAdmin();
             }
             if (sub === 'faturamento') { renderFaturamento(); }
+            if (sub === 'eventos') { loadEventos(); }
         }
 
 
@@ -39287,6 +39301,156 @@
         // Legacy alias
         function copiarChavePix(el) { copiarChavePixEl(el, 'pixCopiadoMsg'); }
 
+        // ═══ ABA EVENTOS ════════════════════════════════════════════════════
+        async function loadEventos() {
+            var box = document.getElementById('eventosList'); if (!box) return;
+            box.innerHTML = '<div style="text-align:center;padding:30px 0;color:rgba(255,255,255,0.4);font-size:12px;">Carregando...</div>';
+            var res = await secureFetch('getEventos', {});
+            if (!res || !res.success) { box.innerHTML = '<div style="text-align:center;padding:30px 0;color:#f87171;font-size:12px;">Erro ao carregar eventos.</div>'; return; }
+            var evs = res.eventos || [];
+            if (!evs.length) { box.innerHTML = '<div style="text-align:center;padding:30px 0;color:rgba(255,255,255,0.4);font-size:12px;">Nenhum evento criado.<br>Clique em "+ Novo evento" para começar.</div>'; return; }
+            var h = '';
+            evs.forEach(function(ev) {
+                var encerrado = ev.status === 'encerrado';
+                var modoLabel = ev.modo === 'aberta' ? '📲 Inscrição aberta' : '👥 Cobrança em lote';
+                h += '<div style="background:rgba(255,255,255,0.03);border:1px solid ' + (encerrado?'rgba(255,255,255,0.06)':'rgba(201,162,58,0.2)') + ';border-radius:12px;padding:14px;margin-bottom:10px;' + (encerrado?'opacity:.6;':'') + '">';
+                h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;">';
+                h += '<div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:800;color:var(--adm-text-1);">' + escapeHtml(ev.nome) + (encerrado?' <span style="font-size:9px;color:#f87171;">(encerrado)</span>':'') + '</div>';
+                if (ev.descricao) h += '<div style="font-size:11px;color:var(--adm-text-3);margin-top:2px;">' + escapeHtml(ev.descricao) + '</div>';
+                h += '</div><div style="font-size:18px;font-weight:900;color:#C9A23A;white-space:nowrap;">R$ ' + ev.valor.toFixed(2) + '</div></div>';
+                h += '<div style="display:flex;gap:10px;font-size:10px;color:var(--adm-text-3);margin-bottom:10px;flex-wrap:wrap;">';
+                if (ev.dataEvento) h += '<span>📅 ' + escapeHtml(ev.dataEvento) + '</span>';
+                h += '<span>' + modoLabel + '</span>';
+                h += '<span>👤 ' + ev.inscritos + ' inscrito' + (ev.inscritos!==1?'s':'') + '</span>';
+                h += '</div>';
+                if (!encerrado) {
+                    h += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
+                    if (ev.modo === 'lote') {
+                        h += '<button onclick="abrirCobrarLote(\'' + ev.id + '\',\'' + escapeHtml(ev.nome) + '\')" style="padding:6px 12px;border-radius:7px;background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.3);font-size:11px;font-weight:700;cursor:pointer;">👥 Cobrar alunos</button>';
+                    }
+                    h += '<button onclick="verInscricoes(\'' + ev.id + '\',\'' + escapeHtml(ev.nome) + '\')" style="padding:6px 12px;border-radius:7px;background:rgba(255,255,255,0.05);color:var(--adm-text-2);border:1px solid rgba(255,255,255,0.1);font-size:11px;font-weight:700;cursor:pointer;">📋 Inscritos</button>';
+                    h += '<button onclick="encerrarEvento(' + ev.row + ')" style="padding:6px 12px;border-radius:7px;background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.4);border:1px solid rgba(255,255,255,0.08);font-size:11px;font-weight:700;cursor:pointer;">Encerrar</button>';
+                    h += '<button onclick="deletarEvento(' + ev.row + ')" style="padding:6px 10px;border-radius:7px;background:rgba(248,113,113,0.1);color:#f87171;border:none;font-size:11px;cursor:pointer;">✕</button>';
+                    h += '</div>';
+                }
+                h += '</div>';
+            });
+            box.innerHTML = h;
+        }
+        function abrirNovoEvento() {
+            var old = document.getElementById('novoEventoSheet'); if (old) old.remove();
+            var sh = document.createElement('div'); sh.id = 'novoEventoSheet';
+            sh.innerHTML = '<div onclick="_fecharNovoEvento()" style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9998;"></div>'
+              + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:#1a1f2e;border-radius:20px 20px 0 0;padding:24px 20px 36px;z-index:9999;max-height:90vh;overflow-y:auto;">'
+              + '<div style="width:40px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 20px;"></div>'
+              + '<div style="font-size:15px;font-weight:800;color:#fff;text-align:center;margin-bottom:18px;">🎫 Novo Evento</div>'
+              + '<div style="display:flex;flex-direction:column;gap:10px;">'
+              + '<div><label style="font-size:10px;color:rgba(255,255,255,.4);display:block;margin-bottom:4px;">Nome do evento *</label>'
+              + '<input type="text" id="evNome" placeholder="Ex: Seminario Faixa Preta" style="width:100%;padding:11px 12px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:13px;box-sizing:border-box;"></div>'
+              + '<div><label style="font-size:10px;color:rgba(255,255,255,.4);display:block;margin-bottom:4px;">Descricao (opcional)</label>'
+              + '<input type="text" id="evDesc" placeholder="Detalhes do evento" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:12px;box-sizing:border-box;"></div>'
+              + '<div style="display:flex;gap:8px;">'
+              + '<div style="flex:1;"><label style="font-size:10px;color:rgba(255,255,255,.4);display:block;margin-bottom:4px;">Valor (R$) *</label>'
+              + '<input type="number" id="evValor" placeholder="0,00" min="0.01" step="0.01" style="width:100%;padding:11px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:15px;font-weight:700;box-sizing:border-box;text-align:center;"></div>'
+              + '<div style="flex:1;"><label style="font-size:10px;color:rgba(255,255,255,.4);display:block;margin-bottom:4px;">Data do evento</label>'
+              + '<input type="date" id="evData" style="width:100%;padding:11px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:#fff;font-size:12px;box-sizing:border-box;"></div></div>'
+              + '<div><label style="font-size:10px;color:rgba(255,255,255,.4);display:block;margin-bottom:6px;">Como cobrar?</label>'
+              + '<div style="display:flex;gap:8px;">'
+              + '<button id="evModoA" onclick="_evSetModo(\'aberta\')" style="flex:1;padding:10px 6px;border-radius:10px;border:1.5px solid #C9A23A;background:rgba(201,162,58,.12);color:#C9A23A;font-size:11px;font-weight:700;cursor:pointer;">📲 Inscricao aberta</button>'
+              + '<button id="evModoL" onclick="_evSetModo(\'lote\')" style="flex:1;padding:10px 6px;border-radius:10px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);font-size:11px;font-weight:700;cursor:pointer;">👥 Cobrar em lote</button>'
+              + '</div>'
+              + '<div id="evModoDesc" style="font-size:10px;color:rgba(255,255,255,.4);text-align:center;margin-top:6px;">Aluno se inscreve pelo app e a cobranca e gerada automaticamente.</div>'
+              + '</div>'
+              + '<input type="hidden" id="evModo" value="aberta">'
+              + '</div>'
+              + '<button onclick="_salvarEvento()" style="width:100%;padding:13px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-top:14px;">Criar evento</button>'
+              + '<button onclick="_fecharNovoEvento()" style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,.25);font-size:12px;cursor:pointer;margin-top:6px;">Cancelar</button>'
+              + '</div>';
+            document.body.appendChild(sh);
+        }
+        function _fecharNovoEvento() { var s = document.getElementById('novoEventoSheet'); if (s) s.remove(); }
+        function _evSetModo(modo) {
+            document.getElementById('evModo').value = modo;
+            var a = document.getElementById('evModoA'), l = document.getElementById('evModoL'), d = document.getElementById('evModoDesc');
+            var on = 'border:1.5px solid #C9A23A;background:rgba(201,162,58,.12);color:#C9A23A;', off = 'border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);';
+            a.style.cssText = 'flex:1;padding:10px 6px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;' + (modo==='aberta'?on:off);
+            l.style.cssText = 'flex:1;padding:10px 6px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;' + (modo==='lote'?on:off);
+            d.textContent = modo==='aberta' ? 'Aluno se inscreve pelo app e a cobranca e gerada automaticamente.' : 'Voce seleciona os alunos e gera as cobrancas de uma vez.';
+        }
+        async function _salvarEvento() {
+            var nome = (document.getElementById('evNome').value||'').trim();
+            var valor = parseFloat(document.getElementById('evValor').value)||0;
+            if (!nome) { alert('Informe o nome do evento.'); return; }
+            if (valor <= 0) { alert('Informe o valor.'); return; }
+            var dataISO = document.getElementById('evData').value;
+            var dataBR = dataISO ? dataISO.split('-').reverse().join('/') : '';
+            var res = await secureFetch('criarEvento', {
+                nome: nome, descricao: (document.getElementById('evDesc').value||'').trim(),
+                valor: valor, dataEvento: dataBR, modo: document.getElementById('evModo').value
+            });
+            if (res && res.success) { _fecharNovoEvento(); loadEventos(); }
+            else alert((res&&res.message)||'Erro');
+        }
+        async function encerrarEvento(row) {
+            if (!confirm('Encerrar este evento? Nao podera mais receber inscricoes.')) return;
+            var res = await secureFetch('encerrarEvento', { row: row });
+            if (res && res.success) loadEventos(); else alert((res&&res.message)||'Erro');
+        }
+        async function deletarEvento(row) {
+            if (!confirm('Remover este evento permanentemente?')) return;
+            var res = await secureFetch('deletarEvento', { row: row });
+            if (res && res.success) loadEventos(); else alert((res&&res.message)||'Erro');
+        }
+        async function verInscricoes(eventoId, nome) {
+            var res = await secureFetch('getInscricoesEvento', { eventoId: eventoId });
+            var ins = (res && res.inscricoes) || [];
+            var old = document.getElementById('inscSheet'); if (old) old.remove();
+            var sh = document.createElement('div'); sh.id = 'inscSheet';
+            var lista = ins.length ? ins.map(function(i){
+                var cor = i.status==='pago'?'#4ade80':i.status==='cancelado'?'#f87171':'#fb923c';
+                return '<div style="display:flex;justify-content:space-between;padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:5px;font-size:12px;"><span style="color:var(--adm-text-2);">' + escapeHtml(i.email) + '</span><span style="color:' + cor + ';font-weight:700;">' + i.status + '</span></div>';
+            }).join('') : '<div style="text-align:center;color:rgba(255,255,255,0.4);font-size:12px;padding:20px 0;">Nenhum inscrito ainda.</div>';
+            sh.innerHTML = '<div onclick="document.getElementById(\'inscSheet\').remove()" style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9998;"></div>'
+              + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:#1a1f2e;border-radius:20px 20px 0 0;padding:24px 20px 36px;z-index:9999;max-height:80vh;overflow-y:auto;">'
+              + '<div style="width:40px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 16px;"></div>'
+              + '<div style="font-size:15px;font-weight:800;color:#fff;text-align:center;margin-bottom:4px;">Inscritos</div>'
+              + '<div style="font-size:11px;color:rgba(255,255,255,.4);text-align:center;margin-bottom:16px;">' + escapeHtml(nome) + ' · ' + ins.length + ' inscrito(s)</div>'
+              + lista
+              + '<button onclick="document.getElementById(\'inscSheet\').remove()" style="width:100%;padding:11px;background:rgba(255,255,255,.05);border:none;border-radius:10px;color:rgba(255,255,255,.5);font-size:12px;cursor:pointer;margin-top:12px;">Fechar</button>'
+              + '</div>';
+            document.body.appendChild(sh);
+        }
+        var _loteEventoId = null;
+        async function abrirCobrarLote(eventoId, nome) {
+            _loteEventoId = eventoId;
+            var res = await secureFetch('getPagamentosAdmin', {});
+            var alunos = (res && res.pagamentos) || [];
+            var old = document.getElementById('loteSheet'); if (old) old.remove();
+            var sh = document.createElement('div'); sh.id = 'loteSheet';
+            var lista = alunos.map(function(a){
+                return '<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:4px;cursor:pointer;"><input type="checkbox" class="loteChk" value="' + escapeHtml(a.email) + '" style="width:15px;height:15px;accent-color:#C9A23A;"><span style="font-size:12px;color:var(--adm-text-2);">' + escapeHtml(a.nome||a.email) + '</span></label>';
+            }).join('');
+            sh.innerHTML = '<div onclick="document.getElementById(\'loteSheet\').remove()" style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9998;"></div>'
+              + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:#1a1f2e;border-radius:20px 20px 0 0;padding:24px 20px 36px;z-index:9999;max-height:85vh;overflow-y:auto;">'
+              + '<div style="width:40px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 16px;"></div>'
+              + '<div style="font-size:15px;font-weight:800;color:#fff;text-align:center;margin-bottom:4px;">Cobrar alunos</div>'
+              + '<div style="font-size:11px;color:rgba(255,255,255,.4);text-align:center;margin-bottom:14px;">' + escapeHtml(nome) + '</div>'
+              + '<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;cursor:pointer;"><input type="checkbox" onchange="_loteSelAll(this)" style="width:15px;height:15px;accent-color:#C9A23A;"><span style="font-size:12px;font-weight:700;color:#C9A23A;">Selecionar todos</span></label>'
+              + lista
+              + '<button onclick="_confirmarCobrarLote()" style="width:100%;padding:13px;background:linear-gradient(135deg,#4ade80,#16a34a);color:#000;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-top:12px;">Gerar cobrancas</button>'
+              + '<button onclick="document.getElementById(\'loteSheet\').remove()" style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,.25);font-size:12px;cursor:pointer;margin-top:6px;">Cancelar</button>'
+              + '</div>';
+            document.body.appendChild(sh);
+        }
+        function _loteSelAll(chk) { document.querySelectorAll('.loteChk').forEach(function(c){ c.checked = chk.checked; }); }
+        async function _confirmarCobrarLote() {
+            var emails = Array.from(document.querySelectorAll('.loteChk:checked')).map(function(c){ return c.value; });
+            if (!emails.length) { alert('Selecione ao menos um aluno.'); return; }
+            var res = await secureFetch('cobrarEventoLote', { eventoId: _loteEventoId, emails: emails });
+            if (res && res.success) { var s=document.getElementById('loteSheet'); if(s)s.remove(); alert(res.message); loadEventos(); }
+            else alert((res&&res.message)||'Erro');
+        }
+
         // ═══ ABA FATURAMENTO (dashboard dedicado) ═══════════════════════════
         var _fatMes = { mes: new Date().getMonth()+1, ano: new Date().getFullYear() };
         async function renderFaturamento() {
@@ -39339,6 +39503,14 @@
               + metodoBar('🟢','PIX', ma.pix, '#4ade80')
               + metodoBar('🖐','Manual', ma.manual, '#94a3b8')
               + metodoBar('💰','Avulso', ma.avulso, '#a855f7')
+              + '</div>'
+                // BREAKDOWN POR CATEGORIA
+              + '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:16px;margin-bottom:14px;">'
+              + '<div style="font-size:12px;font-weight:800;color:var(--adm-text-1);margin-bottom:12px;">Por categoria</div>'
+              + metodoBar('💳','Mensalidade', ma.catMensalidade||0, '#C9A23A')
+              + metodoBar('🎖️','Graduação', ma.catGraduacao||0, '#fbbf24')
+              + metodoBar('🎫','Evento', ma.catEvento||0, '#a855f7')
+              + metodoBar('📌','Avulsa', ma.catAvulsa||0, '#94a3b8')
               + '</div>'
                 // RESUMO KPIs
               + '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:16px;margin-bottom:14px;">'
