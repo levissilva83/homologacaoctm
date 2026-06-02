@@ -10899,12 +10899,23 @@
             <div id="adm-financeiro" class="adm-tab">
                 <div style="padding:0 0 100px;">
 
-                    <!-- Sub-nav oculto — aparece quando houver mais abas -->
-                    <div id="finSubNav" style="display:none;overflow-x:auto;scrollbar-width:none;background:rgba(0,0,0,0.3);border-bottom:1px solid rgba(201,162,58,0.12);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);">
+                    <!-- Sub-nav Financeiro -->
+                    <div id="finSubNav" style="display:flex;overflow-x:auto;scrollbar-width:none;background:rgba(0,0,0,0.3);border-bottom:1px solid rgba(201,162,58,0.12);position:sticky;top:0;z-index:10;backdrop-filter:blur(10px);">
                         <button onclick="switchFinSubTab('pagamentos')" id="finSubBtn_pagamentos"
                             style="flex-shrink:0;padding:13px 18px;border:none;background:transparent;color:#C9A23A;font-size:11px;font-weight:800;cursor:pointer;border-bottom:2px solid #C9A23A;letter-spacing:.3px;">
-                            💳 Pagamentos
+                            💳 Cobranças
                         </button>
+                        <button onclick="switchFinSubTab('faturamento')" id="finSubBtn_faturamento"
+                            style="flex-shrink:0;padding:13px 18px;border:none;background:transparent;color:rgba(255,255,255,0.4);font-size:11px;font-weight:800;cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.3px;">
+                            📊 Faturamento
+                        </button>
+                    </div>
+
+                    <!-- Painel: Faturamento -->
+                    <div id="finPainel_faturamento" style="padding:16px;display:none;">
+                        <div id="fatContent" style="min-height:200px;">
+                            <div style="text-align:center;padding:40px 0;color:rgba(255,255,255,0.4);font-size:12px;">Carregando faturamento...</div>
+                        </div>
                     </div>
 
                     <!-- Painel: Pagamentos -->
@@ -22937,6 +22948,7 @@
             if (sub === 'pagamentos' && typeof initPagamentosAdmin === 'function') {
                 initPagamentosAdmin();
             }
+            if (sub === 'faturamento') { renderFaturamento(); }
         }
 
 
@@ -39274,6 +39286,104 @@
         }
         // Legacy alias
         function copiarChavePix(el) { copiarChavePixEl(el, 'pixCopiadoMsg'); }
+
+        // ═══ ABA FATURAMENTO (dashboard dedicado) ═══════════════════════════
+        var _fatMes = { mes: new Date().getMonth()+1, ano: new Date().getFullYear() };
+        async function renderFaturamento() {
+            var box = document.getElementById('fatContent'); if (!box) return;
+            box.innerHTML = '<div style="text-align:center;padding:40px 0;color:rgba(255,255,255,0.4);font-size:12px;">Carregando faturamento...</div>';
+            var res = await secureFetch('getReceitaMensal', { mes: _fatMes.mes, ano: _fatMes.ano });
+            if (!res || !res.success) { box.innerHTML = '<div style="text-align:center;padding:40px 0;color:#f87171;font-size:12px;">Erro ao carregar faturamento.</div>'; return; }
+            var ma = res.mesAtual, mp = res.mesAnterior, v = res.variacaoPct, k = res.kpis || {};
+            var vCor = v>0?'#4ade80':v<0?'#f87171':'rgba(255,255,255,.4)', seta = v>0?'▲ +':v<0?'▼ ':'';
+
+            // Breakdown por método com %
+            var total = ma.total || 1;
+            function metodoBar(icon, label, valor, cor) {
+                var pct = Math.round((valor/total)*100);
+                return '<div style="margin-bottom:10px;">'
+                     + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">'
+                     + '<span style="font-size:12px;color:var(--adm-text-2);">' + icon + ' ' + label + '</span>'
+                     + '<span style="font-size:12px;font-weight:700;color:var(--adm-text-1);">R$ ' + valor.toFixed(2) + ' <span style="font-size:10px;color:var(--adm-text-3);">' + pct + '%</span></span>'
+                     + '</div>'
+                     + '<div style="height:6px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;"><div style="height:100%;width:' + pct + '%;background:' + cor + ';border-radius:3px;"></div></div>'
+                     + '</div>';
+            }
+
+            box.innerHTML =
+                // HERO
+                '<div style="background:linear-gradient(135deg,rgba(201,162,58,0.12),rgba(201,162,58,0.04));border:1px solid rgba(201,162,58,0.25);border-radius:16px;padding:20px;margin-bottom:14px;text-align:center;position:relative;">'
+              + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">'
+              + '<button onclick="_fatNav(-1)" style="background:rgba(255,255,255,0.06);border:none;border-radius:8px;color:#fff;width:32px;height:32px;cursor:pointer;font-size:14px;">‹</button>'
+              + '<span style="font-size:13px;font-weight:800;color:#fff;letter-spacing:.5px;text-transform:uppercase;">' + ma.label + '</span>'
+              + '<button onclick="_fatNav(1)" style="background:rgba(255,255,255,0.06);border:none;border-radius:8px;color:#fff;width:32px;height:32px;cursor:pointer;font-size:14px;">›</button>'
+              + '</div>'
+              + '<div style="font-size:34px;font-weight:900;color:#C9A23A;line-height:1.1;">R$ ' + ma.total.toFixed(2) + '</div>'
+              + '<div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;">Faturamento bruto</div>'
+              + '<div style="font-size:12px;color:' + vCor + ';margin-top:6px;font-weight:700;">' + seta + Math.abs(v) + '% vs ' + mp.label + '</div>'
+              + '</div>'
+                // BRUTO / TAXA / LÍQUIDO
+              + '<div style="display:flex;align-items:center;gap:6px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:14px;margin-bottom:14px;">'
+              + '<div style="flex:1;text-align:center;"><div style="font-size:9px;color:rgba(255,255,255,0.4);letter-spacing:.5px;">BRUTO</div><div style="font-size:15px;font-weight:700;color:#fff;">R$ ' + ma.total.toFixed(2) + '</div></div>'
+              + '<div style="color:rgba(255,255,255,0.2);font-size:16px;">−</div>'
+              + '<div style="flex:1;text-align:center;"><div style="font-size:9px;color:#f87171;letter-spacing:.5px;">TAXA</div><div style="font-size:15px;font-weight:700;color:#f87171;">R$ ' + (ma.taxa||0).toFixed(2) + '</div></div>'
+              + '<div style="color:rgba(255,255,255,0.2);font-size:16px;">=</div>'
+              + '<div style="flex:1;text-align:center;"><div style="font-size:9px;color:#4ade80;letter-spacing:.5px;">LÍQUIDO</div><div style="font-size:17px;font-weight:900;color:#4ade80;">R$ ' + (ma.liquido||ma.total).toFixed(2) + '</div></div>'
+              + '</div>'
+                // GRÁFICO 6 MESES
+              + '<div id="fatChart" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:16px;margin-bottom:14px;"><div style="font-size:11px;color:rgba(255,255,255,0.4);text-align:center;">Carregando evolução...</div></div>'
+                // BREAKDOWN POR MÉTODO
+              + '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:16px;margin-bottom:14px;">'
+              + '<div style="font-size:12px;font-weight:800;color:var(--adm-text-1);margin-bottom:12px;">Por método de pagamento</div>'
+              + metodoBar('🔵','Gateway', ma.gateway, '#60a5fa')
+              + metodoBar('🟢','PIX', ma.pix, '#4ade80')
+              + metodoBar('🖐','Manual', ma.manual, '#94a3b8')
+              + metodoBar('💰','Avulso', ma.avulso, '#a855f7')
+              + '</div>'
+                // RESUMO KPIs
+              + '<div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:16px;margin-bottom:14px;">'
+              + '<div style="font-size:12px;font-weight:800;color:var(--adm-text-1);margin-bottom:12px;">Resumo do mês</div>'
+              + _fatKpiRow('Pagamentos recebidos', ma.qtd + '')
+              + _fatKpiRow('Ticket médio', 'R$ ' + (k.ticketMedio||0).toFixed(2))
+              + _fatKpiRow('Alunos em dia', (k.emDia||0) + ' de ' + (k.totalAtivos||0))
+              + _fatKpiRow('Inadimplência', (k.inadimplenciaPct||0) + '%', (k.inadimplenciaPct||0) > 20 ? '#f87171' : '#4ade80')
+              + '</div>'
+                // CONFIG TAXAS
+              + '<button onclick="abrirConfigTaxas()" style="width:100%;padding:11px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:rgba(255,255,255,0.55);font-size:12px;cursor:pointer;">⚙️ Configurar taxas do gateway</button>';
+
+            _fatCarregarChart();
+        }
+        function _fatKpiRow(label, val, cor) {
+            return '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);">'
+                 + '<span style="font-size:12px;color:var(--adm-text-3);">' + label + '</span>'
+                 + '<span style="font-size:14px;font-weight:700;color:' + (cor||'var(--adm-text-1)') + ';">' + val + '</span></div>';
+        }
+        async function _fatNav(delta) {
+            var m = _fatMes.mes + delta, a = _fatMes.ano;
+            if (m > 12) { m = 1; a++; } if (m < 1) { m = 12; a--; }
+            _fatMes = { mes: m, ano: a }; renderFaturamento();
+        }
+        async function _fatCarregarChart() {
+            var box = document.getElementById('fatChart'); if (!box) return;
+            try {
+                var res = await secureFetch('getReceitaHistorico', { meses: 6 });
+                if (!res || !res.success || !res.historico) { box.innerHTML = ''; return; }
+                var h = res.historico, max = Math.max.apply(null, h.map(function(b){return b.total;}).concat([1]));
+                var bars = h.map(function(b){
+                    var pct = max>0?Math.round((b.total/max)*100):0;
+                    var atual = (b.mes===_fatMes.mes && b.ano===_fatMes.ano);
+                    var cor = atual?'#C9A23A':'rgba(201,162,58,.35)';
+                    return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">'
+                         + '<div style="font-size:8px;color:rgba(255,255,255,.4);">R$' + (b.total>=1000?(b.total/1000).toFixed(1)+'k':b.total.toFixed(0)) + '</div>'
+                         + '<div style="width:100%;max-width:34px;height:80px;display:flex;align-items:flex-end;"><div style="width:100%;height:' + Math.max(pct,3) + '%;background:' + cor + ';border-radius:5px 5px 0 0;"></div></div>'
+                         + '<div style="font-size:9px;color:rgba(255,255,255,.5);font-weight:' + (atual?'700':'400') + ';">' + b.label + '</div></div>';
+                }).join('');
+                box.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">'
+                  + '<span style="font-size:12px;font-weight:800;color:var(--adm-text-1);">Evolução (6 meses)</span>'
+                  + '<span style="font-size:11px;color:#4ade80;font-weight:700;">Ano ' + res.anoAtual + ': R$ ' + res.totalAno.toFixed(2) + '</span></div>'
+                  + '<div style="display:flex;gap:4px;align-items:flex-end;">' + bars + '</div>';
+            } catch(e) { box.innerHTML = ''; }
+        }
 
         // ── Multi-select cobranças ────────────────────────────────────────
         var _cobSelecionados = new Set();
