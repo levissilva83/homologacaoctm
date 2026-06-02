@@ -10451,6 +10451,41 @@
                         <button class="btn btn-primary" onclick="adminChangePassword()">🔑 Alterar Senha</button>
                     </div>
 
+                    <!-- ██ TAXAS DE GRADUAÇÃO ██ -->
+                    <div class="admin-section" id="taxaGradSection" style="margin-top:20px;">
+                        <div class="admin-section-title">🎖️ Taxas de Graduação</div>
+                        <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:12px;">
+                            Quando uma graduação for aprovada, o sistema pode gerar automaticamente uma cobrança avulsa com o valor configurado. (Disponível nos planos Profissional e Premium)
+                        </div>
+                        <div id="taxaGradList" style="margin-bottom:12px;"><div style="font-size:11px;color:var(--adm-text-3);">Carregando...</div></div>
+                        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px;">
+                            <div style="font-size:11px;font-weight:700;color:var(--adm-text-2);margin-bottom:10px;">➕ Nova taxa</div>
+                            <div style="display:flex;flex-direction:column;gap:8px;">
+                                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                    <select id="taxaGradTipo" style="flex:1;min-width:110px;padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                        <option value="nivel">Mudança de Faixa</option>
+                                        <option value="grau">Mudança de Grau</option>
+                                    </select>
+                                    <select id="taxaGradMod" style="flex:1;min-width:80px;padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                        <option value="all">Todas mod.</option>
+                                        <option value="bjj">BJJ</option>
+                                        <option value="muay_thai">Muay Thai</option>
+                                        <option value="judo">Judô</option>
+                                        <option value="karate">Karatê</option>
+                                    </select>
+                                </div>
+                                <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                    <input type="text" id="taxaGradChave" placeholder="Faixa (ex: azul, roxa, preta)" style="flex:2;padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <input type="number" id="taxaGradValor" placeholder="R$" min="0" step="0.01" style="flex:1;min-width:70px;padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                </div>
+                                <input type="text" id="taxaGradDesc" placeholder="Descrição (opcional)" style="padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                <button onclick="salvarTaxaGrad()" style="padding:7px 14px;background:rgba(201,162,58,0.15);border:1px solid rgba(201,162,58,0.4);border-radius:8px;color:#C9A23A;font-size:12px;font-weight:700;cursor:pointer;align-self:flex-start;">💾 Adicionar taxa</button>
+                            </div>
+                            <div id="taxaGradMsg" style="font-size:11px;margin-top:6px;"></div>
+                        </div>
+                    </div>
+                    <!-- ██ FIM TAXAS DE GRADUAÇÃO ██ -->
+
                     <!-- Logout -->
                     <button class="perfil-logout-btn" onclick="handleLogout()" style="margin-top:16px;margin-bottom:80px;">🚪 Sair da Conta</button>
                     </div><!-- /sis-panel-sistema -->
@@ -23569,6 +23604,7 @@
                 try { carregarContratosAdmin(); } catch(e){}
                 try { loadAdminTreinos(); } catch(e){}
                 try { loadQRCodes(); } catch(e){}
+                try { loadTaxasGrad(); } catch(e){}
                 (async function() {
                     await loadAdminCTs();
                     await initPagamentosAdmin();
@@ -35449,6 +35485,12 @@
                 var gwIcon = { mercadopago:'🔵', infinitypay:'🟣', pix_manual:'🟢', manual:'🖐' };
 
                 var h = '';
+                // Barra de seleção múltipla
+                h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;background:rgba(255,255,255,0.02);border-radius:8px;">'
+                   + '<input type="checkbox" id="cobChkAll" onchange="_cobSelAll(this)" style="width:15px;height:15px;cursor:pointer;accent-color:#C9A23A;">'
+                   + '<span id="cobSelCount" style="flex:1;font-size:11px;color:var(--adm-text-3);">Selecionar todos</span>'
+                   + '<button id="cobBulkBtn" onclick="_cobBulkAction()" style="display:none;padding:5px 12px;background:#C9A23A;color:#000;border:none;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">📋 Atribuir plano</button>'
+                   + '</div>';
                 pags.forEach(function(p) {
                     var st   = (p.status || 'PENDENTE').toUpperCase();
                     var cor  = statusColor[st] || '#94a3b8';
@@ -35461,8 +35503,9 @@
 
                     h += '<div style="background:' + bg + ';border:1px solid rgba(255,255,255,0.04);border-radius:10px;padding:10px 12px;margin-bottom:6px;">';
 
-                    // Linha 1: avatar + nome + badge
+                    // Linha 1: checkbox + avatar + nome + badge
                     h += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">';
+                    h += '<input type="checkbox" class="cobChk" data-email="' + escapeHtml(p.email) + '" onchange="_cobSelChange()" style="width:15px;height:15px;cursor:pointer;accent-color:#C9A23A;flex-shrink:0;">';
                     h += '<div style="width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,0.07);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;">' + escapeHtml(((p.nome||p.email||'?')[0]).toUpperCase()) + '</div>';
                     h += '<div style="flex:1;min-width:0;">';
                     h += '<div style="font-size:12px;font-weight:700;color:var(--adm-text-1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escapeHtml(p.nome || p.email || '—') + '</div>';
@@ -35518,40 +35561,63 @@
             } catch(e) { alert('Erro de conexão'); }
         }
 
-        // Define ou remove o dia de cobrança individual do aluno
-        async function definirDiaCobrancaAluno(email, diaAtual) {
-            var _diaAtualStr = diaAtual ? ' (atual: dia ' + diaAtual + ')' : ' (usando padrão do CT)';
-            var resp = prompt(
-                'Dia de cobrança para ' + email + _diaAtualStr + '\n\n' +
-                'Digite um número de 1 a 28 para definir um dia específico\n' +
-                'ou deixe em branco para usar o padrão do CT:\n',
-                diaAtual || ''
-            );
-            if (resp === null) return; // cancelou
-
-            var limpar = resp.trim() === '';
-            var dia    = limpar ? 0 : parseInt(resp.trim());
-
-            if (!limpar && (isNaN(dia) || dia < 1 || dia > 28)) {
-                alert('Dia inválido. Use um número de 1 a 28.');
-                return;
-            }
-
+        // ── Calendário de cobrança (bottom sheet, 2 modos) ───────────────────
+        function definirDiaCobrancaAluno(email, diaAtual) {
+            var old = document.getElementById('vencSheet'); if (old) old.remove();
+            var t = new Date(), iso = t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
+            var sh = document.createElement('div'); sh.id = 'vencSheet'; sh._modo = 1;
+            sh.innerHTML = '<div onclick="_fecharVencSheet()" style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9998;"></div>'
+              + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:#1a1f2e;border-radius:20px 20px 0 0;padding:24px 20px 40px;z-index:9999;">'
+              + '<div style="width:40px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 20px;"></div>'
+              + '<div style="font-size:15px;font-weight:800;color:#fff;text-align:center;margin-bottom:4px;">Data de cobranca</div>'
+              + '<div style="font-size:11px;color:rgba(255,255,255,.4);text-align:center;margin-bottom:20px;">' + escapeHtml(email) + '</div>'
+              + '<div style="display:flex;gap:8px;margin-bottom:14px;">'
+              + '<button id="vencModo1" onclick="vencSetModo(1)" style="flex:1;padding:10px 6px;border-radius:10px;border:1.5px solid #C9A23A;background:rgba(201,162,58,.12);color:#C9A23A;font-size:12px;font-weight:700;cursor:pointer;">Proximo pagamento</button>'
+              + '<button id="vencModo2" onclick="vencSetModo(2)" style="flex:1;padding:10px 6px;border-radius:10px;border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);font-size:12px;font-weight:700;cursor:pointer;">Ja pagou nesta data</button>'
+              + '</div>'
+              + '<div id="vencModoDesc" style="font-size:11px;color:rgba(255,255,255,.4);text-align:center;margin-bottom:12px;min-height:32px;">Define quando sera o <strong style="color:rgba(255,255,255,.7);">proximo vencimento</strong>.<br>Ideal para acordos futuros.</div>'
+              + '<input type="date" id="vencData" value="' + iso + '" oninput="vencAtualizarPreview()" style="width:100%;padding:14px;background:rgba(255,255,255,.07);border:1.5px solid rgba(201,162,58,.4);border-radius:12px;color:#fff;font-size:18px;font-weight:700;box-sizing:border-box;text-align:center;margin-bottom:6px;">'
+              + '<div id="vencPreview" style="font-size:11px;color:rgba(255,255,255,.4);text-align:center;min-height:18px;margin-bottom:14px;"></div>'
+              + '<button data-email="' + escapeHtml(email) + '" onclick="vencConfirmar(this.getAttribute(\'data-email\'))" style="width:100%;padding:13px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">Confirmar</button>'
+              + '<button onclick="_fecharVencSheet()" style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,.25);font-size:12px;cursor:pointer;margin-top:6px;">Cancelar</button>'
+              + '</div>';
+            document.body.appendChild(sh);
+            vencAtualizarPreview();
+        }
+        function _fecharVencSheet() { var s = document.getElementById('vencSheet'); if (s) s.remove(); }
+        function vencSetModo(n) {
+            var sh = document.getElementById('vencSheet'); if (!sh) return;
+            sh._modo = n;
+            var b1 = document.getElementById('vencModo1'), b2 = document.getElementById('vencModo2'), desc = document.getElementById('vencModoDesc');
+            var on = 'border:1.5px solid #C9A23A;background:rgba(201,162,58,.12);color:#C9A23A;';
+            var off = 'border:1.5px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:rgba(255,255,255,.4);';
+            b1.style.cssText = 'flex:1;padding:10px 6px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;' + (n===1?on:off);
+            b2.style.cssText = 'flex:1;padding:10px 6px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;' + (n===2?on:off);
+            desc.innerHTML = n===1 ? 'Define quando sera o <strong style="color:rgba(255,255,255,.7);">proximo vencimento</strong>.<br>Ideal para acordos futuros.'
+                                   : 'O aluno <strong style="color:rgba(255,255,255,.7);">ja pagou</strong> nesta data.<br>Proximo vencimento = +1 mes.';
+            vencAtualizarPreview();
+        }
+        function vencAtualizarPreview() {
+            var sh = document.getElementById('vencSheet'), dt = document.getElementById('vencData'), prev = document.getElementById('vencPreview');
+            if (!sh || !dt || !prev || !dt.value) { if (prev) prev.textContent=''; return; }
+            var p = dt.value.split('-'), d = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+            var fmt = function(x){ return String(x.getDate()).padStart(2,'0')+'/'+String(x.getMonth()+1).padStart(2,'0')+'/'+x.getFullYear(); };
+            if (sh._modo === 1) prev.innerHTML = 'Proximo vencimento: <strong style="color:#C9A23A;">' + fmt(d) + '</strong>';
+            else { var px = new Date(d); px.setMonth(px.getMonth()+1); prev.innerHTML = 'Pago em <strong style="color:#4ade80;">' + fmt(d) + '</strong> -> Proximo: <strong style="color:#C9A23A;">' + fmt(px) + '</strong>'; }
+        }
+        async function vencConfirmar(email) {
+            var sh = document.getElementById('vencSheet'), dt = document.getElementById('vencData');
+            if (!sh || !dt || !dt.value) { alert('Selecione uma data.'); return; }
+            var p = dt.value.split('-'), d = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+            var fmt = function(x){ return String(x.getDate()).padStart(2,'0')+'/'+String(x.getMonth()+1).padStart(2,'0')+'/'+x.getFullYear(); };
+            var proxVenc, dataPag = '', modo;
+            if (sh._modo === 1) { proxVenc = fmt(d); modo = 'proximo'; }
+            else { dataPag = fmt(d); var px = new Date(d); px.setMonth(px.getMonth()+1); proxVenc = fmt(px); modo = 'jaPagou'; }
             try {
-                var res = await secureFetch('setDiaCobrancaAluno', {
-                    email:  email,
-                    dia:    dia,
-                    limpar: limpar
-                });
-                if (res.success) {
-                    alert('✅ ' + res.message);
-                    loadPagamentosAdmin();
-                } else {
-                    alert('❌ ' + (res.message || 'Erro'));
-                }
-            } catch(e) {
-                alert('Erro de conexão: ' + e.message);
-            }
+                var res = await secureFetch('setProxVencimentoAluno', { email: email, proxVencimento: proxVenc, dataPagamento: dataPag, modo: modo });
+                if (res && res.success) { _fecharVencSheet(); loadPagamentosAdmin(); }
+                else alert((res && res.message) || 'Erro');
+            } catch(e) { alert('Erro: ' + e.message); }
         }
 
         function atribuirPlanoModal(email) {
@@ -39208,6 +39274,87 @@
         }
         // Legacy alias
         function copiarChavePix(el) { copiarChavePixEl(el, 'pixCopiadoMsg'); }
+
+        // ── Multi-select cobranças ────────────────────────────────────────
+        var _cobSelecionados = new Set();
+        function _cobSelChange() { _cobSelecionados = new Set(); document.querySelectorAll('.cobChk:checked').forEach(function(cb){ _cobSelecionados.add(cb.getAttribute('data-email')); }); _cobBarra(); }
+        function _cobSelAll(chk) { document.querySelectorAll('.cobChk').forEach(function(cb){ cb.checked = chk.checked; }); _cobSelChange(); }
+        function _cobBarra() {
+            var n = _cobSelecionados.size, total = document.querySelectorAll('.cobChk').length;
+            var cnt = document.getElementById('cobSelCount'), btn = document.getElementById('cobBulkBtn'), all = document.getElementById('cobChkAll');
+            if (cnt) cnt.textContent = n > 0 ? n + ' selecionado' + (n>1?'s':'') : 'Selecionar todos';
+            if (btn) btn.style.display = n > 0 ? '' : 'none';
+            if (all) { all.indeterminate = n > 0 && n < total; all.checked = total > 0 && n === total; }
+        }
+        async function _cobBulkAction() {
+            if (!_cobSelecionados.size) return;
+            if (!_mpPlanos || !_mpPlanos.length) { alert('Nenhum plano cadastrado.'); return; }
+            var opts = _mpPlanos.map(function(p,i){ return (i+1) + '. ' + (p.nome||p.id) + ' — R$ ' + parseFloat(p.valor||0).toFixed(2); }).join('\n');
+            var resp = prompt('Atribuir plano para ' + _cobSelecionados.size + ' aluno(s):\n\n' + opts + '\n\nNumero:', '1');
+            if (!resp) return;
+            var idx = parseInt(resp) - 1;
+            if (isNaN(idx) || idx < 0 || idx >= _mpPlanos.length) { alert('Opcao invalida.'); return; }
+            var plano = _mpPlanos[idx], emails = Array.from(_cobSelecionados), ok = 0, fail = 0;
+            for (var i = 0; i < emails.length; i++) {
+                try { var r = await secureFetch('atribuirPlanoAluno', { email: emails[i], planoId: plano.id }); if (r && r.success) ok++; else fail++; } catch(_) { fail++; }
+            }
+            alert(ok + ' plano(s) atribuido(s)' + (fail ? '\n' + fail + ' falha(s)' : '') + '.'); _cobSelecionados.clear(); loadPagamentosAdmin();
+        }
+
+        // ── Taxas de Graduação ───────────────────────────────────────────
+        async function loadTaxasGrad() {
+            var section = document.getElementById('taxaGradSection');
+            var list = document.getElementById('taxaGradList');
+            if (!list) return;
+            var pl = typeof _planId !== 'undefined' ? _planId : '';
+            if (pl !== 'profissional' && pl !== 'premium' && pl !== 'enterprise') {
+                if (section) section.innerHTML = '<div class="admin-section-title">🎖️ Taxas de Graduação</div>'
+                    + '<div style="text-align:center;padding:14px 0;"><div style="font-size:24px;margin-bottom:6px;">🔒</div>'
+                    + '<div style="font-size:12px;font-weight:700;color:var(--adm-text-1);margin-bottom:4px;">Plano Profissional ou Premium</div>'
+                    + '<div style="font-size:11px;color:var(--adm-text-3);">Configure taxas automáticas por graduação.</div></div>';
+                return;
+            }
+            try {
+                var res = await secureFetch('getTaxasGraduacao', {});
+                if (!res || !res.success) { list.innerHTML = '<div style="font-size:11px;color:var(--adm-text-3);">Nenhuma taxa cadastrada.</div>'; return; }
+                var taxas = res.taxas || [];
+                if (!taxas.length) { list.innerHTML = '<div style="font-size:11px;color:var(--adm-text-3);">Nenhuma taxa cadastrada. Adicione abaixo.</div>'; return; }
+                var MOD = { all:'Todas', bjj:'BJJ', muay_thai:'Muay Thai', judo:'Judô', karate:'Karatê' };
+                var TIPO = { nivel:'🎗 Faixa', grau:'🏅 Grau' };
+                var h = '<div style="display:flex;flex-direction:column;gap:5px;">';
+                taxas.forEach(function(t) {
+                    h += '<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:8px;">'
+                       + '<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:700;color:var(--adm-text-1);">' + escapeHtml(t.chave) + ' <span style="font-size:9px;color:rgba(255,255,255,0.3);">' + (TIPO[t.tipo]||t.tipo) + ' · ' + (MOD[t.modalidade]||t.modalidade) + '</span></div>'
+                       + (t.descricao ? '<div style="font-size:10px;color:var(--adm-text-3);">' + escapeHtml(t.descricao) + '</div>' : '') + '</div>'
+                       + '<span style="font-size:13px;font-weight:800;color:#C9A23A;white-space:nowrap;">R$ ' + parseFloat(t.valor).toFixed(2) + '</span>'
+                       + '<button onclick="deleteTaxaGrad(' + t.row + ')" style="border:none;background:rgba(248,113,113,0.1);color:#f87171;border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;">✕</button></div>';
+                });
+                h += '</div>';
+                list.innerHTML = h;
+            } catch(e) { list.innerHTML = '<div style="font-size:11px;color:var(--adm-text-3);">Erro ao carregar.</div>'; }
+        }
+        async function salvarTaxaGrad() {
+            var chave = (document.getElementById('taxaGradChave').value||'').trim().toLowerCase();
+            var valor = parseFloat(document.getElementById('taxaGradValor').value) || 0;
+            var desc = (document.getElementById('taxaGradDesc').value||'').trim();
+            var tipo = document.getElementById('taxaGradTipo').value;
+            var mod = document.getElementById('taxaGradMod').value;
+            var msg = document.getElementById('taxaGradMsg');
+            if (!chave) { if(msg){msg.style.color='#f87171';msg.textContent='Informe a faixa.';} return; }
+            if (valor <= 0) { if(msg){msg.style.color='#f87171';msg.textContent='Informe o valor.';} return; }
+            if (!desc) desc = 'Taxa de Graduação — ' + chave.charAt(0).toUpperCase() + chave.slice(1);
+            var res = await secureFetch('saveTaxaGraduacao', { chave:chave, descricao:desc, valor:valor, tipo:tipo, ativo:true, modalidade:mod });
+            if (res && res.success) {
+                if(msg){msg.style.color='#4ade80';msg.textContent='✅ Taxa salva!';}
+                document.getElementById('taxaGradChave').value=''; document.getElementById('taxaGradValor').value=''; document.getElementById('taxaGradDesc').value='';
+                setTimeout(function(){if(msg)msg.textContent='';},3000); loadTaxasGrad();
+            } else { if(msg){msg.style.color='#f87171';msg.textContent='❌ '+((res&&res.message)||'Erro');} }
+        }
+        async function deleteTaxaGrad(row) {
+            if (!confirm('Remover esta taxa?')) return;
+            var res = await secureFetch('deleteTaxaGraduacao', { row: row });
+            if (res && res.success) loadTaxasGrad(); else alert((res&&res.message)||'Erro');
+        }
 
         // ═══ RECURSOS NOVOS (Cobrança Avulsa, Receita Mensal, Taxa Gateway) ═══
         // ── Cobrança Avulsa ──────────────────────────────────────────────
