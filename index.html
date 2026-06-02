@@ -22628,7 +22628,7 @@
 
         function abrirModalAdicionarDependente() {
             // Verifica plano Premium
-            if (_planId && _planId !== 'premium' && _planId !== 'profissional' && _planId !== 'enterprise' && _planId !== 'trial') {
+            if (typeof _planId !== 'undefined' && _planId !== 'premium' && _planId !== 'trial') {
                 alert('❌ Adicionar dependentes pelo app é exclusivo do plano Premium.\nFale com seu professor para cadastrar.');
                 return;
             }
@@ -35825,11 +35825,18 @@
                         '<div class="cob-kpi cob-kpi-red"><span class="cob-kpi-num">' + kAtrasado + '</span><span class="cob-kpi-lbl">Atrasados</span></div>' +
                         '<div class="cob-kpi cob-kpi-yellow"><span class="cob-kpi-num">' + kSemPlano + '</span><span class="cob-kpi-lbl">Sem plano</span></div>' +
                         '<div class="cob-kpi cob-kpi-red" style="cursor:pointer;" onclick="_filtrarNuncaPagou()"><span class="cob-kpi-num">' + kNuncaPagou + '</span><span class="cob-kpi-lbl">Nunca pagou</span></div>' +
-                        '<div class="cob-kpi" id="receitaMensalKpi" style="cursor:pointer;" onclick="abrirReceitaMensal()">' +
+                        '<div class="cob-kpi" style="cursor:pointer;" onclick="_toggleReceitaDetalhes(this)">' +
                             '<span class="cob-kpi-num" style="font-size:11px;">R$' + receitaTotal.toFixed(0) + '</span>' +
-                            '<span class="cob-kpi-lbl">Receita ▸</span>' +
+                            '<span class="cob-kpi-lbl">Receita ▾</span>' +
+                            '<div class="rec-detalhes" style="display:none;">' + receitaDetalhes +
+                            (taxaTotal > 0 ?
+                                '<div style="border-top:1px solid rgba(255,255,255,0.06);margin-top:4px;padding-top:4px;">' +
+                                '<div>💳 Taxas: <strong style="color:#f87171;">-R$' + taxaTotal.toFixed(2) + '</strong></div>' +
+                                '<div>✅ Líquido: <strong style="color:#4ade80;">R$' + receitaLiquid.toFixed(0) + '</strong></div>' +
+                                '</div>' : '') +
+                        '</div>' +
+                        '</div>' +
                         '</div>';
-                    _carregarReceitaKpi(receitaTotal);
 
                     kpiEl.style.gridTemplateColumns = 'repeat(3,1fr)';
                 }
@@ -36141,201 +36148,6 @@
         }
 
 
-        // ─── Multi-select ──────────────────────────────────────────────────
-        var _cobSelecionados = new Set();
-        function _cobSelChange() { _cobSelecionados = new Set(); document.querySelectorAll('.cobChk:checked').forEach(function(cb){ _cobSelecionados.add(cb.getAttribute('data-email')); }); _cobAtualizarBarraSel(); }
-        function _cobSelAll(chk) { document.querySelectorAll('.cobChk').forEach(function(cb){ cb.checked = chk.checked; }); _cobSelChange(); }
-        function _cobAtualizarBarraSel() {
-            var n = _cobSelecionados.size, total = document.querySelectorAll('.cobChk').length;
-            var cnt = document.getElementById('cobSelCount'), btn = document.getElementById('cobBulkBtn'), all = document.getElementById('cobChkAll');
-            if (cnt) cnt.textContent = n > 0 ? n + ' aluno' + (n > 1 ? 's' : '') + ' selecionado' + (n > 1 ? 's' : '') : 'Selecionar todos';
-            if (btn) btn.style.display = n > 0 ? '' : 'none';
-            if (all) { all.indeterminate = n > 0 && n < total; all.checked = total > 0 && n === total; }
-        }
-        async function _cobBulkAction() {
-            if (!_cobSelecionados.size) return;
-            if (!_mpPlanos || !_mpPlanos.length) { alert('Nenhum plano cadastrado.'); return; }
-            var opts = _mpPlanos.map(function(p, i){ return (i+1) + '. ' + (p.nome||p.id) + ' — R$ ' + parseFloat(p.valor||0).toFixed(2); }).join('\n');
-            var resp = prompt('Atribuir plano para ' + _cobSelecionados.size + ' aluno(s):\n\n' + opts + '\n\nNumero:', '1');
-            if (!resp) return;
-            var idx = parseInt(resp) - 1;
-            if (isNaN(idx) || idx < 0 || idx >= _mpPlanos.length) { alert('Opcao invalida.'); return; }
-            var plano = _mpPlanos[idx], emails = Array.from(_cobSelecionados), ok = 0, fail = 0;
-            for (var i = 0; i < emails.length; i++) {
-                try { var r = await secureFetch('atribuirPlanoAluno', { email: emails[i], planoId: plano.id }); if (r && r.success) ok++; else fail++; } catch(_) { fail++; }
-            }
-            alert(ok + ' plano(s) atribuido(s)' + (fail ? '\n' + fail + ' falha(s)' : '') + '.'); _cobSelecionados.clear(); loadPagamentosAdmin();
-        }
-
-        // ─── Atribuir Plano (bottom sheet com data livre) ──────────────────
-        function atribuirPlanoModal(email) {
-            var old = document.getElementById('atribuirPlanoSheet'); if (old) old.remove();
-            if (!_mpPlanos || !_mpPlanos.length) { alert('Nenhum plano cadastrado.'); return; }
-            var t = new Date(), y = t.getFullYear(), m = String(t.getMonth()+1).padStart(2,'0'), d = String(t.getDate()).padStart(2,'0');
-            var iso = y + '-' + m + '-' + d;
-            var opts = _mpPlanos.map(function(p, i){ return '<option value="' + i + '">' + escapeHtml(p.nome||p.id) + ' — R$ ' + parseFloat(p.valor||0).toFixed(2) + '</option>'; }).join('');
-            var sh = document.createElement('div'); sh.id = 'atribuirPlanoSheet';
-            sh.innerHTML = '<div onclick="_fecharAtribuirPlano()" style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9998;"></div>'
-              + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:#1a1f2e;border-radius:20px 20px 0 0;padding:24px 20px 36px;z-index:9999;">'
-              + '<div style="width:40px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 20px;"></div>'
-              + '<div style="font-size:15px;font-weight:800;color:var(--text-1);text-align:center;margin-bottom:3px;">Atribuir Plano</div>'
-              + '<div style="font-size:11px;color:rgba(255,255,255,.4);text-align:center;margin-bottom:18px;">' + escapeHtml(email) + '</div>'
-              + '<input type="hidden" id="atribuirEmail" value="' + escapeHtml(email) + '">'
-              + '<div style="display:flex;flex-direction:column;gap:12px;">'
-              + '<div><label style="font-size:10px;color:rgba(255,255,255,.4);display:block;margin-bottom:5px;">Plano</label>'
-              + '<select id="atribuirPlanoIdx" style="width:100%;padding:11px 12px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text-1);font-size:13px;box-sizing:border-box;">' + opts + '</select></div>'
-              + '<div><label style="font-size:10px;color:rgba(255,255,255,.4);display:block;margin-bottom:5px;">Data da primeira cobranca</label>'
-              + '<input type="date" id="atribuirDataVenc" value="' + iso + '" oninput="_atribuirPreview()" style="width:100%;padding:13px;background:rgba(255,255,255,.07);border:1.5px solid rgba(201,162,58,.4);border-radius:10px;color:var(--text-1);font-size:18px;font-weight:700;box-sizing:border-box;text-align:center;"></div>'
-              + '<div id="atribuirPreview" style="font-size:11px;color:rgba(255,255,255,.4);text-align:center;"></div>'
-              + '</div>'
-              + '<button onclick="_confirmarAtribuirPlano()" style="width:100%;padding:13px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-top:14px;">Atribuir plano</button>'
-              + '<button onclick="_fecharAtribuirPlano()" style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,.25);font-size:12px;cursor:pointer;margin-top:6px;">Cancelar</button>'
-              + '</div>';
-            document.body.appendChild(sh);
-            _atribuirPreview();
-        }
-        function _fecharAtribuirPlano() { var s = document.getElementById('atribuirPlanoSheet'); if (s) s.remove(); }
-        function _atribuirPreview() {
-            var dtEl = document.getElementById('atribuirDataVenc'), prev = document.getElementById('atribuirPreview');
-            if (!dtEl || !prev || !dtEl.value) { if (prev) prev.textContent = ''; return; }
-            var p = dtEl.value.split('-'), d = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
-            var fmt = function(dt){ return String(dt.getDate()).padStart(2,'0') + '/' + String(dt.getMonth()+1).padStart(2,'0') + '/' + dt.getFullYear(); };
-            prev.innerHTML = 'Primeira cobranca: <strong style="color:#C9A23A;">' + fmt(d) + '</strong>';
-        }
-        async function _confirmarAtribuirPlano() {
-            var email = document.getElementById('atribuirEmail').value;
-            var idx   = parseInt(document.getElementById('atribuirPlanoIdx').value) || 0;
-            var iso   = document.getElementById('atribuirDataVenc').value;
-            if (!iso) { alert('Informe a data.'); return; }
-            var plano = _mpPlanos[idx];
-            if (!plano) { alert('Plano nao encontrado.'); return; }
-            var p = iso.split('-'), vencBR = p[2] + '/' + p[1] + '/' + p[0];
-            var res = await secureFetch('atribuirPlanoAluno', { email: email, planoId: plano.id, primeiroVencimento: vencBR });
-            if (res && res.success) { _fecharAtribuirPlano(); loadPagamentosAdmin(); }
-            else alert((res && res.message) || 'Erro');
-        }
-
-        // ─── Cobranca Avulsa ────────────────────────────────────────────────
-        function abrirCobrancaAvulsa(email, nome) {
-            var old = document.getElementById('avulsaSheet'); if (old) old.remove();
-            var t = new Date(), y = t.getFullYear(), m = String(t.getMonth()+1).padStart(2,'0'), d = String(t.getDate()).padStart(2,'0');
-            var iso = y + '-' + m + '-' + d;
-            var sh = document.createElement('div'); sh.id = 'avulsaSheet';
-            sh.innerHTML = '<div onclick="_fecharAvulsaSheet()" style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9998;"></div>'
-              + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:#1a1f2e;border-radius:20px 20px 0 0;padding:24px 20px 36px;z-index:9999;">'
-              + '<div style="width:40px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 20px;"></div>'
-              + '<div style="font-size:15px;font-weight:800;color:var(--text-1);text-align:center;margin-bottom:3px;">Cobranca Avulsa</div>'
-              + '<div style="font-size:11px;color:rgba(255,255,255,.4);text-align:center;margin-bottom:18px;">' + escapeHtml(nome||email) + '</div>'
-              + '<input type="hidden" id="avulsaEmail" value="' + escapeHtml(email) + '">'
-              + '<div style="display:flex;flex-direction:column;gap:10px;">'
-              + '<div><label style="font-size:10px;color:rgba(255,255,255,.4);display:block;margin-bottom:4px;">Descricao *</label>'
-              + '<input type="text" id="avulsaDesc" placeholder="Ex: Taxa de graduacao, Seminario..." style="width:100%;padding:11px 12px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text-1);font-size:13px;box-sizing:border-box;"></div>'
-              + '<div style="display:flex;gap:8px;">'
-              + '<div style="flex:1;"><label style="font-size:10px;color:rgba(255,255,255,.4);display:block;margin-bottom:4px;">Valor (R$) *</label>'
-              + '<input type="number" id="avulsaValor" placeholder="0,00" min="0.01" step="0.01" style="width:100%;padding:11px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text-1);font-size:15px;font-weight:700;box-sizing:border-box;text-align:center;"></div>'
-              + '<div style="flex:1;"><label style="font-size:10px;color:rgba(255,255,255,.4);display:block;margin-bottom:4px;">Vencimento</label>'
-              + '<input type="date" id="avulsaVenc" value="' + iso + '" style="width:100%;padding:11px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text-1);font-size:12px;box-sizing:border-box;"></div></div>'
-              + '<div><label style="font-size:10px;color:rgba(255,255,255,.4);display:block;margin-bottom:4px;">Observacao (opcional)</label>'
-              + '<input type="text" id="avulsaObs" placeholder="Ex: acordo, parcelamento" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text-1);font-size:12px;box-sizing:border-box;"></div></div>'
-              + '<button onclick="_confirmarAvulsa()" style="width:100%;padding:13px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-top:14px;">Criar cobranca</button>'
-              + '<button onclick="_fecharAvulsaSheet()" style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,.25);font-size:12px;cursor:pointer;margin-top:6px;">Cancelar</button></div>';
-            document.body.appendChild(sh);
-            setTimeout(function(){ var el = document.getElementById('avulsaDesc'); if (el) el.focus(); }, 150);
-        }
-        function _fecharAvulsaSheet() { var s = document.getElementById('avulsaSheet'); if (s) s.remove(); }
-        async function _confirmarAvulsa() {
-            var email = document.getElementById('avulsaEmail').value;
-            var desc  = (document.getElementById('avulsaDesc').value||'').trim();
-            var valor = parseFloat(document.getElementById('avulsaValor').value) || 0;
-            var iso   = document.getElementById('avulsaVenc').value;
-            var obs   = (document.getElementById('avulsaObs').value||'').trim();
-            if (!desc) { alert('Informe a descricao.'); return; }
-            if (valor <= 0) { alert('Informe o valor.'); return; }
-            var venc = iso ? iso.split('-').reverse().join('/') : '';
-            var res = await secureFetch('criarCobrancaAvulsa', { email: email, descricao: desc, valor: valor, dataVenc: venc, obs: obs });
-            if (res && res.success) { _fecharAvulsaSheet(); loadPagamentosAdmin(); }
-            else alert((res && res.message) || 'Erro');
-        }
-        async function pagarAvulsa(id) {
-            var res = await secureFetch('pagarCobrancaAvulsa', { id: id });
-            if (res && res.success) loadPagamentosAdmin(); else alert((res && res.message) || 'Erro');
-        }
-        async function cancelarAvulsa(id) {
-            if (!confirm('Cancelar esta cobranca?')) return;
-            var res = await secureFetch('cancelarCobrancaAvulsa', { id: id });
-            if (res && res.success) loadPagamentosAdmin(); else alert((res && res.message) || 'Erro');
-        }
-
-        // ─── Receita Mensal ─────────────────────────────────────────────────
-        var _receitaMensalCache = null;
-        async function _carregarReceitaKpi(v) {
-            try {
-                var h = new Date();
-                var res = await secureFetch('getReceitaMensal', { mes: h.getMonth()+1, ano: h.getFullYear() });
-                if (!res || !res.success) return;
-                _receitaMensalCache = res;
-                var el = document.getElementById('receitaMensalKpi'); if (!el) return;
-                var pct = res.variacaoPct, cor = pct > 0 ? '#4ade80' : pct < 0 ? '#f87171' : 'rgba(255,255,255,.4)', st = pct > 0 ? '+' : '';
-                el.innerHTML = '<span class="cob-kpi-num" style="font-size:11px;">R$' + res.mesAtual.total.toFixed(0) + '</span>'
-                             + '<span class="cob-kpi-lbl">' + res.mesAtual.label + ' <span style="font-size:8px;color:' + cor + ';">' + st + pct + '%</span></span>';
-            } catch(e) {}
-        }
-        function _fecharReceitaSheet() { var s = document.getElementById('receitaSheet'); if (s) s.remove(); }
-        function abrirReceitaMensal() {
-            var old = document.getElementById('receitaSheet'); if (old) old.remove();
-            var sh = document.createElement('div'); sh.id = 'receitaSheet';
-            sh.innerHTML = '<div onclick="_fecharReceitaSheet()" style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9998;"></div>'
-              + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:#1a1f2e;border-radius:20px 20px 0 0;padding:24px 20px 36px;z-index:9999;">'
-              + '<div style="width:40px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 20px;"></div>'
-              + '<div style="font-size:15px;font-weight:800;color:var(--text-1);text-align:center;margin-bottom:16px;">Faturamento Mensal</div>'
-              + '<div id="receitaSheetBody" style="min-height:80px;display:flex;align-items:center;justify-content:center;"><div style="font-size:12px;color:rgba(255,255,255,.4);">Carregando...</div></div>'
-              + '<div style="display:flex;gap:8px;margin-top:12px;">'
-              + '<button onclick="_receitaMesNavegar(-1)" style="flex:1;padding:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:rgba(255,255,255,.6);font-size:13px;cursor:pointer;">Anterior</button>'
-              + '<button onclick="_receitaMesNavegar(1)" style="flex:1;padding:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:rgba(255,255,255,.6);font-size:13px;cursor:pointer;">Proximo</button>'
-              + '</div></div>';
-            document.body.appendChild(sh);
-            if (_receitaMensalCache) _renderReceitaSheet(_receitaMensalCache);
-            else _buscarReceitaSheet(new Date().getMonth()+1, new Date().getFullYear());
-        }
-        var _receitaMesAtual = { mes: new Date().getMonth()+1, ano: new Date().getFullYear() };
-        async function _receitaMesNavegar(delta) {
-            var m = _receitaMesAtual.mes + delta, a = _receitaMesAtual.ano;
-            if (m > 12) { m = 1; a++; } if (m < 1) { m = 12; a--; }
-            _receitaMesAtual = { mes: m, ano: a }; await _buscarReceitaSheet(m, a);
-        }
-        async function _buscarReceitaSheet(mes, ano) {
-            var body = document.getElementById('receitaSheetBody');
-            if (body) body.innerHTML = '<div style="font-size:12px;color:rgba(255,255,255,.4);">Carregando...</div>';
-            var res = await secureFetch('getReceitaMensal', { mes: mes, ano: ano });
-            if (res && res.success) { _receitaMensalCache = res; _renderReceitaSheet(res); }
-        }
-        function _renderReceitaSheet(res) {
-            var body = document.getElementById('receitaSheetBody'); if (!body) return;
-            _receitaMesAtual = { mes: res.mesAtual.mes, ano: res.mesAtual.ano };
-            var ma = res.mesAtual, mp = res.mesAnterior, v = res.variacaoPct;
-            var vCor = v > 0 ? '#4ade80' : v < 0 ? '#f87171' : 'rgba(255,255,255,.4)';
-            var seta = v > 0 ? '+' : '';
-            body.innerHTML = '<div style="width:100%;">'
-              + '<div style="background:rgba(201,162,58,.08);border:1px solid rgba(201,162,58,.2);border-radius:12px;padding:16px;margin-bottom:10px;text-align:center;">'
-              + '<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px;">' + ma.label + ' — Faturamento</div>'
-              + '<div style="font-size:28px;font-weight:800;color:#C9A23A;">R$ ' + ma.total.toFixed(2) + '</div>'
-              + '<div style="font-size:11px;color:' + vCor + ';margin-top:4px;">' + seta + v + '% vs ' + mp.label + ' (R$ ' + mp.total.toFixed(2) + ')</div>'
-              + '<div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:2px;">' + ma.qtd + ' pagamento' + (ma.qtd !== 1 ? 's' : '') + '</div>'
-              + '</div>'
-              + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
-              + _receitaCard('Gateway', ma.gateway)
-              + _receitaCard('Manual/PIX', ma.manual + ma.pix)
-              + _receitaCard('Avulso', ma.avulso)
-              + _receitaCard('Mes anterior', mp.total)
-              + '</div></div>';
-        }
-        function _receitaCard(label, valor) {
-            return '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px;text-align:center;">'
-                 + '<div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px;">' + label + '</div>'
-                 + '<div style="font-size:14px;font-weight:700;color:var(--text-1);">R$ ' + parseFloat(valor||0).toFixed(2) + '</div></div>';
-        }
-
-
         async function confirmarPagtoManual(email, planoId, planoNome, planoValor) {
             if (!planoId) { var ir = confirm('⚠️ Este aluno não tem plano atribuído.\n\nDeseja atribuir um plano agora?'); if (ir) atribuirPlanoModal(email); return; }
             var valorFmt = planoValor ? ' (R$ ' + parseFloat(planoValor).toFixed(2) + ')' : '';
@@ -36470,12 +36282,173 @@
             } catch(e) { alert('Erro: ' + e.message); }
         }
 
-        // ── Cobranças Avulsas ────────────────────────────────
+        // âââ Atribuir Plano (bottom sheet com data livre) ââââââââââââââââââ
+        function atribuirPlanoModal(email) {
+            var old = document.getElementById('atribuirPlanoSheet'); if (old) old.remove();
+            if (!_mpPlanos || !_mpPlanos.length) { alert('Nenhum plano cadastrado.'); return; }
+            var t = new Date(), y = t.getFullYear(), m = String(t.getMonth()+1).padStart(2,'0'), d = String(t.getDate()).padStart(2,'0');
+            var iso = y + '-' + m + '-' + d;
+            var opts = _mpPlanos.map(function(p, i){ return '<option value="' + i + '">' + escapeHtml(p.nome||p.id) + ' — R$ ' + parseFloat(p.valor||0).toFixed(2) + '</option>'; }).join('');
+            var sh = document.createElement('div'); sh.id = 'atribuirPlanoSheet';
+            sh.innerHTML = '<div onclick="_fecharAtribuirPlano()" style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9998;"></div>'
+              + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:#1a1f2e;border-radius:20px 20px 0 0;padding:24px 20px 36px;z-index:9999;">'
+              + '<div style="width:40px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 20px;"></div>'
+              + '<div style="font-size:15px;font-weight:800;color:var(--text-1);text-align:center;margin-bottom:3px;">Atribuir Plano</div>'
+              + '<div style="font-size:11px;color:rgba(255,255,255,.4);text-align:center;margin-bottom:18px;">' + escapeHtml(email) + '</div>'
+              + '<input type="hidden" id="atribuirEmail" value="' + escapeHtml(email) + '">'
+              + '<div style="display:flex;flex-direction:column;gap:12px;">'
+              + '<div><label style="font-size:10px;color:rgba(255,255,255,.4);display:block;margin-bottom:5px;">Plano</label>'
+              + '<select id="atribuirPlanoIdx" style="width:100%;padding:11px 12px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text-1);font-size:13px;box-sizing:border-box;">' + opts + '</select></div>'
+              + '<div><label style="font-size:10px;color:rgba(255,255,255,.4);display:block;margin-bottom:5px;">Data da primeira cobranca</label>'
+              + '<input type="date" id="atribuirDataVenc" value="' + iso + '" oninput="_atribuirPreview()" style="width:100%;padding:13px;background:rgba(255,255,255,.07);border:1.5px solid rgba(201,162,58,.4);border-radius:10px;color:var(--text-1);font-size:18px;font-weight:700;box-sizing:border-box;text-align:center;"></div>'
+              + '<div id="atribuirPreview" style="font-size:11px;color:rgba(255,255,255,.4);text-align:center;"></div>'
+              + '</div>'
+              + '<button onclick="_confirmarAtribuirPlano()" style="width:100%;padding:13px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-top:14px;">Atribuir plano</button>'
+              + '<button onclick="_fecharAtribuirPlano()" style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,.25);font-size:12px;cursor:pointer;margin-top:6px;">Cancelar</button>'
+              + '</div>';
+            document.body.appendChild(sh);
+            _atribuirPreview();
+        }
+        function _fecharAtribuirPlano() { var s = document.getElementById('atribuirPlanoSheet'); if (s) s.remove(); }
+        function _atribuirPreview() {
+            var dtEl = document.getElementById('atribuirDataVenc'), prev = document.getElementById('atribuirPreview');
+            if (!dtEl || !prev || !dtEl.value) { if (prev) prev.textContent = ''; return; }
+            var p = dtEl.value.split('-'), d = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+            var fmt = function(dt){ return String(dt.getDate()).padStart(2,'0') + '/' + String(dt.getMonth()+1).padStart(2,'0') + '/' + dt.getFullYear(); };
+            prev.innerHTML = 'Primeira cobranca: <strong style="color:#C9A23A;">' + fmt(d) + '</strong>';
+        }
+        async function _confirmarAtribuirPlano() {
+            var email = document.getElementById('atribuirEmail').value;
+            var idx = parseInt(document.getElementById('atribuirPlanoIdx').value) || 0;
+            var iso = document.getElementById('atribuirDataVenc').value;
+            if (!iso) { alert('Informe a data.'); return; }
+            var plano = _mpPlanos[idx];
+            if (!plano) { alert('Plano nao encontrado.'); return; }
+            var p = iso.split('-'), vencBR = p[2] + '/' + p[1] + '/' + p[0];
+            var res = await secureFetch('atribuirPlanoAluno', { email: email, planoId: plano.id, primeiroVencimento: vencBR });
+            if (res && res.success) { _fecharAtribuirPlano(); loadPagamentosAdmin(); }
+            else alert((res && res.message) || 'Erro');
+        }
+
+        // âââ Cobranca Avulsa ââââââââââââââââââââââââââââââââââââââââââââââââ
         function abrirCobrancaAvulsa(email, nome) {
             var old = document.getElementById('avulsaSheet'); if (old) old.remove();
-            var today = new Date();
-            var todayISO = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
-            var sheet = document.createElement('div'); sheet.id = 'avulsaSheet';
-            var inner = '<div onclick="_fecharAvulsaSheet()" style="position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9998;"></div>'
-                      + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:#1a1f2e;border-radius:20px 20px 0 0;padding:24px 20px 36px;z-index:9999;box-shadow:0 -8px 40px rgba(0,0,0,0.5);">'
-                      + '<div style="width:40px;height:4px;background:rgba(255,255,255,0.15);border-radius:2px;margin:0 auto 20px;"></div>'
+            var t = new Date(), y = t.getFullYear(), m = String(t.getMonth()+1).padStart(2,'0'), d = String(t.getDate()).padStart(2,'0');
+            var iso = y + '-' + m + '-' + d;
+            var sh = document.createElement('div'); sh.id = 'avulsaSheet';
+            sh.innerHTML = '<div onclick="_fecharAvulsaSheet()" style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9998;"></div>'
+              + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:#1a1f2e;border-radius:20px 20px 0 0;padding:24px 20px 36px;z-index:9999;">'
+              + '<div style="width:40px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 20px;"></div>'
+              + '<div style="font-size:15px;font-weight:800;color:var(--text-1);text-align:center;margin-bottom:3px;">Cobranca Avulsa</div>'
+              + '<div style="font-size:11px;color:rgba(255,255,255,.4);text-align:center;margin-bottom:18px;">' + escapeHtml(nome||email) + '</div>'
+              + '<input type="hidden" id="avulsaEmail" value="' + escapeHtml(email) + '">'
+              + '<div style="display:flex;flex-direction:column;gap:10px;">'
+              + '<div><label style="font-size:10px;color:rgba(255,255,255,.4);display:block;margin-bottom:4px;">Descricao *</label>'
+              + '<input type="text" id="avulsaDesc" placeholder="Ex: Taxa de graduacao, Seminario..." style="width:100%;padding:11px 12px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text-1);font-size:13px;box-sizing:border-box;"></div>'
+              + '<div style="display:flex;gap:8px;">'
+              + '<div style="flex:1;"><label style="font-size:10px;color:rgba(255,255,255,.4);display:block;margin-bottom:4px;">Valor (R$) *</label>'
+              + '<input type="number" id="avulsaValor" placeholder="0,00" min="0.01" step="0.01" style="width:100%;padding:11px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text-1);font-size:15px;font-weight:700;box-sizing:border-box;text-align:center;"></div>'
+              + '<div style="flex:1;"><label style="font-size:10px;color:rgba(255,255,255,.4);display:block;margin-bottom:4px;">Vencimento</label>'
+              + '<input type="date" id="avulsaVenc" value="' + iso + '" style="width:100%;padding:11px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text-1);font-size:12px;box-sizing:border-box;"></div></div>'
+              + '<div><label style="font-size:10px;color:rgba(255,255,255,.4);display:block;margin-bottom:4px;">Observacao (opcional)</label>'
+              + '<input type="text" id="avulsaObs" placeholder="Ex: acordo, parcelamento" style="width:100%;padding:10px 12px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:10px;color:var(--text-1);font-size:12px;box-sizing:border-box;"></div></div>'
+              + '<button onclick="_confirmarAvulsa()" style="width:100%;padding:13px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-top:14px;">Criar cobranca</button>'
+              + '<button onclick="_fecharAvulsaSheet()" style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,.25);font-size:12px;cursor:pointer;margin-top:6px;">Cancelar</button></div>';
+            document.body.appendChild(sh);
+            setTimeout(function(){ var el = document.getElementById('avulsaDesc'); if (el) el.focus(); }, 150);
+        }
+        function _fecharAvulsaSheet() { var s = document.getElementById('avulsaSheet'); if (s) s.remove(); }
+        async function _confirmarAvulsa() {
+            var email = document.getElementById('avulsaEmail').value;
+            var desc = (document.getElementById('avulsaDesc').value||'').trim();
+            var valor = parseFloat(document.getElementById('avulsaValor').value) || 0;
+            var iso = document.getElementById('avulsaVenc').value;
+            var obs = (document.getElementById('avulsaObs').value||'').trim();
+            if (!desc) { alert('Informe a descricao.'); return; }
+            if (valor <= 0) { alert('Informe o valor.'); return; }
+            var venc = iso ? iso.split('-').reverse().join('/') : '';
+            var res = await secureFetch('criarCobrancaAvulsa', { email: email, descricao: desc, valor: valor, dataVenc: venc, obs: obs });
+            if (res && res.success) { _fecharAvulsaSheet(); loadPagamentosAdmin(); }
+            else alert((res && res.message) || 'Erro');
+        }
+        async function pagarAvulsa(id) {
+            var res = await secureFetch('pagarCobrancaAvulsa', { id: id });
+            if (res && res.success) loadPagamentosAdmin(); else alert((res && res.message) || 'Erro');
+        }
+        async function cancelarAvulsa(id) {
+            if (!confirm('Cancelar esta cobranca?')) return;
+            var res = await secureFetch('cancelarCobrancaAvulsa', { id: id });
+            if (res && res.success) loadPagamentosAdmin(); else alert((res && res.message) || 'Erro');
+        }
+
+        // âââ Receita Mensal âââââââââââââââââââââââââââââââââââââââââââââââââ
+        var _receitaMensalCache = null;
+        async function _carregarReceitaKpi(v) {
+            try {
+                var h = new Date();
+                var res = await secureFetch('getReceitaMensal', { mes: h.getMonth()+1, ano: h.getFullYear() });
+                if (!res || !res.success) return;
+                _receitaMensalCache = res;
+                var el = document.getElementById('receitaMensalKpi'); if (!el) return;
+                var pct = res.variacaoPct, cor = pct > 0 ? '#4ade80' : pct < 0 ? '#f87171' : 'rgba(255,255,255,.4)', st = pct > 0 ? '+' : '';
+                el.innerHTML = '<span class="cob-kpi-num" style="font-size:11px;">R$' + res.mesAtual.total.toFixed(0) + '</span>'
+                             + '<span class="cob-kpi-lbl">' + res.mesAtual.label + ' <span style="font-size:8px;color:' + cor + ';">' + st + pct + '%</span></span>';
+            } catch(e) {}
+        }
+        function _fecharReceitaSheet() { var s = document.getElementById('receitaSheet'); if (s) s.remove(); }
+        function abrirReceitaMensal() {
+            var old = document.getElementById('receitaSheet'); if (old) old.remove();
+            var sh = document.createElement('div'); sh.id = 'receitaSheet';
+            sh.innerHTML = '<div onclick="_fecharReceitaSheet()" style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9998;"></div>'
+              + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:#1a1f2e;border-radius:20px 20px 0 0;padding:24px 20px 36px;z-index:9999;">'
+              + '<div style="width:40px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 20px;"></div>'
+              + '<div style="font-size:15px;font-weight:800;color:var(--text-1);text-align:center;margin-bottom:16px;">Faturamento Mensal</div>'
+              + '<div id="receitaSheetBody" style="min-height:80px;display:flex;align-items:center;justify-content:center;"><div style="font-size:12px;color:rgba(255,255,255,.4);">Carregando...</div></div>'
+              + '<div style="display:flex;gap:8px;margin-top:12px;">'
+              + '<button onclick="_receitaMesNavegar(-1)" style="flex:1;padding:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:rgba(255,255,255,.6);font-size:13px;cursor:pointer;">Anterior</button>'
+              + '<button onclick="_receitaMesNavegar(1)" style="flex:1;padding:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:rgba(255,255,255,.6);font-size:13px;cursor:pointer;">Proximo</button>'
+              + '</div></div>';
+            document.body.appendChild(sh);
+            if (_receitaMensalCache) _renderReceitaSheet(_receitaMensalCache);
+            else _buscarReceitaSheet(new Date().getMonth()+1, new Date().getFullYear());
+        }
+        var _receitaMesAtual = { mes: new Date().getMonth()+1, ano: new Date().getFullYear() };
+        async function _receitaMesNavegar(delta) {
+            var m = _receitaMesAtual.mes + delta, a = _receitaMesAtual.ano;
+            if (m > 12) { m = 1; a++; } if (m < 1) { m = 12; a--; }
+            _receitaMesAtual = { mes: m, ano: a }; await _buscarReceitaSheet(m, a);
+        }
+        async function _buscarReceitaSheet(mes, ano) {
+            var body = document.getElementById('receitaSheetBody');
+            if (body) body.innerHTML = '<div style="font-size:12px;color:rgba(255,255,255,.4);">Carregando...</div>';
+            var res = await secureFetch('getReceitaMensal', { mes: mes, ano: ano });
+            if (res && res.success) { _receitaMensalCache = res; _renderReceitaSheet(res); }
+        }
+        function _renderReceitaSheet(res) {
+            var body = document.getElementById('receitaSheetBody'); if (!body) return;
+            _receitaMesAtual = { mes: res.mesAtual.mes, ano: res.mesAtual.ano };
+            var ma = res.mesAtual, mp = res.mesAnterior, v = res.variacaoPct;
+            var vCor = v > 0 ? '#4ade80' : v < 0 ? '#f87171' : 'rgba(255,255,255,.4)';
+            var seta = v > 0 ? '+' : '';
+            body.innerHTML = '<div style="width:100%;">'
+              + '<div style="background:rgba(201,162,58,.08);border:1px solid rgba(201,162,58,.2);border-radius:12px;padding:16px;margin-bottom:10px;text-align:center;">'
+              + '<div style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:4px;">' + ma.label + ' — Faturamento</div>'
+              + '<div style="font-size:28px;font-weight:800;color:#C9A23A;">R$ ' + ma.total.toFixed(2) + '</div>'
+              + '<div style="font-size:11px;color:' + vCor + ';margin-top:4px;">' + seta + v + '% vs ' + mp.label + ' (R$ ' + mp.total.toFixed(2) + ')</div>'
+              + '<div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:2px;">' + ma.qtd + ' pagamento' + (ma.qtd !== 1 ? 's' : '') + '</div>'
+              + '</div>'
+              + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
+              + _receitaCard('Gateway', ma.gateway)
+              + _receitaCard('Manual/PIX', ma.manual + ma.pix)
+              + _receitaCard('Avulso', ma.avulso)
+              + _receitaCard('Mes anterior', mp.total)
+              + '</div></div>';
+        }
+        function _receitaCard(label, valor) {
+            return '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px;text-align:center;">'
+                 + '<div style="font-size:10px;color:rgba(255,255,255,.4);margin-bottom:3px;">' + label + '</div>'
+                 + '<div style="font-size:14px;font-weight:700;color:var(--text-1);">R$ ' + parseFloat(valor||0).toFixed(2) + '</div></div>';
+        }
+    </script>
+</body>
+</html>
