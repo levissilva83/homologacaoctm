@@ -8763,40 +8763,6 @@
                         </div>
 
                         <!-- ===== MINHA ASSINATURA (professores) ===== -->
-                        <div class="perfil-section" id="perfilSecAssinatura" style="display:none;margin-top:16px;">
-                            <div class="perfil-section-title"><span>✍️</span> Minha Assinatura (certificados)</div>
-                            <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">Sua assinatura será usada nos certificados de graduação dos alunos.</div>
-                            <div style="display:flex;gap:6px;margin-bottom:10px;">
-                                <button id="assTabDraw" onclick="_assSetMode('draw')" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #C9A23A;background:rgba(201,162,58,0.12);color:#C9A23A;font-size:12px;font-weight:700;cursor:pointer;">✏️ Desenhar</button>
-                                <button id="assTabUpload" onclick="_assSetMode('upload')" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:var(--text-3);font-size:12px;font-weight:700;cursor:pointer;">🖼️ Enviar imagem</button>
-                            </div>
-                            <div id="assDrawBox">
-                                <canvas id="assCanvas" width="500" height="180" style="width:100%;height:160px;background:#fff;border-radius:10px;border:1.5px solid var(--border);touch-action:none;cursor:crosshair;"></canvas>
-                                <button onclick="_assLimpar()" style="margin-top:6px;padding:5px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:7px;color:var(--text-3);font-size:11px;cursor:pointer;">🧹 Limpar</button>
-                            </div>
-                            <div id="assUploadBox" style="display:none;">
-                                <input type="file" id="assFile" accept="image/png,image/jpeg" onchange="_assUploadPreview(event)" style="font-size:12px;color:var(--text-3);">
-                                <img id="assPreview" style="display:none;max-width:100%;height:120px;object-fit:contain;background:#fff;border-radius:10px;margin-top:8px;border:1.5px solid var(--border);">
-                            </div>
-                            <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
-                                <input type="text" id="assNome" placeholder="Nome como aparece no certificado" style="padding:9px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:9px;color:var(--text-1);font-size:13px;">
-                                <input type="text" id="assTitulo" placeholder="Título (ex: Faixa Preta 3º grau)" style="padding:9px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:9px;color:var(--text-1);font-size:13px;">
-                            </div>
-                            <button class="perfil-save-btn" style="margin-top:10px" onclick="salvarAssinaturaProf()">💾 Salvar assinatura</button>
-                            <div id="assMsg" style="font-size:11px;margin-top:6px;"></div>
-                        </div>
-
-                        <!-- ===== LÍDER DA EQUIPE (só admin) ===== -->
-                        <div class="perfil-section" id="perfilSecLider" style="display:none;margin-top:16px;">
-                            <div class="perfil-section-title"><span>🏆</span> Líder da Equipe (certificados)</div>
-                            <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">Quem assina TODOS os certificados junto com o professor do aluno (ex: o mestre/líder da equipe).</div>
-                            <select id="liderSelect" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:9px;color:var(--text-1);font-size:13px;">
-                                <option value="">— Nenhum (só o professor assina) —</option>
-                            </select>
-                            <button class="perfil-save-btn" style="margin-top:10px" onclick="salvarLiderEquipe()">💾 Definir líder</button>
-                            <div id="liderMsg" style="font-size:11px;margin-top:6px;"></div>
-                        </div>
-
                         <!-- ===== PAGAMENTOS / MENSALIDADE ===== -->
                         <div class="perfil-section" id="perfilSecPagamentos">
                             <div class="perfil-section-title"><span>💳</span> Mensalidade</div>
@@ -9562,6 +9528,43 @@
                         <h2>🎓 Graduações</h2>
                         <p>Solicitações pendentes e progresso dos alunos</p>
                     </div>
+
+                    <!-- ===== CERTIFICADOS: ASSINATURA + LÍDER (admin/professor) ===== -->
+                        <div class="perfil-section" id="perfilSecAssinatura" style="display:none;margin-top:16px;">
+                            <div class="perfil-section-title"><span>✍️</span> Minha Assinatura (certificados)</div>
+                            <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">Sua assinatura será usada nos certificados de graduação dos alunos.</div>
+                            <div style="display:flex;gap:6px;margin-bottom:10px;">
+                                <button id="assTabDraw" onclick="_assSetMode('draw')" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #C9A23A;background:rgba(201,162,58,0.12);color:#C9A23A;font-size:12px;font-weight:700;cursor:pointer;">✏️ Desenhar</button>
+                                <button id="assTabUpload" onclick="_assSetMode('upload')" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:var(--text-3);font-size:12px;font-weight:700;cursor:pointer;">🖼️ Enviar imagem</button>
+                            </div>
+                            <div id="assDrawBox">
+                                <canvas id="assCanvas" width="500" height="180" style="width:100%;height:160px;background:#fff;border-radius:10px;border:1.5px solid var(--border);touch-action:none;cursor:crosshair;"></canvas>
+                                <button onclick="_assLimpar()" style="margin-top:6px;padding:5px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:7px;color:var(--text-3);font-size:11px;cursor:pointer;">🧹 Limpar</button>
+                            </div>
+                            <div id="assUploadBox" style="display:none;">
+                                <input type="file" id="assFile" accept="image/png,image/jpeg" onchange="_assUploadPreview(event)" style="font-size:12px;color:var(--text-3);">
+                                <img id="assPreview" style="display:none;max-width:100%;height:120px;object-fit:contain;background:#fff;border-radius:10px;margin-top:8px;border:1.5px solid var(--border);">
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+                                <input type="text" id="assNome" placeholder="Nome como aparece no certificado" style="padding:9px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:9px;color:var(--text-1);font-size:13px;">
+                                <input type="text" id="assTitulo" placeholder="Título (ex: Faixa Preta 3º grau)" style="padding:9px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:9px;color:var(--text-1);font-size:13px;">
+                            </div>
+                            <button class="perfil-save-btn" style="margin-top:10px" onclick="salvarAssinaturaProf()">💾 Salvar assinatura</button>
+                            <div id="assMsg" style="font-size:11px;margin-top:6px;"></div>
+                        </div>
+
+                        <!-- ===== LÍDER DA EQUIPE (só admin) ===== -->
+                        <div class="perfil-section" id="perfilSecLider" style="display:none;margin-top:16px;">
+                            <div class="perfil-section-title"><span>🏆</span> Líder da Equipe (certificados)</div>
+                            <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">Quem assina TODOS os certificados junto com o professor do aluno (ex: o mestre/líder da equipe).</div>
+                            <select id="liderSelect" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:9px;color:var(--text-1);font-size:13px;">
+                                <option value="">— Nenhum (só o professor assina) —</option>
+                            </select>
+                            <button class="perfil-save-btn" style="margin-top:10px" onclick="salvarLiderEquipe()">💾 Definir líder</button>
+                            <div id="liderMsg" style="font-size:11px;margin-top:6px;"></div>
+                        </div>
+
+
 
                     <!-- ══ PAINEL TABBED: Graduações ══════════════════════════ -->
                     <div class="admin-section" style="padding:0;overflow:hidden;">
@@ -15939,7 +15942,6 @@
             if (tabName === 'perfil') {
                 loadProfile();
                 loadPagamentos();
-                try { loadMinhaAssinatura(); } catch(e){}
                 _carregarMeusContratos(); // carrega contratos e termos do CT
                 // Renderiza seção de modalidades/perfil principal
                 renderPerfilPrincipalSection();
@@ -23629,7 +23631,7 @@
             if (tabName === 'adm-painel') { loadAdminPanel(); loadAdminFeedbacks(); }
             if (tabName === 'adm-alunos') loadStudentsList();
             if (tabName === 'adm-feedbacks') loadFeedbacksTab();
-            if (tabName === 'adm-graduacoes') { loadGradTab(); loadPendingGraduacoes(); initGradSistema(); }
+            if (tabName === 'adm-graduacoes') { loadGradTab(); loadPendingGraduacoes(); initGradSistema(); try { loadMinhaAssinatura(); } catch(e){} }
             if (tabName === 'adm-presenca') initPresencaList();
             if (tabName === 'adm-campeonato') initCampAdmin();
             if (tabName === 'adm-sistema') {
