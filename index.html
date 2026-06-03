@@ -9535,17 +9535,28 @@
                             <div class="perfil-section-title"><span>🎨</span> Personalizar Certificado</div>
                             <div style="font-size:11px;color:var(--text-3);margin-bottom:12px;">Logo da academia, cor e textos que aparecem no certificado de todos os alunos.</div>
 
-                            <!-- Logo -->
-                            <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:6px;">Logo da academia</div>
-                            <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;">
-                                <div id="certLogoPreviewWrap" style="width:72px;height:72px;border:1px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.03);overflow:hidden;flex-shrink:0;">
-                                    <img id="certLogoPreview" style="max-width:100%;max-height:100%;display:none;">
-                                    <span id="certLogoEmpty" style="font-size:10px;color:var(--text-3);text-align:center;">sem<br>logo</span>
+                            <!-- Logos -->
+                            <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:6px;">Logos da academia <span style="color:var(--text-3);font-weight:400;">(2 logos = um em cada canto · 1 logo = centralizado)</span></div>
+                            <div style="display:flex;gap:10px;margin-bottom:14px;">
+                                <div style="flex:1;text-align:center;">
+                                    <div style="font-size:10px;color:var(--text-3);margin-bottom:5px;">Logo 1 (esquerda)</div>
+                                    <div style="width:100%;height:80px;border:1px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.03);overflow:hidden;">
+                                        <img id="certLogoPreview" style="max-width:100%;max-height:100%;display:none;">
+                                        <span id="certLogoEmpty" style="font-size:10px;color:var(--text-3);">sem logo</span>
+                                    </div>
+                                    <input type="file" id="certLogoInput" accept="image/*" style="display:none;" onchange="_certLogoUpload(this,1)">
+                                    <button style="width:100%;margin-top:5px;padding:6px;background:rgba(201,162,58,0.12);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.3);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;" onclick="document.getElementById('certLogoInput').click()">📁 Enviar</button>
+                                    <button onclick="_certLogoLimpar(1)" style="width:100%;margin-top:4px;padding:5px;background:transparent;border:1px solid var(--border);border-radius:7px;color:var(--text-3);font-size:10px;cursor:pointer;">🗑️ Remover</button>
                                 </div>
-                                <div style="flex:1;">
-                                    <input type="file" id="certLogoInput" accept="image/*" style="display:none;" onchange="_certLogoUpload(this)">
-                                    <button class="perfil-save-btn" style="background:rgba(201,162,58,0.12);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.3);" onclick="document.getElementById('certLogoInput').click()">📁 Enviar logo (PNG/JPG)</button>
-                                    <button onclick="_certLogoLimpar()" style="width:100%;margin-top:6px;padding:7px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text-3);font-size:11px;cursor:pointer;">🗑️ Remover logo</button>
+                                <div style="flex:1;text-align:center;">
+                                    <div style="font-size:10px;color:var(--text-3);margin-bottom:5px;">Logo 2 (direita) — opcional</div>
+                                    <div style="width:100%;height:80px;border:1px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.03);overflow:hidden;">
+                                        <img id="certLogoPreview2" style="max-width:100%;max-height:100%;display:none;">
+                                        <span id="certLogoEmpty2" style="font-size:10px;color:var(--text-3);">sem logo</span>
+                                    </div>
+                                    <input type="file" id="certLogoInput2" accept="image/*" style="display:none;" onchange="_certLogoUpload(this,2)">
+                                    <button style="width:100%;margin-top:5px;padding:6px;background:rgba(201,162,58,0.12);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.3);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;" onclick="document.getElementById('certLogoInput2').click()">📁 Enviar</button>
+                                    <button onclick="_certLogoLimpar(2)" style="width:100%;margin-top:4px;padding:5px;background:transparent;border:1px solid var(--border);border-radius:7px;color:var(--text-3);font-size:10px;cursor:pointer;">🗑️ Remover</button>
                                 </div>
                             </div>
 
@@ -39471,16 +39482,24 @@
 
             try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch(e){}
 
-            // Logo da academia (topo central, se houver) — empurra o título pra baixo
+            // Logos da academia no topo (1 = centralizado · 2 = esquerda+direita)
             var topY = 180;
-            if (cfg.logo) {
-                var logoImg = await _carregarImg(cfg.logo);
-                if (logoImg) {
-                    var lw = 150, lh = 150, lr = logoImg.width / logoImg.height;
-                    if (lr > 1) { lh = lw / lr; } else { lw = lh * lr; }
-                    ctx.drawImage(logoImg, W/2 - lw/2, 70, lw, lh);
-                    topY = 280; // título desce pra acomodar o logo
-                }
+            var logo1 = cfg.logo  ? await _carregarImg(cfg.logo)  : null;
+            var logo2 = cfg.logo2 ? await _carregarImg(cfg.logo2) : null;
+            function _drawLogo(img, cx, topPx, box) {
+                var lw = box, lh = box, lr = img.width / img.height;
+                if (lr > 1) { lh = lw / lr; } else { lw = lh * lr; }
+                ctx.drawImage(img, cx - lw/2, topPx, lw, lh);
+            }
+            if (logo1 && logo2) {
+                // Dois logos: cantos superiores
+                _drawLogo(logo1, 230, 70, 150);
+                _drawLogo(logo2, W - 230, 70, 150);
+                topY = 290; // título desce pra baixo da linha de logos
+            } else if (logo1 || logo2) {
+                // Um logo: centralizado
+                _drawLogo(logo1 || logo2, W/2, 70, 150);
+                topY = 280;
             }
 
             ctx.textAlign = 'center';
@@ -39693,8 +39712,9 @@
             else { if (msg) { msg.style.color = '#f87171'; msg.textContent = '❌ ' + ((res && res.message) || 'Erro'); } }
         }
 
-        // ═══ PERSONALIZAR CERTIFICADO (logo + cor + textos) — só admin ═══
+        // ═══ PERSONALIZAR CERTIFICADO (logos + cor + textos) — só admin ═══
         var _certLogoData = '';
+        var _certLogoData2 = '';
 
         async function loadCertConfig() {
             var sec = document.getElementById('perfilSecCertConfig');
@@ -39703,50 +39723,55 @@
             try {
                 var res = await secureFetch('getCertificadoConfig', {});
                 var cfg = (res && res.success && res.layout) ? res.layout : {};
-                _certLogoData = cfg.logo || '';
-                var prev = document.getElementById('certLogoPreview');
-                var empty = document.getElementById('certLogoEmpty');
-                if (_certLogoData) { prev.src = _certLogoData; prev.style.display = ''; empty.style.display = 'none'; }
-                else { prev.style.display = 'none'; empty.style.display = ''; }
+                _certLogoData  = cfg.logo  || '';
+                _certLogoData2 = cfg.logo2 || '';
+                _certLogoRender(1); _certLogoRender(2);
                 document.getElementById('certCorInput').value   = cfg.cor || '#C9A23A';
                 document.getElementById('certTituloInput').value = (cfg.titulo !== undefined) ? cfg.titulo : 'CERTIFICADO';
                 document.getElementById('certSubtInput').value   = (cfg.subtitulo !== undefined) ? cfg.subtitulo : 'DE GRADUAÇÃO';
             } catch(e) {}
         }
 
-        function _certLogoUpload(input) {
+        function _certLogoRender(slot) {
+            var data = slot === 2 ? _certLogoData2 : _certLogoData;
+            var prev = document.getElementById(slot === 2 ? 'certLogoPreview2' : 'certLogoPreview');
+            var empty = document.getElementById(slot === 2 ? 'certLogoEmpty2' : 'certLogoEmpty');
+            if (!prev) return;
+            if (data) { prev.src = data; prev.style.display = ''; if (empty) empty.style.display = 'none'; }
+            else { prev.style.display = 'none'; if (empty) empty.style.display = ''; }
+        }
+
+        function _certLogoUpload(input, slot) {
             var file = input.files && input.files[0];
             if (!file) return;
             var reader = new FileReader();
             reader.onload = function(ev) {
                 var img = new Image();
                 img.onload = function() {
-                    // Redimensiona para no máx 300px (mantém base64 pequeno p/ caber na planilha)
                     var max = 300, w = img.width, h = img.height;
                     if (w > h && w > max) { h = h * max / w; w = max; }
                     else if (h > max) { w = w * max / h; h = max; }
                     var c = document.createElement('canvas'); c.width = w; c.height = h;
                     c.getContext('2d').drawImage(img, 0, 0, w, h);
-                    _certLogoData = c.toDataURL('image/png');
-                    var prev = document.getElementById('certLogoPreview');
-                    prev.src = _certLogoData; prev.style.display = '';
-                    document.getElementById('certLogoEmpty').style.display = 'none';
+                    var dataUrl = c.toDataURL('image/png');
+                    if (slot === 2) _certLogoData2 = dataUrl; else _certLogoData = dataUrl;
+                    _certLogoRender(slot);
                 };
                 img.src = ev.target.result;
             };
             reader.readAsDataURL(file);
         }
 
-        function _certLogoLimpar() {
-            _certLogoData = '';
-            document.getElementById('certLogoPreview').style.display = 'none';
-            document.getElementById('certLogoEmpty').style.display = '';
-            document.getElementById('certLogoInput').value = '';
+        function _certLogoLimpar(slot) {
+            if (slot === 2) { _certLogoData2 = ''; document.getElementById('certLogoInput2').value = ''; }
+            else { _certLogoData = ''; document.getElementById('certLogoInput').value = ''; }
+            _certLogoRender(slot);
         }
 
         function _certFormConfig() {
             return {
-                logo:      _certLogoData || '',
+                logo:      _certLogoData  || '',
+                logo2:     _certLogoData2 || '',
                 cor:       document.getElementById('certCorInput').value || '#C9A23A',
                 titulo:    document.getElementById('certTituloInput').value || 'CERTIFICADO',
                 subtitulo: document.getElementById('certSubtInput').value
