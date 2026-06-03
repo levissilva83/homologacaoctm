@@ -8755,6 +8755,48 @@
                             <button class="perfil-save-btn" style="margin-top:10px" onclick="changePassword()">🔑 Alterar Senha</button>
                         </div>
 
+                        <!-- ===== MEU CERTIFICADO (alunos) ===== -->
+                        <div class="perfil-section" id="perfilSecCertificado" style="margin-top:16px;">
+                            <div class="perfil-section-title"><span>📜</span> Meu Certificado de Graduação</div>
+                            <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">Baixe o certificado da sua graduação atual, assinado pelo seu professor.</div>
+                            <button class="perfil-save-btn" onclick="gerarCertificado('')" style="background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;">📜 Gerar meu certificado</button>
+                        </div>
+
+                        <!-- ===== MINHA ASSINATURA (professores) ===== -->
+                        <div class="perfil-section" id="perfilSecAssinatura" style="display:none;margin-top:16px;">
+                            <div class="perfil-section-title"><span>✍️</span> Minha Assinatura (certificados)</div>
+                            <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">Sua assinatura será usada nos certificados de graduação dos alunos.</div>
+                            <div style="display:flex;gap:6px;margin-bottom:10px;">
+                                <button id="assTabDraw" onclick="_assSetMode('draw')" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #C9A23A;background:rgba(201,162,58,0.12);color:#C9A23A;font-size:12px;font-weight:700;cursor:pointer;">✏️ Desenhar</button>
+                                <button id="assTabUpload" onclick="_assSetMode('upload')" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:var(--text-3);font-size:12px;font-weight:700;cursor:pointer;">🖼️ Enviar imagem</button>
+                            </div>
+                            <div id="assDrawBox">
+                                <canvas id="assCanvas" width="500" height="180" style="width:100%;height:160px;background:#fff;border-radius:10px;border:1.5px solid var(--border);touch-action:none;cursor:crosshair;"></canvas>
+                                <button onclick="_assLimpar()" style="margin-top:6px;padding:5px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:7px;color:var(--text-3);font-size:11px;cursor:pointer;">🧹 Limpar</button>
+                            </div>
+                            <div id="assUploadBox" style="display:none;">
+                                <input type="file" id="assFile" accept="image/png,image/jpeg" onchange="_assUploadPreview(event)" style="font-size:12px;color:var(--text-3);">
+                                <img id="assPreview" style="display:none;max-width:100%;height:120px;object-fit:contain;background:#fff;border-radius:10px;margin-top:8px;border:1.5px solid var(--border);">
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+                                <input type="text" id="assNome" placeholder="Nome como aparece no certificado" style="padding:9px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:9px;color:var(--text-1);font-size:13px;">
+                                <input type="text" id="assTitulo" placeholder="Título (ex: Faixa Preta 3º grau)" style="padding:9px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:9px;color:var(--text-1);font-size:13px;">
+                            </div>
+                            <button class="perfil-save-btn" style="margin-top:10px" onclick="salvarAssinaturaProf()">💾 Salvar assinatura</button>
+                            <div id="assMsg" style="font-size:11px;margin-top:6px;"></div>
+                        </div>
+
+                        <!-- ===== LÍDER DA EQUIPE (só admin) ===== -->
+                        <div class="perfil-section" id="perfilSecLider" style="display:none;margin-top:16px;">
+                            <div class="perfil-section-title"><span>🏆</span> Líder da Equipe (certificados)</div>
+                            <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">Quem assina TODOS os certificados junto com o professor do aluno (ex: o mestre/líder da equipe).</div>
+                            <select id="liderSelect" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:9px;color:var(--text-1);font-size:13px;">
+                                <option value="">— Nenhum (só o professor assina) —</option>
+                            </select>
+                            <button class="perfil-save-btn" style="margin-top:10px" onclick="salvarLiderEquipe()">💾 Definir líder</button>
+                            <div id="liderMsg" style="font-size:11px;margin-top:6px;"></div>
+                        </div>
+
                         <!-- ===== PAGAMENTOS / MENSALIDADE ===== -->
                         <div class="perfil-section" id="perfilSecPagamentos">
                             <div class="perfil-section-title"><span>💳</span> Mensalidade</div>
@@ -12845,27 +12887,18 @@
                     maxGrausPorFaixa: null,
                     simbolo:          'kyu_dan',
                     faixas: [
-                        { id:'Mukyu',         label:'Mukyu — Branca (10º Kyu)',       emoji:'⚪',   cor:'#e8e8e8', cssClass:'branca',       next:'Laranja',       kyu:10, ordemProgresso:1  },
-                        { id:'Laranja',        label:'10º Kyu — Laranja',              emoji:'🟠',   cor:'#f97316', cssClass:'laranja',      next:'Laranja-Preta', kyu:10, ordemProgresso:2  },
-                        { id:'Laranja-Preta',  label:'9º Kyu — Laranja c/ Ponta Preta',emoji:'🟠⚫', cor:'#f97316', cssClass:'laranja-p',    next:'Azul',          kyu:9,  ordemProgresso:3  },
-                        { id:'Azul',           label:'8º Kyu — Azul',                  emoji:'🔵',   cor:'#1565c0', cssClass:'azul',         next:'Azul-Amarela',  kyu:8,  ordemProgresso:4  },
-                        { id:'Azul-Amarela',   label:'7º Kyu — Azul c/ Ponta Amarela', emoji:'🔵🟡', cor:'#1565c0', cssClass:'azul-amarela', next:'Amarela',       kyu:7,  ordemProgresso:5  },
-                        { id:'Amarela',        label:'6º Kyu — Amarela',               emoji:'🟡',   cor:'#fdd835', cssClass:'amarela',      next:'Amarela-Verde', kyu:6,  ordemProgresso:6  },
-                        { id:'Amarela-Verde',  label:'5º Kyu — Amarela c/ Ponta Verde',emoji:'🟡🟢', cor:'#fdd835', cssClass:'amarela-verde',next:'Verde',         kyu:5,  ordemProgresso:7  },
-                        { id:'Verde',          label:'4º Kyu — Verde',                 emoji:'🟢',   cor:'#2e7d32', cssClass:'verde',        next:'Verde-Marrom',  kyu:4,  ordemProgresso:8  },
-                        { id:'Verde-Marrom',   label:'3º Kyu — Verde c/ Ponta Marrom', emoji:'🟢🟤', cor:'#2e7d32', cssClass:'verde-marrom', next:'Marrom',        kyu:3,  ordemProgresso:9  },
-                        { id:'Marrom',         label:'2º Kyu — Marrom',                emoji:'🟤',   cor:'#5d4037', cssClass:'marrom',       next:'Marrom-Preta',  kyu:2,  ordemProgresso:10 },
-                        { id:'Marrom-Preta',   label:'1º Kyu — Marrom c/ Ponta Preta', emoji:'🟤⚫', cor:'#5d4037', cssClass:'marrom-preta', next:'Preta-1Dan',    kyu:1,  ordemProgresso:11 },
-                        { id:'Preta-1Dan',     label:'1º Dan — Shodan',                emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',        next:'Preta-2Dan',    dan:1,  ordemProgresso:12 },
-                        { id:'Preta-2Dan',     label:'2º Dan — Nidan',                 emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',        next:'Preta-3Dan',    dan:2,  ordemProgresso:13 },
-                        { id:'Preta-3Dan',     label:'3º Dan — Sandan',                emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',        next:'Preta-4Dan',    dan:3,  ordemProgresso:14 },
-                        { id:'Preta-4Dan',     label:'4º Dan — Yondan',                emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',        next:'Preta-5Dan',    dan:4,  ordemProgresso:15 },
-                        { id:'Preta-5Dan',     label:'5º Dan — Godan ★',               emoji:'⚫⭐', cor:'#1a1a1a', cssClass:'preta',        next:'Preta-6Dan',    dan:5,  ordemProgresso:16 },
-                        { id:'Preta-6Dan',     label:'6º Dan — Rokudan',               emoji:'⚫⭐', cor:'#1a1a1a', cssClass:'preta',        next:'Preta-7Dan',    dan:6,  ordemProgresso:17 },
-                        { id:'Preta-7Dan',     label:'7º Dan — Shichidan',             emoji:'⚫⭐', cor:'#1a1a1a', cssClass:'preta',        next:'Preta-8Dan',    dan:7,  ordemProgresso:18 },
-                        { id:'Preta-8Dan',     label:'8º Dan — Hachidan',              emoji:'⚫⭐', cor:'#1a1a1a', cssClass:'preta',        next:'Preta-9Dan',    dan:8,  ordemProgresso:19 },
-                        { id:'Preta-9Dan',     label:'9º Dan — Kudan',                 emoji:'⚫⭐', cor:'#1a1a1a', cssClass:'preta',        next:'Preta-10Dan',   dan:9,  ordemProgresso:20 },
-                        { id:'Preta-10Dan',    label:'10º Dan — Judan',                emoji:'⚫⭐', cor:'#1a1a1a', cssClass:'preta',        next:null,            dan:10, ordemProgresso:21 },
+                        { id:'Branca',         label:'Branca (Mukyu)',            emoji:'⚪',   cor:'#e8e8e8', cssClass:'branca',       next:'Laranja',       kyu:11, ordemProgresso:1  },
+                        { id:'Laranja',        label:'Laranja (10º Kyu)',         emoji:'🟠',   cor:'#f97316', cssClass:'laranja',      next:'Laranja-Ponta', kyu:10, ordemProgresso:2  },
+                        { id:'Laranja-Ponta',  label:'Laranja c/ Ponta (9º Kyu)', emoji:'🟠',   cor:'#f97316', cssClass:'laranja-p',    next:'Azul',          kyu:9,  ordemProgresso:3  },
+                        { id:'Azul',           label:'Azul (8º Kyu)',             emoji:'🔵',   cor:'#1565c0', cssClass:'azul',         next:'Azul-Ponta',    kyu:8,  ordemProgresso:4  },
+                        { id:'Azul-Ponta',     label:'Azul c/ Ponta (7º Kyu)',    emoji:'🔵',   cor:'#1565c0', cssClass:'azul-amarela', next:'Amarela',       kyu:7,  ordemProgresso:5  },
+                        { id:'Amarela',        label:'Amarela (6º Kyu)',          emoji:'🟡',   cor:'#fdd835', cssClass:'amarela',      next:'Amarela-Ponta', kyu:6,  ordemProgresso:6  },
+                        { id:'Amarela-Ponta',  label:'Amarela c/ Ponta (5º Kyu)', emoji:'🟡',   cor:'#fdd835', cssClass:'amarela-verde',next:'Verde',         kyu:5,  ordemProgresso:7  },
+                        { id:'Verde',          label:'Verde (4º Kyu)',            emoji:'🟢',   cor:'#2e7d32', cssClass:'verde',        next:'Verde-Ponta',   kyu:4,  ordemProgresso:8  },
+                        { id:'Verde-Ponta',    label:'Verde c/ Ponta (3º Kyu)',   emoji:'🟢',   cor:'#2e7d32', cssClass:'verde-marrom', next:'Marrom',        kyu:3,  ordemProgresso:9  },
+                        { id:'Marrom',         label:'Marrom (2º Kyu)',           emoji:'🟤',   cor:'#5d4037', cssClass:'marrom',       next:'Marrom-Ponta',  kyu:2,  ordemProgresso:10 },
+                        { id:'Marrom-Ponta',   label:'Marrom c/ Ponta (1º Kyu)',  emoji:'🟤',   cor:'#5d4037', cssClass:'marrom-preta', next:'Preta',         kyu:1,  ordemProgresso:11 },
+                        { id:'Preta',          label:'Preta (1º-10º Dan)',        emoji:'⚫',   cor:'#1a1a1a', cssClass:'preta',        next:null,            dan:'1-10', maxGrau:10, ordemProgresso:12 },
                     ],
                 },
                 nomenclatura: {
@@ -15906,6 +15939,7 @@
             if (tabName === 'perfil') {
                 loadProfile();
                 loadPagamentos();
+                try { loadMinhaAssinatura(); } catch(e){}
                 _carregarMeusContratos(); // carrega contratos e termos do CT
                 // Renderiza seção de modalidades/perfil principal
                 renderPerfilPrincipalSection();
@@ -17284,27 +17318,18 @@
 
         // ── Karate Kyokushin belt config ─────────────────────────
         const BELT_CONFIG_KYOKUSHIN = {
-            'Mukyu':         { order:  1, emoji: '⚪',   cls: 'branca',       next: 'Laranja' },
-            'Laranja':       { order:  2, emoji: '🟠',   cls: 'laranja',      next: 'Laranja-Preta' },
-            'Laranja-Preta': { order:  3, emoji: '🟠⚫', cls: 'laranja-p',    next: 'Azul' },
-            'Azul':          { order:  4, emoji: '🔵',   cls: 'azul',         next: 'Azul-Amarela' },
-            'Azul-Amarela':  { order:  5, emoji: '🔵🟡', cls: 'azul-amarela', next: 'Amarela' },
-            'Amarela':       { order:  6, emoji: '🟡',   cls: 'amarela',      next: 'Amarela-Verde' },
-            'Amarela-Verde': { order:  7, emoji: '🟡🟢', cls: 'amarela-verde',next: 'Verde' },
-            'Verde':         { order:  8, emoji: '🟢',   cls: 'verde',        next: 'Verde-Marrom' },
-            'Verde-Marrom':  { order:  9, emoji: '🟢🟤', cls: 'verde-marrom', next: 'Marrom' },
-            'Marrom':        { order: 10, emoji: '🟤',   cls: 'marrom',       next: 'Marrom-Preta' },
-            'Marrom-Preta':  { order: 11, emoji: '🟤⚫', cls: 'marrom-preta', next: 'Preta-1Dan' },
-            'Preta-1Dan':    { order: 12, emoji: '⚫',   cls: 'preta',        next: 'Preta-2Dan' },
-            'Preta-2Dan':    { order: 13, emoji: '⚫',   cls: 'preta',        next: 'Preta-3Dan' },
-            'Preta-3Dan':    { order: 14, emoji: '⚫',   cls: 'preta',        next: 'Preta-4Dan' },
-            'Preta-4Dan':    { order: 15, emoji: '⚫',   cls: 'preta',        next: 'Preta-5Dan' },
-            'Preta-5Dan':    { order: 16, emoji: '⚫⭐', cls: 'preta',        next: 'Preta-6Dan' },
-            'Preta-6Dan':    { order: 17, emoji: '⚫⭐', cls: 'preta',        next: 'Preta-7Dan' },
-            'Preta-7Dan':    { order: 18, emoji: '⚫⭐', cls: 'preta',        next: 'Preta-8Dan' },
-            'Preta-8Dan':    { order: 19, emoji: '⚫⭐', cls: 'preta',        next: 'Preta-9Dan' },
-            'Preta-9Dan':    { order: 20, emoji: '⚫⭐', cls: 'preta',        next: 'Preta-10Dan' },
-            'Preta-10Dan':   { order: 21, emoji: '⚫⭐', cls: 'preta',        next: null }
+            'Branca':        { order:  1, emoji: '⚪',  cls: 'branca',       next: 'Laranja' },
+            'Laranja':       { order:  2, emoji: '🟠',  cls: 'laranja',      next: 'Laranja-Ponta' },
+            'Laranja-Ponta': { order:  3, emoji: '🟠',  cls: 'laranja-p',    next: 'Azul' },
+            'Azul':          { order:  4, emoji: '🔵',  cls: 'azul',         next: 'Azul-Ponta' },
+            'Azul-Ponta':    { order:  5, emoji: '🔵',  cls: 'azul-amarela', next: 'Amarela' },
+            'Amarela':       { order:  6, emoji: '🟡',  cls: 'amarela',      next: 'Amarela-Ponta' },
+            'Amarela-Ponta': { order:  7, emoji: '🟡',  cls: 'amarela-verde',next: 'Verde' },
+            'Verde':         { order:  8, emoji: '🟢',  cls: 'verde',        next: 'Verde-Ponta' },
+            'Verde-Ponta':   { order:  9, emoji: '🟢',  cls: 'verde-marrom', next: 'Marrom' },
+            'Marrom':        { order: 10, emoji: '🟤',  cls: 'marrom',       next: 'Marrom-Ponta' },
+            'Marrom-Ponta':  { order: 11, emoji: '🟤',  cls: 'marrom-preta', next: 'Preta' },
+            'Preta':         { order: 12, emoji: '⚫',  cls: 'preta',        next: null }
         };
 
         // ── Kung Fu — Garra do Dragão do Norte ─────────────────
@@ -34026,6 +34051,7 @@
                     h += '<div style="margin-top:8px;display:flex;justify-content:flex-end;">';
                     h += '<button onclick="openStuModal(\'' + escapeHtml(a.email) + '\')" style="width:36px;height:36px;background:rgba(255,255,255,0.05);color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:8px;font-size:14px;cursor:pointer;" title="Ver perfil completo">👤</button>';
                     h += '<button onclick="aprovarGraduacaoAluno(\'' + escapeHtml(a.email) + '\',\'' + escapeHtml(a.faixa||a.nivel||'') + '\',' + (a.proximoGrau||0) + ',this)" style="width:36px;height:36px;background:rgba(74,222,128,0.08);color:#4ade80;border:1px solid rgba(74,222,128,0.2);border-radius:8px;font-size:14px;cursor:pointer;" title="Aprovar graduação">🎖️</button>';
+                    h += '<button onclick="gerarCertificado(\'' + escapeHtml(a.email) + '\')" style="width:36px;height:36px;background:rgba(201,162,58,0.1);color:#C9A23A;border:1px solid rgba(201,162,58,0.3);border-radius:8px;font-size:14px;cursor:pointer;" title="Gerar certificado">📜</button>';
                     h += '</div>';
                     h += '</div>';
                 });
@@ -39346,6 +39372,256 @@
             var res = await secureFetch('inscreverEvento', { eventoId: eventoId });
             if (res && res.success) { alert(res.message || 'Inscrição realizada!'); loadStuEventos(); if (typeof loadPagamentosTab === 'function') loadPagamentosTab(); }
             else alert((res && res.message) || 'Erro');
+        }
+
+        // ═══ GERAÇÃO DE CERTIFICADO (canvas → PNG/PDF) ══════════════════════
+        async function gerarCertificado(emailAluno, profEmail) {
+            var loading = document.createElement('div');
+            loading.id = 'certLoading';
+            loading.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10000;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;';
+            loading.textContent = 'Gerando certificado...';
+            document.body.appendChild(loading);
+            try {
+                var res = await secureFetch('getDadosCertificado', { email: emailAluno || '', profEmail: profEmail || '' });
+                if (!res || !res.success) { alert((res&&res.message)||'Erro ao gerar'); loading.remove(); return; }
+                await _desenharCertificado(res.aluno, res.assinantes || [], res.data);
+            } catch(e) { alert('Erro: ' + e.message); }
+            loading.remove();
+        }
+
+        function _carregarImg(src) {
+            return new Promise(function(resolve) {
+                if (!src) { resolve(null); return; }
+                var img = new Image();
+                img.onload = function(){ resolve(img); };
+                img.onerror = function(){ resolve(null); };
+                img.src = src;
+            });
+        }
+
+        async function _desenharCertificado(aluno, assinantes, data) {
+            var W = 1414, H = 1000; // A4 paisagem em px (~120dpi)
+            var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+            var ctx = cv.getContext('2d');
+
+            // Fundo branco
+            ctx.fillStyle = '#fffdf8'; ctx.fillRect(0,0,W,H);
+            // Borda dourada dupla
+            ctx.strokeStyle = '#C9A23A'; ctx.lineWidth = 8; ctx.strokeRect(30,30,W-60,H-60);
+            ctx.strokeStyle = '#8C6A0A'; ctx.lineWidth = 2; ctx.strokeRect(48,48,W-96,H-96);
+
+            // Garante fonte Cinzel carregada
+            try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch(e){}
+
+            ctx.textAlign = 'center';
+            // Título
+            ctx.fillStyle = '#C9A23A';
+            ctx.font = '900 64px Cinzel, serif';
+            ctx.fillText('CERTIFICADO', W/2, 180);
+            ctx.fillStyle = '#8C6A0A';
+            ctx.font = '700 26px Cinzel, serif';
+            ctx.fillText('DE GRADUAÇÃO', W/2, 225);
+
+            // "Certificamos que"
+            ctx.fillStyle = '#555';
+            ctx.font = '400 24px Manrope, sans-serif';
+            ctx.fillText('Certificamos que', W/2, 330);
+
+            // Nome do aluno
+            ctx.fillStyle = '#1a1a1a';
+            ctx.font = '800 56px Cinzel, serif';
+            ctx.fillText((aluno.nome||'').toUpperCase(), W/2, 400);
+
+            // Linha decorativa
+            ctx.strokeStyle = '#C9A23A'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(W/2-200, 425); ctx.lineTo(W/2+200, 425); ctx.stroke();
+
+            // Texto graduação
+            ctx.fillStyle = '#555'; ctx.font = '400 23px Manrope, sans-serif';
+            ctx.fillText('foi graduado(a) à faixa', W/2, 490);
+
+            var grauTxt = (aluno.grau && parseInt(aluno.grau) > 0) ? (' · ' + aluno.grau + 'º grau') : '';
+            ctx.fillStyle = '#C9A23A'; ctx.font = '800 44px Cinzel, serif';
+            ctx.fillText((aluno.faixa||'').toUpperCase() + grauTxt, W/2, 550);
+
+            if (aluno.ct) {
+                ctx.fillStyle = '#555'; ctx.font = '400 22px Manrope, sans-serif';
+                ctx.fillText('na ' + aluno.ct, W/2, 600);
+            }
+
+            // Data
+            ctx.fillStyle = '#888'; ctx.font = '400 20px Manrope, sans-serif';
+            ctx.fillText(data || '', W/2, 660);
+
+            // ── Assinaturas (1 a 3, distribuídas) ──
+            var n = Math.min(assinantes.length, 3);
+            if (n > 0) {
+                var imgs = [];
+                for (var k = 0; k < n; k++) imgs.push(await _carregarImg(assinantes[k].assinatura));
+                var baseY = 820, lineY = 850;
+                var slotW = (W - 200) / n;
+                for (var s = 0; s < n; s++) {
+                    var cx = 100 + slotW * s + slotW / 2;
+                    // Imagem da assinatura
+                    if (imgs[s]) {
+                        var iw = 200, ih = 70, ratio = imgs[s].width / imgs[s].height;
+                        if (ratio > iw/ih) { ih = iw / ratio; } else { iw = ih * ratio; }
+                        ctx.drawImage(imgs[s], cx - iw/2, baseY - ih, iw, ih);
+                    }
+                    // Linha
+                    ctx.strokeStyle = '#999'; ctx.lineWidth = 1;
+                    ctx.beginPath(); ctx.moveTo(cx - 130, lineY); ctx.lineTo(cx + 130, lineY); ctx.stroke();
+                    // Nome + título
+                    ctx.fillStyle = '#1a1a1a'; ctx.font = '700 20px Manrope, sans-serif';
+                    ctx.fillText(assinantes[s].nome || '', cx, lineY + 28);
+                    if (assinantes[s].titulo) {
+                        ctx.fillStyle = '#888'; ctx.font = '400 15px Manrope, sans-serif';
+                        ctx.fillText(assinantes[s].titulo, cx, lineY + 50);
+                    }
+                }
+            }
+
+            // Mostra preview + download
+            _mostrarCertificadoPreview(cv, aluno.nome);
+        }
+
+        function _mostrarCertificadoPreview(cv, nomeAluno) {
+            var old = document.getElementById('certPreviewSheet'); if (old) old.remove();
+            var dataUrl = cv.toDataURL('image/png');
+            var sh = document.createElement('div'); sh.id = 'certPreviewSheet';
+            sh.innerHTML = '<div onclick="document.getElementById(\'certPreviewSheet\').remove()" style="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:10000;"></div>'
+              + '<div onclick="event.stopPropagation()" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1a1f2e;border-radius:16px;padding:18px;z-index:10001;width:92%;max-width:560px;max-height:88vh;overflow-y:auto;">'
+              + '<div style="font-size:14px;font-weight:800;color:#fff;text-align:center;margin-bottom:12px;">🎖️ Certificado</div>'
+              + '<img src="' + dataUrl + '" style="width:100%;border-radius:8px;border:1px solid rgba(255,255,255,0.1);">'
+              + '<a href="' + dataUrl + '" download="certificado-' + (nomeAluno||'aluno').replace(/[^a-zA-Z0-9]/g,'_') + '.png" style="display:block;text-align:center;width:100%;padding:13px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-top:14px;text-decoration:none;box-sizing:border-box;">⬇️ Baixar certificado (PNG)</a>'
+              + '<button onclick="document.getElementById(\'certPreviewSheet\').remove()" style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,.3);font-size:12px;cursor:pointer;margin-top:6px;">Fechar</button>'
+              + '</div>';
+            document.body.appendChild(sh);
+        }
+
+        // ═══ ASSINATURA DO PROFESSOR (desenhar ou enviar) ═══════════════════
+        var _assMode = 'draw', _assDrawing = false, _assUploadData = null, _assCtx = null, _assInit = false;
+        function _initAssinaturaCanvas() {
+            var cv = document.getElementById('assCanvas'); if (!cv || _assInit) return;
+            _assInit = true;
+            _assCtx = cv.getContext('2d');
+            _assCtx.lineWidth = 2.5; _assCtx.lineCap = 'round'; _assCtx.strokeStyle = '#1a1a1a';
+            function pos(e) {
+                var r = cv.getBoundingClientRect(), t = e.touches ? e.touches[0] : e;
+                return { x: (t.clientX - r.left) * (cv.width / r.width), y: (t.clientY - r.top) * (cv.height / r.height) };
+            }
+            function start(e) { e.preventDefault(); _assDrawing = true; var p = pos(e); _assCtx.beginPath(); _assCtx.moveTo(p.x, p.y); }
+            function move(e) { if (!_assDrawing) return; e.preventDefault(); var p = pos(e); _assCtx.lineTo(p.x, p.y); _assCtx.stroke(); }
+            function end() { _assDrawing = false; }
+            cv.addEventListener('mousedown', start); cv.addEventListener('mousemove', move); cv.addEventListener('mouseup', end); cv.addEventListener('mouseleave', end);
+            cv.addEventListener('touchstart', start); cv.addEventListener('touchmove', move); cv.addEventListener('touchend', end);
+        }
+        function _assSetMode(m) {
+            _assMode = m;
+            var on='border:1.5px solid #C9A23A;background:rgba(201,162,58,0.12);color:#C9A23A;', off='border:1.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:var(--text-3);';
+            document.getElementById('assTabDraw').style.cssText = 'flex:1;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;' + (m==='draw'?on:off);
+            document.getElementById('assTabUpload').style.cssText = 'flex:1;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;' + (m==='upload'?on:off);
+            document.getElementById('assDrawBox').style.display = m==='draw'?'':'none';
+            document.getElementById('assUploadBox').style.display = m==='upload'?'':'none';
+            if (m==='draw') _initAssinaturaCanvas();
+        }
+        function _assLimpar() { if (_assCtx) { var cv=document.getElementById('assCanvas'); _assCtx.clearRect(0,0,cv.width,cv.height); } }
+        function _assUploadPreview(e) {
+            var f = e.target.files[0]; if (!f) return;
+            var reader = new FileReader();
+            reader.onload = function(ev) {
+                // Redimensiona para no máximo 500px de largura
+                var img = new Image();
+                img.onload = function() {
+                    var c = document.createElement('canvas'), maxW = 500;
+                    var scale = Math.min(1, maxW / img.width);
+                    c.width = img.width * scale; c.height = img.height * scale;
+                    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+                    _assUploadData = c.toDataURL('image/png');
+                    var p = document.getElementById('assPreview'); p.src = _assUploadData; p.style.display = '';
+                };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(f);
+        }
+        function _canvasVazio(cv) {
+            var ctx = cv.getContext('2d'), d = ctx.getImageData(0,0,cv.width,cv.height).data;
+            for (var i = 3; i < d.length; i += 4) { if (d[i] !== 0) return false; }
+            return true;
+        }
+        async function salvarAssinaturaProf() {
+            var nome = (document.getElementById('assNome').value||'').trim();
+            var titulo = (document.getElementById('assTitulo').value||'').trim();
+            var msg = document.getElementById('assMsg');
+            if (!nome) { if(msg){msg.style.color='#f87171';msg.textContent='Informe o nome.';} return; }
+            var assinatura = '';
+            if (_assMode === 'draw') {
+                var cv = document.getElementById('assCanvas');
+                if (!cv || _canvasVazio(cv)) { if(msg){msg.style.color='#f87171';msg.textContent='Desenhe a assinatura.';} return; }
+                assinatura = cv.toDataURL('image/png');
+            } else {
+                if (!_assUploadData) { if(msg){msg.style.color='#f87171';msg.textContent='Envie uma imagem.';} return; }
+                assinatura = _assUploadData;
+            }
+            if (msg) { msg.style.color='var(--text-3)'; msg.textContent='Salvando...'; }
+            var res = await secureFetch('salvarAssinaturaProf', { nome: nome, titulo: titulo, assinatura: assinatura });
+            if (res && res.success) { if(msg){msg.style.color='#4ade80';msg.textContent='✅ Assinatura salva!';} }
+            else { if(msg){msg.style.color='#f87171';msg.textContent='❌ '+((res&&res.message)||'Erro');} }
+        }
+        // Carrega assinatura existente ao abrir perfil (e mostra a seção só p/ admin/professor)
+        async function loadMinhaAssinatura() {
+            var sec = document.getElementById('perfilSecAssinatura');
+            if (!sec) return;
+            if (!(isAdmin() || isProfessor())) { sec.style.display = 'none'; return; }
+            sec.style.display = '';
+            _assSetMode('draw');
+            try {
+                var res = await secureFetch('getAssinaturaProf', {});
+                if (res && res.success && res.assinatura) {
+                    document.getElementById('assNome').value = res.assinatura.nome || '';
+                    document.getElementById('assTitulo').value = res.assinatura.titulo || '';
+                    if (res.assinatura.assinatura) {
+                        _assSetMode('upload');
+                        _assUploadData = res.assinatura.assinatura;
+                        var p = document.getElementById('assPreview'); p.src = _assUploadData; p.style.display = '';
+                    }
+                }
+            } catch(e) {}
+            // Líder da equipe só para admin
+            try { if (isAdmin()) loadLiderEquipe(); } catch(e) {}
+        }
+
+        // Carrega professores com assinatura + líder atual (só admin)
+        async function loadLiderEquipe() {
+            var sec = document.getElementById('perfilSecLider');
+            if (!sec || !isAdmin()) { if (sec) sec.style.display = 'none'; return; }
+            sec.style.display = '';
+            var sel = document.getElementById('liderSelect');
+            try {
+                var profs = await secureFetch('getAssinaturasProfs', {});
+                var cfg   = await secureFetch('getCertificadoConfig', {});
+                var liderAtual = (cfg && cfg.success && cfg.liderEmail) ? cfg.liderEmail.toLowerCase() : '';
+                var opts = '<option value="">— Nenhum (só o professor assina) —</option>';
+                if (profs && profs.success && profs.professores) {
+                    profs.professores.forEach(function(p) {
+                        if (!p.temAssinatura) return; // só quem já tem assinatura cadastrada
+                        var sel = (p.email.toLowerCase() === liderAtual) ? ' selected' : '';
+                        var rotulo = (p.nome || p.email) + (p.titulo ? ' — ' + p.titulo : '');
+                        opts += '<option value="' + escapeHtml(p.email) + '"' + sel + '>' + escapeHtml(rotulo) + '</option>';
+                    });
+                }
+                sel.innerHTML = opts;
+            } catch(e) {}
+        }
+
+        async function salvarLiderEquipe() {
+            var sel = document.getElementById('liderSelect');
+            var msg = document.getElementById('liderMsg');
+            var email = sel ? sel.value : '';
+            if (msg) { msg.style.color = 'var(--text-3)'; msg.textContent = 'Salvando...'; }
+            var res = await secureFetch('setLiderEquipe', { email: email });
+            if (res && res.success) { if (msg) { msg.style.color = '#4ade80'; msg.textContent = email ? '✅ Líder definido!' : '✅ Líder removido.'; } }
+            else { if (msg) { msg.style.color = '#f87171'; msg.textContent = '❌ ' + ((res && res.message) || 'Erro'); } }
         }
 
         // ═══ ABA EVENTOS ════════════════════════════════════════════════════
