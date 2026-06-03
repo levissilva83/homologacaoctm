@@ -9530,6 +9530,46 @@
                     </div>
 
                     <!-- ===== CERTIFICADOS: ASSINATURA + LÍDER (admin/professor) ===== -->
+                        <!-- 🎨 PERSONALIZAR CERTIFICADO (só admin) -->
+                        <div class="perfil-section" id="perfilSecCertConfig" style="display:none;margin-top:16px;">
+                            <div class="perfil-section-title"><span>🎨</span> Personalizar Certificado</div>
+                            <div style="font-size:11px;color:var(--text-3);margin-bottom:12px;">Logo da academia, cor e textos que aparecem no certificado de todos os alunos.</div>
+
+                            <!-- Logo -->
+                            <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:6px;">Logo da academia</div>
+                            <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;">
+                                <div id="certLogoPreviewWrap" style="width:72px;height:72px;border:1px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.03);overflow:hidden;flex-shrink:0;">
+                                    <img id="certLogoPreview" style="max-width:100%;max-height:100%;display:none;">
+                                    <span id="certLogoEmpty" style="font-size:10px;color:var(--text-3);text-align:center;">sem<br>logo</span>
+                                </div>
+                                <div style="flex:1;">
+                                    <input type="file" id="certLogoInput" accept="image/*" style="display:none;" onchange="_certLogoUpload(this)">
+                                    <button class="perfil-save-btn" style="background:rgba(201,162,58,0.12);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.3);" onclick="document.getElementById('certLogoInput').click()">📁 Enviar logo (PNG/JPG)</button>
+                                    <button onclick="_certLogoLimpar()" style="width:100%;margin-top:6px;padding:7px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text-3);font-size:11px;cursor:pointer;">🗑️ Remover logo</button>
+                                </div>
+                            </div>
+
+                            <!-- Cor -->
+                            <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;">
+                                <div style="flex:1;">
+                                    <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:6px;">Cor de destaque</div>
+                                    <input type="color" id="certCorInput" value="#C9A23A" style="width:100%;height:40px;border:1px solid var(--border);border-radius:9px;background:transparent;cursor:pointer;">
+                                </div>
+                            </div>
+
+                            <!-- Título / Subtítulo -->
+                            <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:6px;">Título</div>
+                            <input type="text" id="certTituloInput" maxlength="40" placeholder="CERTIFICADO" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:9px;color:var(--text-1);font-size:13px;margin-bottom:10px;">
+                            <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:6px;">Subtítulo</div>
+                            <input type="text" id="certSubtInput" maxlength="40" placeholder="DE GRADUAÇÃO" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:9px;color:var(--text-1);font-size:13px;margin-bottom:12px;">
+
+                            <div style="display:flex;gap:8px;">
+                                <button class="perfil-save-btn" style="flex:1" onclick="salvarCertConfig()">💾 Salvar</button>
+                                <button class="perfil-save-btn" style="flex:1;background:rgba(255,255,255,0.06);color:var(--text-1);border:1px solid var(--border);" onclick="previewCertificado()">👁️ Pré-visualizar</button>
+                            </div>
+                            <div id="certConfigMsg" style="font-size:11px;margin-top:6px;"></div>
+                        </div>
+
                         <div class="perfil-section" id="perfilSecAssinatura" style="display:none;margin-top:16px;">
                             <div class="perfil-section-title"><span>✍️</span> Minha Assinatura (certificados)</div>
                             <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">Sua assinatura será usada nos certificados de graduação dos alunos.</div>
@@ -23631,7 +23671,7 @@
             if (tabName === 'adm-painel') { loadAdminPanel(); loadAdminFeedbacks(); }
             if (tabName === 'adm-alunos') loadStudentsList();
             if (tabName === 'adm-feedbacks') loadFeedbacksTab();
-            if (tabName === 'adm-graduacoes') { loadGradTab(); loadPendingGraduacoes(); initGradSistema(); try { loadMinhaAssinatura(); } catch(e){} }
+            if (tabName === 'adm-graduacoes') { loadGradTab(); loadPendingGraduacoes(); initGradSistema(); try { loadCertConfig(); loadMinhaAssinatura(); } catch(e){} }
             if (tabName === 'adm-presenca') initPresencaList();
             if (tabName === 'adm-campeonato') initCampAdmin();
             if (tabName === 'adm-sistema') {
@@ -39386,7 +39426,7 @@
             try {
                 var res = await secureFetch('getDadosCertificado', { email: emailAluno || '', profEmail: profEmail || '' });
                 if (!res || !res.success) { alert((res&&res.message)||'Erro ao gerar'); loading.remove(); return; }
-                await _desenharCertificado(res.aluno, res.assinantes || [], res.data);
+                await _desenharCertificado(res.aluno, res.assinantes || [], res.data, res.layout || {});
             } catch(e) { alert('Erro: ' + e.message); }
             loading.remove();
         }
@@ -39401,59 +39441,90 @@
             });
         }
 
-        async function _desenharCertificado(aluno, assinantes, data) {
+        // Escurece uma cor hex por um fator (0-1)
+        function _darken(hex, f) {
+            try {
+                hex = (hex||'#C9A23A').replace('#','');
+                if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+                var r = parseInt(hex.substr(0,2),16), g = parseInt(hex.substr(2,2),16), b = parseInt(hex.substr(4,2),16);
+                r = Math.round(r*(1-f)); g = Math.round(g*(1-f)); b = Math.round(b*(1-f));
+                return 'rgb('+r+','+g+','+b+')';
+            } catch(e) { return '#8C6A0A'; }
+        }
+
+        async function _desenharCertificado(aluno, assinantes, data, cfg) {
+            cfg = cfg || {};
+            var cor   = cfg.cor || '#C9A23A';
+            var corEsc = _darken(cor, 0.35);
+            var titulo = (cfg.titulo !== undefined && cfg.titulo !== '') ? cfg.titulo : 'CERTIFICADO';
+            var subt   = (cfg.subtitulo !== undefined) ? cfg.subtitulo : 'DE GRADUAÇÃO';
+
             var W = 1414, H = 1000; // A4 paisagem em px (~120dpi)
             var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
             var ctx = cv.getContext('2d');
 
             // Fundo branco
             ctx.fillStyle = '#fffdf8'; ctx.fillRect(0,0,W,H);
-            // Borda dourada dupla
-            ctx.strokeStyle = '#C9A23A'; ctx.lineWidth = 8; ctx.strokeRect(30,30,W-60,H-60);
-            ctx.strokeStyle = '#8C6A0A'; ctx.lineWidth = 2; ctx.strokeRect(48,48,W-96,H-96);
+            // Borda dupla com a cor de destaque
+            ctx.strokeStyle = cor;    ctx.lineWidth = 8; ctx.strokeRect(30,30,W-60,H-60);
+            ctx.strokeStyle = corEsc; ctx.lineWidth = 2; ctx.strokeRect(48,48,W-96,H-96);
 
-            // Garante fonte Cinzel carregada
             try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch(e){}
+
+            // Logo da academia (topo central, se houver) — empurra o título pra baixo
+            var topY = 180;
+            if (cfg.logo) {
+                var logoImg = await _carregarImg(cfg.logo);
+                if (logoImg) {
+                    var lw = 150, lh = 150, lr = logoImg.width / logoImg.height;
+                    if (lr > 1) { lh = lw / lr; } else { lw = lh * lr; }
+                    ctx.drawImage(logoImg, W/2 - lw/2, 70, lw, lh);
+                    topY = 280; // título desce pra acomodar o logo
+                }
+            }
 
             ctx.textAlign = 'center';
             // Título
-            ctx.fillStyle = '#C9A23A';
+            ctx.fillStyle = cor;
             ctx.font = '900 64px Cinzel, serif';
-            ctx.fillText('CERTIFICADO', W/2, 180);
-            ctx.fillStyle = '#8C6A0A';
-            ctx.font = '700 26px Cinzel, serif';
-            ctx.fillText('DE GRADUAÇÃO', W/2, 225);
+            ctx.fillText((titulo||'').toUpperCase(), W/2, topY);
+            if (subt) {
+                ctx.fillStyle = corEsc;
+                ctx.font = '700 26px Cinzel, serif';
+                ctx.fillText(subt.toUpperCase(), W/2, topY + 45);
+            }
 
+            var baseLine = topY + 150;
             // "Certificamos que"
             ctx.fillStyle = '#555';
             ctx.font = '400 24px Manrope, sans-serif';
-            ctx.fillText('Certificamos que', W/2, 330);
+            ctx.fillText('Certificamos que', W/2, baseLine);
 
             // Nome do aluno
             ctx.fillStyle = '#1a1a1a';
             ctx.font = '800 56px Cinzel, serif';
-            ctx.fillText((aluno.nome||'').toUpperCase(), W/2, 400);
+            ctx.fillText((aluno.nome||'').toUpperCase(), W/2, baseLine + 70);
 
             // Linha decorativa
-            ctx.strokeStyle = '#C9A23A'; ctx.lineWidth = 2;
-            ctx.beginPath(); ctx.moveTo(W/2-200, 425); ctx.lineTo(W/2+200, 425); ctx.stroke();
+            ctx.strokeStyle = cor; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(W/2-200, baseLine + 95); ctx.lineTo(W/2+200, baseLine + 95); ctx.stroke();
 
             // Texto graduação
             ctx.fillStyle = '#555'; ctx.font = '400 23px Manrope, sans-serif';
-            ctx.fillText('foi graduado(a) à faixa', W/2, 490);
+            ctx.fillText('foi graduado(a) à faixa', W/2, baseLine + 160);
 
             var grauTxt = (aluno.grau && parseInt(aluno.grau) > 0) ? (' · ' + aluno.grau + 'º grau') : '';
-            ctx.fillStyle = '#C9A23A'; ctx.font = '800 44px Cinzel, serif';
-            ctx.fillText((aluno.faixa||'').toUpperCase() + grauTxt, W/2, 550);
+            ctx.fillStyle = cor; ctx.font = '800 44px Cinzel, serif';
+            ctx.fillText((aluno.faixa||'').toUpperCase() + grauTxt, W/2, baseLine + 220);
 
             if (aluno.ct) {
                 ctx.fillStyle = '#555'; ctx.font = '400 22px Manrope, sans-serif';
-                ctx.fillText('na ' + aluno.ct, W/2, 600);
+                ctx.fillText('na ' + aluno.ct, W/2, baseLine + 270);
             }
 
             // Data
             ctx.fillStyle = '#888'; ctx.font = '400 20px Manrope, sans-serif';
-            ctx.fillText(data || '', W/2, 660);
+            ctx.fillText(data || '', W/2, baseLine + 330);
 
             // ── Assinaturas (1 a 3, distribuídas) ──
             var n = Math.min(assinantes.length, 3);
@@ -39464,16 +39535,13 @@
                 var slotW = (W - 200) / n;
                 for (var s = 0; s < n; s++) {
                     var cx = 100 + slotW * s + slotW / 2;
-                    // Imagem da assinatura
                     if (imgs[s]) {
                         var iw = 200, ih = 70, ratio = imgs[s].width / imgs[s].height;
                         if (ratio > iw/ih) { ih = iw / ratio; } else { iw = ih * ratio; }
                         ctx.drawImage(imgs[s], cx - iw/2, baseY - ih, iw, ih);
                     }
-                    // Linha
                     ctx.strokeStyle = '#999'; ctx.lineWidth = 1;
                     ctx.beginPath(); ctx.moveTo(cx - 130, lineY); ctx.lineTo(cx + 130, lineY); ctx.stroke();
-                    // Nome + título
                     ctx.fillStyle = '#1a1a1a'; ctx.font = '700 20px Manrope, sans-serif';
                     ctx.fillText(assinantes[s].nome || '', cx, lineY + 28);
                     if (assinantes[s].titulo) {
@@ -39483,7 +39551,6 @@
                 }
             }
 
-            // Mostra preview + download
             _mostrarCertificadoPreview(cv, aluno.nome);
         }
 
@@ -39624,6 +39691,82 @@
             var res = await secureFetch('setLiderEquipe', { email: email });
             if (res && res.success) { if (msg) { msg.style.color = '#4ade80'; msg.textContent = email ? '✅ Líder definido!' : '✅ Líder removido.'; } }
             else { if (msg) { msg.style.color = '#f87171'; msg.textContent = '❌ ' + ((res && res.message) || 'Erro'); } }
+        }
+
+        // ═══ PERSONALIZAR CERTIFICADO (logo + cor + textos) — só admin ═══
+        var _certLogoData = '';
+
+        async function loadCertConfig() {
+            var sec = document.getElementById('perfilSecCertConfig');
+            if (!sec || !isAdmin()) { if (sec) sec.style.display = 'none'; return; }
+            sec.style.display = '';
+            try {
+                var res = await secureFetch('getCertificadoConfig', {});
+                var cfg = (res && res.success && res.layout) ? res.layout : {};
+                _certLogoData = cfg.logo || '';
+                var prev = document.getElementById('certLogoPreview');
+                var empty = document.getElementById('certLogoEmpty');
+                if (_certLogoData) { prev.src = _certLogoData; prev.style.display = ''; empty.style.display = 'none'; }
+                else { prev.style.display = 'none'; empty.style.display = ''; }
+                document.getElementById('certCorInput').value   = cfg.cor || '#C9A23A';
+                document.getElementById('certTituloInput').value = (cfg.titulo !== undefined) ? cfg.titulo : 'CERTIFICADO';
+                document.getElementById('certSubtInput').value   = (cfg.subtitulo !== undefined) ? cfg.subtitulo : 'DE GRADUAÇÃO';
+            } catch(e) {}
+        }
+
+        function _certLogoUpload(input) {
+            var file = input.files && input.files[0];
+            if (!file) return;
+            var reader = new FileReader();
+            reader.onload = function(ev) {
+                var img = new Image();
+                img.onload = function() {
+                    // Redimensiona para no máx 300px (mantém base64 pequeno p/ caber na planilha)
+                    var max = 300, w = img.width, h = img.height;
+                    if (w > h && w > max) { h = h * max / w; w = max; }
+                    else if (h > max) { w = w * max / h; h = max; }
+                    var c = document.createElement('canvas'); c.width = w; c.height = h;
+                    c.getContext('2d').drawImage(img, 0, 0, w, h);
+                    _certLogoData = c.toDataURL('image/png');
+                    var prev = document.getElementById('certLogoPreview');
+                    prev.src = _certLogoData; prev.style.display = '';
+                    document.getElementById('certLogoEmpty').style.display = 'none';
+                };
+                img.src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function _certLogoLimpar() {
+            _certLogoData = '';
+            document.getElementById('certLogoPreview').style.display = 'none';
+            document.getElementById('certLogoEmpty').style.display = '';
+            document.getElementById('certLogoInput').value = '';
+        }
+
+        function _certFormConfig() {
+            return {
+                logo:      _certLogoData || '',
+                cor:       document.getElementById('certCorInput').value || '#C9A23A',
+                titulo:    document.getElementById('certTituloInput').value || 'CERTIFICADO',
+                subtitulo: document.getElementById('certSubtInput').value
+            };
+        }
+
+        async function salvarCertConfig() {
+            var msg = document.getElementById('certConfigMsg');
+            if (msg) { msg.style.color = 'var(--text-3)'; msg.textContent = 'Salvando...'; }
+            var res = await secureFetch('saveCertConfig', _certFormConfig());
+            if (res && res.success) { if (msg) { msg.style.color = '#4ade80'; msg.textContent = '✅ Configuração salva!'; } }
+            else { if (msg) { msg.style.color = '#f87171'; msg.textContent = '❌ ' + ((res && res.message) || 'Erro'); } }
+        }
+
+        // Pré-visualiza com dados de exemplo aplicando o que está no formulário
+        async function previewCertificado() {
+            var cfg = _certFormConfig();
+            var exemplo = { nome: 'Nome do Aluno', faixa: 'Preta', grau: '1', ct: (window.CT_NOME || 'Sua Academia') };
+            var assEx = [{ nome: 'Professor', titulo: 'Faixa Preta', assinatura: '' }];
+            await _desenharCertificado(exemplo, assEx, new Date().toLocaleDateString('pt-BR'), cfg);
         }
 
         // ═══ ABA EVENTOS ════════════════════════════════════════════════════
