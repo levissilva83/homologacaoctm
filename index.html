@@ -8757,9 +8757,10 @@
 
                         <!-- ===== MEU CERTIFICADO (alunos) ===== -->
                         <div class="perfil-section" id="perfilSecCertificado" style="margin-top:16px;">
-                            <div class="perfil-section-title"><span>📜</span> Meu Certificado de Graduação</div>
-                            <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">Baixe o certificado da sua graduação atual, assinado pelo seu professor.</div>
-                            <button class="perfil-save-btn" onclick="gerarCertificado('')" style="background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;">📜 Gerar meu certificado</button>
+                            <div class="perfil-section-title"><span>📜</span> Meus Certificados de Graduação</div>
+                            <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">Baixe o certificado da sua graduação atual ou de graduações anteriores, assinado pelo seu professor.</div>
+                            <button class="perfil-save-btn" onclick="gerarCertificado('')" style="background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;">📜 Gerar certificado da faixa atual</button>
+                            <div id="meusCertsRetroLista" style="margin-top:12px;"></div>
                         </div>
 
                         <!-- ===== MINHA ASSINATURA (professores) ===== -->
@@ -9573,6 +9574,13 @@
                             <input type="text" id="certTituloInput" maxlength="40" placeholder="CERTIFICADO" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:9px;color:var(--text-1);font-size:13px;margin-bottom:10px;">
                             <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:6px;">Subtítulo</div>
                             <input type="text" id="certSubtInput" maxlength="40" placeholder="DE GRADUAÇÃO" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:9px;color:var(--text-1);font-size:13px;margin-bottom:12px;">
+
+                            <!-- Assinantes do certificado (até 4) -->
+                            <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:4px;">✍️ Assinantes do certificado <span style="color:var(--text-3);font-weight:400;">(marque até 4 · só quem tem assinatura cadastrada)</span></div>
+                            <div style="font-size:10px;color:var(--text-3);margin-bottom:8px;">Se não marcar ninguém, o certificado usa o professor + líder da equipe.</div>
+                            <div id="certSignatariosList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
+                                <div style="font-size:11px;color:var(--text-3);">Carregando professores...</div>
+                            </div>
 
                             <div style="display:flex;gap:8px;">
                                 <button class="perfil-save-btn" style="flex:1" onclick="salvarCertConfig()">💾 Salvar</button>
@@ -15994,6 +16002,7 @@
                 loadProfile();
                 loadPagamentos();
                 _carregarMeusContratos(); // carrega contratos e termos do CT
+                try { loadMeusCertsRetro(); } catch(e){}
                 // Renderiza seção de modalidades/perfil principal
                 renderPerfilPrincipalSection();
                 // Monta lista de CTs permitidos a partir do currentUser (disponível desde o login)
@@ -39428,18 +39437,62 @@
         }
 
         // ═══ GERAÇÃO DE CERTIFICADO (canvas → PNG/PDF) ══════════════════════
-        async function gerarCertificado(emailAluno, profEmail) {
+        async function gerarCertificado(emailAluno, profEmail, gradOverride) {
             var loading = document.createElement('div');
             loading.id = 'certLoading';
             loading.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10000;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;';
             loading.textContent = 'Gerando certificado...';
             document.body.appendChild(loading);
             try {
-                var res = await secureFetch('getDadosCertificado', { email: emailAluno || '', profEmail: profEmail || '' });
+                var payload = { email: emailAluno || '', profEmail: profEmail || '' };
+                if (gradOverride) {
+                    payload.faixaCert = gradOverride.faixa || '';
+                    payload.grauCert  = (gradOverride.grau !== undefined) ? gradOverride.grau : '';
+                    payload.dataCert  = gradOverride.data || '';
+                }
+                var res = await secureFetch('getDadosCertificado', payload);
                 if (!res || !res.success) { alert((res&&res.message)||'Erro ao gerar'); loading.remove(); return; }
                 await _desenharCertificado(res.aluno, res.assinantes || [], res.data, res.layout || {});
             } catch(e) { alert('Erro: ' + e.message); }
             loading.remove();
+        }
+
+        // ── Certificados retroativos do aluno ────────────────────────────────
+        var _meusCertsRetro = [];
+        var _CERT_MODL = { bjj:'BJJ', bjj_kids:'BJJ Kids', muay_thai:'Muay Thai', muaythai:'Muay Thai', muaythai_fcme:'Muay Thai FCMTE', muaythai_trad:'Muay Thai Trad.', muay_thai_khan:'Muay Thai Khan', judo:'Judô', karate:'Karatê', karate_kyokushin:'Kyokushin', karate_gojuryu:'Goju-Ryu', boxe:'Boxe', mma:'MMA', wrestling:'Wrestling', kickboxing:'Kickboxing', taekwondo:'Taekwondo', capoeira:'Capoeira', wushu_sanda:'Wushu Sanda' };
+
+        async function loadMeusCertsRetro() {
+            var box = document.getElementById('meusCertsRetroLista');
+            if (!box) return;
+            box.innerHTML = '';
+            try {
+                var res = await secureFetch('getMyGraduacoes', {});
+                var evs = (res && res.success && res.events) ? res.events : [];
+                evs = evs.filter(function(e){
+                    var st = (e.status || 'APROVADO').toString().toUpperCase();
+                    return st === 'APROVADO' && (e.faixa || e.nivel);
+                });
+                if (!evs.length) return;
+                _meusCertsRetro = evs.slice().reverse(); // mais recentes primeiro
+                var h = '<div style="font-size:11px;font-weight:700;color:var(--text-2);margin:6px 0 8px;">Graduações anteriores</div>';
+                _meusCertsRetro.forEach(function(ev, idx) {
+                    var faixa = ev.faixa || ev.nivel || '';
+                    var grau  = (ev.grau && parseInt(ev.grau) > 0) ? (' · ' + ev.grau + 'º grau') : '';
+                    var mod   = ev.modalidade ? (' · ' + (_CERT_MODL[ev.modalidade] || ev.modalidade)) : '';
+                    h += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 11px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:9px;margin-bottom:6px;">'
+                       + '<div style="min-width:0;"><div style="font-size:12px;color:var(--text-1);font-weight:600;">' + escapeHtml(faixa) + grau + '</div>'
+                       + '<div style="font-size:10px;color:var(--text-3);">' + escapeHtml((ev.data || '') + mod) + '</div></div>'
+                       + '<button onclick="_baixarCertRetro(' + idx + ')" style="flex-shrink:0;padding:7px 14px;background:rgba(201,162,58,0.12);color:#C9A23A;border:1px solid rgba(201,162,58,0.3);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">⬇️ Baixar</button>'
+                       + '</div>';
+                });
+                box.innerHTML = h;
+            } catch(e) { box.innerHTML = ''; }
+        }
+
+        function _baixarCertRetro(idx) {
+            var ev = _meusCertsRetro[idx];
+            if (!ev) return;
+            gerarCertificado('', '', { faixa: ev.faixa || ev.nivel || '', grau: ev.grau || 0, data: ev.data || '' });
         }
 
         function _carregarImg(src) {
@@ -39546,7 +39599,7 @@
             ctx.fillText(data || '', W/2, baseLine + 330);
 
             // ── Assinaturas (1 a 3, distribuídas) ──
-            var n = Math.min(assinantes.length, 3);
+            var n = Math.min(assinantes.length, 4);
             if (n > 0) {
                 var imgs = [];
                 for (var k = 0; k < n; k++) imgs.push(await _carregarImg(assinantes[k].assinatura));
@@ -39729,7 +39782,41 @@
                 document.getElementById('certCorInput').value   = cfg.cor || '#C9A23A';
                 document.getElementById('certTituloInput').value = (cfg.titulo !== undefined) ? cfg.titulo : 'CERTIFICADO';
                 document.getElementById('certSubtInput').value   = (cfg.subtitulo !== undefined) ? cfg.subtitulo : 'DE GRADUAÇÃO';
+                await _renderSignatarios(cfg.signatarios || []);
             } catch(e) {}
+        }
+
+        // Lista de professores com assinatura, como checkboxes (assinantes fixos)
+        async function _renderSignatarios(selecionados) {
+            var box = document.getElementById('certSignatariosList');
+            if (!box) return;
+            var sel = {}; (selecionados||[]).forEach(function(e){ sel[(e||'').toLowerCase()] = true; });
+            try {
+                var res = await secureFetch('getAssinaturasProfs', {});
+                var profs = (res && res.success && res.professores) ? res.professores.filter(function(p){return p.temAssinatura;}) : [];
+                if (!profs.length) {
+                    box.innerHTML = '<div style="font-size:11px;color:var(--text-3);">Nenhum professor cadastrou assinatura ainda.</div>';
+                    return;
+                }
+                var h = '';
+                profs.forEach(function(p) {
+                    var checked = sel[(p.email||'').toLowerCase()] ? 'checked' : '';
+                    var rotulo = escapeHtml((p.nome || p.email) + (p.titulo ? ' — ' + p.titulo : ''));
+                    h += '<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px;color:var(--text-1);">'
+                       + '<input type="checkbox" class="certSigCb" value="' + escapeHtml(p.email) + '" ' + checked + ' style="width:16px;height:16px;accent-color:var(--adm-primary);"> '
+                       + rotulo + '</label>';
+                });
+                box.innerHTML = h;
+            } catch(e) {
+                box.innerHTML = '<div style="font-size:11px;color:#f87171;">Erro ao carregar professores.</div>';
+            }
+        }
+
+        function _getSignatariosSelecionados() {
+            var cbs = document.querySelectorAll('.certSigCb');
+            var out = [];
+            cbs.forEach(function(cb){ if (cb.checked) out.push(cb.value); });
+            return out.slice(0, 4);
         }
 
         function _certLogoRender(slot) {
@@ -39774,7 +39861,8 @@
                 logo2:     _certLogoData2 || '',
                 cor:       document.getElementById('certCorInput').value || '#C9A23A',
                 titulo:    document.getElementById('certTituloInput').value || 'CERTIFICADO',
-                subtitulo: document.getElementById('certSubtInput').value
+                subtitulo: document.getElementById('certSubtInput').value,
+                signatarios: _getSignatariosSelecionados()
             };
         }
 
