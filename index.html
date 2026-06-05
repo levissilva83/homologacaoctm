@@ -10650,6 +10650,7 @@
               </div>
             </div>
             <div id="asnVencAviso" style="display:none;margin:12px 4px 0;padding:11px 14px;border-radius:11px;font-size:12.5px;font-weight:700;text-align:center;"></div>
+            <button id="asnBtnRegularizar" onclick="asnRegularizarPagamento()" style="display:none;width:calc(100% - 8px);margin:10px 4px 0;padding:13px;background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;border:none;border-radius:11px;font-size:14px;font-weight:800;cursor:pointer;">&#128179; Pagar agora e regularizar</button>
             <div class="asn-status-actions">
               <button onclick="asnAbrirTrocarPlano()" class="asn-btn-outline asn-btn-gold">&#128260; Trocar Plano</button>
               <button onclick="asnConfirmarCancelar()" class="asn-btn-outline asn-btn-danger">&#10005; Cancelar</button>
@@ -41832,6 +41833,16 @@
                         }
                     }
                 }
+                // Botão "Pagar agora e regularizar": aparece quando vencido ou inadimplente
+                var _btnReg = _el('asnBtnRegularizar');
+                if (_btnReg) {
+                    var _st = (a.status || '').toString().toUpperCase();
+                    var _vencido = false;
+                    var _dv = _parseVencDate(a.proximoVencimento || '');
+                    if (_dv) { var _h2 = new Date(); _h2.setHours(0,0,0,0); _dv.setHours(0,0,0,0); _vencido = (_dv < _h2); }
+                    var _mostrarReg = _vencido || _st === 'INADIMPLENTE' || _st === 'EXPIRADO' || _st === 'BLOQUEADO';
+                    _btnReg.style.display = _mostrarReg ? 'block' : 'none';
+                }
             } catch(_eVenc) {}
 
             // Oculta ID de PIX (pix_... / manual_...) — não é útil para o usuário
@@ -41980,6 +41991,30 @@
                 if (m) m.style.display = 'none';
             };
         })();
+
+        // Botão "Pagar agora e regularizar" — para quem JÁ é assinante mas venceu.
+        // Seleciona o plano atual e abre o pagamento (contrato → PIX/cartão).
+        window.asnRegularizarPagamento = function() {
+            try {
+                var a = _assinatura || {};
+                var alvo = (a.planoId || a.plano || '').toString().toLowerCase();
+                var plano = null;
+                if (alvo && _planos && _planos.length) {
+                    plano = _planos.filter(function(p){ return (p.id_plano || '').toString().toLowerCase() === alvo; })[0] || null;
+                }
+                if (!plano && _planos && _planos.length === 1) plano = _planos[0];
+                if (!plano) {
+                    // Sem match claro: abre o seletor de planos pra escolher e pagar
+                    if (typeof asnAbrirTrocarPlano === 'function') asnAbrirTrocarPlano();
+                    else showToast('Selecione seu plano para pagar', 'error');
+                    return;
+                }
+                _planoSel = plano;
+                asnAbrirFormCartao(); // contrato → formulário de pagamento (PIX/cartão)
+            } catch(e) {
+                showToast('Erro ao abrir pagamento: ' + e.message, 'error');
+            }
+        };
 
         // Opens the upgrade plan selector
         // Botão "Pagar agora" — leva direto para o primeiro plano disponível
