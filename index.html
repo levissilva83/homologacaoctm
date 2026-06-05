@@ -19964,6 +19964,32 @@
         }
 
         // ── Carrega status de pagamento do aluno ──────────────
+        // Sincroniza o vencimento da mensalidade no currentUser com o valor AO VIVO
+        // (vindo do getPagamentoStatus), pra o banner da home não mostrar data antiga
+        // do login. Recalcula dias restantes e os flags e atualiza a sessão.
+        function _syncMensalidadeVenc(proxVenc, status) {
+            try {
+                if (!currentUser || !proxVenc) return;
+                var d = _parseVencDate(proxVenc);
+                if (!d) return;
+                var hoje = new Date(); hoje.setHours(0,0,0,0); d.setHours(0,0,0,0);
+                var dias = Math.round((d - hoje) / 86400000);
+                var dataBR = ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+'/'+d.getFullYear();
+                var st = (status || (currentUser.mensalidadeVenc && currentUser.mensalidadeVenc.status) || 'PENDENTE');
+                currentUser.mensalidadeVenc = {
+                    data:          dataBR,
+                    diasRestantes: dias,
+                    status:        st,
+                    atrasado:      dias < 0,
+                    venceHoje:     dias === 0,
+                    venceEmBreve:  dias > 0 && dias <= 5
+                };
+                try { localStorage.setItem('bjjUser', JSON.stringify(currentUser)); } catch(e){}
+                // Re-renderiza o banner da home, se a função existir
+                try { if (typeof renderModalidadeHome === 'function') renderModalidadeHome(); } catch(e){}
+            } catch(e) {}
+        }
+
         async function loadPagamentos() {
             var el = document.getElementById('pagamentosContainer');
             if (!el) return;
@@ -19971,6 +19997,7 @@
             try {
                 var data = await secureFetch('getPagamentoStatus', { email: currentUser.email });
                 _pagData = data;
+                _syncMensalidadeVenc(data.proximoVencimento, data.status);
                 renderPagamentos(data);
 
                 // Retoma polling automaticamente se PIX ainda pendente
