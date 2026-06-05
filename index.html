@@ -10649,6 +10649,7 @@
                 <div id="asnSubId" class="asn-status-cell-sub"></div>
               </div>
             </div>
+            <div id="asnVencAviso" style="display:none;margin:12px 4px 0;padding:11px 14px;border-radius:11px;font-size:12.5px;font-weight:700;text-align:center;"></div>
             <div class="asn-status-actions">
               <button onclick="asnAbrirTrocarPlano()" class="asn-btn-outline asn-btn-gold">&#128260; Trocar Plano</button>
               <button onclick="asnConfirmarCancelar()" class="asn-btn-outline asn-btn-danger">&#10005; Cancelar</button>
@@ -24359,6 +24360,22 @@
                 }
             } catch(e) {}
             return val.toString();
+        }
+
+        // Converte a próxima cobrança (dd/MM/yyyy, ISO ou Date string) em objeto Date.
+        // Retorna null se não der pra interpretar.
+        function _parseVencDate(val) {
+            if (!val) return null;
+            try {
+                var s = val.toString().trim();
+                var m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);     // dd/MM/yyyy
+                if (m) return new Date(parseInt(m[3]), parseInt(m[2]) - 1, parseInt(m[1]));
+                m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);            // yyyy-MM-dd (ISO)
+                if (m) return new Date(parseInt(m[1]), parseInt(m[2]) - 1, parseInt(m[3]));
+                var d = new Date(s);                                // fallback
+                if (!isNaN(d.getTime())) return d;
+            } catch(e) {}
+            return null;
         }
 
         function fmtDateBR(isoStr) {
@@ -41699,6 +41716,41 @@
             // Formata próxima cobrança em pt-BR
             var _vencAsn = _formatVencBR(a.proximoVencimento || '');
             _txt('asnProximaCobranca', _vencAsn || '-');
+
+            // ── Aviso de vencimento (compara a próxima cobrança com hoje) ──
+            try {
+                var _avEl = _el('asnVencAviso');
+                if (_avEl) {
+                    var _d = _parseVencDate(a.proximoVencimento || '');
+                    if (!_d) { _avEl.style.display = 'none'; }
+                    else {
+                        var _hoje = new Date(); _hoje.setHours(0,0,0,0);
+                        _d.setHours(0,0,0,0);
+                        var _dias = Math.round((_d - _hoje) / 86400000);
+                        var _txtAv = '', _bg = '', _bd = '', _cor = '';
+                        if (_dias < 0) {
+                            var _ha = Math.abs(_dias);
+                            _txtAv = '🔴 Cobrança vencida há ' + _ha + ' dia' + (_ha > 1 ? 's' : '') + ' — verifique seu pagamento';
+                            _bg = 'rgba(248,113,113,0.12)'; _bd = '#f87171'; _cor = '#fca5a5';
+                        } else if (_dias === 0) {
+                            _txtAv = '🟡 Sua cobrança vence hoje';
+                            _bg = 'rgba(251,191,36,0.12)'; _bd = '#fbbf24'; _cor = '#fde68a';
+                        } else if (_dias <= 7) {
+                            _txtAv = '🟡 Sua assinatura vence em ' + _dias + ' dia' + (_dias > 1 ? 's' : '');
+                            _bg = 'rgba(251,191,36,0.12)'; _bd = '#fbbf24'; _cor = '#fde68a';
+                        }
+                        if (_txtAv) {
+                            _avEl.textContent = _txtAv;
+                            _avEl.style.background = _bg;
+                            _avEl.style.border = '1.5px solid ' + _bd;
+                            _avEl.style.color = _cor;
+                            _avEl.style.display = '';
+                        } else {
+                            _avEl.style.display = 'none';
+                        }
+                    }
+                }
+            } catch(_eVenc) {}
 
             // Oculta ID de PIX (pix_... / manual_...) — não é útil para o usuário
             var _subId = a.subscriptionId || '';
