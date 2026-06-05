@@ -15853,6 +15853,14 @@
                 loadAdminPanel();
                 initAdminPlano();
                 checkSuperAdmin(); // verifica superadmin e ajusta UI
+                // TRAVA: se a assinatura está vencida, entra direto na Central de Assinatura
+                try {
+                    _aplicarTravaNav();
+                    if (_assinaturaTravada()) {
+                        _toastAssinatura('Assinatura vencida — regularize o pagamento para liberar o sistema.');
+                        setTimeout(function(){ try { switchAdminTab('adm-sistema'); } catch(e){} }, 200);
+                    }
+                } catch(eTrava) {}
             } else {
                 // STUDENT VIEW
                 document.getElementById('adminScreen').style.display = 'none';
@@ -23674,6 +23682,12 @@
         }
 
                 function switchAdminTab(tabName, evt) {
+            // TRAVA: assinatura vencida → só libera a aba Assinatura (dentro de adm-sistema)
+            if (_assinaturaTravada() && tabName !== 'adm-sistema' && tabName !== 'adm-assinatura') {
+                _toastAssinatura('Assinatura vencida — regularize o pagamento para acessar o sistema.');
+                tabName = 'adm-sistema';
+                evt = null;
+            }
             document.querySelectorAll('.adm-tab').forEach(function(t) { t.classList.remove('active'); });
             // Ao abrir Financeiro: mostra pagamentos por padrão
             if (tabName === 'adm-financeiro') {
@@ -23740,6 +23754,8 @@
                 var bAsn = document.getElementById('sisBtnAssinante');
                 if (bSis) bSis.classList.add('active');
                 if (bAsn) bAsn.classList.remove('active');
+                // TRAVA: se a assinatura está vencida, abre direto a Central de Assinatura
+                if (_assinaturaTravada()) { setTimeout(function(){ try { sisSwitchTab('assinante'); } catch(e){} }, 60); }
             }
             if (tabName === 'adm-superadmin') { if (isSuperAdmin()) {
                 saSubTab('licenciados');
@@ -23753,6 +23769,11 @@
 
         // ── sisSwitchTab — controla sub-tabs do Sistema & Manutenção ──
         function sisSwitchTab(tab) {
+            // TRAVA: assinatura vencida → só a Central de Assinatura fica acessível
+            if (_assinaturaTravada() && tab !== 'assinante') {
+                _toastAssinatura('Regularize sua assinatura para acessar esta área.');
+                tab = 'assinante';
+            }
             ['sistema','assinante'].forEach(function(t) {
                 var panel = document.getElementById('sis-panel-' + t);
                 var btn   = document.getElementById('sisBtn' + t.charAt(0).toUpperCase() + t.slice(1));
@@ -24376,6 +24397,57 @@
                 if (!isNaN(d.getTime())) return d;
             } catch(e) {}
             return null;
+        }
+
+        // ── TRAVA POR ASSINATURA VENCIDA ─────────────────────────────────────
+        // Retorna true quando o admin deve ficar preso na aba Assinatura:
+        //   status INADIMPLENTE/EXPIRADO/BLOQUEADO/CANCELADO  OU  data vencida.
+        // ATIVO/PAGO com data futura = liberado normalmente.
+        function _assinaturaTravada() {
+            try {
+                if (!currentUser) return false;
+                if (!isAdmin || !isAdmin()) return false; // trava só faz sentido p/ admin
+                var st = (currentUser.licStatus || '').toString().toUpperCase();
+                if (st === 'INADIMPLENTE' || st === 'EXPIRADO' || st === 'BLOQUEADO' || st === 'CANCELADO') return true;
+                var venc = _parseVencDate(currentUser.licProxVenc || '');
+                if (venc) {
+                    var hoje = new Date(); hoje.setHours(0,0,0,0); venc.setHours(0,0,0,0);
+                    if (venc < hoje) return true; // data passou
+                }
+                return false;
+            } catch(e) { return false; }
+        }
+
+        function _toastAssinatura(msg) {
+            try {
+                var t = document.getElementById('_toastAsnTrava');
+                if (!t) {
+                    t = document.createElement('div'); t.id = '_toastAsnTrava';
+                    t.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:90px;z-index:99999;background:rgba(248,113,113,0.96);color:#2a0707;font-size:12.5px;font-weight:700;padding:11px 18px;border-radius:10px;max-width:88%;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.45);';
+                    document.body.appendChild(t);
+                }
+                t.textContent = msg; t.style.display = 'block';
+                clearTimeout(window._toastAsnTimer);
+                window._toastAsnTimer = setTimeout(function(){ t.style.display = 'none'; }, 3200);
+            } catch(e) {}
+        }
+
+        // Aplica o visual de bloqueio nos botões do menu admin (dim + cadeado)
+        function _aplicarTravaNav() {
+            try {
+                var travado = _assinaturaTravada();
+                document.querySelectorAll('#adminNav .bnav-btn').forEach(function(b) {
+                    var alvo = (b.getAttribute('onclick') || '');
+                    var ehSistema = alvo.indexOf('adm-sistema') > -1 || alvo.indexOf('adm-assinatura') > -1;
+                    if (travado && !ehSistema) {
+                        b.style.opacity = '0.35';
+                        b.style.filter = 'grayscale(1)';
+                    } else {
+                        b.style.opacity = '';
+                        b.style.filter = '';
+                    }
+                });
+            } catch(e) {}
         }
 
         function fmtDateBR(isoStr) {
@@ -41703,6 +41775,16 @@
 
         function _renderStatus() {
             var a = _assinatura; if (!a) return;
+            // Mantém o currentUser sincronizado com o status mais recente da assinatura
+            // (assim a trava de navegação destrava na hora após o pagamento).
+            try {
+                if (currentUser) {
+                    if (a.status) currentUser.licStatus = a.status;
+                    if (a.proximoVencimento) currentUser.licProxVenc = a.proximoVencimento;
+                    try { localStorage.setItem('bjjUser', JSON.stringify(currentUser)); } catch(e){}
+                }
+                _aplicarTravaNav();
+            } catch(eSync) {}
             // Atualiza aviso de dias restantes na tela Sem Assinatura
             try {
                 var dRestantes = (typeof _diasRestantesTrial !== 'undefined') ? _diasRestantesTrial : null;
