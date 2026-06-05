@@ -10594,32 +10594,6 @@
                     </div>
                     <!-- ██ FIM TAXAS DE GRADUAÇÃO ██ -->
 
-                    <!-- ██ QUIOSQUE FACIAL ██ -->
-                    <div class="admin-section" id="quiosqueSection" style="margin-top:20px;">
-                        <div class="admin-section-title">🤳 Quiosque Facial</div>
-                        <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:12px;">
-                            Check-in por reconhecimento facial em tablet na recepção. O aluno não precisa fazer login — basta posicionar o rosto. (Requer fotos cadastradas e AWS Rekognition)
-                        </div>
-                        <div style="display:flex;flex-direction:column;gap:10px;">
-                            <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--adm-text-2);"><span>Ativar Quiosque</span>
-                                <input type="checkbox" id="qkAtivo" style="width:18px;height:18px;accent-color:#C9A23A;"></label>
-                            <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--adm-text-2);"><span>Confiança mínima (%)</span>
-                                <input type="number" id="qkConf" min="70" max="99" value="90" style="width:80px;padding:6px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;text-align:center;"></label>
-                            <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--adm-text-2);"><span>Tempo de retorno (seg)</span>
-                                <input type="number" id="qkTempo" min="1" max="15" value="3" style="width:80px;padding:6px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;text-align:center;"></label>
-                            <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--adm-text-2);"><span>Som de confirmação</span>
-                                <input type="checkbox" id="qkSom" checked style="width:18px;height:18px;accent-color:#C9A23A;"></label>
-                            <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--adm-text-2);"><span>Permitir visitantes</span>
-                                <input type="checkbox" id="qkVisit" style="width:18px;height:18px;accent-color:#C9A23A;"></label>
-                            <div style="display:flex;gap:8px;margin-top:6px;">
-                                <button onclick="salvarQuiosqueConfig()" style="flex:1;padding:11px;background:rgba(201,162,58,0.15);border:1px solid rgba(201,162,58,0.4);border-radius:10px;color:#C9A23A;font-size:13px;font-weight:800;cursor:pointer;">💾 Salvar</button>
-                                <button onclick="abrirQuiosque()" style="flex:1;padding:11px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;">📺 Abrir Quiosque</button>
-                            </div>
-                            <div id="qkMsg" style="font-size:11px;margin-top:4px;text-align:center;"></div>
-                        </div>
-                    </div>
-                    <!-- ██ FIM QUIOSQUE FACIAL ██ -->
-
                     <!-- Logout -->
                     <button class="perfil-logout-btn" onclick="handleLogout()" style="margin-top:16px;margin-bottom:80px;">🚪 Sair da Conta</button>
                     </div><!-- /sis-panel-sistema -->
@@ -21881,6 +21855,9 @@
 
                 if (backendOk) {
                     document.getElementById('avbFotoMsg').textContent = '✅ Foto salva com sucesso!';
+                    // Indexa o rosto no AWS Rekognition para reconhecimento no Quiosque
+                    // (mantém a coleção em sincronia com a foto da coluna U)
+                    try { indexarFaceAluno(currentUser.email, dataUrl); } catch(e) {}
                 } else {
                     // Fallback: tenta saveProfile normal (foto já está no campo)
                     try { await saveProfile(); } catch(e) {}
@@ -23863,7 +23840,6 @@
                 }
                 if (btn) btn.classList.toggle('active', t === tab);
             });
-            if (tab === 'sistema') { try { loadQuiosqueConfig(); } catch(e){} }
             // Só admin pode abrir Central do Assinante
             if (tab === 'assinante') {
                 if (!isAdmin()) { sisSwitchTab('sistema'); return; }
@@ -40052,42 +40028,6 @@
         }
 
         // ═══ ABA EVENTOS ════════════════════════════════════════════════════
-        // ── Quiosque Facial (admin) ──────────────────────────────────────────
-        async function loadQuiosqueConfig() {
-            try {
-                var ct = currentUser ? (currentUser.ct||'') : '';
-                var res = await secureFetch('getQuiosqueConfig', { ct: ct });
-                if (!res || !res.success || !res.config) return;
-                var c = res.config, el;
-                if (el = document.getElementById('qkAtivo')) el.checked = !!c.ativo;
-                if (el = document.getElementById('qkConf'))  el.value = c.confidence || 90;
-                if (el = document.getElementById('qkTempo')) el.value = c.tempo_retorno || 3;
-                if (el = document.getElementById('qkSom'))   el.checked = c.som_confirmacao !== false;
-                if (el = document.getElementById('qkVisit')) el.checked = !!c.permitir_visitante;
-            } catch(e){}
-        }
-        async function salvarQuiosqueConfig() {
-            var msg = document.getElementById('qkMsg');
-            var payload = {
-                ct: currentUser ? (currentUser.ct||'') : '',
-                ativo: document.getElementById('qkAtivo').checked,
-                confidence: parseInt(document.getElementById('qkConf').value)||90,
-                tempo_retorno: parseInt(document.getElementById('qkTempo').value)||3,
-                som_confirmacao: document.getElementById('qkSom').checked,
-                permitir_visitante: document.getElementById('qkVisit').checked,
-                camera_mode: 'user'
-            };
-            if (msg) { msg.textContent = 'Salvando...'; msg.style.color = 'var(--adm-text-3)'; }
-            try {
-                var res = await secureFetch('saveQuiosqueConfig', payload);
-                if (msg) { msg.textContent = (res&&res.success) ? ('✅ '+res.message) : ('❌ '+((res&&res.message)||'Erro')); msg.style.color = (res&&res.success)?'#4ade80':'#f87171'; }
-            } catch(e){ if (msg){ msg.textContent='❌ Erro de conexão'; msg.style.color='#f87171'; } }
-        }
-        function abrirQuiosque() {
-            var ct = currentUser ? encodeURIComponent(currentUser.ct||'') : '';
-            window.open('/quiosque.html?ctm=' + ct, '_blank');
-        }
-
         async function loadEventos() {
             var box = document.getElementById('eventosList'); if (!box) return;
             box.innerHTML = '<div style="text-align:center;padding:30px 0;color:rgba(255,255,255,0.4);font-size:12px;">Carregando...</div>';
