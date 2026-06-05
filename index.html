@@ -41833,15 +41833,27 @@
                         }
                     }
                 }
-                // Botão "Pagar agora e regularizar": aparece quando vencido ou inadimplente
+                // Botão de pagamento: aparece sempre que houver aviso (vencido, hoje
+                // ou vencendo em ≤7 dias) ou status problemático.
                 var _btnReg = _el('asnBtnRegularizar');
                 if (_btnReg) {
                     var _st = (a.status || '').toString().toUpperCase();
-                    var _vencido = false;
+                    var _dias2 = null;
                     var _dv = _parseVencDate(a.proximoVencimento || '');
-                    if (_dv) { var _h2 = new Date(); _h2.setHours(0,0,0,0); _dv.setHours(0,0,0,0); _vencido = (_dv < _h2); }
-                    var _mostrarReg = _vencido || _st === 'INADIMPLENTE' || _st === 'EXPIRADO' || _st === 'BLOQUEADO';
-                    _btnReg.style.display = _mostrarReg ? 'block' : 'none';
+                    if (_dv) { var _h2 = new Date(); _h2.setHours(0,0,0,0); _dv.setHours(0,0,0,0); _dias2 = Math.round((_dv - _h2) / 86400000); }
+                    var _statusRuim = (_st === 'INADIMPLENTE' || _st === 'EXPIRADO' || _st === 'BLOQUEADO');
+                    var _mostrarReg = _statusRuim || (_dias2 !== null && _dias2 <= 7);
+                    if (_mostrarReg) {
+                        // Texto adaptado: regularizar (vencido) vs renovar (a vencer)
+                        if (_statusRuim || (_dias2 !== null && _dias2 < 0)) {
+                            _btnReg.innerHTML = '&#128179; Pagar agora e regularizar';
+                        } else {
+                            _btnReg.innerHTML = '&#128179; Renovar agora';
+                        }
+                        _btnReg.style.display = 'block';
+                    } else {
+                        _btnReg.style.display = 'none';
+                    }
                 }
             } catch(_eVenc) {}
 
