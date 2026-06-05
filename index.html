@@ -42010,7 +42010,10 @@
                     return;
                 }
                 _planoSel = plano;
-                asnAbrirFormCartao(); // contrato → formulário de pagamento (PIX/cartão)
+                window._asnRegularizando = true;
+                // Renovação do mesmo plano: o contrato já foi aceito na 1ª assinatura,
+                // então pula a tela de contrato e vai direto ao pagamento (PIX/cartão).
+                asnAceitarContratoEProsseguir();
             } catch(e) {
                 showToast('Erro ao abrir pagamento: ' + e.message, 'error');
             }
@@ -42141,6 +42144,16 @@
 
         window.asnAceitarContratoEProsseguir = function() {
             asnFecharContrato();
+            // REGULARIZAÇÃO: o formulário fica dentro de #asnSemAssinatura, que está
+            // escondido para quem já é assinante. Revela o container e oculta a parte
+            // de "escolher plano" para mostrar só o pagamento.
+            if (window._asnRegularizando) {
+                var _sa = document.getElementById('asnSemAssinatura');
+                if (_sa) _sa.style.display = 'block';
+                var _pa = document.getElementById('asnPagarAgoraBox'); if (_pa) _pa.style.display = 'none';
+                var _lp = document.getElementById('asnListaPlanos');   if (_lp) _lp.style.display = 'none';
+                var _hd = _sa ? _sa.querySelector('.asn-page-header') : null; if (_hd) _hd.style.display = 'none';
+            }
             // Agora abre o formulário de pagamento
             _show('asnBotaoAssinarBox', 'none'); var _bb2=document.getElementById('asnBotaoAssinarBox'); if(_bb2) _bb2.classList.remove('visible');
             _show('asnFormCartao', 'block'); var _fc=document.getElementById('asnFormCartao'); if(_fc) _fc.classList.add('visible');
@@ -42155,6 +42168,15 @@
 
         window.asnFecharFormCartao = function () {
             _show('asnFormCartao', 'none'); var _fc2=document.getElementById('asnFormCartao'); if(_fc2) _fc2.classList.remove('visible'); _show('asnBotaoAssinarBox', 'none'); var _bb2=document.getElementById('asnBotaoAssinarBox'); if(_bb2) _bb2.classList.remove('visible');
+            // Sai do modo regularização e restaura a seção de planos
+            if (window._asnRegularizando) {
+                window._asnRegularizando = false;
+                var _pa = document.getElementById('asnPagarAgoraBox'); if (_pa) _pa.style.display = '';
+                var _lp = document.getElementById('asnListaPlanos');   if (_lp) _lp.style.display = '';
+                var _sa = document.getElementById('asnSemAssinatura');
+                var _hd = _sa ? _sa.querySelector('.asn-page-header') : null; if (_hd) _hd.style.display = '';
+                try { asnIniciarSeNecessario(); } catch(e){}
+            }
             _planoSel = null; _renderPlanos('asnListaPlanos', false);
         };
 
