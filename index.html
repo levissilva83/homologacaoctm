@@ -19723,6 +19723,17 @@
             var statusBg    = { pago:'rgba(74,222,128,0.08)', emdia:'rgba(74,222,128,0.08)', pendente:'rgba(251,191,36,0.08)', atrasado:'rgba(248,113,113,0.08)', vencendo:'rgba(251,191,36,0.08)', inativo:'rgba(100,116,139,0.08)' };
             var gwLabel     = { mercadopago:'🔵 Mercado Pago', infinitypay:'🟣 Infinity Pay', pix_manual:'🟢 PIX Manual' };
 
+            // Status efetivo pela DATA (libera cobrança quando vence hoje / venceu)
+            var _vMT = _parseVencDate(data.proximoVencimento || '');
+            var _diasMT = null;
+            if (_vMT) { var _hMT = new Date(); _hMT.setHours(0,0,0,0); _vMT.setHours(0,0,0,0); _diasMT = Math.round((_vMT - _hMT) / 86400000); }
+            var statusEfetivo = status;
+            if (!semPlano && _diasMT !== null && (status === 'pago' || status === 'emdia')) {
+                if (_diasMT < 0) statusEfetivo = 'atrasado';
+                else if (_diasMT === 0) statusEfetivo = 'vencendo';
+            }
+            atrasado = (statusEfetivo === 'atrasado');
+
             var h = '';
 
             // ── Card: Plano Ativo ──────────────────────────────────
@@ -19745,13 +19756,13 @@
                 h += '</div>';
                 h += '<div style="text-align:right;">';
                 h += '<div style="font-size:20px;font-weight:800;color:#C9A23A;">R$ ' + parseFloat(plano.valor||0).toFixed(2) + '</div>';
-                h += '<div style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:' + (statusBg[status]||'rgba(100,116,139,0.08)') + ';color:' + (statusColor[status]||'#64748b') + ';margin-top:4px;">';
-                h += (statusLabel[status] || status) + '</div>';
+                h += '<div style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:' + (statusBg[statusEfetivo]||'rgba(100,116,139,0.08)') + ';color:' + (statusColor[statusEfetivo]||'#64748b') + ';margin-top:4px;">';
+                h += (statusLabel[statusEfetivo] || statusEfetivo) + '</div>';
                 h += '</div></div>';
             }
 
             // Status pendente/atrasado → destaque em "Pagar Agora"; em dia → "Trocar Plano"
-            var _devePagarBtn = (status === 'pendente' || status === 'atrasado' || status === 'vencendo') && !semPlano;
+            var _devePagarBtn = (statusEfetivo === 'pendente' || statusEfetivo === 'atrasado' || statusEfetivo === 'vencendo') && !semPlano;
             if (semPlano) {
                 h += '<button onclick="abrirModalPlano()" style="width:100%;padding:13px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#0D0B08;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;">';
                 h += '📋 Escolher Plano e Pagar';
@@ -19785,7 +19796,7 @@
 
             // ── Card: Pagamento ───────────────────────────────────
             // Mostra se: deve pagar OU se cartão falhou (PIX fallback)
-            var devePagar = (status === 'pendente' || status === 'atrasado' || status === 'vencendo' || status === 'inativo');
+            var devePagar = (statusEfetivo === 'pendente' || statusEfetivo === 'atrasado' || statusEfetivo === 'vencendo' || statusEfetivo === 'inativo');
             if ((devePagar || pixFallback) && !semPlano) {
                 h += '<div style="background:var(--bg-card);border-radius:16px;border:1px solid ' + (atrasado ? 'rgba(248,113,113,0.3)' : 'rgba(201,162,58,0.2)') + ';padding:16px;margin-bottom:14px;">';
                 if (atrasado && !pixFallback) h += '<div style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#fca5a5;">⚠️ Mensalidade em atraso. Regularize para evitar suspensão.</div>';
@@ -20165,6 +20176,19 @@
             var statusLabel = { pago:'✅ Em dia', emdia:'✅ Em dia', pendente:'⏳ Aguardando', atrasado:'⚠️ Em atraso', vencendo:'🟡 Vencendo', inativo:'— Sem plano' };
             var statusClass = { pago:'pago', emdia:'pago', pendente:'pendente', atrasado:'atrasado', vencendo:'vencendo', inativo:'inativo' };
 
+            // Status efetivo pela DATA: o backend às vezes mantém "em dia" mesmo no
+            // dia ou após o vencimento — aqui corrigimos pela data real, pra liberar
+            // a cobrança quando vence hoje (ou já venceu).
+            var _vM = _parseVencDate(data.proximoVencimento || '');
+            var _diasM = null;
+            if (_vM) { var _hM = new Date(); _hM.setHours(0,0,0,0); _vM.setHours(0,0,0,0); _diasM = Math.round((_vM - _hM) / 86400000); }
+            var statusEfetivo = status;
+            if (!semPlano && _diasM !== null && (status === 'pago' || status === 'emdia')) {
+                if (_diasM < 0) statusEfetivo = 'atrasado';
+                else if (_diasM === 0) statusEfetivo = 'vencendo';
+            }
+            atrasado = (statusEfetivo === 'atrasado');
+
             var h = '';
 
             // ── Tabs: Minha Mensalidade | Histórico ──────────────────────
@@ -20187,11 +20211,11 @@
             }
             h += '</div>';
             if (plano.nome) {
-                h += '<div class="pag-badge ' + (statusClass[status]||'inativo') + '">' + (statusLabel[status]||status) + '</div>';
+                h += '<div class="pag-badge ' + (statusClass[statusEfetivo]||'inativo') + '">' + (statusLabel[statusEfetivo]||statusEfetivo) + '</div>';
             }
             h += '</div>';
             // Botão principal: pagar agora se pendente/atrasado, trocar se em dia
-            var devePagar = (status === 'pendente' || status === 'atrasado' || status === 'vencendo' || status === 'inativo') && !semPlano;
+            var devePagar = (statusEfetivo === 'pendente' || statusEfetivo === 'atrasado' || statusEfetivo === 'vencendo' || statusEfetivo === 'inativo') && !semPlano;
             if (semPlano) {
                 // Sem plano: escolher
                 h += '<button onclick="abrirModalPlano()" class="pag-btn" style="margin-top:10px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#0D0B08;font-weight:800;">';
