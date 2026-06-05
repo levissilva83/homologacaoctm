@@ -19728,9 +19728,9 @@
             var _diasMT = null;
             if (_vMT) { var _hMT = new Date(); _hMT.setHours(0,0,0,0); _vMT.setHours(0,0,0,0); _diasMT = Math.round((_vMT - _hMT) / 86400000); }
             var statusEfetivo = status;
-            if (!semPlano && _diasMT !== null && (status === 'pago' || status === 'emdia')) {
-                if (_diasMT < 0) statusEfetivo = 'atrasado';
-                else if (_diasMT === 0) statusEfetivo = 'vencendo';
+            if (!semPlano && _diasMT !== null) {
+                if (_diasMT < 0) statusEfetivo = 'atrasado';                                          // venceu → SEMPRE gera cobrança
+                else if (_diasMT === 0 && status !== 'pendente' && status !== 'atrasado') statusEfetivo = 'vencendo'; // vence hoje
             }
             atrasado = (statusEfetivo === 'atrasado');
 
@@ -20210,9 +20210,9 @@
             var _diasM = null;
             if (_vM) { var _hM = new Date(); _hM.setHours(0,0,0,0); _vM.setHours(0,0,0,0); _diasM = Math.round((_vM - _hM) / 86400000); }
             var statusEfetivo = status;
-            if (!semPlano && _diasM !== null && (status === 'pago' || status === 'emdia')) {
-                if (_diasM < 0) statusEfetivo = 'atrasado';
-                else if (_diasM === 0) statusEfetivo = 'vencendo';
+            if (!semPlano && _diasM !== null) {
+                if (_diasM < 0) statusEfetivo = 'atrasado';                                         // venceu → SEMPRE gera cobrança
+                else if (_diasM === 0 && status !== 'pendente' && status !== 'atrasado') statusEfetivo = 'vencendo'; // vence hoje
             }
             atrasado = (statusEfetivo === 'atrasado');
 
@@ -36546,9 +36546,10 @@
                             h += '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">';
                             h += '<div style="font-size:10px;font-weight:800;color:#ffcc00;">HOJE!</div>';
                             h += '<button class="bday-wa-btn"'
-                                + ' data-email="' + escapeHtml(b.email||b.name) + '"'
-                                + ' data-nome="'  + escapeHtml(b.name)          + '"'
-                                + ' data-idade="' + (b.idade||0)                + '"'
+                                + ' data-email="' + escapeHtml(b.email||'')  + '"'
+                                + ' data-nome="'  + escapeHtml(b.name)       + '"'
+                                + ' data-idade="' + (b.idade||0)             + '"'
+                                + ' data-tel="'   + escapeHtml(b.telefone||'') + '"'
                                 + ' style="padding:4px 8px;background:#25D366;color:#fff;border:none;border-radius:6px;font-size:9px;font-weight:700;cursor:pointer;">📱 WhatsApp</button>';
                             h += '</div>';
                         } else {
@@ -36565,20 +36566,18 @@
                             var idade = parseInt(btn.getAttribute('data-idade'))||0;
                             var tel   = btn.getAttribute('data-tel')   || '';
 
-                            // Se não tem email mas tem telefone, abre WhatsApp direto
-                            if (!email && tel) {
-                                var digits = tel.replace(/\D/g,'');
-                                if (digits.length >= 10) {
-                                    if (!digits.startsWith('55')) digits = '55' + digits;
-                                    window.location.href = 'https://wa.me/' + digits;
-                                    return;
-                                }
-                            }
-                            if (!email) {
-                                showToast('⚠️ Email não encontrado para ' + nome.split(' ')[0]);
+                            // Caminho principal: tem telefone → abre o WhatsApp direto com mensagem de parabéns
+                            var digits = tel.replace(/\D/g,'');
+                            if (digits.length >= 10) {
+                                if (!digits.startsWith('55')) digits = '55' + digits;
+                                var primeiro = nome ? nome.split(' ')[0] : '';
+                                var msg = encodeURIComponent('🎉 Feliz aniversário' + (primeiro ? ', ' + primeiro : '') + '! 🥳 Toda a equipe te deseja muita saúde e ótimos treinos. Parabéns! 🎂');
+                                window.location.href = 'https://wa.me/' + digits + '?text=' + msg;
                                 return;
                             }
-                            enviarWAAniversario(email, nome, idade);
+                            // Fallback: sem telefone mas com email → tenta o link via backend
+                            if (email) { enviarWAAniversario(email, nome, idade); return; }
+                            showToast('⚠️ ' + (nome ? nome.split(' ')[0] : 'Aluno') + ' não tem telefone cadastrado');
                         });
                     });
                 } else {
