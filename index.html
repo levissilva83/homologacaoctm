@@ -7913,6 +7913,7 @@
                         <div class="mod-home-name" id="modHomeName">Atleta</div>
                         <div class="mod-home-sub" id="modHomeSub">Qual modalidade vai treinar hoje?</div>
                         <div id="modHomeMensalidadeAlert" style="display:none;margin:10px 16px 0;padding:8px 14px;border-radius:10px;font-size:11px;font-weight:600;text-align:center;"></div>
+                        <div id="modHomeEventosAlert" onclick="_irParaEventos()" style="display:none;margin:10px 16px 0;padding:10px 14px;border-radius:10px;font-size:12px;font-weight:700;text-align:center;cursor:pointer;background:linear-gradient(135deg,rgba(168,85,247,0.15),rgba(124,58,237,0.06));border:1px solid rgba(168,85,247,0.35);color:#c084fc;"></div>
                     </div>
 
                     <div class="mod-home-divider"></div>
@@ -13967,6 +13968,9 @@
                     _alrH.style.background=_bH; _alrH.style.border=_brH; _alrH.style.color=_cH;
                 } else { _alrH.style.display='none'; }
             }
+
+            // ── Aviso de eventos abertos na home ──
+            try { _renderHomeEventosAlert(); } catch(e){}
 
             // ── Aplica tema do avatar (cor da modalidade) ──
             var previewMod = getModalidadeById(_modalidadePrincipal || userModalidades[0]);
@@ -21855,9 +21859,6 @@
 
                 if (backendOk) {
                     document.getElementById('avbFotoMsg').textContent = '✅ Foto salva com sucesso!';
-                    // Indexa o rosto no AWS Rekognition para reconhecimento no Quiosque
-                    // (mantém a coleção em sincronia com a foto da coluna U)
-                    try { indexarFaceAluno(currentUser.email, dataUrl); } catch(e) {}
                 } else {
                     // Fallback: tenta saveProfile normal (foto já está no campo)
                     try { await saveProfile(); } catch(e) {}
@@ -39550,6 +39551,33 @@
         }
 
         // ── Eventos no app do ALUNO ──────────────────────────────────────────
+        // Aviso de eventos abertos na home + navegação até a inscrição
+        async function _renderHomeEventosAlert() {
+            var el = document.getElementById('modHomeEventosAlert');
+            if (!el) return;
+            try {
+                var res = await secureFetch('getEventos', {});
+                var abertos = (res && res.success && res.eventos)
+                    ? res.eventos.filter(function(ev){ return !ev.jaInscrito; })
+                    : [];
+                if (abertos.length > 0) {
+                    el.textContent = '🎫 ' + abertos.length + ' evento' + (abertos.length>1?'s':'')
+                        + ' aberto' + (abertos.length>1?'s':'') + ' para inscrição — toque para ver';
+                    el.style.display = 'block';
+                } else {
+                    el.style.display = 'none';
+                }
+            } catch(e) { el.style.display = 'none'; }
+        }
+        function _irParaEventos() {
+            try {
+                if (typeof switchTab === 'function') switchTab('pagamentos-tab');
+                setTimeout(function(){
+                    var b = document.getElementById('stuEventosBox');
+                    if (b) b.scrollIntoView({ behavior:'smooth', block:'start' });
+                }, 350);
+            } catch(e){}
+        }
         async function loadStuEventos() {
             var box = document.getElementById('stuEventosBox'); if (!box) return;
             var res = await secureFetch('getEventos', {});
