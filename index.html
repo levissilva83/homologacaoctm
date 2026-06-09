@@ -25,7 +25,7 @@
 
     <title>CT Manager - Checkin</title>
     <!-- PWA / TWA (Play Store) — manifest e ícones reais -->
-    <link rel="manifest" id="pwaManifestLink" href="/manifest.json">
+    <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -7649,28 +7649,13 @@
     </script>
 
     <script>
-
-    // ── PWA helper: monta start_url sempre com ?ctm= ────────────────────────
-    function _getPwaStartUrl() {
-        // 1. ctm na URL atual
-        var m = (window.location.search || "").match(/[?&]ctm=([^&]+)/);
-        if (m) return window.location.origin + window.location.pathname + "?ctm=" + m[1];
-        // 2. ctm salvo no localStorage quando o CT foi carregado
-        try {
-            var s = localStorage.getItem("ctmId") || localStorage.getItem("_ctmId")
-                 || localStorage.getItem("currentCtm") || "";
-            if (s) return window.location.origin + window.location.pathname + "?ctm=" + s;
-        } catch(e) {}
-        // 3. fallback
-        return window.location.href;
-    }
     // Dynamic PWA manifest — uses CT logo as app icon
     function _injectPWAManifest(iconDataUrl) {
         var iconUrl = iconDataUrl || '';
         var manifest = {
             name: 'CT Manager',
             short_name: 'CT Manager',
-            start_url: _getPwaStartUrl(),
+            start_url: window.location.href,
             display: 'standalone',
             background_color: '#0f1729',
             theme_color: '#C9A23A',
@@ -11709,6 +11694,13 @@
                             </div>
                             <div class="stu-toggle" id="stuProfToggle" onclick="onStuProfToggle()"></div>
                         </div>
+                        <div class="stu-toggle-row">
+                            <div class="stu-toggle-label">
+                                🎖️ Isento de mensalidade
+                                <div style="font-size:10px;color:var(--adm-text-3);font-weight:400;margin-top:2px;">Bolsista ou cortesia — sem cobrança</div>
+                            </div>
+                            <div class="stu-toggle" id="stuIsentoToggle" onclick="this.classList.toggle('on')"></div>
+                        </div>
                     </div>
 
                     <!-- CTs do Professor (visível só quando admin=true) -->
@@ -12239,7 +12231,7 @@
                     name: 'CT Manager',
                     short_name: 'CT Manager',
                     description: 'Sistema de gestão de CT - IDESystems Tecnologia',
-                    start_url: _getPwaStartUrl(),
+                    start_url: window.location.href,
                     display: 'standalone',
                     background_color: '#0F172A',
                     theme_color: '#060607',
@@ -19795,13 +19787,22 @@
             var proxVenc  = _formatVencBR(data.proximoVencimento || '');
             var atrasado  = (status === 'atrasado');
             var semPlano  = (!plano.nome);
+            if (data.isento || status === 'isento') {
+                container.innerHTML =
+                    '<div style="text-align:center;padding:30px 16px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.25);border-radius:14px;">' +
+                        '<div style="font-size:36px;margin-bottom:10px;">🎖️</div>' +
+                        '<div style="font-size:16px;font-weight:800;color:#a78bfa;margin-bottom:6px;">Isento de Mensalidade</div>' +
+                        '<div style="font-size:12px;color:var(--text-3);">Sua conta não possui cobrança de mensalidade.</div>' +
+                    '</div>';
+                return;
+            }
             var temGateway = !!data.temGateway;
             var pixFallback = !!data.pixFallback;   // cartão falhou → PIX como fallback
             var motivoFalha = data.motivoFalha || '';
             var freqLabel  = { mensal:'Mensal', trimestral:'Trimestral', semestral:'Semestral', anual:'Anual' };
-            var statusLabel = { pago:'✅ Em dia', emdia:'✅ Em dia', pendente:'⏳ Aguardando pagamento', atrasado:'⚠️ Em atraso', vencendo:'🟡 Vencendo em breve', inativo:'— Sem plano' };
-            var statusColor = { pago:'#4ade80', emdia:'#4ade80', pendente:'#fbbf24', atrasado:'#f87171', vencendo:'#fbbf24', inativo:'#64748b' };
-            var statusBg    = { pago:'rgba(74,222,128,0.08)', emdia:'rgba(74,222,128,0.08)', pendente:'rgba(251,191,36,0.08)', atrasado:'rgba(248,113,113,0.08)', vencendo:'rgba(251,191,36,0.08)', inativo:'rgba(100,116,139,0.08)' };
+            var statusLabel = { pago:'✅ Em dia', emdia:'✅ Em dia', pendente:'⏳ Aguardando pagamento', atrasado:'⚠️ Em atraso', vencendo:'🟡 Vencendo em breve', inativo:'— Sem plano', isento:'🎖️ Isento' };
+            var statusColor = { pago:'#4ade80', emdia:'#4ade80', pendente:'#fbbf24', atrasado:'#f87171', vencendo:'#fbbf24', inativo:'#64748b', isento:'#a78bfa' };
+            var statusBg    = { pago:'rgba(74,222,128,0.08)', emdia:'rgba(74,222,128,0.08)', pendente:'rgba(251,191,36,0.08)', atrasado:'rgba(248,113,113,0.08)', vencendo:'rgba(251,191,36,0.08)', inativo:'rgba(100,116,139,0.08)', isento:'rgba(167,139,250,0.10)' };
             var gwLabel     = { mercadopago:'🔵 Mercado Pago', infinitypay:'🟣 Infinity Pay', pix_manual:'🟢 PIX Manual' };
 
             // Status efetivo pela DATA (libera cobrança quando vence hoje / venceu)
@@ -19877,7 +19878,7 @@
 
             // ── Card: Pagamento ───────────────────────────────────
             // Mostra se: deve pagar OU se cartão falhou (PIX fallback)
-            var devePagar = (statusEfetivo === 'pendente' || statusEfetivo === 'atrasado' || statusEfetivo === 'vencendo' || statusEfetivo === 'inativo');
+            var devePagar = (statusEfetivo === 'pendente' || statusEfetivo === 'atrasado' || statusEfetivo === 'vencendo' || statusEfetivo === 'inativo') && statusEfetivo !== 'isento';
             if ((devePagar || pixFallback) && !semPlano) {
                 h += '<div style="background:var(--bg-card);border-radius:16px;border:1px solid ' + (atrasado ? 'rgba(248,113,113,0.3)' : 'rgba(201,162,58,0.2)') + ';padding:16px;margin-bottom:14px;">';
                 if (atrasado && !pixFallback) h += '<div style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#fca5a5;">⚠️ Mensalidade em atraso. Regularize para evitar suspensão.</div>';
@@ -20281,8 +20282,8 @@
             var pixFallback = !!data.pixFallback;
             var motivoFalha = data.motivoFalha || '';
             var gwLabel    = { mercadopago:'🔵 Mercado Pago', infinitypay:'🟣 Infinity Pay', pix_manual:'🟢 PIX Manual' };
-            var statusLabel = { pago:'✅ Em dia', emdia:'✅ Em dia', pendente:'⏳ Aguardando', atrasado:'⚠️ Em atraso', vencendo:'🟡 Vencendo', inativo:'— Sem plano' };
-            var statusClass = { pago:'pago', emdia:'pago', pendente:'pendente', atrasado:'atrasado', vencendo:'vencendo', inativo:'inativo' };
+            var statusLabel = { pago:'✅ Em dia', emdia:'✅ Em dia', pendente:'⏳ Aguardando', atrasado:'⚠️ Em atraso', vencendo:'🟡 Vencendo', inativo:'— Sem plano', isento:'🎖️ Isento' };
+            var statusClass = { pago:'pago', emdia:'pago', pendente:'pendente', atrasado:'atrasado', vencendo:'vencendo', inativo:'inativo', isento:'pago' };
 
             // Status efetivo pela DATA: o backend às vezes mantém "em dia" mesmo no
             // dia ou após o vencimento — aqui corrigimos pela data real, pra liberar
@@ -20323,7 +20324,7 @@
             }
             h += '</div>';
             // Botão principal: pagar agora se pendente/atrasado, trocar se em dia
-            var devePagar = (statusEfetivo === 'pendente' || statusEfetivo === 'atrasado' || statusEfetivo === 'vencendo' || statusEfetivo === 'inativo') && !semPlano;
+            var devePagar = (statusEfetivo === 'pendente' || statusEfetivo === 'atrasado' || statusEfetivo === 'vencendo' || statusEfetivo === 'inativo') && !semPlano && statusEfetivo !== 'isento';
             if (semPlano) {
                 // Sem plano: escolher
                 h += '<button onclick="abrirModalPlano()" class="pag-btn" style="margin-top:10px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#0D0B08;font-weight:800;">';
@@ -29213,8 +29214,6 @@ function abrirModalAdicionarDependente() {
             });
             // Atualiza manifest PWA com o logo
             if (typeof _onLogoLoaded === 'function') _onLogoLoaded(src);
-            // Re-injeta manifest garantindo ?ctm= correto no start_url
-            try { if (typeof _injectPWAManifest === 'function') _injectPWAManifest(); } catch(_ep) {}
         }
 
         // Abre seletor de arquivo para o admin trocar o logo
@@ -38317,8 +38316,14 @@ function abrirModalAdicionarDependente() {
             var isProfUser = s.isProfessor === true || s.isProfessor === 'true' || _rawTipo === 'professor';
             // Só admin real pode ver e alterar papéis
             if (adminRow) adminRow.style.display = currentIsRealAdmin ? '' : 'none';
-            if (adminToggle) { isAdminUser ? adminToggle.classList.add('on') : adminToggle.classList.remove('on'); }
-            if (profToggle)  { isProfUser  ? profToggle.classList.add('on')  : profToggle.classList.remove('on'); }
+            if (adminToggle)  { isAdminUser ? adminToggle.classList.add('on')  : adminToggle.classList.remove('on'); }
+            if (profToggle)   { isProfUser  ? profToggle.classList.add('on')   : profToggle.classList.remove('on'); }
+            var isentoToggle = document.getElementById('stuIsentoToggle');
+            if (isentoToggle) {
+                // Professor é isento automaticamente; flag manual também
+                var _isIsento = isProfUser || !!(s.isentoCobranca);
+                _isIsento ? isentoToggle.classList.add('on') : isentoToggle.classList.remove('on');
+            }
             // Mostra seção de CTs do professor se for prof ou admin
             renderStuCTSections(s, isAdminUser || isProfUser);
             // Seção de modalidades do professor (só admin vê, só para professores)
@@ -38752,6 +38757,9 @@ function abrirModalAdicionarDependente() {
                     return dias.join(',');
                 })(),
                 isProfessor:          currentIsRealAdmin ? isProfStu  : undefined,
+                isentoCobranca:       currentIsRealAdmin
+                    ? (isProfStu || (document.getElementById('stuIsentoToggle') ? document.getElementById('stuIsentoToggle').classList.contains('on') : false))
+                    : undefined,
                 ctsProfessor:         currentIsRealAdmin ? ctsdoprof  : undefined,
                 ctsliberados:         ctsliberados,
                 modalidades:          modData.modalidades,
@@ -38780,6 +38788,7 @@ function abrirModalAdicionarDependente() {
                         _cached.admin               = isAdminStu;
                         _cached.tipoPerfil          = isProfStu ? 'professor' : '';
                         _cached.isProfessor         = isProfStu;
+                        _cached.isentoCobranca      = isProfStu || (document.getElementById('stuIsentoToggle') ? document.getElementById('stuIsentoToggle').classList.contains('on') : false);
                         _cached.ctsProfessor        = ctsdoprof;
                         _cached.modalidades         = modData.modalidades;
                         _cached.modalidadePrincipal = modData.modalidadePrincipal;
