@@ -12485,31 +12485,11 @@
             if (_planLimits.filiais < 3) {
                 _lockByPlan('addCTSection', '🏠 Criar Filiais / CTs', 'premium');
             }
-            // Dependentes no painel admin (Profissional ou superior)
-            if (_planId !== 'premium' && _planId !== 'profissional') {
-                _lockByPlan('stuFamiliaSection', '👨‍👩‍👧‍👦 Dependentes', 'profissional');
-            }
-            // Seção Minha Família no perfil do aluno — mostrar para ver lista (Profissional)
-            // Botão cadastrar dependente — somente Premium (já tratado abaixo)
-            if (_planId !== 'premium' && _planId !== 'profissional') {
-                _lockByPlan('perfilSecFamilia', '👨‍👩‍👧‍👦 Minha Família', 'profissional');
-            }
+// Dependentes e Família — liberado para todos os planos
             // Plano Família com cobrança unificada (somente Premium)
             if (_planId !== 'premium') {
                 _lockByPlan('familiaPlanoResumo',        '💰 Plano Família Unificado', 'premium');
                 _lockByPlan('familiaStatusBillingBanner','💰 Plano Família Unificado', 'premium');
-                // Botão adicionar dependente pelo responsável — só Premium
-                var _btnDep = document.getElementById('btnAdicionarDependente');
-                if (_btnDep) {
-                    _btnDep.disabled = true;
-                    _btnDep.style.opacity = '0.35';
-                    _btnDep.textContent = '🔒 Premium';
-                    _btnDep.title = 'Disponível no plano Premium';
-                    _btnDep.onclick = function(e) {
-                        e.preventDefault();
-                        alert('Cadastrar dependentes pelo app requer o plano Premium. Fale com seu professor!');
-                    };
-                }
             }
             // Congelamento de Matrícula (Profissional ou superior)
             if (_planId !== 'premium' && _planId !== 'profissional') {
