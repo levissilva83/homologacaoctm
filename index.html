@@ -7727,8 +7727,73 @@
         });
       });
     </script>
-</head>
-<body>
+    <!-- ██ PATCH: Modalidades dinâmicas no modal Cadastrar Novo Aluno ██ -->
+    <script>
+    (function() {
+      var _SU = 'https://script.google.com/macros/s/AKfycbyWwOSEW2dw2EioooNWWd62VMDCmBl9A271jejNJTXeTfSt94_eyIttNJseDQvTW10u/exec';
+      function _tok(){ try{ var s=JSON.parse(localStorage.getItem('bjjSession')||'null'); return s&&s.token&&(!s.expiresAt||Date.now()<s.expiresAt)?s.token:null; }catch(e){return null;} }
+      function _ct(){ try{ var u=JSON.parse(localStorage.getItem('bjjUser')||'null'); return u&&u.ct?u.ct:''; }catch(e){return '';} }
+      async function _loadMods(grid, ctName) {
+        grid.innerHTML = '<div style="text-align:center;padding:12px;font-size:12px;color:#9ca3af;">⏳ Carregando modalidades...</div>';
+        var mods = [];
+        if (ctName) {
+          try {
+            var r = await fetch(_SU, {method:'POST', body:JSON.stringify({action:'getModalidadesCT', ct:ctName, token:_tok()||'', _origin:location.origin+'/'})});
+            var d = await r.json();
+            mods = (d&&d.modalidades) ? d.modalidades : [];
+          } catch(e){}
+        }
+        grid.innerHTML = '';
+        if (!mods.length) {
+          grid.innerHTML = '<div style="padding:14px;font-size:12px;color:#9ca3af;border:1px dashed #374151;border-radius:8px;text-align:center;">' + (ctName?'⚠️ Nenhuma modalidade cadastrada para este CT.':'👆 Selecione o CT.') + '</div>';
+          return;
+        }
+        grid.style.gridTemplateColumns = '1fr 1fr';
+        mods.forEach(function(m) {
+          var lbl = document.createElement('label');
+          lbl.style.cssText = 'display:flex;align-items:center;gap:6px;padding:8px 10px;border:1px solid #374151;border-radius:8px;font-size:12px;font-weight:600;color:#d1d5db;cursor:pointer;background:#1f2937;';
+          var chk = document.createElement('input');
+          chk.type='checkbox'; chk.value=m.id; chk.name='novoAlunoMod';
+          chk.style.cssText = 'width:14px;height:14px;accent-color:#C9A23A;';
+          chk.onchange = function(){ lbl.style.borderColor=chk.checked?'#C9A23A':'#374151'; var e=document.getElementById('novoAlunoModErr'); if(e) e.style.display='none'; };
+          lbl.appendChild(chk);
+          lbl.appendChild(document.createTextNode((m.icon||'🥋')+' '+(m.nome||m.id)));
+          grid.appendChild(lbl);
+        });
+      }
+      var _active = null;
+      var _obs = new MutationObserver(function() {
+        var grid = document.getElementById('novoAlunoMods');
+        if (!grid || grid === _active) return;
+        if (grid.querySelectorAll('input[type="checkbox"]').length > 0) return;
+        _active = grid;
+        // Descobre o seletor de CT: tenta IDs conhecidos, senão usa o CT do usuário logado
+        var par = grid.parentElement;
+        var ctSel = document.getElementById('novoAlunoCT') ||
+                    document.getElementById('admNovoAlunoCT') ||
+                    document.getElementById('newStudentCT') ||
+                    (par && par.querySelector('select')) ||
+                    (par && par.parentElement && par.parentElement.querySelector('select[id*="CT"], select[id*="ct"]'));
+        var ctName = ctSel ? ctSel.value : _ct();
+        // pré-seleciona CT do usuário logado se o select estiver vazio
+        if (ctSel && !ctSel.value) {
+          var uc = _ct(); if (uc) { try { ctSel.value = uc; } catch(e){} ctName = ctSel.value || uc; }
+        }
+        if (ctSel && !ctSel.dataset.bvOk) {
+          ctSel.dataset.bvOk = '1';
+          ctSel.addEventListener('change', function() {
+            var g = document.getElementById('novoAlunoMods');
+            if (g) { _active = g; _loadMods(g, ctSel.value); }
+          });
+        }
+        _loadMods(grid, ctName);
+      });
+      document.addEventListener('DOMContentLoaded', function() {
+        _obs.observe(document.body, {childList:true, subtree:true});
+      });
+    })();
+    </script>
+    <!-- ██ FIM PATCH ██ -->
     <div class="app">
         <!-- HEADER -->
         <div class="hdr">
@@ -9795,7 +9860,6 @@
                                 <option value="CANCELADO">❌ Cancelado</option>
                                 <option value="INATIVO">⏸ Inativo</option>
                                 <option value="INADIMPLENTE">🔴 Inadimplente</option>
-                                <option value="RENOVACAO">🔄 Renovação</option>
                                 <option value="SEM CONTRATO">📋 Sem contrato</option>
                             </select>
                             <button onclick="CTM_Contratos.data.carregar()"
@@ -9886,7 +9950,6 @@
                                                     <option value="INATIVO">⏸ INATIVO</option>
                                                     <option value="CANCELADO">❌ CANCELADO</option>
                                                     <option value="INADIMPLENTE">🔴 INADIMPLENTE</option>
-                                                    <option value="RENOVACAO">🔄 RENOVAÇÃO</option>
                                                 </select>
                                             </div>
                                             <div class="cm-campo">
@@ -10561,58 +10624,18 @@
                         <button class="btn btn-primary" onclick="adminChangePassword()">🔑 Alterar Senha</button>
                     </div>
 
-                    <!-- ██ TAXAS DE GRADUAÇÃO ██ -->
-                    <div class="admin-section" id="taxaGradSection" style="margin-top:20px;">
-                        <div class="admin-section-title">🎖️ Taxas de Graduação</div>
-                        <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:12px;">
-                            Quando uma graduação for aprovada, o sistema pode gerar automaticamente uma cobrança avulsa com o valor configurado. (Disponível nos planos Profissional e Premium)
-                        </div>
-                        <div id="taxaGradList" style="margin-bottom:12px;"><div style="font-size:11px;color:var(--adm-text-3);">Carregando...</div></div>
-                        <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px;">
-                            <div style="font-size:11px;font-weight:700;color:var(--adm-text-2);margin-bottom:10px;">➕ Nova taxa</div>
-                            <div style="display:flex;flex-direction:column;gap:8px;">
-                                <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                                    <select id="taxaGradTipo" style="flex:1;min-width:110px;padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
-                                        <option value="nivel">Mudança de Faixa</option>
-                                        <option value="grau">Mudança de Grau</option>
-                                    </select>
-                                    <select id="taxaGradMod" style="flex:1;min-width:80px;padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
-                                        <option value="all">Todas mod.</option>
-                                        <option value="bjj">BJJ</option>
-                                        <option value="muay_thai">Muay Thai</option>
-                                        <option value="judo">Judô</option>
-                                        <option value="karate">Karatê</option>
-                                    </select>
-                                </div>
-                                <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                                    <input type="text" id="taxaGradChave" placeholder="Faixa (ex: azul, roxa, preta)" style="flex:2;padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
-                                    <input type="number" id="taxaGradValor" placeholder="R$" min="0" step="0.01" style="flex:1;min-width:70px;padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
-                                </div>
-                                <input type="text" id="taxaGradDesc" placeholder="Descrição (opcional)" style="padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
-                                <button onclick="salvarTaxaGrad()" style="padding:7px 14px;background:rgba(201,162,58,0.15);border:1px solid rgba(201,162,58,0.4);border-radius:8px;color:#C9A23A;font-size:12px;font-weight:700;cursor:pointer;align-self:flex-start;">💾 Adicionar taxa</button>
-                            </div>
-                            <div id="taxaGradMsg" style="font-size:11px;margin-top:6px;"></div>
-                        </div>
-                    </div>
-                    <!-- ██ FIM TAXAS DE GRADUAÇÃO ██ -->
+                    <!-- Taxas de Graduação → Financeiro / Eventos -->
 
                     <!-- ██ QUIOSQUE FACIAL ██ -->
                     <div class="admin-section" id="quiosqueSection" style="margin-top:20px;">
                         <div class="admin-section-title">🤳 Quiosque Facial</div>
-                        <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:12px;">
-                            Check-in por reconhecimento facial em tablet na recepção. O aluno não precisa fazer login — basta posicionar o rosto. (Requer fotos cadastradas e AWS Rekognition)
-                        </div>
+                        <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:12px;">Check-in por reconhecimento facial em tablet na recepção. O aluno não precisa fazer login.</div>
                         <div style="display:flex;flex-direction:column;gap:10px;">
-                            <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--adm-text-2);"><span>Ativar Quiosque</span>
-                                <input type="checkbox" id="qkAtivo" style="width:18px;height:18px;accent-color:#C9A23A;"></label>
-                            <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--adm-text-2);"><span>Confiança mínima (%)</span>
-                                <input type="number" id="qkConf" min="70" max="99" value="90" style="width:80px;padding:6px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;text-align:center;"></label>
-                            <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--adm-text-2);"><span>Tempo de retorno (seg)</span>
-                                <input type="number" id="qkTempo" min="1" max="15" value="3" style="width:80px;padding:6px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;text-align:center;"></label>
-                            <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--adm-text-2);"><span>Som de confirmação</span>
-                                <input type="checkbox" id="qkSom" checked style="width:18px;height:18px;accent-color:#C9A23A;"></label>
-                            <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--adm-text-2);"><span>Permitir visitantes</span>
-                                <input type="checkbox" id="qkVisit" style="width:18px;height:18px;accent-color:#C9A23A;"></label>
+                            <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--adm-text-2);"><span>Ativar Quiosque</span><input type="checkbox" id="qkAtivo" style="width:18px;height:18px;accent-color:#C9A23A;"></label>
+                            <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--adm-text-2);"><span>Confiança mínima (%)</span><input type="number" id="qkConf" min="70" max="99" value="90" style="width:80px;padding:6px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;text-align:center;"></label>
+                            <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--adm-text-2);"><span>Tempo de retorno (seg)</span><input type="number" id="qkTempo" min="1" max="15" value="3" style="width:80px;padding:6px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;text-align:center;"></label>
+                            <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--adm-text-2);"><span>Som de confirmação</span><input type="checkbox" id="qkSom" checked style="width:18px;height:18px;accent-color:#C9A23A;"></label>
+                            <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--adm-text-2);"><span>Permitir visitantes</span><input type="checkbox" id="qkVisit" style="width:18px;height:18px;accent-color:#C9A23A;"></label>
                             <div style="display:flex;gap:8px;margin-top:6px;">
                                 <button onclick="salvarQuiosqueConfig()" style="flex:1;padding:11px;background:rgba(201,162,58,0.15);border:1px solid rgba(201,162,58,0.4);border-radius:10px;color:#C9A23A;font-size:13px;font-weight:800;cursor:pointer;">💾 Salvar</button>
                                 <button onclick="abrirQuiosque()" style="flex:1;padding:11px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;">📺 Abrir Quiosque</button>
@@ -11060,6 +11083,41 @@
                             <button onclick="abrirNovoEvento()" style="padding:8px 14px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;">+ Novo evento</button>
                         </div>
                         <div id="eventosList"><div style="text-align:center;padding:30px 0;color:rgba(255,255,255,0.4);font-size:12px;">Carregando...</div></div>
+
+                        <!-- ██ TAXAS DE GRADUAÇÃO ██ -->
+                        <div class="admin-section" id="taxaGradSection" style="margin-top:20px;">
+                            <div class="admin-section-title">🎖️ Taxas de Graduação</div>
+                            <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:12px;">
+                                Quando uma graduação for aprovada, o sistema pode gerar automaticamente uma cobrança avulsa com o valor configurado. (Disponível nos planos Profissional e Premium)
+                            </div>
+                            <div id="taxaGradList" style="margin-bottom:12px;"><div style="font-size:11px;color:var(--adm-text-3);">Carregando...</div></div>
+                            <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px;">
+                                <div style="font-size:11px;font-weight:700;color:var(--adm-text-2);margin-bottom:10px;">➕ Nova taxa</div>
+                                <div style="display:flex;flex-direction:column;gap:8px;">
+                                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                        <select id="taxaGradTipo" style="flex:1;min-width:110px;padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                            <option value="nivel">Mudança de Faixa</option>
+                                            <option value="grau">Mudança de Grau</option>
+                                        </select>
+                                        <select id="taxaGradMod" style="flex:1;min-width:80px;padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                            <option value="all">Todas mod.</option>
+                                            <option value="bjj">BJJ</option>
+                                            <option value="muay_thai">Muay Thai</option>
+                                            <option value="judo">Judô</option>
+                                            <option value="karate">Karatê</option>
+                                        </select>
+                                    </div>
+                                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                        <input type="text" id="taxaGradChave" placeholder="Faixa (ex: azul, roxa, preta)" style="flex:2;padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                        <input type="number" id="taxaGradValor" placeholder="R$" min="0" step="0.01" style="flex:1;min-width:70px;padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    </div>
+                                    <input type="text" id="taxaGradDesc" placeholder="Descrição (opcional)" style="padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <button onclick="salvarTaxaGrad()" style="padding:7px 14px;background:rgba(201,162,58,0.15);border:1px solid rgba(201,162,58,0.4);border-radius:8px;color:#C9A23A;font-size:12px;font-weight:700;cursor:pointer;align-self:flex-start;">💾 Adicionar taxa</button>
+                                </div>
+                                <div id="taxaGradMsg" style="font-size:11px;margin-top:6px;"></div>
+                            </div>
+                        </div>
+                        <!-- ██ FIM TAXAS DE GRADUAÇÃO ██ -->
                     </div>
 
                     <!-- Painel: Faturamento -->
@@ -21883,9 +21941,7 @@
 
                 if (backendOk) {
                     document.getElementById('avbFotoMsg').textContent = '✅ Foto salva com sucesso!';
-                    // Indexa o rosto no AWS Rekognition para reconhecimento no Quiosque
-                    // (mantém a coleção em sincronia com a foto da coluna U)
-                    try { indexarFaceAluno(currentUser.email, dataUrl); } catch(e) {}
+                    try { indexarFaceAluno(currentUser.email, dataUrl); } catch(e){}
                 } else {
                     // Fallback: tenta saveProfile normal (foto já está no campo)
                     try { await saveProfile(); } catch(e) {}
@@ -22564,13 +22620,7 @@
             // Atualiza hidden com seleção inicial
             if (hidden) hidden.value = _depModsSelecionadas.join(',');
         }
-
-        function abrirModalAdicionarDependente() {
-            // Verifica plano Premium
-            if (_planId && _planId !== 'premium' && _planId !== 'profissional' && _planId !== 'enterprise' && _planId !== 'trial') {
-                alert('❌ Adicionar dependentes pelo app é exclusivo do plano Premium.\nFale com seu professor para cadastrar.');
-                return;
-            }
+function abrirModalAdicionarDependente() {
             var modal = document.getElementById('modalAdicionarDependente');
             if (!modal) return;
             // Limpa campos
@@ -23878,6 +23928,28 @@
             }
         }
 
+        // ── Quiosque Facial (admin) ────────────────────────────────
+        async function loadQuiosqueConfig() {
+            try {
+                var ct = currentUser ? (currentUser.ct||'') : '';
+                var res = await secureFetch('getQuiosqueConfig', { ct: ct });
+                if (!res || !res.success || !res.config) return;
+                var c = res.config, el;
+                if (el = document.getElementById('qkAtivo')) el.checked = !!c.ativo;
+                if (el = document.getElementById('qkConf'))  el.value = c.confidence || 90;
+                if (el = document.getElementById('qkTempo')) el.value = c.tempo_retorno || 3;
+                if (el = document.getElementById('qkSom'))   el.checked = c.som_confirmacao !== false;
+                if (el = document.getElementById('qkVisit')) el.checked = !!c.permitir_visitante;
+            } catch(e){}
+        }
+        async function salvarQuiosqueConfig() {
+            var msg = document.getElementById('qkMsg');
+            var payload = { ct: currentUser?(currentUser.ct||''):'', ativo:document.getElementById('qkAtivo').checked, confidence:parseInt(document.getElementById('qkConf').value)||90, tempo_retorno:parseInt(document.getElementById('qkTempo').value)||3, som_confirmacao:document.getElementById('qkSom').checked, permitir_visitante:document.getElementById('qkVisit').checked, camera_mode:'user' };
+            if (msg) { msg.textContent='Salvando...'; msg.style.color='var(--adm-text-3)'; }
+            try { var res=await secureFetch('saveQuiosqueConfig',payload); if(msg){msg.textContent=(res&&res.success)?('✅ '+res.message):('❌ '+((res&&res.message)||'Erro'));msg.style.color=(res&&res.success)?'#4ade80':'#f87171';} } catch(e){ if(msg){msg.textContent='❌ Erro';msg.style.color='#f87171';} }
+        }
+        function abrirQuiosque() { var ct=currentUser?encodeURIComponent(currentUser.ct||''):''; window.open('/quiosque.html?ctm='+ct,'_blank'); }
+
         function loadAdminProfile() {
             if (!currentUser) return;
             document.getElementById('admPerfilName').textContent  = currentUser.name;
@@ -24493,7 +24565,7 @@
                 if (!currentUser) return false;
                 if (!isAdmin || !isAdmin()) return false; // trava só faz sentido p/ admin
                 var st = (currentUser.licStatus || '').toString().toUpperCase();
-                if (st === 'INADIMPLENTE' || st === 'EXPIRADO' || st === 'BLOQUEADO' || st === 'CANCELADO' || st === 'RENOVACAO' || st === 'VENCIDO') return true;
+                if (st === 'INADIMPLENTE' || st === 'EXPIRADO' || st === 'BLOQUEADO' || st === 'CANCELADO') return true;
                 var venc = _parseVencDate(currentUser.licProxVenc || '');
                 if (venc) {
                     var hoje = new Date(); hoje.setHours(0,0,0,0); venc.setHours(0,0,0,0);
@@ -40058,42 +40130,6 @@
         }
 
         // ═══ ABA EVENTOS ════════════════════════════════════════════════════
-        // ── Quiosque Facial (admin) ──────────────────────────────────────────
-        async function loadQuiosqueConfig() {
-            try {
-                var ct = currentUser ? (currentUser.ct||'') : '';
-                var res = await secureFetch('getQuiosqueConfig', { ct: ct });
-                if (!res || !res.success || !res.config) return;
-                var c = res.config, el;
-                if (el = document.getElementById('qkAtivo')) el.checked = !!c.ativo;
-                if (el = document.getElementById('qkConf'))  el.value = c.confidence || 90;
-                if (el = document.getElementById('qkTempo')) el.value = c.tempo_retorno || 3;
-                if (el = document.getElementById('qkSom'))   el.checked = c.som_confirmacao !== false;
-                if (el = document.getElementById('qkVisit')) el.checked = !!c.permitir_visitante;
-            } catch(e){}
-        }
-        async function salvarQuiosqueConfig() {
-            var msg = document.getElementById('qkMsg');
-            var payload = {
-                ct: currentUser ? (currentUser.ct||'') : '',
-                ativo: document.getElementById('qkAtivo').checked,
-                confidence: parseInt(document.getElementById('qkConf').value)||90,
-                tempo_retorno: parseInt(document.getElementById('qkTempo').value)||3,
-                som_confirmacao: document.getElementById('qkSom').checked,
-                permitir_visitante: document.getElementById('qkVisit').checked,
-                camera_mode: 'user'
-            };
-            if (msg) { msg.textContent = 'Salvando...'; msg.style.color = 'var(--adm-text-3)'; }
-            try {
-                var res = await secureFetch('saveQuiosqueConfig', payload);
-                if (msg) { msg.textContent = (res&&res.success) ? ('✅ '+res.message) : ('❌ '+((res&&res.message)||'Erro')); msg.style.color = (res&&res.success)?'#4ade80':'#f87171'; }
-            } catch(e){ if (msg){ msg.textContent='❌ Erro de conexão'; msg.style.color='#f87171'; } }
-        }
-        function abrirQuiosque() {
-            var ct = currentUser ? encodeURIComponent(currentUser.ct||'') : '';
-            window.open('/quiosque.html?ctm=' + ct, '_blank');
-        }
-
         async function loadEventos() {
             var box = document.getElementById('eventosList'); if (!box) return;
             box.innerHTML = '<div style="text-align:center;padding:30px 0;color:rgba(255,255,255,0.4);font-size:12px;">Carregando...</div>';
