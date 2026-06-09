@@ -25,7 +25,7 @@
 
     <title>CT Manager - Checkin</title>
     <!-- PWA / TWA (Play Store) — manifest e ícones reais -->
-    <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" id="pwaManifestLink" href="/manifest.json">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -7649,13 +7649,28 @@
     </script>
 
     <script>
+
+    // ── PWA helper: monta start_url sempre com ?ctm= ────────────────────────
+    function _getPwaStartUrl() {
+        // 1. ctm na URL atual
+        var m = (window.location.search || "").match(/[?&]ctm=([^&]+)/);
+        if (m) return window.location.origin + window.location.pathname + "?ctm=" + m[1];
+        // 2. ctm salvo no localStorage quando o CT foi carregado
+        try {
+            var s = localStorage.getItem("ctmId") || localStorage.getItem("_ctmId")
+                 || localStorage.getItem("currentCtm") || "";
+            if (s) return window.location.origin + window.location.pathname + "?ctm=" + s;
+        } catch(e) {}
+        // 3. fallback
+        return window.location.href;
+    }
     // Dynamic PWA manifest — uses CT logo as app icon
     function _injectPWAManifest(iconDataUrl) {
         var iconUrl = iconDataUrl || '';
         var manifest = {
             name: 'CT Manager',
             short_name: 'CT Manager',
-            start_url: window.location.href,
+            start_url: _getPwaStartUrl(),
             display: 'standalone',
             background_color: '#0f1729',
             theme_color: '#C9A23A',
@@ -12224,7 +12239,7 @@
                     name: 'CT Manager',
                     short_name: 'CT Manager',
                     description: 'Sistema de gestão de CT - IDESystems Tecnologia',
-                    start_url: window.location.href,
+                    start_url: _getPwaStartUrl(),
                     display: 'standalone',
                     background_color: '#0F172A',
                     theme_color: '#060607',
@@ -29198,6 +29213,8 @@ function abrirModalAdicionarDependente() {
             });
             // Atualiza manifest PWA com o logo
             if (typeof _onLogoLoaded === 'function') _onLogoLoaded(src);
+            // Re-injeta manifest garantindo ?ctm= correto no start_url
+            try { if (typeof _injectPWAManifest === 'function') _injectPWAManifest(); } catch(_ep) {}
         }
 
         // Abre seletor de arquivo para o admin trocar o logo
