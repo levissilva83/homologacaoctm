@@ -8954,6 +8954,8 @@
                         <!-- ===== MINHA FAMÍLIA v5.0 ===== -->
                         <div class="perfil-section" id="perfilSecFamilia" style="display:none;margin-top:16px;">
                             <div class="perfil-section-title"><span>👨‍👩‍👧‍👦</span> Minha Família</div>
+                            <div id="familiaStatusBillingBanner" style="display:none;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:11px;color:#4ade80;"></div>
+                            <div id="familiaPlanoResumo" style="font-size:11px;color:var(--text-3);margin-bottom:10px;"></div>
                             <div id="familiaMembrosLista" style="display:flex;flex-direction:column;gap:8px;"></div>
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
                                 <button onclick="abrirCheckinFamilia()" id="btnCheckinFamilia" style="padding:11px;background:rgba(201,162,58,0.1);border:1px solid rgba(201,162,58,0.3);border-radius:10px;color:#C9A23A;font-size:12px;font-weight:700;cursor:pointer;">🥋 Check-in</button>
@@ -12683,6 +12685,11 @@
                 _lockByPlan('addCTSection', '🏠 Criar Filiais / CTs', 'premium');
             }
 // Dependentes e Família — liberado para todos os planos
+            // Plano Família com cobrança unificada (somente Premium)
+            if (_planId !== 'premium') {
+                _lockByPlan('familiaPlanoResumo',        '💰 Plano Família Unificado', 'premium');
+                _lockByPlan('familiaStatusBillingBanner','💰 Plano Família Unificado', 'premium');
+            }
             // Congelamento de Matrícula (Profissional ou superior)
             if (_planId !== 'premium' && _planId !== 'profissional') {
                 _lockByPlan('perfilSecCongelamento', '❄️ Congelamento de Matrícula', 'profissional');
@@ -22691,6 +22698,8 @@
         async function loadFamiliaSection() {
             var sec    = document.getElementById('perfilSecFamilia');
             var lista  = document.getElementById('familiaMembrosLista');
+            var resumo = document.getElementById('familiaPlanoResumo');
+            var banner = document.getElementById('familiaStatusBillingBanner');
             if (!sec || !lista) return;
 
             try {
@@ -22728,11 +22737,11 @@
                     // compat: _familiaCache usado por outras partes do app
                     _familiaCache = _famV5Membros;
                     sec.style.display = 'block';
-                    _famRenderLista(lista);
+                    _famRenderLista(lista, resumo, banner, r.financeiro);
                     return;
                 }
 
-                // ── Fallback v4: getDependentes ──
+                // ── Fallback v4: getDependentes + getPlanoFamiliar ──
                 var r4 = await secureFetch('getDependentes', {});
                 if (!r4.success) return;
                 _famV5Cache   = null;
@@ -22748,12 +22757,59 @@
                 });
                 _familiaCache = _famV5Membros;
                 sec.style.display = 'block';
-                _famRenderLista(lista);
+
+                // Financeiro v4
+                var finV4 = null;
+                try {
+                    var pf = await secureFetch('getPlanoFamiliar', {});
+                    if (pf.success && pf.financeiro) {
+                        finV4 = {
+                            nomePlano:        pf.plano && pf.plano.nome ? pf.plano.nome : '',
+                            valorBase:        pf.financeiro.valorBase || 0,
+                            totalComDesconto: pf.financeiro.totalComDesc || 0,
+                            economia:         pf.financeiro.economia || 0,
+                            statusPagamento:  pf.financeiro.statusPagamento || ''
+                        };
+                    }
+                } catch(_ep) {}
+                _famRenderLista(lista, resumo, banner, finV4);
 
             } catch(e) { console.error('loadFamiliaSection:', e); }
         }
 
-        function _famRenderLista(lista) {
+        function _famRenderLista(lista, resumo, banner, fin) {
+            // Banner de pagamento
+            if (banner && fin && fin.statusPagamento) {
+                var stMap = { PAGO:'✅ Mensalidade em dia — todos os membros cobertos',
+                              PENDENTE:'⏳ Mensalidade pendente — regularize para manter dependentes ativos',
+                              ATRASADO:'⚠️ Mensalidade em atraso — dependentes podem ser bloqueados' };
+                var stBg  = { PAGO:'rgba(74,222,128,0.08)', PENDENTE:'rgba(251,191,36,0.08)', ATRASADO:'rgba(248,113,113,0.08)' };
+                var stBd  = { PAGO:'rgba(74,222,128,0.2)',  PENDENTE:'rgba(251,191,36,0.2)',  ATRASADO:'rgba(248,113,113,0.3)' };
+                var stTx  = { PAGO:'#4ade80', PENDENTE:'#fbbf24', ATRASADO:'#f87171' };
+                var st = (fin.statusPagamento || '').toUpperCase();
+                if (stMap[st]) {
+                    banner.style.display     = 'block';
+                    banner.style.background  = stBg[st] || '';
+                    banner.style.borderColor = stBd[st] || '';
+                    banner.style.color       = stTx[st] || '';
+                    banner.textContent       = stMap[st];
+                }
+            }
+
+            // Resumo financeiro
+            if (resumo && fin && (fin.valorBase > 0 || fin.nomePlano)) {
+                var totalMembros = _famV5Membros.length + 1;
+                resumo.innerHTML =
+                    '<div style="padding:10px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;">' +
+                    (fin.nomePlano ? '<div class="fam-fin-row"><span>Plano</span><span class="val">' + escapeHtml(fin.nomePlano) + '</span></div>' : '') +
+                    '<div class="fam-fin-row"><span>Membros</span><span class="val">' + totalMembros + '</span></div>' +
+                    (fin.totalComDesconto > 0 ? '<div class="fam-fin-row"><span>Total c/ desconto</span><span class="val">R$ ' + fin.totalComDesconto.toFixed(2) + '/mês</span></div>' : '') +
+                    (fin.economia > 0 ? '<div class="fam-fin-row"><span>Economia</span><span class="val green">💰 R$ ' + fin.economia.toFixed(2) + '/mês</span></div>' : '') +
+                    '</div>';
+            } else if (resumo) {
+                resumo.innerHTML = '';
+            }
+
             // Lista de membros
             if (_famV5Membros.length === 0) {
                 lista.innerHTML = '<div style="font-size:12px;color:var(--text-3);text-align:center;padding:10px 0;">Nenhum membro cadastrado.<br>Clique em <b>➕ Membro</b> para adicionar.</div>';
@@ -30090,10 +30146,13 @@
                                 diasRestantes +
                                 (isTrial ? '<div style="font-size:8px;color:var(--adm-text-3);">fim trial</div>' : '') +
                             '</div></div>' +
-                            // Col 7: Ações (✏️ editar, 💸 cobrar, 🗑️ excluir)
+                            // Col 7: Ações (✏️ editar, 💸 cobrar, 🔄 pix pendente, 🗑️ excluir)
                             '<div class="cm-row-cell" style="justify-content:flex-end;gap:3px;">' +
                                 '<button data-edit="'+escapeHtml(c.email)+'" title="Editar" style="padding:4px 7px;background:rgba(201,162,58,0.08);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.2);border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;">✏️</button>' +
                                 '<button data-charge="'+escapeHtml(c.email)+'" title="Cobrar" style="padding:4px 7px;background:rgba(74,222,128,0.08);color:#4ade80;border:1px solid rgba(74,222,128,0.2);border-radius:6px;font-size:10px;cursor:pointer;">💸</button>' +
+                                (s === 'PENDENTE_PIX'
+                                    ? '<button data-confirmpix="'+escapeHtml(c.email)+'" title="Confirmar PIX pendente" style="padding:4px 7px;background:rgba(96,165,250,0.12);color:#60a5fa;border:1px solid rgba(96,165,250,0.3);border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;">🔄 PIX</button>'
+                                    : '') +
                                 '<button data-delete="'+escapeHtml(c.email)+'" title="Excluir cliente" style="padding:4px 7px;background:rgba(248,113,113,0.08);color:#f87171;border:1px solid rgba(248,113,113,0.2);border-radius:6px;font-size:10px;cursor:pointer;">🗑️</button>' +
                             '</div>';
                         tbody.appendChild(row);
@@ -30115,6 +30174,13 @@
                             var emailD = delBtn.getAttribute('data-delete');
                             state.clienteAtivo = state.clientes.find(function(x){ return x.email===emailD; }) || null;
                             if (state.clienteAtivo) CTM_Contratos.actions.excluir();
+                            return;
+                        }
+                        var pixBtn = e.target.closest('[data-confirmpix]');
+                        if (pixBtn) {
+                            var emailP = pixBtn.getAttribute('data-confirmpix');
+                            var clienteP = state.clientes.find(function(x){ return x.email===emailP; }) || {};
+                            _abrirConfirmarPixAdmin(emailP, clienteP.subscriptionId || '', clienteP.plano || '');
                             return;
                         }
                         var row2 = e.target.closest('[data-email]');
@@ -43034,6 +43100,104 @@
                 showToast('Código PIX copiado!', 'success');
             }
         };
+        // ══ CONFIRMAR PIX PENDENTE — painel SuperAdmin ══════════════════
+
+        async function _abrirConfirmarPixAdmin(email, subscriptionId, planoId) {
+            var pixId = subscriptionId && subscriptionId.indexOf('pix_') === 0
+                ? subscriptionId.replace('pix_', '')
+                : subscriptionId || '';
+
+            var old = document.getElementById('pixAdminSheet'); if (old) old.remove();
+            var sh  = document.createElement('div');
+            sh.id   = 'pixAdminSheet';
+            sh.style.cssText = 'position:fixed;inset:0;z-index:9998;';
+
+            sh.innerHTML =
+                '<div onclick="document.getElementById(\' pixAdminSheet\').remove()" style="position:fixed;inset:0;background:rgba(0,0,0,0.72);"></div>'
+                + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:var(--adm-bg-card,#1a1f2e);border-radius:20px 20px 0 0;padding:24px 20px 36px;z-index:9999;max-width:480px;margin:0 auto;">'
+                + '<div style="width:40px;height:4px;background:rgba(255,255,255,.12);border-radius:2px;margin:0 auto 20px;"></div>'
+                + '<div style="font-size:15px;font-weight:800;color:var(--adm-text-1);margin-bottom:4px;">🔄 Confirmar PIX</div>'
+                + '<div style="font-size:11px;color:var(--adm-text-3);margin-bottom:16px;">' + escapeHtml(email) + '</div>'
+
+                + '<div style="background:rgba(96,165,250,0.07);border:1px solid rgba(96,165,250,0.25);border-radius:10px;padding:12px;margin-bottom:14px;font-size:11px;color:var(--adm-text-2);line-height:1.7;">'
+                + '⚠️ <strong>Use apenas quando o pagamento constar no Mercado Pago mas o webhook não chegou.</strong><br>'
+                + 'Esta ação consulta o MP via API e, se o PIX estiver <code style="color:#4ade80;">approved</code>, ativa o cliente automaticamente.<br>'
+                + 'Se o pixId não estiver registrado ainda, use <strong>Forçar ativação manual</strong> abaixo.'
+                + '</div>'
+
+                + '<div style="font-size:10px;color:var(--adm-text-3);margin-bottom:4px;">PIX ID (pix_... da planilha LICENCIADOS)</div>'
+                + '<input id="pixAdminId" value="' + escapeHtml(pixId) + '" placeholder="ID do pagamento no MP (ex: 162617210617)" '
+                + 'style="width:100%;box-sizing:border-box;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:12px;">'
+
+                + '<div id="pixAdminMsg" style="font-size:11px;min-height:16px;margin-bottom:10px;text-align:center;"></div>'
+
+                + '<button onclick="_executarConfirmarPixAdmin(\'' + escapeHtml(email) + '\',\'' + escapeHtml(planoId) + '\',false)" '
+                + 'style="width:100%;padding:12px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;margin-bottom:8px;">'
+                + '🔄 Consultar MP e confirmar PIX</button>'
+
+                + '<button onclick="_executarConfirmarPixAdmin(\'' + escapeHtml(email) + '\',\'' + escapeHtml(planoId) + '\',true)" '
+                + 'style="width:100%;padding:12px;background:rgba(251,191,36,0.12);color:#fbbf24;border:1px solid rgba(251,191,36,0.3);border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;">'
+                + '⚡ Forçar ativação manual (sem consultar MP)</button>'
+
+                + '<button onclick="document.getElementById(\'pixAdminSheet\').remove()" '
+                + 'style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,.25);font-size:12px;cursor:pointer;">Cancelar</button>'
+                + '</div>';
+
+            document.body.appendChild(sh);
+        }
+
+        async function _executarConfirmarPixAdmin(email, planoId, forcar) {
+            var pixIdEl = document.getElementById('pixAdminId');
+            var msgEl   = document.getElementById('pixAdminMsg');
+            var pixId   = pixIdEl ? pixIdEl.value.trim().replace('pix_', '') : '';
+
+            if (!forcar && !pixId) {
+                if (msgEl) { msgEl.style.color='#f87171'; msgEl.textContent='⚠️ Informe o PIX ID antes de consultar.'; }
+                return;
+            }
+
+            var btns = document.querySelectorAll('#pixAdminSheet button');
+            btns.forEach(function(b){ b.disabled = true; });
+            if (msgEl) { msgEl.style.color = '#60a5fa'; msgEl.textContent = forcar ? '⏳ Forçando ativação...' : '⏳ Consultando Mercado Pago...'; }
+
+            try {
+                var resp = await secureFetch('confirmarPixAssinatura', {
+                    email:   email,
+                    pixId:   pixId || 'admin_force_' + Date.now(),
+                    planoId: planoId || '',
+                    forcar:  forcar
+                });
+
+                if (resp && resp.success) {
+                    if (msgEl) { msgEl.style.color='#4ade80'; msgEl.textContent='✅ ' + (resp.message || 'Cliente ativado com sucesso!'); }
+                    setTimeout(function(){
+                        var sh = document.getElementById('pixAdminSheet');
+                        if (sh) sh.remove();
+                        // Recarrega a lista de clientes
+                        if (typeof CTM_Contratos !== 'undefined' && CTM_Contratos.actions) {
+                            try { CTM_Contratos.actions.carregar(); } catch(_r) {}
+                        }
+                    }, 1800);
+                } else {
+                    var _st  = resp && resp.data && resp.data.status ? resp.data.status : '';
+                    var _mpStatus = _st ? ' (MP: ' + _st + ')' : '';
+                    var _errMsg = (resp && resp.message) || 'Erro ao confirmar';
+
+                    // Se falhou porque o PIX ainda não está approved no MP, sugere forçar
+                    var _sugerirForca = _st && _st !== 'approved';
+                    if (msgEl) {
+                        msgEl.style.color = '#fbbf24';
+                        msgEl.textContent = '⚠️ ' + _errMsg + _mpStatus
+                            + (_sugerirForca ? ' — use Forçar ativação se o dinheiro já constar no MP.' : '');
+                    }
+                    btns.forEach(function(b){ b.disabled = false; });
+                }
+            } catch(e) {
+                if (msgEl) { msgEl.style.color='#f87171'; msgEl.textContent='❌ Erro: ' + e.message; }
+                btns.forEach(function(b){ b.disabled = false; });
+            }
+        }
+
         // ── fim PIX assinatura ─────────────────────────────────────────
 
         window.asnConfirmarCancelar = function () {
