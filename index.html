@@ -2835,6 +2835,74 @@
             background: transparent !important;
         }
 
+        /* ── Sub-abas da Evolução (Sistema de Graduação / Meus Certificados) ── */
+        .evo-subtab-btn {
+            flex-shrink: 0;
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--bg-elevated);
+            color: var(--text-3);
+            transition: all .18s ease;
+            white-space: nowrap;
+        }
+        .evo-subtab-btn.active {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+        }
+        .evo-subtab-btn:not(.active):hover {
+            border-color: rgba(201,162,58,0.4);
+            color: var(--text-2);
+        }
+        .evo-subtab-pane {
+            display: none;
+            animation: fadeInTab .2s ease;
+        }
+        .evo-subtab-pane.active { display: block; }
+
+        /* ── Abas secundárias (Mensalidade / Contratos / Congelamento / Família) ── */
+        .perfil-tabs-nav--secondary {
+            margin-top: 20px;
+            padding-bottom: 0;
+            border-bottom: 1px solid var(--border);
+            gap: 0;
+        }
+        .perfil-tab-btn--secondary {
+            border-radius: 10px 10px 0 0;
+            border-bottom: none !important;
+            padding: 8px 12px;
+            font-size: 10.5px;
+            background: transparent;
+            color: var(--text-3);
+            border-color: transparent;
+            position: relative;
+            bottom: -1px;
+        }
+        .perfil-tab-btn--secondary.active {
+            background: var(--bg-card);
+            color: var(--accent);
+            border: 1px solid var(--border);
+            border-bottom-color: var(--bg-card);
+        }
+        .perfil-tab-btn--secondary:not(.active):hover {
+            color: var(--text-2);
+            border-color: transparent;
+        }
+        .perfil-tab-pane--secondary {
+            display: none;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-top: none;
+            border-radius: 0 0 14px 14px;
+            padding: 16px;
+            animation: fadeInTab .2s ease;
+        }
+        .perfil-tab-pane--secondary.active { display: block; }
+
         .perfil-section {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -8276,6 +8344,14 @@
 
                         <button class="evo-exam-btn disabled" id="evoExamBtn" data-module="exame" disabled>🔒 Critérios pendentes · Aprovação do professor</button>
 
+                        <!-- ══ SUB-ABAS DA EVOLUÇÃO ══ -->
+                        <div style="display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding:4px 0 12px;-webkit-overflow-scrolling:touch;" id="evoSubTabsNav">
+                            <button class="evo-subtab-btn active" data-evosub="graduacao" onclick="switchEvoSubTab('graduacao')">🎓 Sistema de Graduação</button>
+                            <button class="evo-subtab-btn" data-evosub="certificados" onclick="switchEvoSubTab('certificados')">📜 Meus Certificados</button>
+                        </div>
+
+                        <!-- SUB-ABA: SISTEMA DE GRADUAÇÃO -->
+                        <div class="evo-subtab-pane active" id="evoSubGraduacao">
                         <div class="ibjjf-roadmap">
                             <div class="ibjjf-title" id="ibjjfTitle">🎓 Sistema de Graduação</div>
                             <div class="ibjjf-subtitle" id="ibjjfSubtitle">Toque em uma faixa para ver sua jornada</div>
@@ -8339,6 +8415,19 @@
                         <div id="evoTimeline" style="display:none;">
                             <div id="evoTimelineContent"></div>
                         </div>
+                        </div><!-- fim evo-subtab-pane#evoSubGraduacao -->
+
+                        <!-- SUB-ABA: MEUS CERTIFICADOS -->
+                        <div class="evo-subtab-pane" id="evoSubCertificados">
+                            <div id="perfilSecCertificado" style="padding-top:4px;">
+                                <div style="font-size:11px;color:var(--text-3);margin-bottom:14px;line-height:1.6;">
+                                    Baixe o certificado da sua graduação atual ou de graduações anteriores, assinado pelo seu professor.
+                                </div>
+                                <button onclick="gerarCertificado('')" style="width:100%;padding:13px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.3px;">📜 Gerar certificado da faixa atual</button>
+                                <div id="meusCertsRetroLista" style="margin-top:14px;"></div>
+                            </div>
+                        </div><!-- fim evo-subtab-pane#evoSubCertificados -->
+
                     </div>
                     </div>
 
@@ -8954,14 +9043,7 @@
                         <div id="perfilMessage"></div>
                         <button class="perfil-save-btn" id="perfilSaveBtn" onclick="saveProfile()">💾 Salvar Perfil</button>
 
-                        <!-- ===== CONTRATOS E TERMOS ===== -->
-                        <div id="perfilContratosSection" class="perfil-section" style="margin-top:16px;display:none;">
-                            <div class="perfil-section-title"><span>📋</span> Contratos e Termos</div>
-                            <div id="perfilContratosLista">
-                                <div style="text-align:center;padding:12px;color:var(--text-3);font-size:12px;">⏳ Carregando...</div>
-                            </div>
-                        </div>
-
+                        <!-- ===== ALTERAR SENHA ===== -->
                         <div class="perfil-section" id="perfilSecSenha" style="margin-top:16px;">
                             <div class="perfil-section-title"><span>🔒</span> Alterar Senha</div>
                             <div class="perfil-field">
@@ -8982,66 +9064,79 @@
                             <button class="perfil-save-btn" style="margin-top:10px" onclick="changePassword()">🔑 Alterar Senha</button>
                         </div>
 
-                        <!-- ===== MEU CERTIFICADO (alunos) ===== -->
-                        <div class="perfil-section" id="perfilSecCertificado" style="margin-top:16px;">
-                            <div class="perfil-section-title"><span>📜</span> Meus Certificados de Graduação</div>
-                            <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">Baixe o certificado da sua graduação atual ou de graduações anteriores, assinado pelo seu professor.</div>
-                            <button class="perfil-save-btn" onclick="gerarCertificado('')" style="background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;">📜 Gerar certificado da faixa atual</button>
-                            <div id="meusCertsRetroLista" style="margin-top:12px;"></div>
+                        <!-- ══════════════════════════════════════════════════ -->
+                        <!-- ABAS SECUNDÁRIAS: Mensalidade | Contratos |       -->
+                        <!--                   Congelamento | Minha Família    -->
+                        <!-- ══════════════════════════════════════════════════ -->
+                        <div class="perfil-tabs-nav perfil-tabs-nav--secondary" id="perfilTabsNavSec" style="margin-top:20px;">
+                            <button class="perfil-tab-btn perfil-tab-btn--secondary active" data-ptabsec="mensalidade" onclick="switchPerfilTabSec('mensalidade')">💳 Mensalidade</button>
+                            <button class="perfil-tab-btn perfil-tab-btn--secondary"        data-ptabsec="contratos"   onclick="switchPerfilTabSec('contratos')">📋 Contratos</button>
+                            <button class="perfil-tab-btn perfil-tab-btn--secondary"        data-ptabsec="congelamento" onclick="switchPerfilTabSec('congelamento')">❄️ Congelamento</button>
+                            <button class="perfil-tab-btn perfil-tab-btn--secondary"        data-ptabsec="familia"     onclick="switchPerfilTabSec('familia')">👨‍👩‍👧‍👦 Família</button>
                         </div>
 
-                        <!-- ===== MINHA ASSINATURA (professores) ===== -->
-                        <!-- ===== PAGAMENTOS / MENSALIDADE ===== -->
-                        <div class="perfil-section" id="perfilSecPagamentos">
-                            <div class="perfil-section-title"><span>💳</span> Mensalidade</div>
-                            <div id="pagamentosContainer">
-                                <div style="text-align:center;padding:20px;color:var(--text-3);font-size:12px;">Carregando...</div>
-                            </div>
-                        </div>
-
-
-                        <!-- ===== CONGELAMENTO DE MATRÍCULA ===== -->
-                        <div class="perfil-section" id="perfilSecCongelamento" style="margin-top:16px;">
-                            <div class="perfil-section-title"><span>❄️</span> Congelamento de Matrícula</div>
-                            <div id="congelamentoStatus" style="font-size:12px;color:var(--text-3);margin-bottom:10px;">
-                                Pausa temporária. Mín. 15 dias · Máx. 90 dias · Até 2x por ano.
-                            </div>
-                            <div id="congelamentoAtivo" style="display:none;background:rgba(99,179,237,0.08);border:1px solid rgba(99,179,237,0.25);border-radius:10px;padding:12px;margin-bottom:10px;">
-                                <div style="font-size:13px;font-weight:700;color:#63b3ed;">❄️ Matrícula Congelada</div>
-                                <div id="congelamentoAtivoInfo" style="font-size:11px;color:var(--text-3);margin-top:4px;"></div>
-                                <button onclick="cancelarCongelamento()" style="margin-top:8px;width:100%;padding:8px;background:transparent;border:1px solid rgba(248,113,113,0.3);border-radius:8px;color:#f87171;font-size:11px;font-weight:600;cursor:pointer;">✕ Cancelar Congelamento</button>
-                            </div>
-                            <div id="congelamentoPendente" style="display:none;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:10px;padding:12px;margin-bottom:10px;">
-                                <div style="font-size:12px;font-weight:700;color:#fbbf24;">⏳ Aguardando aprovação do professor</div>
-                                <div id="congelamentoPendenteInfo" style="font-size:11px;color:var(--text-3);margin-top:4px;"></div>
-                                <button onclick="cancelarCongelamento()" style="margin-top:8px;width:100%;padding:8px;background:transparent;border:1px solid rgba(251,191,36,0.3);border-radius:8px;color:#fbbf24;font-size:11px;cursor:pointer;">✕ Cancelar Solicitação</button>
-                            </div>
-                            <div id="congelamentoForm">
-                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-                                    <div>
-                                        <label style="font-size:10px;color:var(--text-3);font-weight:600;">INÍCIO</label>
-                                        <input type="date" id="congInicio" style="width:100%;padding:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:12px;">
-                                    </div>
-                                    <div>
-                                        <label style="font-size:10px;color:var(--text-3);font-weight:600;">RETORNO</label>
-                                        <input type="date" id="congFim" style="width:100%;padding:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:12px;">
-                                    </div>
+                        <!-- ABA SECUNDÁRIA: MENSALIDADE -->
+                        <div class="perfil-tab-pane perfil-tab-pane--secondary active" id="perfilTabSecMensalidade">
+                            <div id="perfilSecPagamentos" style="border:none;padding:0;background:transparent;">
+                                <div id="pagamentosContainer">
+                                    <div style="text-align:center;padding:20px;color:var(--text-3);font-size:12px;">Carregando...</div>
                                 </div>
-                                <input id="congMotivo" placeholder="Motivo (ex: férias, viagem, cirurgia...)" style="width:100%;padding:8px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:12px;margin-bottom:8px;">
-                                <div id="congDiasPreview" style="font-size:11px;color:var(--text-3);margin-bottom:8px;"></div>
-                                <button onclick="solicitarCongelamento()" style="width:100%;padding:10px;background:rgba(99,179,237,0.1);border:1px solid rgba(99,179,237,0.3);border-radius:10px;color:#63b3ed;font-size:12px;font-weight:700;cursor:pointer;">❄️ Solicitar Congelamento</button>
                             </div>
                         </div>
 
-                        <!-- ===== MINHA FAMÍLIA v5.0 ===== -->
-                        <div class="perfil-section" id="perfilSecFamilia" style="display:none;margin-top:16px;">
-                            <div class="perfil-section-title"><span>👨‍👩‍👧‍👦</span> Minha Família</div>
-                            <div id="familiaStatusBillingBanner" style="display:none;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:11px;color:#4ade80;"></div>
-                            <div id="familiaPlanoResumo" style="font-size:11px;color:var(--text-3);margin-bottom:10px;"></div>
-                            <div id="familiaMembrosLista" style="display:flex;flex-direction:column;gap:8px;"></div>
-                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
-                                <button onclick="abrirCheckinFamilia()" id="btnCheckinFamilia" style="padding:11px;background:rgba(201,162,58,0.1);border:1px solid rgba(201,162,58,0.3);border-radius:10px;color:#C9A23A;font-size:12px;font-weight:700;cursor:pointer;">🥋 Check-in</button>
-                                <button onclick="famV5_abrirModalMembro()" id="btnAdicionarDependente" style="padding:11px;background:rgba(99,179,237,0.08);border:1px solid rgba(99,179,237,0.25);border-radius:10px;color:#63b3ed;font-size:12px;font-weight:700;cursor:pointer;">➕ Membro</button>
+                        <!-- ABA SECUNDÁRIA: CONTRATOS -->
+                        <div class="perfil-tab-pane perfil-tab-pane--secondary" id="perfilTabSecContratos">
+                            <div id="perfilContratosSection" style="border:none;padding:0;background:transparent;">
+                                <div id="perfilContratosLista">
+                                    <div style="text-align:center;padding:12px;color:var(--text-3);font-size:12px;">⏳ Carregando...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ABA SECUNDÁRIA: CONGELAMENTO -->
+                        <div class="perfil-tab-pane perfil-tab-pane--secondary" id="perfilTabSecCongelamento">
+                            <div id="perfilSecCongelamento" style="border:none;padding:0;background:transparent;">
+                                <div id="congelamentoStatus" style="font-size:12px;color:var(--text-3);margin-bottom:10px;">
+                                    Pausa temporária. Mín. 15 dias · Máx. 90 dias · Até 2x por ano.
+                                </div>
+                                <div id="congelamentoAtivo" style="display:none;background:rgba(99,179,237,0.08);border:1px solid rgba(99,179,237,0.25);border-radius:10px;padding:12px;margin-bottom:10px;">
+                                    <div style="font-size:13px;font-weight:700;color:#63b3ed;">❄️ Matrícula Congelada</div>
+                                    <div id="congelamentoAtivoInfo" style="font-size:11px;color:var(--text-3);margin-top:4px;"></div>
+                                    <button onclick="cancelarCongelamento()" style="margin-top:8px;width:100%;padding:8px;background:transparent;border:1px solid rgba(248,113,113,0.3);border-radius:8px;color:#f87171;font-size:11px;font-weight:600;cursor:pointer;">✕ Cancelar Congelamento</button>
+                                </div>
+                                <div id="congelamentoPendente" style="display:none;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:10px;padding:12px;margin-bottom:10px;">
+                                    <div style="font-size:12px;font-weight:700;color:#fbbf24;">⏳ Aguardando aprovação do professor</div>
+                                    <div id="congelamentoPendenteInfo" style="font-size:11px;color:var(--text-3);margin-top:4px;"></div>
+                                    <button onclick="cancelarCongelamento()" style="margin-top:8px;width:100%;padding:8px;background:transparent;border:1px solid rgba(251,191,36,0.3);border-radius:8px;color:#fbbf24;font-size:11px;cursor:pointer;">✕ Cancelar Solicitação</button>
+                                </div>
+                                <div id="congelamentoForm">
+                                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                                        <div>
+                                            <label style="font-size:10px;color:var(--text-3);font-weight:600;">INÍCIO</label>
+                                            <input type="date" id="congInicio" style="width:100%;padding:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:12px;">
+                                        </div>
+                                        <div>
+                                            <label style="font-size:10px;color:var(--text-3);font-weight:600;">RETORNO</label>
+                                            <input type="date" id="congFim" style="width:100%;padding:8px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:12px;">
+                                        </div>
+                                    </div>
+                                    <input id="congMotivo" placeholder="Motivo (ex: férias, viagem, cirurgia...)" style="width:100%;padding:8px 10px;background:var(--bg-card);border:1px solid var(--border);border-radius:8px;color:var(--text-1);font-size:12px;margin-bottom:8px;">
+                                    <div id="congDiasPreview" style="font-size:11px;color:var(--text-3);margin-bottom:8px;"></div>
+                                    <button onclick="solicitarCongelamento()" style="width:100%;padding:10px;background:rgba(99,179,237,0.1);border:1px solid rgba(99,179,237,0.3);border-radius:10px;color:#63b3ed;font-size:12px;font-weight:700;cursor:pointer;">❄️ Solicitar Congelamento</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ABA SECUNDÁRIA: MINHA FAMÍLIA -->
+                        <div class="perfil-tab-pane perfil-tab-pane--secondary" id="perfilTabSecFamilia">
+                            <div id="perfilSecFamilia" style="border:none;padding:0;background:transparent;">
+                                <div id="familiaStatusBillingBanner" style="display:none;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:11px;color:#4ade80;"></div>
+                                <div id="familiaPlanoResumo" style="font-size:11px;color:var(--text-3);margin-bottom:10px;"></div>
+                                <div id="familiaMembrosLista" style="display:flex;flex-direction:column;gap:8px;"></div>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
+                                    <button onclick="abrirCheckinFamilia()" id="btnCheckinFamilia" style="padding:11px;background:rgba(201,162,58,0.1);border:1px solid rgba(201,162,58,0.3);border-radius:10px;color:#C9A23A;font-size:12px;font-weight:700;cursor:pointer;">🥋 Check-in</button>
+                                    <button onclick="famV5_abrirModalMembro()" id="btnAdicionarDependente" style="padding:11px;background:rgba(99,179,237,0.08);border:1px solid rgba(99,179,237,0.25);border-radius:10px;color:#63b3ed;font-size:12px;font-weight:700;cursor:pointer;">➕ Membro</button>
+                                </div>
                             </div>
                         </div>
 
@@ -16359,7 +16454,7 @@
                 if (typeof resetPerfilTabs === 'function') resetPerfilTabs();
                 loadProfile();
                 loadPagamentos();
-                _carregarMeusContratos(); // carrega contratos e termos do CT
+                // contratos carregados via switchPerfilTabSec('contratos') quando o aluno clicar na aba
                 try { loadMeusCertsRetro(); } catch(e){}
                 // Renderiza seção de modalidades/perfil principal
                 renderPerfilPrincipalSection();
@@ -21503,10 +21598,8 @@
         function loadProfile() {
             if (!currentUser) return;
             document.getElementById('perfilAvatarInitial').textContent = (currentUser.name || '?')[0].toUpperCase();
-            // Inicializa card de congelamento
-            setTimeout(initCongelamentoForm, 100);
-            // Carrega seção família
-            setTimeout(loadFamiliaSection, 200);
+            // Reseta abas secundárias para Mensalidade ao abrir o perfil
+            switchPerfilTabSec('mensalidade');
             document.getElementById('perfilNome').textContent = currentUser.name || '—';
             
             // Kids vs Adult faixa tag
@@ -22018,6 +22111,53 @@
 
         function resetPerfilTabs() {
             switchPerfilTab('dados');
+            switchPerfilTabSec('mensalidade');
+        }
+
+        function switchEvoSubTab(tab) {
+            document.querySelectorAll('.evo-subtab-btn').forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-evosub') === tab);
+            });
+            var map = {
+                graduacao:    'evoSubGraduacao',
+                certificados: 'evoSubCertificados'
+            };
+            Object.keys(map).forEach(function(key) {
+                var el = document.getElementById(map[key]);
+                if (el) el.classList.toggle('active', key === tab);
+            });
+            // Carrega certificados ao abrir aba
+            if (tab === 'certificados' && typeof loadMeusCertsRetro === 'function') {
+                loadMeusCertsRetro();
+            }
+        }
+
+        function switchPerfilTabSec(tab) {
+            document.querySelectorAll('.perfil-tab-btn--secondary').forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-ptabsec') === tab);
+            });
+            var map = {
+                mensalidade:  'perfilTabSecMensalidade',
+                contratos:    'perfilTabSecContratos',
+                congelamento: 'perfilTabSecCongelamento',
+                familia:      'perfilTabSecFamilia'
+            };
+            Object.keys(map).forEach(function(key) {
+                var el = document.getElementById(map[key]);
+                if (el) el.classList.toggle('active', key === tab);
+            });
+            // Carrega contratos ao abrir aba
+            if (tab === 'contratos' && typeof _carregarMeusContratos === 'function') {
+                _carregarMeusContratos();
+            }
+            // Carrega família ao abrir aba
+            if (tab === 'familia' && typeof loadFamiliaSection === 'function') {
+                loadFamiliaSection();
+            }
+            // Carrega congelamento ao abrir aba
+            if (tab === 'congelamento' && typeof initCongelamentoForm === 'function') {
+                initCongelamentoForm();
+            }
         }
 
         async function saveProfile() {
