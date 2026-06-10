@@ -12955,7 +12955,7 @@
                 corRGB:    corRGB,
                 gradient:  'linear-gradient(135deg,' + cor + ' 0%,' + cor + ' 100%)',
                 gradientBg:'radial-gradient(ellipse at 20% 10%,rgba(' + corRGB + ',0.18) 0%,transparent 60%)',
-                btnLabel:  (m.emoji || '🥋') + ' Treinei',
+                btnLabel:  (m.emoji || '🥋') + ' Entrar',
                 btnClass:  'mod-btn-' + m.id.replace(/_/g,'-'),
                 cardBg:    'linear-gradient(145deg,rgba(' + corRGB + ',0.12) 0%,rgba(' + corRGB + ',0.06) 100%)',
                 tag:       (MOD_GRAD_TIPO_STYLES[m.gradTipo] || {}).tag || '',
@@ -16580,7 +16580,7 @@
                             cor: cor, corDark: corDark, corLight: corLight, corRGB: corRGB,
                             gradient: 'linear-gradient(135deg,'+cor+' 0%,'+corLight+' 55%,'+corDark+' 100%)',
                             gradientBg: 'radial-gradient(ellipse at 20% 10%,rgba('+corRGB+',0.18) 0%,transparent 60%)',
-                            btnLabel: '🥋 Treinei',
+                            btnLabel: '🥋 Entrar',
                             cardBg: 'linear-gradient(145deg,rgba('+corRGB+',0.12) 0%,rgba('+corRGB+',0.05) 100%)',
                             tag: nome.toUpperCase(), tagColor: cor,
                             ativo: mod.ativo !== false
@@ -37646,7 +37646,7 @@
                 corRGB: corRGB,
                 gradient: 'linear-gradient(135deg, '+cor+' 0%, #'+[Math.min(255,r+80),Math.min(255,g+80),Math.min(255,b+80)].map(function(x){return ('0'+x.toString(16)).slice(-2);}).join('')+' 55%, '+corDark+' 100%)',
                 gradientBg: 'radial-gradient(ellipse at 20% 10%, rgba('+corRGB+',0.18) 0%, transparent 60%)',
-                btnLabel: '🥋 Treinei',
+                btnLabel: '🥋 Entrar',
                 cardBg: 'linear-gradient(145deg, rgba('+corRGB+',0.12) 0%, rgba('+corRGB+',0.05) 100%)',
                 tag: nome.toUpperCase(), tagColor: cor
             };
