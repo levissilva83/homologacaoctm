@@ -24264,7 +24264,13 @@
                 }
 
             } catch(e) {
-                sec.style.display = 'none';
+                // Só oculta se for erro de "sem contratos" — não suprime erros de auth/rede
+                if (e && e.message && e.message.indexOf('Sessão') !== -1) {
+                    // Sessão expirada — deixa secureFetch tratar (já chama handleSessionExpired)
+                } else {
+                    console.warn('[contratos] erro ao carregar:', e && e.message);
+                    sec.style.display = 'none';
+                }
             }
         }
 
