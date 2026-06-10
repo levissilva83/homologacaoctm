@@ -2784,6 +2784,57 @@
             transition: width 0.6s ease;
         }
 
+        /* ── Abas do Perfil ─────────────────────────────────── */
+        .perfil-tabs-nav {
+            display: flex;
+            gap: 4px;
+            overflow-x: auto;
+            padding: 2px 0 10px;
+            margin-bottom: 2px;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        .perfil-tabs-nav::-webkit-scrollbar { display: none; }
+
+        .perfil-tab-btn {
+            flex-shrink: 0;
+            padding: 7px 13px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            background: var(--bg-elevated);
+            color: var(--text-3);
+            transition: all .18s ease;
+            white-space: nowrap;
+            letter-spacing: .3px;
+        }
+        .perfil-tab-btn.active {
+            background: var(--accent);
+            color: #000;
+            border-color: var(--accent);
+        }
+        .perfil-tab-btn:not(.active):hover {
+            border-color: rgba(201,162,58,0.4);
+            color: var(--text-2);
+        }
+        .perfil-tab-pane {
+            display: none;
+            animation: fadeInTab .2s ease;
+        }
+        .perfil-tab-pane.active { display: block; }
+        @keyframes fadeInTab {
+            from { opacity: 0; transform: translateY(4px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .perfil-tab-pane .perfil-section {
+            border: none !important;
+            padding: 0 !important;
+            margin-top: 0 !important;
+            background: transparent !important;
+        }
+
         .perfil-section {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -8738,113 +8789,144 @@
                             </div>
                         </div>
 
-                        <div class="perfil-section" id="perfilSecDados">
-                            <div class="perfil-section-title"><span>👤</span> Dados Pessoais</div>
-                            <div class="perfil-field">
-                                <label>Data de Nascimento</label>
-                                <input type="date" id="perfilNascimento">
-                            </div>
-                            <div class="perfil-row">
+                        <!-- ══════════════════════════════════════════ -->
+                        <!-- ABAS DO PERFIL                             -->
+                        <!-- ══════════════════════════════════════════ -->
+                        <div class="perfil-tabs-nav" id="perfilTabsNav">
+                            <button class="perfil-tab-btn active" data-ptab="dados"    onclick="switchPerfilTab('dados')">👤 Dados</button>
+                            <button class="perfil-tab-btn"        data-ptab="contato"  onclick="switchPerfilTab('contato')">📱 Contato</button>
+                            <button class="perfil-tab-btn"        data-ptab="treino"   onclick="switchPerfilTab('treino')">🥋 Treino</button>
+                            <button class="perfil-tab-btn"        data-ptab="horarios" onclick="switchPerfilTab('horarios')">⏰ Horários</button>
+                            <button class="perfil-tab-btn"        data-ptab="exp"      onclick="switchPerfilTab('exp')">🏅 Experiência</button>
+                            <button class="perfil-tab-btn"        data-ptab="saude"    onclick="switchPerfilTab('saude')">🏥 Saúde</button>
+                        </div>
+
+                        <!-- ABA: DADOS PESSOAIS -->
+                        <div class="perfil-tab-pane active" id="perfilTabDados">
+                            <div class="perfil-section" id="perfilSecDados" style="margin-top:0;border:none;padding:0;">
                                 <div class="perfil-field">
-                                    <label>Gênero</label>
-                                    <select id="perfilGenero">
+                                    <label>Data de Nascimento</label>
+                                    <input type="date" id="perfilNascimento">
+                                </div>
+                                <div class="perfil-row">
+                                    <div class="perfil-field">
+                                        <label>Gênero</label>
+                                        <select id="perfilGenero">
+                                            <option value="">Selecione</option>
+                                            <option value="Masculino">Masculino</option>
+                                            <option value="Feminino">Feminino</option>
+                                            <option value="Outro">Outro</option>
+                                            <option value="Prefiro não dizer">Prefiro não dizer</option>
+                                        </select>
+                                    </div>
+                                    <div class="perfil-field">
+                                        <label>Profissão</label>
+                                        <input type="text" id="perfilProfissao" placeholder="Ex: Engenheiro, Professor...">
+                                    </div>
+                                </div>
+                                <div class="perfil-field">
+                                    <label>Bairro / Cidade</label>
+                                    <input type="text" id="perfilBairro" placeholder="Ex: Tijuca - Rio de Janeiro">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ABA: CONTATO -->
+                        <div class="perfil-tab-pane" id="perfilTabContato">
+                            <div class="perfil-section" id="perfilSecContato" style="margin-top:0;border:none;padding:0;">
+                                <div class="perfil-field">
+                                    <label>Telefone / WhatsApp</label>
+                                    <input type="tel" id="perfilTelefone" placeholder="(21) 99999-9999">
+                                </div>
+                                <div class="perfil-field">
+                                    <label>Instagram</label>
+                                    <input type="text" id="perfilInstagram" placeholder="@seuusuario">
+                                </div>
+                                <div class="perfil-field">
+                                    <label>Contato de Emergência</label>
+                                    <input type="text" id="perfilEmergencia" placeholder="Nome — (21) 99999-9999">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ABA: SOBRE SEU TREINO -->
+                        <div class="perfil-tab-pane" id="perfilTabTreino">
+                            <div class="perfil-section" id="perfilSecJJ" style="margin-top:0;border:none;padding:0;">
+                                <div class="perfil-field">
+                                    <label>Como conheceu o CT?</label>
+                                    <select id="perfilOrigem">
                                         <option value="">Selecione</option>
-                                        <option value="Masculino">Masculino</option>
-                                        <option value="Feminino">Feminino</option>
+                                        <option value="Indicação de amigo">Indicação de amigo</option>
+                                        <option value="Indicação de aluno">Indicação de aluno</option>
+                                        <option value="Instagram">Instagram</option>
+                                        <option value="Facebook">Facebook</option>
+                                        <option value="TikTok">TikTok</option>
+                                        <option value="Google / Busca">Google / Busca</option>
+                                        <option value="Passei na frente">Passei na frente</option>
+                                        <option value="Evento / Campeonato">Evento / Campeonato</option>
                                         <option value="Outro">Outro</option>
-                                        <option value="Prefiro não dizer">Prefiro não dizer</option>
                                     </select>
                                 </div>
                                 <div class="perfil-field">
-                                    <label>Profissão</label>
-                                    <input type="text" id="perfilProfissao" placeholder="Ex: Engenheiro, Professor...">
+                                    <label>Objetivo no Treino</label>
+                                    <select id="perfilObjetivo">
+                                        <option value="">Selecione</option>
+                                        <option value="Saúde e condicionamento">Saúde e condicionamento</option>
+                                        <option value="Defesa pessoal">Defesa pessoal</option>
+                                        <option value="Competição">Competição</option>
+                                        <option value="Hobby / Lazer">Hobby / Lazer</option>
+                                        <option value="Disciplina / Foco">Disciplina / Foco</option>
+                                        <option value="Socializar">Socializar</option>
+                                        <option value="Faixa preta">Chegar à faixa preta</option>
+                                    </select>
                                 </div>
                             </div>
-                            <div class="perfil-field">
-                                <label>Bairro / Cidade</label>
-                                <input type="text" id="perfilBairro" placeholder="Ex: Tijuca - Rio de Janeiro">
-                            </div>
                         </div>
 
-                        <div class="perfil-section" id="perfilSecContato">
-                            <div class="perfil-section-title"><span>📱</span> Contato</div>
-                            <div class="perfil-field">
-                                <label>Telefone / WhatsApp</label>
-                                <input type="tel" id="perfilTelefone" placeholder="(21) 99999-9999">
-                            </div>
-                            <div class="perfil-field">
-                                <label>Instagram</label>
-                                <input type="text" id="perfilInstagram" placeholder="@seuusuario">
-                            </div>
-                            <div class="perfil-field">
-                                <label>Contato de Emergência</label>
-                                <input type="text" id="perfilEmergencia" placeholder="Nome — (21) 99999-9999">
-                            </div>
-                        </div>
-
-                        <div class="perfil-section" id="perfilSecJJ">
-                            <div class="perfil-section-title"><span>🏅</span> Sobre seu Treino</div>
-                            <div class="perfil-field">
-                                <label>Como conheceu o CT?</label>
-                                <select id="perfilOrigem">
-                                    <option value="">Selecione</option>
-                                    <option value="Indicação de amigo">Indicação de amigo</option>
-                                    <option value="Indicação de aluno">Indicação de aluno</option>
-                                    <option value="Instagram">Instagram</option>
-                                    <option value="Facebook">Facebook</option>
-                                    <option value="TikTok">TikTok</option>
-                                    <option value="Google / Busca">Google / Busca</option>
-                                    <option value="Passei na frente">Passei na frente</option>
-                                    <option value="Evento / Campeonato">Evento / Campeonato</option>
-                                    <option value="Outro">Outro</option>
-                                </select>
-                            </div>
-                            <div class="perfil-field">
-                                <label>Objetivo no Treino</label>
-                                <select id="perfilObjetivo">
-                                    <option value="">Selecione</option>
-                                    <option value="Saúde e condicionamento">Saúde e condicionamento</option>
-                                    <option value="Defesa pessoal">Defesa pessoal</option>
-                                    <option value="Competição">Competição</option>
-                                    <option value="Hobby / Lazer">Hobby / Lazer</option>
-                                    <option value="Disciplina / Foco">Disciplina / Foco</option>
-                                    <option value="Socializar">Socializar</option>
-                                    <option value="Faixa preta">Chegar à faixa preta</option>
-                                </select>
-                            </div>
-                            <div class="perfil-field" id="perfilHorarioField">
-                                <label>⏰ Horários de Treino</label>
-                                <!-- Input oculto: mantém compatibilidade com saveProfile -->
-                                <input type="hidden" id="perfilHorario">
-                                <!-- Seletor dinâmico de slots por modalidade -->
-                                <div id="perfilHorarioSlots" style="margin-top:4px;">
-                                    <div style="font-size:11px;color:var(--text-3);padding:8px;background:var(--bg-elevated);border-radius:8px;border:1px solid var(--border);">
-                                        Carregando horários disponíveis...
+                        <!-- ABA: HORÁRIOS DE TREINO -->
+                        <div class="perfil-tab-pane" id="perfilTabHorarios">
+                            <div class="perfil-section" style="margin-top:0;border:none;padding:0;">
+                                <div class="perfil-field" id="perfilHorarioField">
+                                    <!-- Input oculto: mantém compatibilidade com saveProfile -->
+                                    <input type="hidden" id="perfilHorario">
+                                    <!-- Seletor dinâmico de slots por modalidade -->
+                                    <div id="perfilHorarioSlots" style="margin-top:4px;">
+                                        <div style="font-size:11px;color:var(--text-3);padding:8px;background:var(--bg-elevated);border-radius:8px;border:1px solid var(--border);">
+                                            Carregando horários disponíveis...
+                                        </div>
+                                    </div>
+                                    <div style="font-size:10px;color:var(--text-3);margin-top:6px;line-height:1.4;">
+                                        Selecione os horários que você costuma treinar. O professor usará isso para a lista de presença.
                                     </div>
                                 </div>
-                                <div style="font-size:10px;color:var(--text-3);margin-top:6px;line-height:1.4;">
-                                    Selecione os horários que você costuma treinar. O professor usará isso para a lista de presença.
-                                </div>
-                            </div>
-                            <div class="perfil-field">
-                                <label>Experiência anterior</label>
-                                <select id="perfilExperiencia">
-                                    <option value="">Selecione</option>
-                                    <option value="Nunca treinei">Nunca treinei</option>
-                                    <option value="Menos de 1 ano">Menos de 1 ano</option>
-                                    <option value="1-2 anos">1-2 anos</option>
-                                    <option value="3-5 anos">3-5 anos</option>
-                                    <option value="5-10 anos">5-10 anos</option>
-                                    <option value="10+ anos">10+ anos</option>
-                                </select>
                             </div>
                         </div>
 
-                        <div class="perfil-section" id="perfilSecSaude">
-                            <div class="perfil-section-title"><span>🏥</span> Saúde e Segurança</div>
-                            <div class="perfil-field">
-                                <label>Lesão ou condição médica</label>
-                                <textarea id="perfilSaude" placeholder="Ex: Lesão no joelho, hérnia de disco, asma..."></textarea>
+                        <!-- ABA: EXPERIÊNCIA ANTERIOR -->
+                        <div class="perfil-tab-pane" id="perfilTabExp">
+                            <div class="perfil-section" style="margin-top:0;border:none;padding:0;">
+                                <div class="perfil-field">
+                                    <label>Experiência anterior em artes marciais</label>
+                                    <select id="perfilExperiencia">
+                                        <option value="">Selecione</option>
+                                        <option value="Nunca treinei">Nunca treinei</option>
+                                        <option value="Menos de 1 ano">Menos de 1 ano</option>
+                                        <option value="1-2 anos">1-2 anos</option>
+                                        <option value="3-5 anos">3-5 anos</option>
+                                        <option value="5-10 anos">5-10 anos</option>
+                                        <option value="10+ anos">10+ anos</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ABA: SAÚDE E SEGURANÇA -->
+                        <div class="perfil-tab-pane" id="perfilTabSaude">
+                            <div class="perfil-section" id="perfilSecSaude" style="margin-top:0;border:none;padding:0;">
+                                <div class="perfil-field">
+                                    <label>Lesão ou condição médica</label>
+                                    <textarea id="perfilSaude" placeholder="Ex: Lesão no joelho, hérnia de disco, asma..."></textarea>
+                                </div>
                             </div>
                         </div>
 
@@ -16274,6 +16356,7 @@
                 if (activeSub) triggerSubTabLoad(activeSub.id);
             }
             if (tabName === 'perfil') {
+                if (typeof resetPerfilTabs === 'function') resetPerfilTabs();
                 loadProfile();
                 loadPagamentos();
                 _carregarMeusContratos(); // carrega contratos e termos do CT
@@ -21906,6 +21989,35 @@
             var pct = Math.round((filled / PERFIL_FIELDS.length) * 100);
             document.getElementById('perfilCompletePct').textContent = pct + '%';
             setTimeout(function() { document.getElementById('perfilCompleteFill').style.width = pct + '%'; }, 100);
+        }
+
+
+        function switchPerfilTab(tab) {
+            // Atualiza botões
+            document.querySelectorAll('.perfil-tab-btn').forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-ptab') === tab);
+            });
+            // Mostra/oculta painéis
+            var map = {
+                dados:    'perfilTabDados',
+                contato:  'perfilTabContato',
+                treino:   'perfilTabTreino',
+                horarios: 'perfilTabHorarios',
+                exp:      'perfilTabExp',
+                saude:    'perfilTabSaude'
+            };
+            Object.keys(map).forEach(function(key) {
+                var el = document.getElementById(map[key]);
+                if (el) el.classList.toggle('active', key === tab);
+            });
+            // Se mudou para horários, força re-render dos slots
+            if (tab === 'horarios' && typeof loadHorarioSlots === 'function') {
+                loadHorarioSlots();
+            }
+        }
+
+        function resetPerfilTabs() {
+            switchPerfilTab('dados');
         }
 
         async function saveProfile() {
