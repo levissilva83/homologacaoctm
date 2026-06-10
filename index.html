@@ -24150,123 +24150,159 @@
                 }
 
                 sec.style.display = 'block';
-                var h = '';
                 var temPendente = false;
+                r.contratos.forEach(function(ct) {
+                    if (!ct.respostaMinha || (!ct.respostaMinha && ct.obrigatorio)) temPendente = true;
+                });
+
+                // ── Pré-carrega respostas existentes ──
+                window._ctRespostasPerfil = {};
+                r.contratos.forEach(function(ct) {
+                    if (ct.respostaMinha) window._ctRespostasPerfil[ct.tipo] = ct.respostaMinha;
+                });
+
+                var h = '';
 
                 r.contratos.forEach(function(ct) {
                     var icon     = ct.tipo === 'imagem' ? '📸' : ct.tipo === 'acidente' ? '⚠️' : ct.tipo === 'atestado' ? '🏥' : '💳';
                     var aceito   = ct.respostaMinha === 'aceito';
                     var recusado = ct.respostaMinha === 'recusado';
                     var pendente = !ct.respostaMinha;
-                    if (pendente || (!aceito && ct.obrigatorio)) temPendente = true;
 
-                    var statusBadge = aceito
-                        ? '<span style="font-size:9px;background:rgba(74,222,128,0.15);color:#4ade80;border:1px solid rgba(74,222,128,0.3);padding:2px 7px;border-radius:4px;">✓ Aceito</span>'
-                        : recusado
-                            ? '<span style="font-size:9px;background:rgba(248,113,113,0.15);color:#f87171;border:1px solid rgba(248,113,113,0.3);padding:2px 7px;border-radius:4px;">✗ Não aceito</span>'
-                            : '<span style="font-size:9px;background:rgba(251,191,36,0.15);color:#FBB724;border:1px solid rgba(251,191,36,0.3);padding:2px 7px;border-radius:4px;">⏳ Pendente</span>';
+                    // ── Borda colorida por estado ──
+                    var borderColor = aceito ? 'rgba(74,222,128,0.35)' : recusado ? 'rgba(248,113,113,0.35)' : 'rgba(251,191,36,0.35)';
+                    var bgTop       = aceito ? 'rgba(74,222,128,0.06)' : recusado ? 'rgba(248,113,113,0.06)' : 'rgba(251,191,36,0.06)';
 
-                    h += '<div id="ctCard_perfil_' + ct.tipo + '" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:12px;margin-bottom:8px;">';
-                    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
-                    h += '<span style="font-size:12px;font-weight:700;color:var(--text-1);">' + icon + ' ' + escapeHtml(ct.titulo) + '</span>';
-                    h += statusBadge;
-                    h += '</div>';
-                    h += '<div style="font-size:10px;color:rgba(255,255,255,0.5);line-height:1.5;max-height:70px;overflow-y:auto;margin-bottom:10px;">' + escapeHtml(ct.texto) + '</div>';
-                    h += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">';
+                    h += '<div id="ctCard_perfil_' + ct.tipo + '" style="border:1px solid ' + borderColor + ';border-radius:12px;overflow:hidden;margin-bottom:12px;">';
 
-                    var btnAStyle = aceito
-                        ? 'background:rgba(74,222,128,0.2);color:#4ade80;border:1px solid #4ade80;'
-                        : 'background:rgba(74,222,128,0.06);color:rgba(74,222,128,0.5);border:1px solid rgba(74,222,128,0.15);';
-                    var btnRStyle = recusado
-                        ? 'background:rgba(248,113,113,0.2);color:#f87171;border:1px solid #f87171;'
-                        : 'background:rgba(248,113,113,0.06);color:rgba(248,113,113,0.5);border:1px solid rgba(248,113,113,0.15);';
-
-                    h += '<button class="ct-perfil-btn" data-tipo="' + ct.tipo + '" data-resp="aceito" '
-                       + 'style="padding:7px;' + btnAStyle + 'border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">✅ Aceitar</button>';
-                    if (!ct.obrigatorio) {
-                        h += '<button class="ct-perfil-btn" data-tipo="' + ct.tipo + '" data-resp="recusado" '
-                           + 'style="padding:7px;' + btnRStyle + 'border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">❌ Não aceitar</button>';
-                    } else {
-                        h += '<span style="font-size:9px;color:var(--text-3);display:flex;align-items:center;padding-left:6px;">Obrigatório</span>';
-                    }
+                    // ── Cabeçalho do contrato ──
+                    h += '<div style="background:' + bgTop + ';padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;">';
+                    h += '<div style="display:flex;align-items:center;gap:8px;">';
+                    h += '<span style="font-size:18px;">' + icon + '</span>';
+                    h += '<div>';
+                    h += '<div style="font-size:12px;font-weight:800;color:var(--text-1);">' + escapeHtml(ct.titulo) + '</div>';
+                    if (ct.obrigatorio) h += '<div style="font-size:9px;color:#f87171;font-weight:700;letter-spacing:.4px;">OBRIGATÓRIO</div>';
                     h += '</div></div>';
+                    // Badge de status
+                    if (aceito) {
+                        h += '<span style="flex-shrink:0;font-size:10px;font-weight:800;background:rgba(74,222,128,0.15);color:#4ade80;'
+                           + 'border:1px solid rgba(74,222,128,0.4);padding:3px 9px;border-radius:20px;">✓ Aceito</span>';
+                    } else if (recusado) {
+                        h += '<span style="flex-shrink:0;font-size:10px;font-weight:800;background:rgba(248,113,113,0.15);color:#f87171;'
+                           + 'border:1px solid rgba(248,113,113,0.4);padding:3px 9px;border-radius:20px;">✗ Não aceito</span>';
+                    } else {
+                        h += '<span style="flex-shrink:0;font-size:10px;font-weight:800;background:rgba(251,191,36,0.15);color:#FBB724;'
+                           + 'border:1px solid rgba(251,191,36,0.4);padding:3px 9px;border-radius:20px;">⏳ Pendente</span>';
+                    }
+                    h += '</div>'; // fim cabeçalho
+
+                    // ── Texto do contrato ──
+                    h += '<div style="padding:12px 14px;border-top:1px solid rgba(255,255,255,0.06);">';
+                    h += '<div style="font-size:10px;color:rgba(255,255,255,0.55);line-height:1.7;max-height:110px;overflow-y:auto;'
+                       + 'background:rgba(0,0,0,0.2);padding:10px;border-radius:8px;margin-bottom:10px;">'
+                       + escapeHtml(ct.texto) + '</div>';
+
+                    // ── Selo de assinatura (se respondido) ──
+                    if (!pendente && ct.dataResposta) {
+                        var seloColor = aceito ? '#4ade80' : '#f87171';
+                        var seloText  = aceito ? '✅ Assinado digitalmente' : '✗ Recusado';
+                        h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;'
+                           + 'background:' + bgTop + ';border:1px solid ' + borderColor + ';border-radius:8px;margin-bottom:10px;">';
+                        h += '<div style="font-size:18px;">🖊️</div>';
+                        h += '<div>';
+                        h += '<div style="font-size:10px;font-weight:800;color:' + seloColor + ';">' + seloText + '</div>';
+                        h += '<div style="font-size:9px;color:var(--text-3);margin-top:1px;">📅 ' + escapeHtml(ct.dataResposta) + ' &nbsp;·&nbsp; '
+                           + escapeHtml((currentUser && currentUser.name) || (currentUser && currentUser.email) || '') + '</div>';
+                        h += '</div></div>';
+                    } else if (!pendente) {
+                        // respondido mas sem data salva (registros antigos)
+                        var seloColor2 = aceito ? '#4ade80' : '#f87171';
+                        h += '<div style="font-size:9px;color:' + seloColor2 + ';margin-bottom:10px;">'
+                           + (aceito ? '✅ Contrato aceito' : '✗ Contrato recusado') + '</div>';
+                    }
+
+                    // ── Botões de ação ──
+                    h += '<div style="display:grid;grid-template-columns:1fr ' + (ct.obrigatorio ? '' : '1fr') + ';gap:6px;">';
+                    var btnAStyle = aceito
+                        ? 'background:rgba(74,222,128,0.18);color:#4ade80;border:1px solid rgba(74,222,128,0.6);font-weight:800;'
+                        : 'background:rgba(74,222,128,0.05);color:rgba(74,222,128,0.55);border:1px solid rgba(74,222,128,0.15);font-weight:700;';
+                    h += '<button class="ct-perfil-btn" data-tipo="' + ct.tipo + '" data-resp="aceito" '
+                       + 'style="padding:9px;' + btnAStyle + 'border-radius:8px;font-size:11px;cursor:pointer;">✅ '
+                       + (aceito ? 'Aceito ✓' : 'Aceitar') + '</button>';
+                    if (!ct.obrigatorio) {
+                        var btnRStyle = recusado
+                            ? 'background:rgba(248,113,113,0.18);color:#f87171;border:1px solid rgba(248,113,113,0.6);font-weight:800;'
+                            : 'background:rgba(248,113,113,0.05);color:rgba(248,113,113,0.55);border:1px solid rgba(248,113,113,0.15);font-weight:700;';
+                        h += '<button class="ct-perfil-btn" data-tipo="' + ct.tipo + '" data-resp="recusado" '
+                           + 'style="padding:9px;' + btnRStyle + 'border-radius:8px;font-size:11px;cursor:pointer;">❌ '
+                           + (recusado ? 'Recusado ✓' : 'Não aceitar') + '</button>';
+                    }
+                    h += '</div>'; // fim botões
+                    h += '</div>'; // fim padding
+                    h += '</div>'; // fim card
                 });
 
                 // Botão salvar
                 h += '<button id="btnSalvarContratos" onclick="_salvarMeusContratos()" '
-                   + 'style="width:100%;margin-top:10px;padding:12px;background:var(--accent);color:#000;border:none;'
-                   + 'border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;">💾 Salvar Meus Termos</button>';
+                   + 'style="width:100%;margin-top:4px;padding:13px;background:var(--accent);color:#000;border:none;'
+                   + 'border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.3px;">🖊️ Salvar Respostas</button>';
                 h += '<div id="contratosMsgPerfil" style="min-height:14px;font-size:11px;text-align:center;margin-top:6px;"></div>';
 
                 lista.innerHTML = h;
 
-                // Event listeners nos botões
+                // ── Event listeners nos botões ──
                 lista.querySelectorAll('.ct-perfil-btn').forEach(function(btn) {
                     btn.addEventListener('click', function() {
                         var tipo = btn.getAttribute('data-tipo');
                         var resp = btn.getAttribute('data-resp');
-                        var card = document.getElementById('ctCard_perfil_' + tipo);
-                        // Atualiza visual
-                        if (card) {
-                            card.querySelectorAll('.ct-perfil-btn').forEach(function(b) {
-                                var isSelected = b.getAttribute('data-resp') === resp;
-                                if (b.getAttribute('data-resp') === 'aceito') {
-                                    b.style.background   = isSelected ? 'rgba(74,222,128,0.2)'  : 'rgba(74,222,128,0.06)';
-                                    b.style.color        = isSelected ? '#4ade80'               : 'rgba(74,222,128,0.5)';
-                                    b.style.borderColor  = isSelected ? '#4ade80'               : 'rgba(74,222,128,0.15)';
-                                } else {
-                                    b.style.background   = isSelected ? 'rgba(248,113,113,0.2)' : 'rgba(248,113,113,0.06)';
-                                    b.style.color        = isSelected ? '#f87171'              : 'rgba(248,113,113,0.5)';
-                                    b.style.borderColor  = isSelected ? '#f87171'              : 'rgba(248,113,113,0.15)';
-                                }
-                            });
-                            // Atualiza badge
-                            var badge = card.querySelector('span[style*="border-radius:4px"]');
-                            if (badge) {
-                                badge.textContent = resp === 'aceito' ? '✓ Aceito' : '✗ Não aceito';
-                                badge.style.color = resp === 'aceito' ? '#4ade80' : '#f87171';
-                            }
-                        }
-                        btn.setAttribute('data-selected', '1');
-                        // Marca no dataset temporário
                         if (!window._ctRespostasPerfil) window._ctRespostasPerfil = {};
                         window._ctRespostasPerfil[tipo] = resp;
+
+                        var card = document.getElementById('ctCard_perfil_' + tipo);
+                        if (!card) return;
+                        // Atualiza botões do card
+                        card.querySelectorAll('.ct-perfil-btn').forEach(function(b) {
+                            var sel = b.getAttribute('data-resp') === resp;
+                            if (b.getAttribute('data-resp') === 'aceito') {
+                                b.style.background  = sel ? 'rgba(74,222,128,0.18)' : 'rgba(74,222,128,0.05)';
+                                b.style.color       = sel ? '#4ade80' : 'rgba(74,222,128,0.55)';
+                                b.style.borderColor = sel ? 'rgba(74,222,128,0.6)' : 'rgba(74,222,128,0.15)';
+                                b.style.fontWeight  = sel ? '800' : '700';
+                                b.textContent = sel ? '✅ Aceito ✓' : '✅ Aceitar';
+                            } else {
+                                b.style.background  = sel ? 'rgba(248,113,113,0.18)' : 'rgba(248,113,113,0.05)';
+                                b.style.color       = sel ? '#f87171' : 'rgba(248,113,113,0.55)';
+                                b.style.borderColor = sel ? 'rgba(248,113,113,0.6)' : 'rgba(248,113,113,0.15)';
+                                b.style.fontWeight  = sel ? '800' : '700';
+                                b.textContent = sel ? '❌ Recusado ✓' : '❌ Não aceitar';
+                            }
+                        });
+                        // Atualiza badge de status no cabeçalho
+                        var badge = card.querySelector('span[style*="border-radius:20px"]');
+                        if (badge) {
+                            if (resp === 'aceito') {
+                                badge.textContent = '✓ Aceito';
+                                badge.style.color = '#4ade80';
+                                badge.style.background = 'rgba(74,222,128,0.15)';
+                                badge.style.borderColor = 'rgba(74,222,128,0.4)';
+                            } else {
+                                badge.textContent = '✗ Não aceito';
+                                badge.style.color = '#f87171';
+                                badge.style.background = 'rgba(248,113,113,0.15)';
+                                badge.style.borderColor = 'rgba(248,113,113,0.4)';
+                            }
+                        }
                     });
                 });
 
-                // Pré-carrega respostas existentes
-                window._ctRespostasPerfil = {};
-                r.contratos.forEach(function(ct) {
-                    if (ct.respostaMinha) window._ctRespostasPerfil[ct.tipo] = ct.respostaMinha;
-                });
-
-                // Se todos já assinados e nenhum pendente → mostra resumo compacto direto
-                if (!temPendente && r.contratos.length > 0) {
-                    var aceitos2  = r.contratos.filter(function(ct){ return ct.respostaMinha === 'aceito'; }).length;
-                    var recusados2 = r.contratos.filter(function(ct){ return ct.respostaMinha === 'recusado'; }).length;
-                    lista.innerHTML =
-                        '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;'
-                        + 'background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:10px;">'
-                        + '<div>'
-                        + '<div style="font-size:12px;font-weight:700;color:#4ade80;">✅ Termos em dia</div>'
-                        + '<div style="font-size:10px;color:var(--text-3);margin-top:2px;">'
-                        + aceitos2 + ' aceito' + (aceitos2!==1?'s':'')
-                        + (recusados2 > 0 ? ' · ' + recusados2 + ' não aceito' + (recusados2!==1?'s':'') : '')
-                        + '</div>'
-                        + '</div>'
-                        + '<button onclick="_carregarMeusContratos()" '
-                        + 'style="font-size:10px;padding:5px 10px;background:transparent;color:var(--text-3);'
-                        + 'border:1px solid var(--adm-border);border-radius:7px;cursor:pointer;">✏️ Editar</button>'
-                        + '</div>';
-                } else if (temPendente) {
+                if (temPendente) {
                     var avEl = document.getElementById('avisoContratosPendentes');
                     if (avEl) avEl.remove();
                 }
 
             } catch(e) {
-                // Só oculta se for erro de "sem contratos" — não suprime erros de auth/rede
                 if (e && e.message && e.message.indexOf('Sessão') !== -1) {
-                    // Sessão expirada — deixa secureFetch tratar (já chama handleSessionExpired)
+                    // sessão expirada — secureFetch já trata
                 } else {
                     console.warn('[contratos] erro ao carregar:', e && e.message);
                     sec.style.display = 'none';
@@ -24289,30 +24325,9 @@
                     if (av) av.remove();
                     if (currentUser) currentUser.contratosPendentes = false;
 
-                    // Conta aceitos e recusados
-                    var resp   = window._ctRespostasPerfil;
-                    var aceitos  = Object.keys(resp).filter(function(k){ return resp[k]==='aceito'; }).length;
-                    var total    = Object.keys(resp).length;
-                    var recusados = total - aceitos;
-
-                    // Colapsa a seção mostrando resumo compacto
-                    var lista = document.getElementById('perfilContratosLista');
-                    if (lista) {
-                        lista.innerHTML =
-                            '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;'
-                            + 'background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:10px;">'
-                            + '<div>'
-                            + '<div style="font-size:12px;font-weight:700;color:#4ade80;">✅ Termos atualizados</div>'
-                            + '<div style="font-size:10px;color:var(--text-3);margin-top:2px;">'
-                            + aceitos + ' aceito' + (aceitos!==1?'s':'')
-                            + (recusados > 0 ? ' · ' + recusados + ' não aceito' + (recusados!==1?'s':'') : '')
-                            + '</div>'
-                            + '</div>'
-                            + '<button onclick="_carregarMeusContratos()" '
-                            + 'style="font-size:10px;padding:5px 10px;background:transparent;color:var(--text-3);'
-                            + 'border:1px solid var(--adm-border);border-radius:7px;cursor:pointer;">✏️ Editar</button>'
-                            + '</div>';
-                    }
+                    if (msg) { msg.textContent = '✅ Respostas salvas!'; msg.style.color = '#4ade80'; }
+                    // Recarrega para exibir selos de assinatura com data
+                    setTimeout(function() { _carregarMeusContratos(); }, 800);
                 } else {
                     if (msg) { msg.textContent = '❌ ' + (r ? r.message : 'Erro'); msg.style.color = '#f87171'; }
                 }
