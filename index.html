@@ -30146,13 +30146,10 @@
                                 diasRestantes +
                                 (isTrial ? '<div style="font-size:8px;color:var(--adm-text-3);">fim trial</div>' : '') +
                             '</div></div>' +
-                            // Col 7: Ações (✏️ editar, 💸 cobrar, 🔄 pix pendente, 🗑️ excluir)
+                            // Col 7: Ações (✏️ editar, 💸 cobrar, 🗑️ excluir)
                             '<div class="cm-row-cell" style="justify-content:flex-end;gap:3px;">' +
                                 '<button data-edit="'+escapeHtml(c.email)+'" title="Editar" style="padding:4px 7px;background:rgba(201,162,58,0.08);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.2);border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;">✏️</button>' +
                                 '<button data-charge="'+escapeHtml(c.email)+'" title="Cobrar" style="padding:4px 7px;background:rgba(74,222,128,0.08);color:#4ade80;border:1px solid rgba(74,222,128,0.2);border-radius:6px;font-size:10px;cursor:pointer;">💸</button>' +
-                                (s === 'PENDENTE_PIX'
-                                    ? '<button data-confirmpix="'+escapeHtml(c.email)+'" title="Confirmar PIX pendente" style="padding:4px 7px;background:rgba(96,165,250,0.12);color:#60a5fa;border:1px solid rgba(96,165,250,0.3);border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;">🔄 PIX</button>'
-                                    : '') +
                                 '<button data-delete="'+escapeHtml(c.email)+'" title="Excluir cliente" style="padding:4px 7px;background:rgba(248,113,113,0.08);color:#f87171;border:1px solid rgba(248,113,113,0.2);border-radius:6px;font-size:10px;cursor:pointer;">🗑️</button>' +
                             '</div>';
                         tbody.appendChild(row);
@@ -30174,13 +30171,6 @@
                             var emailD = delBtn.getAttribute('data-delete');
                             state.clienteAtivo = state.clientes.find(function(x){ return x.email===emailD; }) || null;
                             if (state.clienteAtivo) CTM_Contratos.actions.excluir();
-                            return;
-                        }
-                        var pixBtn = e.target.closest('[data-confirmpix]');
-                        if (pixBtn) {
-                            var emailP = pixBtn.getAttribute('data-confirmpix');
-                            var clienteP = state.clientes.find(function(x){ return x.email===emailP; }) || {};
-                            _abrirConfirmarPixAdmin(emailP, clienteP.subscriptionId || '', clienteP.plano || '');
                             return;
                         }
                         var row2 = e.target.closest('[data-email]');
@@ -36264,6 +36254,14 @@
             if (!el) return;
             el.innerHTML = '<div class="admin-empty" style="font-size:10px;">⏳ Carregando...</div>';
 
+            // Pré-carrega planos em paralelo se ainda não foram buscados.
+            // Evita o alert de 'Crie pelo menos um plano' ao clicar em Atribuir.
+            if (!_mpPlanos || _mpPlanos.length === 0) {
+                secureFetch('getPlanosList', {}).then(function(r) {
+                    if (r && r.success && r.planos && r.planos.length > 0) _mpPlanos = r.planos;
+                }).catch(function(){});
+            }
+
             _cobCTFiltro = document.getElementById('cobCTFiltro') ? document.getElementById('cobCTFiltro').value : '';
 
             // Garante que vínculos estão carregados para popular o select de CT
@@ -36508,22 +36506,103 @@
             } catch(e) { alert('Erro: ' + e.message); }
         }
 
-        function atribuirPlanoModal(email) {
+        // atribuirPlanoModal — bottom-sheet com busca lazy de planos
+        // Se _mpPlanos ainda não foi carregado (usuário veio direto para Cobranças
+        // sem passar pela Aba 3), busca silenciosamente antes de abrir o seletor.
+        async function atribuirPlanoModal(email) {
+            // ── 1. Garante que os planos estão carregados ──────────────────
             if (!_mpPlanos || _mpPlanos.length === 0) {
-                alert('Crie pelo menos um plano (Aba 3) antes de atribuir.');
+                var _loadingEl = document.createElement('div');
+                _loadingEl.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);'
+                    + 'background:#1a1f2e;border:1px solid var(--adm-border);border-radius:10px;'
+                    + 'padding:10px 16px;font-size:11px;color:var(--adm-text-3);z-index:9990;';
+                _loadingEl.textContent = '⏳ Carregando planos...';
+                document.body.appendChild(_loadingEl);
+                try {
+                    var _pr = await secureFetch('getPlanosList', {});
+                    if (_pr.success) _mpPlanos = _pr.planos || [];
+                } catch(_ep) {}
+                _loadingEl.remove();
+            }
+
+            if (!_mpPlanos || _mpPlanos.length === 0) {
+                alert('Nenhum plano encontrado. Crie um plano na aba Planos (Aba 3) antes de atribuir.');
                 return;
             }
-            var escolha = prompt('Atribuir plano para ' + email + ':\n\n' +
-                _mpPlanos.map(function(p,i){ return (i+1) + '. ' + p.nome + ' — R$' + parseFloat(p.valor||0).toFixed(2) + ' (' + (p.ct||'—') + ')'; }).join('\n') +
-                '\n\nDigite o número:');
-            if (!escolha) return;
-            var idx = parseInt(escolha) - 1;
-            if (isNaN(idx) || idx < 0 || idx >= _mpPlanos.length) { alert('Opção inválida'); return; }
-            secureFetch('atribuirPlanoAluno', { email: email, planoId: _mpPlanos[idx].id })
-                .then(function(data) {
-                    if (data.success) { alert('✅ ' + data.message); loadPagamentosAdmin(); }
-                    else alert('❌ ' + data.message);
-                }).catch(function() { alert('Erro de conexão'); });
+
+            // ── 2. Abre bottom-sheet de seleção ────────────────────────────
+            var _old = document.getElementById('atribuirPlanoSheet');
+            if (_old) _old.remove();
+
+            var sh = document.createElement('div');
+            sh.id  = 'atribuirPlanoSheet';
+            sh.style.cssText = 'position:fixed;inset:0;z-index:9998;';
+
+            var optsHtml = _mpPlanos.map(function(p, i) {
+                return '<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;'
+                    + 'background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);'
+                    + 'border-radius:10px;cursor:pointer;margin-bottom:6px;">'
+                    + '<input type="radio" name="_atribPlano" value="' + i + '"'
+                    + ' style="accent-color:#C9A23A;width:16px;height:16px;flex-shrink:0;">'
+                    + '<div style="flex:1;min-width:0;">'
+                    + '<div style="font-size:12px;font-weight:700;color:var(--adm-text-1);">' + escapeHtml(p.nome) + '</div>'
+                    + '<div style="font-size:10px;color:var(--adm-text-3);">R$ '
+                    + parseFloat(p.valor||0).toFixed(2) + '/mês'
+                    + (p.ct ? ' · ' + escapeHtml(p.ct) : '') + '</div>'
+                    + '</div>'
+                    + '</label>';
+            }).join('');
+
+            sh.innerHTML =
+                '<div onclick="document.getElementById(\'atribuirPlanoSheet\').remove()" '
+                + 'style="position:fixed;inset:0;background:rgba(0,0,0,0.72);"></div>'
+                + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;'
+                + 'background:var(--adm-bg-card,#1a1f2e);border-radius:20px 20px 0 0;'
+                + 'padding:22px 20px 36px;z-index:9999;max-height:85vh;overflow-y:auto;max-width:480px;margin:0 auto;">'
+                + '<div style="width:40px;height:4px;background:rgba(255,255,255,.12);border-radius:2px;margin:0 auto 18px;"></div>'
+                + '<div style="font-size:15px;font-weight:800;color:var(--adm-text-1);margin-bottom:3px;">📋 Atribuir Plano</div>'
+                + '<div style="font-size:11px;color:var(--adm-text-3);margin-bottom:14px;word-break:break-all;">' + escapeHtml(email) + '</div>'
+                + '<div id="_atribPlanoLista">' + optsHtml + '</div>'
+                + '<div id="_atribPlanoMsg" style="font-size:11px;min-height:16px;margin:8px 0;"></div>'
+                + '<button onclick="_confirmarAtribuirPlano(\'' + escapeHtml(email) + '\')" '
+                + 'style="width:100%;padding:13px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);'
+                + 'color:#000;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;">'
+                + '✅ Confirmar</button>'
+                + '<button onclick="document.getElementById(\'atribuirPlanoSheet\').remove()" '
+                + 'style="width:100%;padding:10px;background:transparent;border:none;'
+                + 'color:rgba(255,255,255,.25);font-size:12px;cursor:pointer;">Cancelar</button>'
+                + '</div>';
+
+            document.body.appendChild(sh);
+        }
+
+        async function _confirmarAtribuirPlano(email) {
+            var radios = document.querySelectorAll('input[name="_atribPlano"]');
+            var idx = -1;
+            radios.forEach(function(r){ if (r.checked) idx = parseInt(r.value); });
+            if (idx < 0 || !_mpPlanos[idx]) {
+                var msg = document.getElementById('_atribPlanoMsg');
+                if (msg) { msg.style.color='#f87171'; msg.textContent='⚠️ Selecione um plano.'; }
+                return;
+            }
+            var plano = _mpPlanos[idx];
+            var btn   = document.querySelector('#atribuirPlanoSheet button[onclick*="_confirmarAtribuirPlano"]');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Atribuindo...'; }
+            try {
+                var data = await secureFetch('atribuirPlanoAluno', { email: email, planoId: plano.id || plano.planoId || '', ct: plano.ct || '' });
+                var sh   = document.getElementById('atribuirPlanoSheet');
+                if (sh) sh.remove();
+                if (data.success) {
+                    if (typeof showToast === 'function') showToast('✅ ' + (data.message || 'Plano atribuído!'), 'success');
+                    else alert('✅ ' + (data.message || 'Plano atribuído!'));
+                    loadPagamentosAdmin();
+                } else {
+                    alert('❌ ' + (data.message || 'Erro ao atribuir'));
+                }
+            } catch(e) {
+                if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar'; }
+                alert('Erro de conexão');
+            }
         }
 
         // ── Cobrança imediata por aluno específico ──────────────────────────
@@ -43100,104 +43179,6 @@
                 showToast('Código PIX copiado!', 'success');
             }
         };
-        // ══ CONFIRMAR PIX PENDENTE — painel SuperAdmin ══════════════════
-
-        async function _abrirConfirmarPixAdmin(email, subscriptionId, planoId) {
-            var pixId = subscriptionId && subscriptionId.indexOf('pix_') === 0
-                ? subscriptionId.replace('pix_', '')
-                : subscriptionId || '';
-
-            var old = document.getElementById('pixAdminSheet'); if (old) old.remove();
-            var sh  = document.createElement('div');
-            sh.id   = 'pixAdminSheet';
-            sh.style.cssText = 'position:fixed;inset:0;z-index:9998;';
-
-            sh.innerHTML =
-                '<div onclick="document.getElementById(\' pixAdminSheet\').remove()" style="position:fixed;inset:0;background:rgba(0,0,0,0.72);"></div>'
-                + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:var(--adm-bg-card,#1a1f2e);border-radius:20px 20px 0 0;padding:24px 20px 36px;z-index:9999;max-width:480px;margin:0 auto;">'
-                + '<div style="width:40px;height:4px;background:rgba(255,255,255,.12);border-radius:2px;margin:0 auto 20px;"></div>'
-                + '<div style="font-size:15px;font-weight:800;color:var(--adm-text-1);margin-bottom:4px;">🔄 Confirmar PIX</div>'
-                + '<div style="font-size:11px;color:var(--adm-text-3);margin-bottom:16px;">' + escapeHtml(email) + '</div>'
-
-                + '<div style="background:rgba(96,165,250,0.07);border:1px solid rgba(96,165,250,0.25);border-radius:10px;padding:12px;margin-bottom:14px;font-size:11px;color:var(--adm-text-2);line-height:1.7;">'
-                + '⚠️ <strong>Use apenas quando o pagamento constar no Mercado Pago mas o webhook não chegou.</strong><br>'
-                + 'Esta ação consulta o MP via API e, se o PIX estiver <code style="color:#4ade80;">approved</code>, ativa o cliente automaticamente.<br>'
-                + 'Se o pixId não estiver registrado ainda, use <strong>Forçar ativação manual</strong> abaixo.'
-                + '</div>'
-
-                + '<div style="font-size:10px;color:var(--adm-text-3);margin-bottom:4px;">PIX ID (pix_... da planilha LICENCIADOS)</div>'
-                + '<input id="pixAdminId" value="' + escapeHtml(pixId) + '" placeholder="ID do pagamento no MP (ex: 162617210617)" '
-                + 'style="width:100%;box-sizing:border-box;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:12px;">'
-
-                + '<div id="pixAdminMsg" style="font-size:11px;min-height:16px;margin-bottom:10px;text-align:center;"></div>'
-
-                + '<button onclick="_executarConfirmarPixAdmin(\'' + escapeHtml(email) + '\',\'' + escapeHtml(planoId) + '\',false)" '
-                + 'style="width:100%;padding:12px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;margin-bottom:8px;">'
-                + '🔄 Consultar MP e confirmar PIX</button>'
-
-                + '<button onclick="_executarConfirmarPixAdmin(\'' + escapeHtml(email) + '\',\'' + escapeHtml(planoId) + '\',true)" '
-                + 'style="width:100%;padding:12px;background:rgba(251,191,36,0.12);color:#fbbf24;border:1px solid rgba(251,191,36,0.3);border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:8px;">'
-                + '⚡ Forçar ativação manual (sem consultar MP)</button>'
-
-                + '<button onclick="document.getElementById(\'pixAdminSheet\').remove()" '
-                + 'style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,.25);font-size:12px;cursor:pointer;">Cancelar</button>'
-                + '</div>';
-
-            document.body.appendChild(sh);
-        }
-
-        async function _executarConfirmarPixAdmin(email, planoId, forcar) {
-            var pixIdEl = document.getElementById('pixAdminId');
-            var msgEl   = document.getElementById('pixAdminMsg');
-            var pixId   = pixIdEl ? pixIdEl.value.trim().replace('pix_', '') : '';
-
-            if (!forcar && !pixId) {
-                if (msgEl) { msgEl.style.color='#f87171'; msgEl.textContent='⚠️ Informe o PIX ID antes de consultar.'; }
-                return;
-            }
-
-            var btns = document.querySelectorAll('#pixAdminSheet button');
-            btns.forEach(function(b){ b.disabled = true; });
-            if (msgEl) { msgEl.style.color = '#60a5fa'; msgEl.textContent = forcar ? '⏳ Forçando ativação...' : '⏳ Consultando Mercado Pago...'; }
-
-            try {
-                var resp = await secureFetch('confirmarPixAssinatura', {
-                    email:   email,
-                    pixId:   pixId || 'admin_force_' + Date.now(),
-                    planoId: planoId || '',
-                    forcar:  forcar
-                });
-
-                if (resp && resp.success) {
-                    if (msgEl) { msgEl.style.color='#4ade80'; msgEl.textContent='✅ ' + (resp.message || 'Cliente ativado com sucesso!'); }
-                    setTimeout(function(){
-                        var sh = document.getElementById('pixAdminSheet');
-                        if (sh) sh.remove();
-                        // Recarrega a lista de clientes
-                        if (typeof CTM_Contratos !== 'undefined' && CTM_Contratos.actions) {
-                            try { CTM_Contratos.actions.carregar(); } catch(_r) {}
-                        }
-                    }, 1800);
-                } else {
-                    var _st  = resp && resp.data && resp.data.status ? resp.data.status : '';
-                    var _mpStatus = _st ? ' (MP: ' + _st + ')' : '';
-                    var _errMsg = (resp && resp.message) || 'Erro ao confirmar';
-
-                    // Se falhou porque o PIX ainda não está approved no MP, sugere forçar
-                    var _sugerirForca = _st && _st !== 'approved';
-                    if (msgEl) {
-                        msgEl.style.color = '#fbbf24';
-                        msgEl.textContent = '⚠️ ' + _errMsg + _mpStatus
-                            + (_sugerirForca ? ' — use Forçar ativação se o dinheiro já constar no MP.' : '');
-                    }
-                    btns.forEach(function(b){ b.disabled = false; });
-                }
-            } catch(e) {
-                if (msgEl) { msgEl.style.color='#f87171'; msgEl.textContent='❌ Erro: ' + e.message; }
-                btns.forEach(function(b){ b.disabled = false; });
-            }
-        }
-
         // ── fim PIX assinatura ─────────────────────────────────────────
 
         window.asnConfirmarCancelar = function () {
