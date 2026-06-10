@@ -4516,6 +4516,85 @@
         }
         .picker-add-label { font-size: 12px; color: rgba(255,255,255,0.3); font-weight: 600; }
 
+        /* ═══ FAMÍLIA v5.0 ═══ */
+        .fam-membro-card {
+            display: flex; align-items: center; gap: 10px;
+            padding: 11px 12px; background: var(--bg-elevated);
+            border: 1px solid var(--border); border-radius: 12px;
+            transition: border-color 0.15s;
+        }
+        .fam-membro-card:active { border-color: var(--border-accent); transform: scale(0.99); }
+        .fam-avatar {
+            width: 38px; height: 38px; border-radius: 50%;
+            background: rgba(201,162,58,0.15);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px; font-weight: 800; color: var(--accent); flex-shrink: 0;
+        }
+        .fam-avatar.responsavel { background: rgba(201,162,58,0.25); }
+        .fam-avatar.adulto { background: rgba(99,179,237,0.15); color: #63b3ed; }
+        .fam-avatar.menor { background: rgba(167,139,250,0.15); color: #a78bfa; }
+        .fam-badge {
+            display: inline-flex; align-items: center; gap: 3px;
+            padding: 2px 7px; border-radius: 20px;
+            font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+        }
+        .fam-badge.responsavel { background: rgba(201,162,58,0.12); color: var(--accent); border: 1px solid rgba(201,162,58,0.25); }
+        .fam-badge.dependente { background: rgba(167,139,250,0.12); color: #a78bfa; border: 1px solid rgba(167,139,250,0.25); }
+        .fam-badge.adulto { background: rgba(99,179,237,0.10); color: #63b3ed; border: 1px solid rgba(99,179,237,0.20); }
+        .fam-badge.menor13 { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.25); }
+        .fam-badge.ativo { background: rgba(74,222,128,0.10); color: #4ade80; border: 1px solid rgba(74,222,128,0.20); }
+        .fam-modal-sheet {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.76);
+            z-index: 9999; display: none; align-items: flex-end; justify-content: center;
+        }
+        .fam-modal-sheet.open { display: flex; }
+        .fam-modal-inner {
+            background: var(--bg-card); border-radius: 22px 22px 0 0;
+            padding: 20px 20px calc(20px + var(--safe-bottom));
+            width: 100%; max-width: 480px; max-height: 92vh; overflow-y: auto;
+        }
+        .fam-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+        .fam-tab-btn {
+            flex: 1; padding: 8px; border-radius: 9px;
+            font-size: 11px; font-weight: 700; cursor: pointer;
+            border: 1.5px solid var(--border); background: var(--bg-elevated);
+            color: var(--text-3); transition: all 0.15s;
+        }
+        .fam-tab-btn.active {
+            background: rgba(201,162,58,0.12); border-color: rgba(201,162,58,0.4); color: var(--accent);
+        }
+        .fam-field { display: flex; flex-direction: column; gap: 4px; }
+        .fam-field label {
+            font-size: 10px; color: var(--text-3); font-weight: 700;
+            text-transform: uppercase; letter-spacing: .5px;
+        }
+        .fam-field input, .fam-field select {
+            width: 100%; padding: 10px 12px; background: var(--bg-elevated);
+            border: 1.5px solid var(--border); border-radius: 9px;
+            color: var(--text-1); font-size: 13px; outline: none;
+            transition: border-color 0.18s;
+        }
+        .fam-field input:focus, .fam-field select:focus { border-color: var(--accent); }
+        .fam-lgpd-block {
+            padding: 12px; background: rgba(167,139,250,0.06);
+            border: 1px solid rgba(167,139,250,0.2); border-radius: 10px; display: none;
+        }
+        .fam-lgpd-block.show { display: block; }
+        .fam-lgpd-item { display: flex; align-items: flex-start; gap: 8px; margin-bottom: 8px; }
+        .fam-lgpd-item:last-child { margin-bottom: 0; }
+        .fam-lgpd-item input[type="checkbox"] {
+            width: 16px; height: 16px; accent-color: var(--accent); flex-shrink: 0; margin-top: 1px;
+        }
+        .fam-lgpd-item span { font-size: 11px; color: var(--text-2); line-height: 1.4; }
+        .fam-fin-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 6px 0; border-bottom: 1px solid var(--border);
+            font-size: 11px; color: var(--text-3);
+        }
+        .fam-fin-row:last-child { border-bottom: none; }
+        .fam-fin-row .val { font-weight: 700; color: var(--text-1); }
+        .fam-fin-row .val.green { color: #4ade80; }
+
         /* Dependente form */
         .dep-form-section { max-width: 400px; width: 100%; }
         .dep-form-section .form-group { margin-bottom: 10px; }
@@ -8872,19 +8951,137 @@
                             </div>
                         </div>
 
-                        <!-- ===== MINHA FAMÍLIA ===== -->
+                        <!-- ===== MINHA FAMÍLIA v5.0 ===== -->
                         <div class="perfil-section" id="perfilSecFamilia" style="display:none;margin-top:16px;">
                             <div class="perfil-section-title"><span>👨‍👩‍👧‍👦</span> Minha Família</div>
-                            <div id="familiaStatusBillingBanner" style="display:none;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:10px;padding:10px 12px;margin-bottom:10px;font-size:11px;color:#4ade80;"></div>
-                            <div id="familiaPlanoResumo" style="font-size:11px;color:var(--text-3);margin-bottom:10px;"></div>
-                            <div id="familiaMembrosLista"></div>
+                            <div id="familiaMembrosLista" style="display:flex;flex-direction:column;gap:8px;"></div>
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px;">
                                 <button onclick="abrirCheckinFamilia()" id="btnCheckinFamilia" style="padding:11px;background:rgba(201,162,58,0.1);border:1px solid rgba(201,162,58,0.3);border-radius:10px;color:#C9A23A;font-size:12px;font-weight:700;cursor:pointer;">🥋 Check-in</button>
-                                <button onclick="abrirModalAdicionarDependente()" id="btnAdicionarDependente" style="padding:11px;background:rgba(99,179,237,0.08);border:1px solid rgba(99,179,237,0.25);border-radius:10px;color:#63b3ed;font-size:12px;font-weight:700;cursor:pointer;">➕ Dependente</button>
+                                <button onclick="famV5_abrirModalMembro()" id="btnAdicionarDependente" style="padding:11px;background:rgba(99,179,237,0.08);border:1px solid rgba(99,179,237,0.25);border-radius:10px;color:#63b3ed;font-size:12px;font-weight:700;cursor:pointer;">➕ Membro</button>
                             </div>
                         </div>
 
-                        <!-- Modal adicionar dependente (pelo responsável) -->
+                        <!-- ═══ MODAL v5: ADICIONAR MEMBRO (novo dependente OU vincular existente) ═══ -->
+                        <div id="famModalMembro" class="fam-modal-sheet">
+                            <div class="fam-modal-inner">
+                                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                                    <div style="font-size:15px;font-weight:800;color:var(--text-1);">➕ Adicionar Membro</div>
+                                    <button onclick="famV5_fecharModalMembro()" style="background:none;border:none;color:var(--text-3);font-size:20px;cursor:pointer;line-height:1;">✕</button>
+                                </div>
+
+                                <div class="fam-tabs">
+                                    <button class="fam-tab-btn active" id="famTabNovo" onclick="famV5_trocarAba('novo')">🆕 Novo dependente</button>
+                                    <button class="fam-tab-btn" id="famTabExist" onclick="famV5_trocarAba('existente')">🔗 Já tem conta</button>
+                                </div>
+
+                                <!-- ── ABA: Novo dependente ── -->
+                                <div id="famPainelNovo" style="display:flex;flex-direction:column;gap:10px;">
+                                    <div class="fam-field">
+                                        <label>Nome completo *</label>
+                                        <input id="famDepNome" placeholder="Ex: João Silva">
+                                    </div>
+                                    <div class="fam-field">
+                                        <label>Data de nascimento *</label>
+                                        <input type="date" id="famDepNasc" onchange="famV5_onNascChange()">
+                                    </div>
+                                    <div class="fam-field">
+                                        <label>Parentesco *</label>
+                                        <select id="famDepParentesco">
+                                            <option value="">Selecione...</option>
+                                            <option value="filho">Filho(a)</option>
+                                            <option value="enteado">Enteado(a)</option>
+                                            <option value="irmao">Irmão/Irmã</option>
+                                            <option value="sobrinho">Sobrinho(a)</option>
+                                            <option value="neto">Neto(a)</option>
+                                            <option value="outro">Outro</option>
+                                        </select>
+                                    </div>
+                                    <div class="fam-field">
+                                        <label>Modalidades</label>
+                                        <div id="famDepModsGrid" style="display:flex;flex-wrap:wrap;gap:6px;min-height:36px;">
+                                            <div style="font-size:11px;color:var(--text-3);padding:8px 0;">⏳ Carregando...</div>
+                                        </div>
+                                        <input type="hidden" id="famDepMods">
+                                    </div>
+
+                                    <!-- Campos do responsável — aparecem automaticamente quando menor < 18 -->
+                                    <div id="famCamposResponsavel" style="display:none;padding:12px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:10px;">
+                                        <div style="font-size:11px;font-weight:700;color:#fbbf24;margin-bottom:10px;">⚠️ Menor de idade — dados do responsável legal obrigatórios (LGPD)</div>
+                                        <div style="display:flex;flex-direction:column;gap:8px;">
+                                            <div class="fam-field">
+                                                <label>CPF do responsável *</label>
+                                                <input id="famRespCpf" placeholder="000.000.000-00" maxlength="14" inputmode="numeric"
+                                                    oninput="this.value=this.value.replace(/\D/g,'').replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/,function(_,a,b,c,d){return a+'.'+b+'.'+c+(d?'-'+d:'');})">
+                                            </div>
+                                            <div class="fam-field">
+                                                <label>Telefone do responsável *</label>
+                                                <input id="famRespTel" type="tel" placeholder="(11) 99999-9999">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bloco LGPD — aparece automaticamente quando menor < 18 -->
+                                    <div class="fam-lgpd-block" id="famLgpdBlock">
+                                        <div style="font-size:11px;font-weight:700;color:#a78bfa;margin-bottom:8px;">🔒 Consentimentos LGPD — obrigatórios para menores de 18 anos</div>
+                                        <div class="fam-lgpd-item">
+                                            <input type="checkbox" id="famLgpdTermos">
+                                            <span>Li e aceito os <b>Termos de Uso</b> e a <b>Política de Privacidade</b> em nome do menor. *</span>
+                                        </div>
+                                        <div class="fam-lgpd-item">
+                                            <input type="checkbox" id="famLgpdImagem">
+                                            <span>Autorizo o uso de imagem do menor para registro e comunicação da academia.</span>
+                                        </div>
+                                        <div class="fam-lgpd-item">
+                                            <input type="checkbox" id="famLgpdFacial">
+                                            <span>Autorizo o reconhecimento facial para check-in automático do menor.</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ── ABA: Vincular existente ── -->
+                                <div id="famPainelExistente" style="display:none;flex-direction:column;gap:10px;">
+                                    <div style="font-size:11px;color:var(--text-3);padding:8px 10px;background:rgba(99,179,237,0.06);border:1px solid rgba(99,179,237,0.15);border-radius:8px;">
+                                        💡 O aluno já tem conta no sistema. Informe o e-mail para vinculá-lo à sua família.
+                                    </div>
+                                    <div class="fam-field">
+                                        <label>E-mail do aluno existente *</label>
+                                        <input id="famEmailExistente" type="email" placeholder="email@exemplo.com">
+                                    </div>
+                                    <div class="fam-field">
+                                        <label>Parentesco</label>
+                                        <select id="famParentescoExist">
+                                            <option value="">Selecione...</option>
+                                            <option value="filho">Filho(a)</option>
+                                            <option value="enteado">Enteado(a)</option>
+                                            <option value="irmao">Irmão/Irmã</option>
+                                            <option value="conjuge">Cônjuge/Companheiro(a)</option>
+                                            <option value="outro">Outro</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div id="famModalMsg" style="font-size:11px;min-height:16px;margin:10px 0 2px;"></div>
+
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+                                    <button onclick="famV5_fecharModalMembro()" style="padding:12px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;color:var(--text-2);font-size:12px;font-weight:700;cursor:pointer;">Cancelar</button>
+                                    <button onclick="famV5_salvarMembro()" style="padding:12px;background:var(--accent);border:none;border-radius:10px;color:#000;font-size:12px;font-weight:800;cursor:pointer;">✅ Adicionar</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ═══ MODAL v5: DETALHE DE MEMBRO ═══ -->
+                        <div id="famModalDetalhe" class="fam-modal-sheet">
+                            <div class="fam-modal-inner">
+                                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                                    <div style="font-size:15px;font-weight:800;color:var(--text-1);" id="famDetNome">Membro</div>
+                                    <button onclick="famV5_fecharDetalhe()" style="background:none;border:none;color:var(--text-3);font-size:20px;cursor:pointer;">✕</button>
+                                </div>
+                                <div id="famDetConteudo"></div>
+                                <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px;" id="famDetAcoes"></div>
+                            </div>
+                        </div>
+
+                        <!-- Modal legado adicionar dependente — mantido como fallback -->
                         <div id="modalAdicionarDependente" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;align-items:flex-end;justify-content:center;">
                             <div style="background:var(--bg-card);border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;">
                                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
@@ -8920,7 +9117,7 @@
                             </div>
                         </div>
 
-                        <!-- Modal check-in família -->
+                        <!-- Modal check-in família (v5: render dinâmico com badge de menor) -->
                         <div id="modalCheckinFamilia" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:flex-end;justify-content:center;">
                             <div style="background:var(--bg-card);border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto;">
                                 <div style="font-size:15px;font-weight:800;color:var(--text-1);margin-bottom:4px;">🥋 Check-in da Família</div>
@@ -11694,13 +11891,6 @@
                             </div>
                             <div class="stu-toggle" id="stuProfToggle" onclick="onStuProfToggle()"></div>
                         </div>
-                        <div class="stu-toggle-row">
-                            <div class="stu-toggle-label">
-                                🎖️ Isento de mensalidade
-                                <div style="font-size:10px;color:var(--adm-text-3);font-weight:400;margin-top:2px;">Bolsista ou cortesia — sem cobrança</div>
-                            </div>
-                            <div class="stu-toggle" id="stuIsentoToggle" onclick="this.classList.toggle('on')"></div>
-                        </div>
                     </div>
 
                     <!-- CTs do Professor (visível só quando admin=true) -->
@@ -12493,11 +12683,6 @@
                 _lockByPlan('addCTSection', '🏠 Criar Filiais / CTs', 'premium');
             }
 // Dependentes e Família — liberado para todos os planos
-            // Plano Família com cobrança unificada (somente Premium)
-            if (_planId !== 'premium') {
-                _lockByPlan('familiaPlanoResumo',        '💰 Plano Família Unificado', 'premium');
-                _lockByPlan('familiaStatusBillingBanner','💰 Plano Família Unificado', 'premium');
-            }
             // Congelamento de Matrícula (Profissional ou superior)
             if (_planId !== 'premium' && _planId !== 'profissional') {
                 _lockByPlan('perfilSecCongelamento', '❄️ Congelamento de Matrícula', 'profissional');
@@ -14027,12 +14212,6 @@
                     } else if (_mvH.venceEmBreve) {
                         _tH='📅 Mensalidade vence em '+_mvH.diasRestantes+' dia'+(_mvH.diasRestantes>1?'s':'')+'. ('+_mvH.data+')';
                         _bH='rgba(251,191,36,0.08)'; _brH='1px solid rgba(251,191,36,0.25)'; _cH='#fbbf24';
-                    } else if (_mvH.status==='PENDENTE'||_mvH.status==='ATRASADO') {
-                        _tH='⚠️ Mensalidade pendente. Entre em contato com seu professor.';
-                        _bH='rgba(248,113,113,0.08)'; _brH='1px solid rgba(248,113,113,0.3)'; _cH='#f87171';
-                    } else {
-                        _tH='✅ Mensalidade em dia'+(_mvH.data?' · vence em '+_mvH.data:'')+'.';
-                        _bH='rgba(74,222,128,0.08)'; _brH='1px solid rgba(74,222,128,0.2)'; _cH='#4ade80';
                     }
                 }
                 if (_tH) {
@@ -19787,22 +19966,13 @@
             var proxVenc  = _formatVencBR(data.proximoVencimento || '');
             var atrasado  = (status === 'atrasado');
             var semPlano  = (!plano.nome);
-            if (data.isento || status === 'isento') {
-                container.innerHTML =
-                    '<div style="text-align:center;padding:30px 16px;background:rgba(167,139,250,0.07);border:1px solid rgba(167,139,250,0.25);border-radius:14px;">' +
-                        '<div style="font-size:36px;margin-bottom:10px;">🎖️</div>' +
-                        '<div style="font-size:16px;font-weight:800;color:#a78bfa;margin-bottom:6px;">Isento de Mensalidade</div>' +
-                        '<div style="font-size:12px;color:var(--text-3);">Sua conta não possui cobrança de mensalidade.</div>' +
-                    '</div>';
-                return;
-            }
             var temGateway = !!data.temGateway;
             var pixFallback = !!data.pixFallback;   // cartão falhou → PIX como fallback
             var motivoFalha = data.motivoFalha || '';
             var freqLabel  = { mensal:'Mensal', trimestral:'Trimestral', semestral:'Semestral', anual:'Anual' };
-            var statusLabel = { pago:'✅ Em dia', emdia:'✅ Em dia', pendente:'⏳ Aguardando pagamento', atrasado:'⚠️ Em atraso', vencendo:'🟡 Vencendo em breve', inativo:'— Sem plano', isento:'🎖️ Isento' };
-            var statusColor = { pago:'#4ade80', emdia:'#4ade80', pendente:'#fbbf24', atrasado:'#f87171', vencendo:'#fbbf24', inativo:'#64748b', isento:'#a78bfa' };
-            var statusBg    = { pago:'rgba(74,222,128,0.08)', emdia:'rgba(74,222,128,0.08)', pendente:'rgba(251,191,36,0.08)', atrasado:'rgba(248,113,113,0.08)', vencendo:'rgba(251,191,36,0.08)', inativo:'rgba(100,116,139,0.08)', isento:'rgba(167,139,250,0.10)' };
+            var statusLabel = { pago:'✅ Em dia', emdia:'✅ Em dia', pendente:'⏳ Aguardando pagamento', atrasado:'⚠️ Em atraso', vencendo:'🟡 Vencendo em breve', inativo:'— Sem plano' };
+            var statusColor = { pago:'#4ade80', emdia:'#4ade80', pendente:'#fbbf24', atrasado:'#f87171', vencendo:'#fbbf24', inativo:'#64748b' };
+            var statusBg    = { pago:'rgba(74,222,128,0.08)', emdia:'rgba(74,222,128,0.08)', pendente:'rgba(251,191,36,0.08)', atrasado:'rgba(248,113,113,0.08)', vencendo:'rgba(251,191,36,0.08)', inativo:'rgba(100,116,139,0.08)' };
             var gwLabel     = { mercadopago:'🔵 Mercado Pago', infinitypay:'🟣 Infinity Pay', pix_manual:'🟢 PIX Manual' };
 
             // Status efetivo pela DATA (libera cobrança quando vence hoje / venceu)
@@ -19878,7 +20048,7 @@
 
             // ── Card: Pagamento ───────────────────────────────────
             // Mostra se: deve pagar OU se cartão falhou (PIX fallback)
-            var devePagar = (statusEfetivo === 'pendente' || statusEfetivo === 'atrasado' || statusEfetivo === 'vencendo' || statusEfetivo === 'inativo') && statusEfetivo !== 'isento';
+            var devePagar = (statusEfetivo === 'pendente' || statusEfetivo === 'atrasado' || statusEfetivo === 'vencendo' || statusEfetivo === 'inativo');
             if ((devePagar || pixFallback) && !semPlano) {
                 h += '<div style="background:var(--bg-card);border-radius:16px;border:1px solid ' + (atrasado ? 'rgba(248,113,113,0.3)' : 'rgba(201,162,58,0.2)') + ';padding:16px;margin-bottom:14px;">';
                 if (atrasado && !pixFallback) h += '<div style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:12px;color:#fca5a5;">⚠️ Mensalidade em atraso. Regularize para evitar suspensão.</div>';
@@ -20282,8 +20452,8 @@
             var pixFallback = !!data.pixFallback;
             var motivoFalha = data.motivoFalha || '';
             var gwLabel    = { mercadopago:'🔵 Mercado Pago', infinitypay:'🟣 Infinity Pay', pix_manual:'🟢 PIX Manual' };
-            var statusLabel = { pago:'✅ Em dia', emdia:'✅ Em dia', pendente:'⏳ Aguardando', atrasado:'⚠️ Em atraso', vencendo:'🟡 Vencendo', inativo:'— Sem plano', isento:'🎖️ Isento' };
-            var statusClass = { pago:'pago', emdia:'pago', pendente:'pendente', atrasado:'atrasado', vencendo:'vencendo', inativo:'inativo', isento:'pago' };
+            var statusLabel = { pago:'✅ Em dia', emdia:'✅ Em dia', pendente:'⏳ Aguardando', atrasado:'⚠️ Em atraso', vencendo:'🟡 Vencendo', inativo:'— Sem plano' };
+            var statusClass = { pago:'pago', emdia:'pago', pendente:'pendente', atrasado:'atrasado', vencendo:'vencendo', inativo:'inativo' };
 
             // Status efetivo pela DATA: o backend às vezes mantém "em dia" mesmo no
             // dia ou após o vencimento — aqui corrigimos pela data real, pra liberar
@@ -20324,7 +20494,7 @@
             }
             h += '</div>';
             // Botão principal: pagar agora se pendente/atrasado, trocar se em dia
-            var devePagar = (statusEfetivo === 'pendente' || statusEfetivo === 'atrasado' || statusEfetivo === 'vencendo' || statusEfetivo === 'inativo') && !semPlano && statusEfetivo !== 'isento';
+            var devePagar = (statusEfetivo === 'pendente' || statusEfetivo === 'atrasado' || statusEfetivo === 'vencendo' || statusEfetivo === 'inativo') && !semPlano;
             if (semPlano) {
                 // Sem plano: escolher
                 h += '<button onclick="abrirModalPlano()" class="pag-btn" style="margin-top:10px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#0D0B08;font-weight:800;">';
@@ -22478,80 +22648,149 @@
         var _familiaCache    = null; // cache dos dependentes
         var _currentRealPhoto = '';  // foto real do usuário atual (data:image...)
 
+        // ════════════════════════════════════════════════════════════
+        // MÓDULO FAMÍLIA v5.0 — getFamiliaCompleta + LGPD + menores
+        // Fallback automático para API v4 (getDependentes/checkinFamilia)
+        // ════════════════════════════════════════════════════════════
+
+        var _famV5Cache   = null;  // resposta de getFamiliaCompleta
+        var _famV5Membros = [];    // membros enriquecidos
+        var _famV5Aba     = 'novo';
+
+        function _famIdade(nascStr) {
+            if (!nascStr) return null;
+            var d = new Date(nascStr);
+            if (isNaN(d.getTime())) {
+                // tenta dd/MM/yyyy
+                var m = nascStr.toString().match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+                if (m) d = new Date(m[3] + '-' + m[2] + '-' + m[1] + 'T12:00:00');
+                if (isNaN(d.getTime())) return null;
+            }
+            var hoje = new Date();
+            var anos = hoje.getFullYear() - d.getFullYear();
+            if (hoje.getMonth() < d.getMonth() ||
+                (hoje.getMonth() === d.getMonth() && hoje.getDate() < d.getDate())) anos--;
+            return anos;
+        }
+
+        function _famPolitica(idade) {
+            if (idade === null || idade === undefined) return 'COMPLETO';
+            if (idade < 13) return 'SEM_LOGIN';
+            if (idade < 18) return 'LIMITADO';
+            return 'COMPLETO';
+        }
+
+        function _famModalMsg(texto, tipo) {
+            var el = document.getElementById('famModalMsg');
+            if (!el) return;
+            var cores = { erro:'#f87171', ok:'#4ade80', info:'rgba(255,255,255,0.4)' };
+            el.style.color = cores[tipo] || cores.info;
+            el.textContent = texto;
+        }
+
         async function loadFamiliaSection() {
+            var sec    = document.getElementById('perfilSecFamilia');
+            var lista  = document.getElementById('familiaMembrosLista');
+            if (!sec || !lista) return;
+
             try {
-                var r = await secureFetch('getDependentes', {});
-                if (!r.success) return;
-                _familiaCache = r.dependentes || [];
+                // ── Tenta API v5 (getFamiliaCompleta), fallback v4 ──
+                var r = null;
+                try {
+                    r = await secureFetch('getFamiliaCompleta', {});
+                    if (!r || !r.success) r = null;
+                } catch(_e) { r = null; }
 
-                var sec     = document.getElementById('perfilSecFamilia');
-                var lista   = document.getElementById('familiaMembrosLista');
-                var resumo  = document.getElementById('familiaPlanoResumo');
-                var banner  = document.getElementById('familiaStatusBillingBanner');
-                if (!sec || !lista) return;
-
-                // Mostra seção sempre (Premium) — mesmo sem dependentes cadastrados ainda
-                sec.style.display = 'block';
-                if (_familiaCache.length === 0) {
-                    lista.innerHTML = '<div style="font-size:12px;color:var(--color-text-secondary);text-align:center;padding:10px 0;">Nenhum dependente cadastrado.<br>Clique em <b>+ Dependente</b> para adicionar.</div>';
+                if (r) {
+                    _famV5Cache   = r;
+                    _famV5Membros = (r.membros || []).filter(function(m) {
+                        // não exibe o próprio responsável na lista (ele é "você")
+                        return (m.email_aluno || m.email || '').toLowerCase() !== currentUser.email.toLowerCase()
+                            || (m.tipo_membro || '') !== 'RESPONSAVEL';
+                    }).map(function(m) {
+                        return {
+                            email:        m.email_aluno || m.email,
+                            nome:         m.nome,
+                            faixa:        m.faixa || (m.graduacao ? m.graduacao.faixa : ''),
+                            grau:         m.grau  || (m.graduacao ? m.graduacao.grau  : 0),
+                            ct:           m.ct    || (m.graduacao ? m.graduacao.ct    : ''),
+                            modalidades:  m.modalidades || (m.graduacao ? m.graduacao.modalidades : ''),
+                            status:       m.statusAluno || m.status || 'ATIVO',
+                            treinos:      m.treinos30d || 0,
+                            idade:        m.idade !== undefined ? m.idade : _famIdade(m.data_nascimento),
+                            politicaLogin: m.politicaLogin || _famPolitica(m.idade),
+                            tipo_membro:  (m.tipo_membro || 'DEPENDENTE').toUpperCase(),
+                            parentesco:   m.parentesco || '',
+                            membro_id:    m.membro_id || '',
+                            familia_id:   m.familia_id || ''
+                        };
+                    });
+                    // compat: _familiaCache usado por outras partes do app
+                    _familiaCache = _famV5Membros;
+                    sec.style.display = 'block';
+                    _famRenderLista(lista);
                     return;
                 }
 
-                // Banner do plano familiar
-                try {
-                    var pf = await secureFetch('getPlanoFamiliar', {});
-                    if (pf.success && pf.financeiro) {
-                        var fin = pf.financeiro;
-                        if (resumo) {
-                            resumo.innerHTML =
-                                '<span style="color:var(--text-1);font-weight:700;">' + pf.totalMembros + ' membros</span>' +
-                                (fin.plano && fin.plano.nome ? ' · ' + escapeHtml(fin.plano.nome) : '') +
-                                (fin.economia > 0 ? ' · <span style="color:#4ade80;">💰 economia R$ ' + fin.economia.toFixed(2) + '/mês</span>' : '') +
-                                '<br><span style="font-size:10px;">Total: R$ ' + fin.totalComDesc.toFixed(2) + '/mês</span>';
-                        }
-                        if (banner && fin.statusPagamento) {
-                            var stMap = { PAGO:'✅ Mensalidade em dia — todos os membros cobertos',
-                                          PENDENTE:'⏳ Mensalidade pendente — regularize para manter dependentes ativos',
-                                          ATRASADO:'⚠️ Mensalidade em atraso — dependentes podem ser bloqueados' };
-                            var stColor = { PAGO:'rgba(74,222,128,0.08)', PENDENTE:'rgba(251,191,36,0.08)', ATRASADO:'rgba(248,113,113,0.08)' };
-                            var stBord  = { PAGO:'rgba(74,222,128,0.2)',  PENDENTE:'rgba(251,191,36,0.2)',  ATRASADO:'rgba(248,113,113,0.3)' };
-                            var stTxt   = { PAGO:'#4ade80', PENDENTE:'#fbbf24', ATRASADO:'#f87171' };
-                            var st = fin.statusPagamento.toUpperCase();
-                            if (stMap[st]) {
-                                banner.style.display     = 'block';
-                                banner.style.background  = stColor[st] || '';
-                                banner.style.borderColor = stBord[st]  || '';
-                                banner.style.color       = stTxt[st]   || '';
-                                banner.textContent       = stMap[st];
-                            }
-                        }
-                    }
-                } catch(_ep) {}
-
-                // Lista de membros
-                lista.innerHTML = _familiaCache.map(function(dep) {
-                    var inicialBg = 'rgba(201,162,58,0.15)';
-                    return '<div style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;">' +
-                        '<div style="width:36px;height:36px;border-radius:50%;background:' + inicialBg + ';display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#C9A23A;flex-shrink:0;">' +
-                            escapeHtml((dep.nome || '?')[0].toUpperCase()) +
-                        '</div>' +
-                        '<div style="flex:1;min-width:0;">' +
-                            '<div style="font-size:13px;font-weight:700;color:var(--text-1);">' + escapeHtml(dep.nome) + '</div>' +
-                            '<div style="font-size:10px;color:var(--text-3);">' +
-                                escapeHtml(dep.faixa) + (dep.grau > 0 ? ' · ' + dep.grau + 'º grau' : '') +
-                                ' · ' + dep.treinos + ' treinos' +
-                            '</div>' +
-                        '</div>' +
-                        '<div style="font-size:10px;padding:3px 8px;border-radius:20px;background:rgba(74,222,128,0.1);color:#4ade80;font-weight:700;">' +
-                            escapeHtml(dep.status || 'ATIVO') +
-                        '</div>' +
-                    '</div>';
-                }).join('');
+                // ── Fallback v4: getDependentes ──
+                var r4 = await secureFetch('getDependentes', {});
+                if (!r4.success) return;
+                _famV5Cache   = null;
+                _famV5Membros = (r4.dependentes || []).map(function(d) {
+                    var idade = _famIdade(d.nascimento);
+                    return {
+                        email: d.email, nome: d.nome, faixa: d.faixa, grau: d.grau,
+                        ct: d.ct, modalidades: d.modalidades,
+                        status: d.status || 'ATIVO', treinos: d.treinos || 0,
+                        idade: idade, politicaLogin: _famPolitica(idade),
+                        tipo_membro: 'DEPENDENTE', parentesco: '', membro_id: '', familia_id: ''
+                    };
+                });
+                _familiaCache = _famV5Membros;
+                sec.style.display = 'block';
+                _famRenderLista(lista);
 
             } catch(e) { console.error('loadFamiliaSection:', e); }
         }
 
-        // ── Adicionar dependente pelo responsável (Premium) ─────────────
+        function _famRenderLista(lista) {
+            // Lista de membros
+            if (_famV5Membros.length === 0) {
+                lista.innerHTML = '<div style="font-size:12px;color:var(--text-3);text-align:center;padding:10px 0;">Nenhum membro cadastrado.<br>Clique em <b>➕ Membro</b> para adicionar.</div>';
+                return;
+            }
+
+            lista.innerHTML = _famV5Membros.map(function(m) {
+                var politica = m.politicaLogin || _famPolitica(m.idade);
+                var tipo     = m.tipo_membro || 'DEPENDENTE';
+                var avatarClass = tipo === 'RESPONSAVEL' ? 'responsavel' : tipo === 'ALUNO_ADULTO' ? 'adulto' : 'menor';
+                var inicial  = (m.nome || '?')[0].toUpperCase();
+
+                var badge = tipo === 'RESPONSAVEL' ? '<span class="fam-badge responsavel">Responsável</span>'
+                          : tipo === 'ALUNO_ADULTO' ? '<span class="fam-badge adulto">Adulto</span>'
+                          : politica === 'SEM_LOGIN' ? '<span class="fam-badge menor13">Menor &lt;13</span>'
+                          : '<span class="fam-badge dependente">Dependente</span>';
+
+                var sub = [];
+                if (m.faixa)   sub.push(escapeHtml(m.faixa) + (m.grau > 0 ? ' · ' + m.grau + 'º grau' : ''));
+                if (m.treinos) sub.push(m.treinos + ' treinos');
+                if (m.parentesco) sub.push(escapeHtml(m.parentesco));
+                if (politica === 'SEM_LOGIN') sub.push('check-in via responsável');
+
+                return '<div class="fam-membro-card" onclick="famV5_verDetalhe(\'' + escapeHtml(m.email) + '\')" style="cursor:pointer;">' +
+                    '<div class="fam-avatar ' + avatarClass + '">' + escapeHtml(inicial) + '</div>' +
+                    '<div style="flex:1;min-width:0;">' +
+                        '<div style="font-size:13px;font-weight:700;color:var(--text-1);margin-bottom:3px;">' + escapeHtml(m.nome) + '</div>' +
+                        '<div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">' + badge +
+                            '<span class="fam-badge ativo">' + escapeHtml(m.status || 'ATIVO') + '</span>' +
+                            (sub.length ? '<span style="font-size:10px;color:var(--text-3);">' + sub.join(' · ') + '</span>' : '') +
+                        '</div>' +
+                    '</div>' +
+                    '<div style="font-size:18px;color:var(--text-3);">›</div>' +
+                '</div>';
+            }).join('');
+        }
+
         // ── Popula grid de modalidades dinamicamente ─────────────────────
         var _depModsSelecionadas = []; // para ambos os modais
 
@@ -22572,7 +22811,6 @@
                 }
             } catch(_e) {}
 
-            // Fallback para MODALIDADES_CATALOG
             if (MODS.length === 0 && typeof MODALIDADES_CATALOG !== 'undefined' && MODALIDADES_CATALOG.length > 0) {
                 MODS = MODALIDADES_CATALOG;
             }
@@ -22607,92 +22845,173 @@
                         btn.style.borderColor  = '#C9A23A';
                         btn.style.color        = '#C9A23A';
                     }
-                    // Atualiza hidden input
                     if (hidden) hidden.value = _depModsSelecionadas.join(',');
                 };
                 grid.appendChild(btn);
             });
 
-            // Atualiza hidden com seleção inicial
             if (hidden) hidden.value = _depModsSelecionadas.join(',');
         }
-function abrirModalAdicionarDependente() {
-            var modal = document.getElementById('modalAdicionarDependente');
-            if (!modal) return;
-            // Limpa campos
-            ['depNomePerfil','depNascPerfil','depModsPerfil'].forEach(function(id) {
+
+        // ══════════════════════════════════════════════════════════
+        // MODAL ADICIONAR MEMBRO v5 (novo dependente OU vincular existente)
+        // ══════════════════════════════════════════════════════════
+
+        function famV5_abrirModalMembro() {
+            var modal = document.getElementById('famModalMembro');
+            if (!modal) { abrirModalAdicionarDependenteLegacy(); return; }
+            ['famDepNome','famDepNasc','famRespCpf','famRespTel','famEmailExistente'].forEach(function(id) {
                 var el = document.getElementById(id); if (el) el.value = '';
             });
-            var msg = document.getElementById('depMsgPerfil');
-            if (msg) msg.textContent = '';
-            // Pré-preenche modalidade com a do responsável
-            // Carrega modalidades do sistema
+            var s1 = document.getElementById('famDepParentesco');   if (s1) s1.value = '';
+            var s2 = document.getElementById('famParentescoExist'); if (s2) s2.value = '';
+            var cr = document.getElementById('famCamposResponsavel'); if (cr) cr.style.display = 'none';
+            var lg = document.getElementById('famLgpdBlock'); if (lg) lg.classList.remove('show');
+            ['famLgpdTermos','famLgpdImagem','famLgpdFacial'].forEach(function(id) {
+                var el = document.getElementById(id); if (el) el.checked = false;
+            });
+            _famModalMsg('','info');
             _depModsSelecionadas = [];
             var _modPrinc = currentUser && currentUser.modalidadePrincipal ? currentUser.modalidadePrincipal : '';
-            _carregarModsDepGrid('depModsGrid', 'depModsPerfil', _modPrinc);
-            modal.style.display = 'flex';
+            _carregarModsDepGrid('famDepModsGrid', 'famDepMods', _modPrinc);
+            famV5_trocarAba('novo');
+            modal.classList.add('open');
         }
 
-        function fecharModalAdicionarDependente() {
-            var modal = document.getElementById('modalAdicionarDependente');
-            if (modal) modal.style.display = 'none';
+        function famV5_fecharModalMembro() {
+            var modal = document.getElementById('famModalMembro');
+            if (modal) modal.classList.remove('open');
         }
 
-        async function salvarDependentePerfil() {
-            var nome  = (document.getElementById('depNomePerfil')?.value  || '').trim();
-            var nasc  = (document.getElementById('depNascPerfil')?.value  || '').trim();
-            var mods  = (document.getElementById('depModsPerfil')?.value || _depModsSelecionadas.join(',') || '').trim();
-            var msg   = document.getElementById('depMsgPerfil');
+        function famV5_trocarAba(aba) {
+            _famV5Aba = aba;
+            var tn = document.getElementById('famTabNovo');
+            var te = document.getElementById('famTabExist');
+            var pn = document.getElementById('famPainelNovo');
+            var pe = document.getElementById('famPainelExistente');
+            if (tn) tn.classList.toggle('active', aba === 'novo');
+            if (te) te.classList.toggle('active', aba === 'existente');
+            if (pn) pn.style.display = aba === 'novo'      ? 'flex' : 'none';
+            if (pe) pe.style.display = aba === 'existente' ? 'flex' : 'none';
+        }
 
-            if (!nome) { if (msg) msg.textContent = '⚠️ Nome obrigatório.'; return; }
-            if (!nasc) { if (msg) msg.textContent = '⚠️ Data de nascimento obrigatória.'; return; }
+        function famV5_onNascChange() {
+            var nasc = (document.getElementById('famDepNasc') || {}).value || '';
+            if (!nasc) return;
+            var idade = _famIdade(nasc);
+            var menor = idade !== null && idade < 18;
+            var cr = document.getElementById('famCamposResponsavel');
+            var lg = document.getElementById('famLgpdBlock');
+            if (cr) cr.style.display = menor ? 'block' : 'none';
+            if (lg) { if (menor) lg.classList.add('show'); else lg.classList.remove('show'); }
+        }
 
-            // Usa modalidade do responsável como fallback
-            if (!mods && currentUser && currentUser.modalidadePrincipal) mods = currentUser.modalidadePrincipal;
-            if (!mods) mods = 'bjj';
-
-            if (msg) msg.textContent = '⏳ Cadastrando...';
-
+        async function famV5_salvarMembro() {
+            _famModalMsg('⏳ Salvando...', 'info');
             try {
-                var r = await secureFetch('criarDependente', {
-                    responsavelEmail: currentUser.email,
-                    nome:             nome,
-                    nascimento:       nasc,
-                    modalidades:      mods
-                });
-                if (r.success) {
-                    if (msg) msg.textContent = '';
-                    fecharModalAdicionarDependente();
-                    alert('✅ ' + nome + ' cadastrado com sucesso!\nSenha: seu e-mail (' + currentUser.email + ')');
-                    // Recarrega a lista de dependentes
-                    _familiaCache = null;
+                var r;
+                if (_famV5Aba === 'novo') {
+                    var nome  = (document.getElementById('famDepNome')?.value || '').trim();
+                    var nasc  = (document.getElementById('famDepNasc')?.value || '').trim();
+                    var paren = (document.getElementById('famDepParentesco')?.value || '').trim();
+                    var mods  = (document.getElementById('famDepMods')?.value || _depModsSelecionadas.join(',') || 'bjj').trim();
+
+                    if (!nome) { _famModalMsg('⚠️ Nome é obrigatório', 'erro'); return; }
+                    if (!nasc) { _famModalMsg('⚠️ Data de nascimento é obrigatória', 'erro'); return; }
+
+                    var idade = _famIdade(nasc);
+                    var menor = idade !== null && idade < 18;
+
+                    var payload = {
+                        nome: nome, nascimento: nasc, modalidades: mods,
+                        parentesco: paren || 'filho',
+                        responsavelEmail: currentUser.email
+                    };
+
+                    if (menor) {
+                        var cpf = (document.getElementById('famRespCpf')?.value || '').replace(/\D/g,'');
+                        var tel = (document.getElementById('famRespTel')?.value || '').trim();
+                        if (!cpf || cpf.length !== 11) { _famModalMsg('⚠️ CPF do responsável inválido (11 dígitos)', 'erro'); return; }
+                        if (!tel)                       { _famModalMsg('⚠️ Telefone do responsável obrigatório', 'erro'); return; }
+                        if (!paren)                     { _famModalMsg('⚠️ Parentesco obrigatório para menores', 'erro'); return; }
+                        var termos = document.getElementById('famLgpdTermos');
+                        if (!termos || !termos.checked) { _famModalMsg('⚠️ Aceite dos termos LGPD é obrigatório para menores', 'erro'); return; }
+                        payload.responsavelCpf = cpf;
+                        payload.responsavelTel = tel;
+                        payload.lgpdAceito     = true;
+                        var li = document.getElementById('famLgpdImagem');
+                        var lf = document.getElementById('famLgpdFacial');
+                        payload.lgpdImagem = li ? li.checked : false;
+                        payload.lgpdFacial = lf ? lf.checked : false;
+                    }
+
+                    try {
+                        r = await secureFetch('adicionarMembroFamilia', payload);
+                        if (!r || !r.success) throw new Error((r && r.message) || 'v5 indisponível');
+                    } catch(_e) {
+                        r = await secureFetch('criarDependente', payload); // fallback v4
+                    }
+
+                } else {
+                    // ── Vincular aluno existente ──
+                    var emailEx = (document.getElementById('famEmailExistente')?.value || '').trim().toLowerCase();
+                    var parenEx = (document.getElementById('famParentescoExist')?.value || '').trim();
+                    if (!emailEx) { _famModalMsg('⚠️ E-mail obrigatório', 'erro'); return; }
+
+                    try {
+                        r = await secureFetch('adicionarMembroFamilia', {
+                            responsavelEmail: currentUser.email,
+                            emailExistente:   emailEx,
+                            parentesco:       parenEx || 'outro'
+                        });
+                        if (!r || !r.success) throw new Error((r && r.message) || 'v5 indisponível');
+                    } catch(_e) {
+                        r = await secureFetch('vincularDependente', {
+                            responsavelEmail: currentUser.email,
+                            dependenteEmail:  emailEx
+                        });
+                    }
+                }
+
+                if (r && r.success) {
+                    famV5_fecharModalMembro();
+                    if (typeof showToast === 'function') showToast('✅ ' + (r.message || 'Membro adicionado!'), 'success');
+                    else alert('✅ ' + (r.message || 'Membro adicionado!'));
+                    _famV5Cache = null; _famV5Membros = []; _familiaCache = null;
                     loadFamiliaSection();
                 } else {
-                    if (msg) msg.textContent = '❌ ' + (r.message || 'Erro ao cadastrar');
+                    _famModalMsg('❌ ' + ((r && r.message) || 'Erro ao salvar'), 'erro');
                 }
             } catch(e) {
-                if (msg) msg.textContent = '❌ Erro: ' + e.message;
+                _famModalMsg('❌ Erro: ' + e.message, 'erro');
             }
         }
 
+        // ══════════════════════════════════════════════════════════
+        // CHECK-IN FAMÍLIA v5 — usa checkinFamiliaV2, fallback v4
+        // ══════════════════════════════════════════════════════════
+
         function abrirCheckinFamilia() {
-            if (!_familiaCache || _familiaCache.length === 0) {
-                alert('Nenhum dependente cadastrado.'); return;
+            if (!_famV5Membros || _famV5Membros.length === 0) {
+                alert('Nenhum membro cadastrado.'); return;
             }
-            var modal   = document.getElementById('modalCheckinFamilia');
-            var listEl  = document.getElementById('checkinFamiliaMembros');
+            var modal  = document.getElementById('modalCheckinFamilia');
+            var listEl = document.getElementById('checkinFamiliaMembros');
             if (!modal || !listEl) return;
 
-            // Monta lista com checkboxes — responsável sempre pré-selecionado
-            var itens = [{ email: currentUser.email, nome: currentUser.name || 'Você', self: true }]
-                .concat(_familiaCache);
+            var itens = [{ email: currentUser.email, nome: currentUser.name || 'Você', self: true, politicaLogin: 'COMPLETO', faixa: '' }]
+                .concat(_famV5Membros);
 
             listEl.innerHTML = itens.map(function(m) {
+                var politica  = m.politicaLogin || _famPolitica(m.idade);
+                var bloqueado = false; // menores <13 PODEM ser selecionados pelo responsável
+                var dicaMenor = (!m.self && politica === 'SEM_LOGIN')
+                    ? ' <span style="font-size:9px;color:#fbbf24;">menor &lt;13</span>' : '';
                 return '<label style="display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;cursor:pointer;">' +
                     '<input type="checkbox" data-email="' + escapeHtml(m.email) + '" ' + (m.self ? 'checked' : '') +
                     ' style="width:18px;height:18px;accent-color:#C9A23A;flex-shrink:0;">' +
                     '<div>' +
-                        '<div style="font-size:13px;font-weight:700;color:var(--text-1);">' + escapeHtml(m.nome) + (m.self ? ' (você)' : '') + '</div>' +
+                        '<div style="font-size:13px;font-weight:700;color:var(--text-1);">' + escapeHtml(m.nome) + (m.self ? ' (você)' : '') + dicaMenor + '</div>' +
                         '<div style="font-size:10px;color:var(--text-3);">' + (m.faixa ? escapeHtml(m.faixa) : '') + '</div>' +
                     '</div>' +
                 '</label>';
@@ -22713,20 +23032,162 @@ function abrirModalAdicionarDependente() {
 
             var ct = (currentUser && currentUser.ct) || '';
             if (!ct && typeof selectedCT !== 'undefined' && selectedCT) ct = selectedCT;
+            var modalidade = typeof activeModality !== 'undefined' ? activeModality : 'bjj';
 
             try {
-                var r = await secureFetch('checkinFamilia', {
-                    emails:     emails,
-                    ct:         ct,
-                    modalidade: (typeof activeModality !== 'undefined' ? activeModality : 'bjj')
-                });
+                var r = null;
+                // Tenta v5 primeiro
+                try {
+                    r = await secureFetch('checkinFamiliaV2', { emails: emails, ct: ct, modalidade: modalidade });
+                    if (!r || !r.success) r = null;
+                } catch(_e) { r = null; }
+                // Fallback v4
+                if (!r) {
+                    r = await secureFetch('checkinFamilia', { emails: emails, ct: ct, modalidade: modalidade });
+                }
+
                 fecharCheckinFamilia();
-                if (r.success) {
-                    alert('✅ ' + r.message);
+                if (r && r.success) {
+                    alert('✅ ' + (r.message || 'Check-in registrado!'));
                 } else {
-                    alert('❌ ' + (r.message || 'Erro'));
+                    alert('❌ ' + ((r && r.message) || 'Erro'));
                 }
             } catch(e) { alert('Erro: ' + e.message); }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        // DETALHE DE MEMBRO v5
+        // ══════════════════════════════════════════════════════════
+
+        function famV5_verDetalhe(email) {
+            var m = _famV5Membros.find(function(x){ return x.email === email; });
+            if (!m) return;
+            var modal  = document.getElementById('famModalDetalhe');
+            var nomeEl = document.getElementById('famDetNome');
+            var contEl = document.getElementById('famDetConteudo');
+            var acoesEl = document.getElementById('famDetAcoes');
+            if (!modal) return;
+
+            if (nomeEl) nomeEl.textContent = m.nome || 'Membro';
+
+            var politica = m.politicaLogin || _famPolitica(m.idade);
+            var tipo     = m.tipo_membro || 'DEPENDENTE';
+
+            var linhas = [];
+            if (m.faixa)       linhas.push(['Faixa', m.faixa + (m.grau > 0 ? ' · ' + m.grau + 'º grau' : '')]);
+            if (m.ct)          linhas.push(['CT', m.ct]);
+            if (m.modalidades) linhas.push(['Modalidades', m.modalidades]);
+            if (m.idade !== null && m.idade !== undefined) linhas.push(['Idade', m.idade + ' anos']);
+            if (m.parentesco)  linhas.push(['Parentesco', m.parentesco]);
+            linhas.push(['Status', m.status || 'ATIVO']);
+            linhas.push(['Tipo', tipo === 'RESPONSAVEL' ? 'Responsável' : tipo === 'ALUNO_ADULTO' ? 'Aluno Adulto' : 'Dependente']);
+            if (politica === 'SEM_LOGIN')      linhas.push(['Login', 'Menor < 13 — quiosque ou responsável']);
+            else if (politica === 'LIMITADO')  linhas.push(['Login', 'Menor (13–17) — permissões limitadas']);
+
+            if (contEl) {
+                contEl.innerHTML = linhas.map(function(l) {
+                    return '<div class="fam-fin-row"><span>' + escapeHtml(l[0]) + '</span><span class="val">' + escapeHtml(l[1]) + '</span></div>';
+                }).join('');
+            }
+
+            if (acoesEl) {
+                acoesEl.innerHTML = '';
+                if (tipo !== 'RESPONSAVEL') {
+                    var btnRem = document.createElement('button');
+                    btnRem.textContent = '🗑️ Remover da família';
+                    btnRem.style.cssText = 'padding:11px;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2);border-radius:10px;color:#f87171;font-size:12px;font-weight:700;cursor:pointer;';
+                    btnRem.onclick = function() { famV5_removerMembro(m.email, m.nome); };
+                    acoesEl.appendChild(btnRem);
+                }
+            }
+            modal.classList.add('open');
+        }
+
+        function famV5_fecharDetalhe() {
+            var modal = document.getElementById('famModalDetalhe');
+            if (modal) modal.classList.remove('open');
+        }
+
+        async function famV5_removerMembro(email, nome) {
+            if (!confirm('Remover ' + nome + ' da família? O histórico será preservado.')) return;
+            try {
+                var r;
+                try {
+                    r = await secureFetch('removerMembroFamilia', { emailMembro: email });
+                    if (!r || !r.success) throw new Error((r && r.message) || 'v5 indisponível');
+                } catch(_e) {
+                    r = await secureFetch('desvincularDependente', { dependenteEmail: email });
+                }
+                famV5_fecharDetalhe();
+                if (r && r.success) {
+                    if (typeof showToast === 'function') showToast('✅ Membro removido', 'success');
+                    else alert('✅ Membro removido');
+                    _famV5Cache = null; _famV5Membros = []; _familiaCache = null;
+                    loadFamiliaSection();
+                } else {
+                    alert('❌ ' + ((r && r.message) || 'Erro'));
+                }
+            } catch(e) { alert('Erro: ' + e.message); }
+        }
+
+        // ══════════════════════════════════════════════════════════
+        // ALIASES DE COMPATIBILIDADE — handlers antigos do HTML
+        // ══════════════════════════════════════════════════════════
+
+        function abrirModalAdicionarDependente()  { famV5_abrirModalMembro(); }
+        function fecharModalAdicionarDependente() {
+            famV5_fecharModalMembro();
+            var legado = document.getElementById('modalAdicionarDependente');
+            if (legado) legado.style.display = 'none';
+        }
+        // Modal legado (fallback se famModalMembro não existir)
+        function abrirModalAdicionarDependenteLegacy() {
+            var modal = document.getElementById('modalAdicionarDependente');
+            if (!modal) return;
+            ['depNomePerfil','depNascPerfil','depModsPerfil'].forEach(function(id) {
+                var el = document.getElementById(id); if (el) el.value = '';
+            });
+            var msg = document.getElementById('depMsgPerfil');
+            if (msg) msg.textContent = '';
+            _depModsSelecionadas = [];
+            var _modPrinc = currentUser && currentUser.modalidadePrincipal ? currentUser.modalidadePrincipal : '';
+            _carregarModsDepGrid('depModsGrid', 'depModsPerfil', _modPrinc);
+            modal.style.display = 'flex';
+        }
+
+        async function salvarDependentePerfil() {
+            var nome  = (document.getElementById('depNomePerfil')?.value  || '').trim();
+            var nasc  = (document.getElementById('depNascPerfil')?.value  || '').trim();
+            var mods  = (document.getElementById('depModsPerfil')?.value || _depModsSelecionadas.join(',') || '').trim();
+            var msg   = document.getElementById('depMsgPerfil');
+
+            if (!nome) { if (msg) msg.textContent = '⚠️ Nome obrigatório.'; return; }
+            if (!nasc) { if (msg) msg.textContent = '⚠️ Data de nascimento obrigatória.'; return; }
+            if (!mods && currentUser && currentUser.modalidadePrincipal) mods = currentUser.modalidadePrincipal;
+            if (!mods) mods = 'bjj';
+            if (msg) msg.textContent = '⏳ Cadastrando...';
+
+            try {
+                var payload = { responsavelEmail: currentUser.email, nome: nome, nascimento: nasc, modalidades: mods };
+                var r;
+                try {
+                    r = await secureFetch('adicionarMembroFamilia', payload);
+                    if (!r || !r.success) throw new Error((r && r.message) || 'v5 indisponível');
+                } catch(_e) {
+                    r = await secureFetch('criarDependente', payload);
+                }
+                if (r.success) {
+                    if (msg) msg.textContent = '';
+                    fecharModalAdicionarDependente();
+                    alert('✅ ' + nome + ' cadastrado com sucesso!');
+                    _famV5Cache = null; _famV5Membros = []; _familiaCache = null;
+                    loadFamiliaSection();
+                } else {
+                    if (msg) msg.textContent = '❌ ' + (r.message || 'Erro ao cadastrar');
+                }
+            } catch(e) {
+                if (msg) msg.textContent = '❌ Erro: ' + e.message;
+            }
         }
 
         async function cancelarCongelamento() {
@@ -38316,14 +38777,8 @@ function abrirModalAdicionarDependente() {
             var isProfUser = s.isProfessor === true || s.isProfessor === 'true' || _rawTipo === 'professor';
             // Só admin real pode ver e alterar papéis
             if (adminRow) adminRow.style.display = currentIsRealAdmin ? '' : 'none';
-            if (adminToggle)  { isAdminUser ? adminToggle.classList.add('on')  : adminToggle.classList.remove('on'); }
-            if (profToggle)   { isProfUser  ? profToggle.classList.add('on')   : profToggle.classList.remove('on'); }
-            var isentoToggle = document.getElementById('stuIsentoToggle');
-            if (isentoToggle) {
-                // Professor é isento automaticamente; flag manual também
-                var _isIsento = isProfUser || !!(s.isentoCobranca);
-                _isIsento ? isentoToggle.classList.add('on') : isentoToggle.classList.remove('on');
-            }
+            if (adminToggle) { isAdminUser ? adminToggle.classList.add('on') : adminToggle.classList.remove('on'); }
+            if (profToggle)  { isProfUser  ? profToggle.classList.add('on')  : profToggle.classList.remove('on'); }
             // Mostra seção de CTs do professor se for prof ou admin
             renderStuCTSections(s, isAdminUser || isProfUser);
             // Seção de modalidades do professor (só admin vê, só para professores)
@@ -38757,9 +39212,6 @@ function abrirModalAdicionarDependente() {
                     return dias.join(',');
                 })(),
                 isProfessor:          currentIsRealAdmin ? isProfStu  : undefined,
-                isentoCobranca:       currentIsRealAdmin
-                    ? (isProfStu || (document.getElementById('stuIsentoToggle') ? document.getElementById('stuIsentoToggle').classList.contains('on') : false))
-                    : undefined,
                 ctsProfessor:         currentIsRealAdmin ? ctsdoprof  : undefined,
                 ctsliberados:         ctsliberados,
                 modalidades:          modData.modalidades,
@@ -38788,7 +39240,6 @@ function abrirModalAdicionarDependente() {
                         _cached.admin               = isAdminStu;
                         _cached.tipoPerfil          = isProfStu ? 'professor' : '';
                         _cached.isProfessor         = isProfStu;
-                        _cached.isentoCobranca      = isProfStu || (document.getElementById('stuIsentoToggle') ? document.getElementById('stuIsentoToggle').classList.contains('on') : false);
                         _cached.ctsProfessor        = ctsdoprof;
                         _cached.modalidades         = modData.modalidades;
                         _cached.modalidadePrincipal = modData.modalidadePrincipal;
