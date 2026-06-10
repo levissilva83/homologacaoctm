@@ -8252,7 +8252,6 @@
                     </div>
 
                     <button id="btnConfirmarPresenca" onclick="confirmAttendance()">
-                        <span class="btn-conf-icon" id="btnConfIcon">🥋</span>
                         <span class="btn-conf-label" id="btnConfLabel">✓ Confirmar Presença</span>
                         <span class="btn-conf-mod" id="btnConfMod">BJJ</span>
                     </button>
@@ -14348,6 +14347,12 @@
         function renderModalidadeHome() {
             var grid = document.getElementById('modHomeGrid');
             if (!grid) return;
+            // ── Guarda: não redireciona se o usuário já entrou no app ──
+            // activeModality é definido em enterModalidade() — se tiver valor,
+            // o usuário já passou pela home e está em outra tela.
+            var homeEl = document.getElementById('modalidadeHome');
+            if (activeModality && homeEl && homeEl.style.display === 'none') return;
+
             grid.innerHTML = '';
 
             var isSingle = userModalidades.length === 1;
@@ -20426,8 +20431,14 @@
                     venceEmBreve:  dias > 0 && dias <= 5
                 };
                 try { localStorage.setItem('bjjUser', JSON.stringify(currentUser)); } catch(e){}
-                // Re-renderiza o banner da home, se a função existir
-                try { if (typeof renderModalidadeHome === 'function') renderModalidadeHome(); } catch(e){}
+                // Re-renderiza o banner da home APENAS se ela estiver visível no momento
+                // (evita redirecionar o usuário para fora de outras telas como perfil)
+                try {
+                    var _homeEl = document.getElementById('modalidadeHome');
+                    if (typeof renderModalidadeHome === 'function' && _homeEl && _homeEl.style.display !== 'none') {
+                        renderModalidadeHome();
+                    }
+                } catch(e){}
             } catch(e) {}
         }
 
