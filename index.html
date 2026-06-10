@@ -36254,14 +36254,6 @@
             if (!el) return;
             el.innerHTML = '<div class="admin-empty" style="font-size:10px;">⏳ Carregando...</div>';
 
-            // Pré-carrega planos em paralelo se ainda não foram buscados.
-            // Evita o alert de 'Crie pelo menos um plano' ao clicar em Atribuir.
-            if (!_mpPlanos || _mpPlanos.length === 0) {
-                secureFetch('getPlanosList', {}).then(function(r) {
-                    if (r && r.success && r.planos && r.planos.length > 0) _mpPlanos = r.planos;
-                }).catch(function(){});
-            }
-
             _cobCTFiltro = document.getElementById('cobCTFiltro') ? document.getElementById('cobCTFiltro').value : '';
 
             // Garante que vínculos estão carregados para popular o select de CT
@@ -36506,103 +36498,22 @@
             } catch(e) { alert('Erro: ' + e.message); }
         }
 
-        // atribuirPlanoModal — bottom-sheet com busca lazy de planos
-        // Se _mpPlanos ainda não foi carregado (usuário veio direto para Cobranças
-        // sem passar pela Aba 3), busca silenciosamente antes de abrir o seletor.
-        async function atribuirPlanoModal(email) {
-            // ── 1. Garante que os planos estão carregados ──────────────────
+        function atribuirPlanoModal(email) {
             if (!_mpPlanos || _mpPlanos.length === 0) {
-                var _loadingEl = document.createElement('div');
-                _loadingEl.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);'
-                    + 'background:#1a1f2e;border:1px solid var(--adm-border);border-radius:10px;'
-                    + 'padding:10px 16px;font-size:11px;color:var(--adm-text-3);z-index:9990;';
-                _loadingEl.textContent = '⏳ Carregando planos...';
-                document.body.appendChild(_loadingEl);
-                try {
-                    var _pr = await secureFetch('getPlanosList', {});
-                    if (_pr.success) _mpPlanos = _pr.planos || [];
-                } catch(_ep) {}
-                _loadingEl.remove();
-            }
-
-            if (!_mpPlanos || _mpPlanos.length === 0) {
-                alert('Nenhum plano encontrado. Crie um plano na aba Planos (Aba 3) antes de atribuir.');
+                alert('Crie pelo menos um plano (Aba 3) antes de atribuir.');
                 return;
             }
-
-            // ── 2. Abre bottom-sheet de seleção ────────────────────────────
-            var _old = document.getElementById('atribuirPlanoSheet');
-            if (_old) _old.remove();
-
-            var sh = document.createElement('div');
-            sh.id  = 'atribuirPlanoSheet';
-            sh.style.cssText = 'position:fixed;inset:0;z-index:9998;';
-
-            var optsHtml = _mpPlanos.map(function(p, i) {
-                return '<label style="display:flex;align-items:center;gap:10px;padding:10px 12px;'
-                    + 'background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);'
-                    + 'border-radius:10px;cursor:pointer;margin-bottom:6px;">'
-                    + '<input type="radio" name="_atribPlano" value="' + i + '"'
-                    + ' style="accent-color:#C9A23A;width:16px;height:16px;flex-shrink:0;">'
-                    + '<div style="flex:1;min-width:0;">'
-                    + '<div style="font-size:12px;font-weight:700;color:var(--adm-text-1);">' + escapeHtml(p.nome) + '</div>'
-                    + '<div style="font-size:10px;color:var(--adm-text-3);">R$ '
-                    + parseFloat(p.valor||0).toFixed(2) + '/mês'
-                    + (p.ct ? ' · ' + escapeHtml(p.ct) : '') + '</div>'
-                    + '</div>'
-                    + '</label>';
-            }).join('');
-
-            sh.innerHTML =
-                '<div onclick="document.getElementById(\'atribuirPlanoSheet\').remove()" '
-                + 'style="position:fixed;inset:0;background:rgba(0,0,0,0.72);"></div>'
-                + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;'
-                + 'background:var(--adm-bg-card,#1a1f2e);border-radius:20px 20px 0 0;'
-                + 'padding:22px 20px 36px;z-index:9999;max-height:85vh;overflow-y:auto;max-width:480px;margin:0 auto;">'
-                + '<div style="width:40px;height:4px;background:rgba(255,255,255,.12);border-radius:2px;margin:0 auto 18px;"></div>'
-                + '<div style="font-size:15px;font-weight:800;color:var(--adm-text-1);margin-bottom:3px;">📋 Atribuir Plano</div>'
-                + '<div style="font-size:11px;color:var(--adm-text-3);margin-bottom:14px;word-break:break-all;">' + escapeHtml(email) + '</div>'
-                + '<div id="_atribPlanoLista">' + optsHtml + '</div>'
-                + '<div id="_atribPlanoMsg" style="font-size:11px;min-height:16px;margin:8px 0;"></div>'
-                + '<button onclick="_confirmarAtribuirPlano(\'' + escapeHtml(email) + '\')" '
-                + 'style="width:100%;padding:13px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);'
-                + 'color:#000;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;">'
-                + '✅ Confirmar</button>'
-                + '<button onclick="document.getElementById(\'atribuirPlanoSheet\').remove()" '
-                + 'style="width:100%;padding:10px;background:transparent;border:none;'
-                + 'color:rgba(255,255,255,.25);font-size:12px;cursor:pointer;">Cancelar</button>'
-                + '</div>';
-
-            document.body.appendChild(sh);
-        }
-
-        async function _confirmarAtribuirPlano(email) {
-            var radios = document.querySelectorAll('input[name="_atribPlano"]');
-            var idx = -1;
-            radios.forEach(function(r){ if (r.checked) idx = parseInt(r.value); });
-            if (idx < 0 || !_mpPlanos[idx]) {
-                var msg = document.getElementById('_atribPlanoMsg');
-                if (msg) { msg.style.color='#f87171'; msg.textContent='⚠️ Selecione um plano.'; }
-                return;
-            }
-            var plano = _mpPlanos[idx];
-            var btn   = document.querySelector('#atribuirPlanoSheet button[onclick*="_confirmarAtribuirPlano"]');
-            if (btn) { btn.disabled = true; btn.textContent = '⏳ Atribuindo...'; }
-            try {
-                var data = await secureFetch('atribuirPlanoAluno', { email: email, planoId: plano.id || plano.planoId || '', ct: plano.ct || '' });
-                var sh   = document.getElementById('atribuirPlanoSheet');
-                if (sh) sh.remove();
-                if (data.success) {
-                    if (typeof showToast === 'function') showToast('✅ ' + (data.message || 'Plano atribuído!'), 'success');
-                    else alert('✅ ' + (data.message || 'Plano atribuído!'));
-                    loadPagamentosAdmin();
-                } else {
-                    alert('❌ ' + (data.message || 'Erro ao atribuir'));
-                }
-            } catch(e) {
-                if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar'; }
-                alert('Erro de conexão');
-            }
+            var escolha = prompt('Atribuir plano para ' + email + ':\n\n' +
+                _mpPlanos.map(function(p,i){ return (i+1) + '. ' + p.nome + ' — R$' + parseFloat(p.valor||0).toFixed(2) + ' (' + (p.ct||'—') + ')'; }).join('\n') +
+                '\n\nDigite o número:');
+            if (!escolha) return;
+            var idx = parseInt(escolha) - 1;
+            if (isNaN(idx) || idx < 0 || idx >= _mpPlanos.length) { alert('Opção inválida'); return; }
+            secureFetch('atribuirPlanoAluno', { email: email, planoId: _mpPlanos[idx].id })
+                .then(function(data) {
+                    if (data.success) { alert('✅ ' + data.message); loadPagamentosAdmin(); }
+                    else alert('❌ ' + data.message);
+                }).catch(function() { alert('Erro de conexão'); });
         }
 
         // ── Cobrança imediata por aluno específico ──────────────────────────
@@ -41098,16 +41009,73 @@
         function _fecharAvulsaSheet() { var s = document.getElementById('avulsaSheet'); if (s) s.remove(); }
         async function _confirmarAvulsa() {
             var email = document.getElementById('avulsaEmail').value;
-            var desc = (document.getElementById('avulsaDesc').value||'').trim();
+            var desc  = (document.getElementById('avulsaDesc').value||'').trim();
             var valor = parseFloat(document.getElementById('avulsaValor').value) || 0;
-            var iso = document.getElementById('avulsaVenc').value;
-            var obs = (document.getElementById('avulsaObs').value||'').trim();
-            if (!desc) { alert('Informe a descricao.'); return; }
+            var iso   = document.getElementById('avulsaVenc').value;
+            var obs   = (document.getElementById('avulsaObs').value||'').trim();
+            if (!desc)      { alert('Informe a descricao.'); return; }
             if (valor <= 0) { alert('Informe o valor.'); return; }
             var venc = iso ? iso.split('-').reverse().join('/') : '';
-            var res = await secureFetch('criarCobrancaAvulsa', { email: email, descricao: desc, valor: valor, dataVenc: venc, obs: obs });
-            if (res && res.success) { _fecharAvulsaSheet(); loadPagamentosAdmin(); }
-            else alert((res && res.message) || 'Erro');
+            var btn = document.querySelector('#avulsaSheet button[onclick="_confirmarAvulsa()"]');
+            if (btn) { btn.disabled = true; btn.textContent = '&#x23F3; Gerando...'; }
+            try {
+                var res = await secureFetch('criarCobrancaAvulsa', {
+                    email: email, descricao: desc, valor: valor, dataVenc: venc, obs: obs
+                });
+                if (!res || !res.success) { alert((res && res.message) || 'Erro ao criar cobranca'); return; }
+                _fecharAvulsaSheet();
+                loadPagamentosAdmin();
+                var valorFmt = 'R$ ' + parseFloat(valor).toFixed(2).replace('.', ',');
+                if (res.pixCode || res.qrBase64) {
+                    _showAvulsaPixModal({ nome: email, descricao: desc, valor: valorFmt, pixCode: res.pixCode||'', qrBase64: res.qrBase64||'', manual: false });
+                } else if (res.pixManual && res.chavePix) {
+                    _showAvulsaPixModal({ nome: email, descricao: desc, valor: valorFmt, pixCode: res.chavePix, qrBase64: '', manual: true });
+                } else {
+                    if (typeof showToast === 'function') showToast('Cobranca criada!', 'success');
+                    else alert('Cobranca criada com sucesso!');
+                }
+            } catch(e) { alert('Erro de conexao: ' + e.message);
+            } finally { if (btn) { btn.disabled = false; btn.textContent = 'Criar cobranca'; } }
+        }
+
+        function _showAvulsaPixModal(d) {
+            var old = document.getElementById('avulsaPixModal'); if (old) old.remove();
+            var modal = document.createElement('div');
+            modal.id  = 'avulsaPixModal';
+            modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9997;display:flex;align-items:flex-end;justify-content:center;';
+            var card = document.createElement('div');
+            card.style.cssText = 'background:var(--adm-bg-card,#1a1f2e);border:1px solid rgba(168,85,247,0.3);border-radius:20px 20px 0 0;width:100%;max-width:500px;max-height:88vh;overflow-y:auto;padding:22px 20px 36px;';
+            var tit    = d.manual ? '&#x1F7E2; Chave PIX' : '&#x1F7E2; PIX Gerado';
+            var codLbl = d.manual ? 'CHAVE PIX ESTATICA' : 'CODIGO PIX — COPIA E COLA';
+            card.innerHTML =
+                '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'
+                + '<div><div style="font-size:15px;font-weight:800;color:#a855f7;">' + tit + '</div>'
+                + '<div style="font-size:11px;color:var(--adm-text-3);margin-top:2px;">' + escapeHtml(d.descricao) + ' &middot; ' + escapeHtml(d.valor) + '</div></div>'
+                + '<button id="avulsaPixClose" style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.06);color:var(--adm-text-3);border:1px solid var(--adm-border);cursor:pointer;font-size:13px;">&#x2715;</button>'
+                + '</div>'
+                + (d.qrBase64 ? '<div style="text-align:center;margin-bottom:12px;"><img src="data:image/png;base64,' + d.qrBase64 + '" style="width:180px;height:180px;border-radius:10px;border:3px solid #a855f7;"></div>' : '')
+                + (d.pixCode
+                    ? '<div style="background:rgba(0,0,0,0.25);border:1px dashed rgba(168,85,247,0.4);border-radius:10px;padding:12px;margin-bottom:12px;">'
+                    + '<div style="font-size:9px;font-weight:700;color:var(--adm-text-3);margin-bottom:5px;">' + codLbl + '</div>'
+                    + '<div id="avulsaPixCode" style="font-size:10px;font-family:monospace;color:#c084fc;word-break:break-all;cursor:pointer;line-height:1.6;" onclick="_copiarAvulsaPix()">' + escapeHtml(d.pixCode) + '</div>'
+                    + '</div>' : '')
+                + '<button onclick="_copiarAvulsaPix()" style="width:100%;padding:11px;background:rgba(168,85,247,0.12);border:1.5px solid rgba(168,85,247,0.3);color:#a855f7;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:8px;">&#x1F4CB; Copiar codigo PIX</button>'
+                + '<button id="avulsaPixFechar" style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,.25);font-size:12px;cursor:pointer;">Fechar</button>';
+            modal.appendChild(card);
+            document.body.appendChild(modal);
+            modal.onclick = function(e) { if (e.target === modal) modal.remove(); };
+            document.getElementById('avulsaPixClose').onclick  = function() { modal.remove(); };
+            document.getElementById('avulsaPixFechar').onclick = function() { modal.remove(); };
+            window._avulsaPixCodeAtual = d.pixCode || '';
+        }
+
+        function _copiarAvulsaPix() {
+            var code = window._avulsaPixCodeAtual || '';
+            if (!code) return;
+            if (navigator.clipboard) navigator.clipboard.writeText(code);
+            var el = document.getElementById('avulsaPixCode');
+            if (el) { var orig = el.style.color; el.style.color = '#4ade80'; setTimeout(function(){ el.style.color = orig; }, 1500); }
+            if (typeof showToast === 'function') showToast('Codigo PIX copiado!', 'success');
         }
         async function pagarAvulsa(id) {
             var res = await secureFetch('pagarCobrancaAvulsa', { id: id });
