@@ -15082,9 +15082,14 @@
         function getSessionToken() {
             try {
                 var session = JSON.parse(localStorage.getItem('bjjSession') || 'null');
-                if (!session || !session.token) return null;
-                if (session.expiresAt && Date.now() > session.expiresAt) { clearSession(); return null; }
-                return session.token;
+                if (session && session.token) {
+                    if (session.expiresAt && Date.now() > session.expiresAt) { clearSession(); return null; }
+                    return session.token;
+                }
+                // Fallback: fluxo trial/assinatura salva em sessionStorage
+                var ssFallback = sessionStorage.getItem('sessionToken');
+                if (ssFallback) return ssFallback;
+                return null;
             } catch(e) { return null; }
         }
 
@@ -30745,7 +30750,7 @@
                 }
 
                 // Login OK — salva sessão e mostra fase de assinatura
-                if (r.token)  sessionStorage.setItem('sessionToken', r.token);
+                if (r.token) { setSessionToken(r.token); sessionStorage.setItem('sessionToken', r.token); }
                 if (r.userId) sessionStorage.setItem('userId', r.userId);
                 localStorage.setItem('lastEmail', email);
                 currentUser = r.user || r.userData || { email: email };
