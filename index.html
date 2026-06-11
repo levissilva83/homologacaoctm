@@ -17284,7 +17284,7 @@
                             label: t,
                             startMin: classeStart,
                             endMin: classeStart + 60,                        // aula dura 60min — sobrescrito se fim disponível
-                            checkinOpen: Math.min(classeStart + 50, 1439),   // check-in abre 50min após início
+                            checkinOpen: Math.min(classeStart + ((ct && ct.checkinMinutos !== undefined) ? parseInt(ct.checkinMinutos) : 50), 1439),
                             checkinClose: Math.min(classeStart + 269, 1439), // check-in fecha 4h29 após início
                             ct: ctName
                         };
@@ -17491,8 +17491,9 @@
                 var h = parseInt(parts[1]);
                 var m = parseInt(parts[2]);
                 var classeStart = h * 60 + m;
-                var startMin = Math.min(classeStart + 50, 1439);  // check-in abre 50min após início
-                var endMin   = Math.min(classeStart + 269, 1439); // fecha 4h29 após início
+                var _delay   = (ct && ct.checkinMinutos !== undefined) ? parseInt(ct.checkinMinutos) : 50;
+                var startMin = Math.min(classeStart + _delay, 1439);               // check-in abre após delay configurado
+                var endMin   = Math.min(classeStart + _delay + 219, 1439);         // fecha 3h39 após abertura
                 windows.push({ start: startMin, end: endMin, label: t, classeStart: classeStart });
             }
 
@@ -17522,7 +17523,8 @@
 
             var msg = '⚠️ Fora do horário de check-in.';
             if (proximaHoje) {
-                msg += '<br>Check-in libera às ' + formatMinutes(proximaHoje.start) + ' (50min após início da aula das ' + proximaHoje.label + ')';
+                var _delayMsg = (ct && ct.checkinMinutos !== undefined) ? parseInt(ct.checkinMinutos) : 50;
+            msg += '<br>Check-in libera às ' + formatMinutes(proximaHoje.start) + ' (' + _delayMsg + 'min após início da aula das ' + proximaHoje.label + ')';
             } else {
                 msg += '<br>Janelas de hoje já encerraram.';
             }
@@ -38307,6 +38309,17 @@
                 html += '<div class="ct-mod-section-label">📅 Grade Horária</div>';
                 html += _renderDayRows(ctName, mod.id, schedule, modHpd);
 
+                // ── Check-in Minutos — configurável por CT ──
+                var _cmVal = (typeof ctObj === 'object' && ctObj.checkinMinutos !== undefined) ? ctObj.checkinMinutos : 50;
+                var _cmId  = 'ctCheckinMin_' + encodeURIComponent(ctName);
+                html += '<div style="margin-top:14px;background:rgba(255,255,255,0.03);border:1px solid var(--adm-border);border-radius:10px;padding:12px;">';
+                html += '<div style="font-size:10px;font-weight:700;color:var(--adm-text-3);margin-bottom:8px;">⏱️ TEMPO PARA CONFIRMAR PRESENÇA</div>';
+                html += '<div style="display:flex;align-items:center;gap:10px;">';
+                html += '<input type="number" id="'+_cmId+'" value="'+_cmVal+'" min="0" max="180" step="5" ';
+                html += 'style="width:70px;padding:8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:14px;font-weight:700;text-align:center;">';
+                html += '<div style="font-size:11px;color:var(--adm-text-3);">minutos após o início da aula<br><span style="font-size:10px;opacity:0.6;">Padrão: 50 min · Mín: 0 · Máx: 180</span></div>';
+                html += '</div></div>';
+
                 // ── Botão salvar grade horária ──
                 html += '<div style="margin-top:14px;">';
                 var _saveBtnId = 'ctSaveBtn_' + encodeURIComponent(ctName) + '_' + mod.id;
@@ -38932,14 +38945,19 @@
             // 2. Envia
             try {
                 var token = getSessionToken();
+                // Lê checkinMinutos do input do painel
+                var _cmEl = document.getElementById('ctCheckinMin_' + encodeURIComponent(ctName));
+                var _cmVal = _cmEl ? (parseInt(_cmEl.value) || 50) : 50;
+
                 var payload = JSON.stringify({
-                    action:   'saveCTDetails',
-                    ctName:   ctName,
-                    modId:    activeModId,
-                    modHpd:   JSON.stringify(modData),
-                    clearMod: Object.keys(modData).length === 0 ? '1' : '0',
-                    token:    token,
-                    _origin:  window.location.href.split('?')[0]
+                    action:          'saveCTDetails',
+                    ctName:          ctName,
+                    modId:           activeModId,
+                    modHpd:          JSON.stringify(modData),
+                    clearMod:        Object.keys(modData).length === 0 ? '1' : '0',
+                    checkinMinutos:  _cmVal,
+                    token:           token,
+                    _origin:         window.location.href.split('?')[0]
                 });
 
                 var resp = await fetch(SCRIPT_URL, { method: 'POST', body: payload });
