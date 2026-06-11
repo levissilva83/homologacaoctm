@@ -20148,17 +20148,53 @@
             var el = document.getElementById('pagTabContainer');
             if (!el) return;
 
-            // Módulo não configurado pelo professor → ainda permite cadastrar forma de pagamento
+            // Módulo não configurado → mostra avulsas pendentes + histórico de pagas
             if (!data.success || !data.configurado) {
-                el.innerHTML =
-                    '<div style="padding:16px 0;">' +
-                    '<div style="text-align:center;padding:20px;background:rgba(255,255,255,0.02);border-radius:14px;border:1px dashed var(--border);margin-bottom:16px;">' +
-                    '<div style="font-size:32px;margin-bottom:8px;">💳</div>' +
-                    '<div style="font-size:13px;font-weight:700;color:var(--text-1);margin-bottom:4px;">Mensalidade não configurada</div>' +
-                    '<div style="font-size:11px;color:var(--text-3);line-height:1.5;">Seu professor ainda não ativou o módulo de cobrança.<br>Você já pode cadastrar sua forma de pagamento.</div>' +
-                    '</div>' +
-                    _renderCartaoSection(data) +
-                    '</div>';
+                var _avNC   = (data.cobrancasAvulsas || []).filter(function(a){ return a.status !== 'PAGO' && a.status !== 'CANCELADO'; });
+                var _histNC = data.historico || [];
+                var _hNC = '<div style="padding:16px 0;">';
+                // Tabs: Mensalidade | Histórico
+                _hNC += '<div style="display:flex;gap:0;background:rgba(255,255,255,0.03);border-radius:12px;padding:4px;margin-bottom:16px;">';
+                _hNC += '<button id="pagStuTabBtn1" onclick="switchPagStuTab(1)" style="flex:1;padding:9px 4px;border:none;border-radius:8px;background:rgba(201,162,58,0.15);color:var(--accent);font-size:12px;font-weight:800;cursor:pointer;border-bottom:2px solid var(--accent);">💳 Minha Mensalidade</button>';
+                _hNC += '<button id="pagStuTabBtn2" onclick="switchPagStuTab(2)" style="flex:1;padding:9px 4px;border:none;border-radius:8px;background:transparent;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;">🕐 Histórico</button>';
+                _hNC += '</div>';
+                // Tab 1: mensalidade + cobranças pendentes
+                _hNC += '<div id="pagStuTab1">';
+                _hNC += '<div style="text-align:center;padding:20px;background:rgba(255,255,255,0.02);border-radius:14px;border:1px dashed var(--border);margin-bottom:16px;">';
+                _hNC += '<div style="font-size:32px;margin-bottom:8px;">💳</div>';
+                _hNC += '<div style="font-size:13px;font-weight:700;color:var(--text-1);margin-bottom:4px;">Mensalidade não configurada</div>';
+                _hNC += '<div style="font-size:11px;color:var(--text-3);line-height:1.5;">Seu professor ainda não ativou o módulo de cobrança automática.</div>';
+                _hNC += '</div>';
+                if (_avNC.length > 0) {
+                    _hNC += '<div style="background:var(--bg-card);border-radius:16px;border:1px solid rgba(168,85,247,0.25);padding:16px;margin-bottom:14px;">';
+                    _hNC += '<div style="font-size:11px;font-weight:800;color:#a855f7;letter-spacing:.6px;margin-bottom:12px;">📌 COBRANÇAS PENDENTES (' + _avNC.length + ')</div>';
+                    _avNC.forEach(function(av) {
+                        var _vDate = av.dataVenc ? av.dataVenc.split('/').reverse().join('-') : '';
+                        var isAtrasado = _vDate && (new Date(_vDate) < new Date());
+                        var cor = isAtrasado ? '#f87171' : '#fbbf24';
+                        _hNC += '<div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.18);border-radius:12px;padding:14px;margin-bottom:10px;">';
+                        _hNC += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
+                        _hNC += '<div style="font-size:13px;font-weight:700;color:var(--text-1);">' + escapeHtml(av.descricao) + '</div>';
+                        _hNC += '<div style="font-size:16px;font-weight:900;color:#a855f7;">R$ ' + parseFloat(av.valor).toFixed(2) + '</div>';
+                        _hNC += '</div>';
+                        if (av.dataVenc) _hNC += '<div style="font-size:10px;color:' + cor + ';margin-bottom:8px;">📅 Vencimento: ' + escapeHtml(av.dataVenc) + (isAtrasado ? ' · Em atraso' : '') + '</div>';
+                        if (av.obs) _hNC += '<div style="font-size:10px;color:var(--text-3);margin-bottom:8px;">' + escapeHtml(av.obs) + '</div>';
+                        _hNC += '<div id="avulsaPixArea_' + escapeHtml(av.id) + '"></div>';
+                        _hNC += '<button onclick="pagarAvulsaAluno(\'' + escapeHtml(av.id) + '\',this)" style="width:100%;padding:11px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;">🟢 Pagar via PIX</button>';
+                        _hNC += '</div>';
+                    });
+                    _hNC += '</div>';
+                }
+                _hNC += _renderCartaoSection(data);
+                _hNC += '</div>';
+                // Tab 2: histórico de pagas
+                _hNC += '<div id="pagStuTab2" style="display:none;">';
+                _hNC += '<div style="background:var(--bg-card);border-radius:16px;border:1px solid var(--border);padding:16px;">';
+                _hNC += '<div style="font-size:11px;font-weight:700;color:var(--text-3);letter-spacing:.6px;margin-bottom:14px;">HISTÓRICO DE PAGAMENTOS</div>';
+                _hNC += renderHistoricoPagStu(_histNC);
+                _hNC += '</div></div>';
+                _hNC += '</div>';
+                el.innerHTML = _hNC;
                 return;
             }
 
@@ -35929,14 +35965,17 @@
                 _gwVinculos.forEach(function(v) {
                     var icon   = gwIcon[v.gateway] || '⚪';
                     var status = v.ativo ? '<span style="color:#4ade80;font-size:9px;font-weight:700;">● Ativo</span>' : '<span style="color:#f87171;font-size:9px;">● Inativo</span>';
-                    h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 11px;background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:9px;margin-bottom:5px;">';
-                    h += '<div style="flex:1;min-width:0;">';
+                    h += '<div style="padding:10px 11px;background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:9px;margin-bottom:6px;">';
+                    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">';
                     h += '<div style="font-size:11px;font-weight:800;color:var(--adm-text-1);">📍 ' + escapeHtml(v.ct) + ' ' + status + '</div>';
-                    h += '<div style="font-size:9px;color:var(--adm-text-3);margin-top:2px;">' + icon + ' ' + escapeHtml(v.gatewayLabel || v.gateway);
+                    h += '<div style="display:flex;gap:5px;">';
+                    h += '<button onclick="editarVinculoCT(' + JSON.stringify(v).replace(/"/g,'&quot;') + ')" style="padding:3px 8px;border-radius:5px;background:rgba(99,102,241,0.1);color:#818cf8;border:1px solid rgba(99,102,241,0.25);font-size:9px;cursor:pointer;">✏️ Editar</button>';
+                    h += '<button onclick="removerVinculoCT(\'' + escapeHtml(v.ct) + '\')" style="padding:3px 8px;border-radius:5px;background:rgba(248,113,113,0.08);color:#f87171;border:1px solid rgba(248,113,113,0.2);font-size:9px;cursor:pointer;">🗑️ Excluir</button>';
+                    h += '</div></div>';
+                    h += '<div style="font-size:9px;color:var(--adm-text-3);">' + icon + ' ' + escapeHtml(v.gatewayLabel || v.gateway);
                     if (v.chavePix) h += ' · 🔑 ' + escapeHtml(v.chavePix);
-                    h += ' · Venc. dia ' + (v.diaVencimento || '10') + '</div>';
+                    if (v.diaVencimento) h += ' · Venc. dia ' + v.diaVencimento;
                     h += '</div>';
-                    h += '<button onclick="removerVinculoCT(\'' + escapeHtml(v.ct) + '\')" style="flex-shrink:0;margin-left:8px;padding:3px 8px;border-radius:5px;background:rgba(248,113,113,0.08);color:#f87171;border:1px solid rgba(248,113,113,0.2);font-size:9px;cursor:pointer;">✕</button>';
                     h += '</div>';
                 });
                 el.innerHTML = h;
@@ -35949,12 +35988,41 @@
         }
 
         async function removerVinculoCT(ct) {
-            if (!confirm('Remover gateway do CT "' + ct + '"?\nPlanos existentes não serão removidos.')) return;
+            if (!confirm('⚠️ Isso vai APAGAR permanentemente a configuração do CT "' + ct + '" da planilha.\nPlanos existentes não serão removidos.\n\nConfirmar exclusão?')) return;
             try {
                 var data = await secureFetch('removerVinculoCT', { ct: ct });
-                if (data.success) { loadVinculosCT(); }
+                if (data.success) { showToast && showToast('CT removido!', 'success'); loadVinculosCT(); }
                 else alert('❌ ' + data.message);
             } catch(e) { alert('Erro de conexão'); }
+        }
+
+        function editarVinculoCT(v) {
+            // Preenche o formulário com os dados do CT para edição
+            var ctSel = document.getElementById('gwCTSelect');
+            var gwSel = document.getElementById('gwSelect');
+            var pixIn = document.getElementById('gwChavePix');
+            var diaIn = document.getElementById('gwDiaVencimento');
+
+            if (ctSel) {
+                // Tenta selecionar o CT no select
+                for (var i = 0; i < ctSel.options.length; i++) {
+                    if (ctSel.options[i].value === v.ct) { ctSel.selectedIndex = i; break; }
+                }
+            }
+            if (gwSel) {
+                // Tenta selecionar o gateway
+                for (var j = 0; j < gwSel.options.length; j++) {
+                    if (gwSel.options[j].value === v.gatewayId) { gwSel.selectedIndex = j; break; }
+                }
+            }
+            if (pixIn) pixIn.value = v.chavePix || '';
+            if (diaIn) diaIn.value = v.diaVencimento || '';
+
+            // Scroll até o formulário
+            var form = document.getElementById('gwVincularForm') || document.querySelector('[id*="vincular"]');
+            if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            if (typeof showToast === 'function') showToast('Dados carregados para edição — ajuste e clique em Vincular', 'info');
         }
 
         // Popula selects de CT que têm gateway configurado (abas 3 e 4)
