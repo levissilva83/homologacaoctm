@@ -38968,6 +38968,19 @@
                 if (r && r.success) {
                     var badge = document.getElementById('ctStatusBadge');
                     if (badge) { badge.textContent='salvo ✓'; badge.className='ct-schedule-status saved'; }
+                    // ── Atualiza allCTs em memória com o novo checkinMinutos ──
+                    if (typeof allCTs !== 'undefined' && allCTs) {
+                        var _ctIdx = allCTs.findIndex(function(c){ return (c.name || c) === ctName; });
+                        if (_ctIdx >= 0 && typeof allCTs[_ctIdx] === 'object') {
+                            allCTs[_ctIdx].checkinMinutos = _cmVal;
+                        }
+                    }
+                    // Recarrega lista de CTs para garantir sincronia (checkinMinutos e horários)
+                    try {
+                        secureFetch('getCTsList', {}).then(function(ctR) {
+                            if (ctR && ctR.cts) allCTs = ctR.cts;
+                        });
+                    } catch(_eR) {}
                     // Atualiza o botão se encontrar
                     var btn = document.getElementById('ctSaveBtn_' + safeKey)
                            || document.querySelector('button[onclick*="saveCTFull2"]');
