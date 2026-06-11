@@ -9065,13 +9065,13 @@
 
                         <!-- ══════════════════════════════════════════════════ -->
                         <!-- ABAS SECUNDÁRIAS: Mensalidade | Contratos |       -->
-                        <!--                   Congelamento | Minha Família    -->
+                        <!--                   Congelamento | Dependentes    -->
                         <!-- ══════════════════════════════════════════════════ -->
                         <div class="perfil-tabs-nav perfil-tabs-nav--secondary" id="perfilTabsNavSec" style="margin-top:20px;">
                             <button class="perfil-tab-btn perfil-tab-btn--secondary active" data-ptabsec="mensalidade" onclick="switchPerfilTabSec('mensalidade')">💳 Mensalidade</button>
                             <button class="perfil-tab-btn perfil-tab-btn--secondary"        data-ptabsec="contratos"   onclick="switchPerfilTabSec('contratos')">📋 Contratos</button>
                             <button class="perfil-tab-btn perfil-tab-btn--secondary"        data-ptabsec="congelamento" onclick="switchPerfilTabSec('congelamento')">❄️ Congelamento</button>
-                            <button class="perfil-tab-btn perfil-tab-btn--secondary"        data-ptabsec="familia"     onclick="switchPerfilTabSec('familia')">👨‍👩‍👧‍👦 Família</button>
+                            <button class="perfil-tab-btn perfil-tab-btn--secondary"        data-ptabsec="familia"     onclick="switchPerfilTabSec('familia')">👥 Dependentes</button>
                         </div>
 
                         <!-- ABA SECUNDÁRIA: MENSALIDADE -->
@@ -9298,7 +9298,7 @@
                         <!-- Modal check-in família (v5: render dinâmico com badge de menor) -->
                         <div id="modalCheckinFamilia" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:flex-end;justify-content:center;">
                             <div style="background:var(--bg-card);border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:480px;max-height:80vh;overflow-y:auto;">
-                                <div style="font-size:15px;font-weight:800;color:var(--text-1);margin-bottom:4px;">🥋 Check-in da Família</div>
+                                <div style="font-size:15px;font-weight:800;color:var(--text-1);margin-bottom:4px;">🥋 Check-in dos Dependentes</div>
                                 <div style="font-size:11px;color:var(--text-3);margin-bottom:14px;">Selecione quem está presente hoje</div>
                                 <div id="checkinFamiliaMembros" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;"></div>
                                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
@@ -12287,7 +12287,7 @@
                 <!-- Família -->
                 <div id="stuFamiliaSection" style="margin-top:14px;padding:12px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px;">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                        <div style="font-size:12px;font-weight:700;color:var(--text-1);">👨‍👩‍👧‍👦 Família / Dependentes</div>
+                        <div style="font-size:12px;font-weight:700;color:var(--text-1);">👨‍👩‍👧‍👦 Dependentes</div>
                         <button onclick="abrirModalCriarDependente()" style="padding:5px 10px;background:rgba(201,162,58,0.1);border:1px solid rgba(201,162,58,0.3);border-radius:7px;color:#C9A23A;font-size:10px;font-weight:700;cursor:pointer;">+ Adicionar</button>
                     </div>
                     <div id="stuDependentesList" style="font-size:11px;color:var(--text-3);">Carregando...</div>
@@ -12910,6 +12910,8 @@
                 };
               }
               // Atualiza faixas com dados da planilha (sobrescreve hardcoded)
+              // Ordena pela coluna 'ordem' da planilha antes de processar
+              m.faixas = m.faixas.slice().sort(function(a,b){ return (parseInt(a.ordem)||999)-(parseInt(b.ordem)||999); });
               var grad = MODALIDADES_SCHEMA[modId].graduacao;
               grad.faixas = m.faixas.map(function(f, idx) {
                 return {
@@ -12921,7 +12923,7 @@
                   cssClass:       (f.id || '').toString().toLowerCase().replace(/[^a-z0-9]/g,'-'),
                   next:           f.next  || null,
                   minMeses:       f.minMeses || 0,
-                  ordemProgresso: idx + 1
+                  ordemProgresso: parseInt(f.ordem) || (idx + 1)
                 };
               });
               // maxGrausPorFaixa: usa o max_grau da ÚLTIMA faixa como referência geral
@@ -12984,6 +12986,11 @@
             var faixas   = mod.faixas  || [];
             if (!faixas.length) return; // sem faixas na planilha = mantém hardcoded
 
+            // ── Garante ordenação pela coluna 'ordem' da planilha Faixas ──
+            faixas = faixas.slice().sort(function(a, b) {
+                return (parseInt(a.ordem) || 999) - (parseInt(b.ordem) || 999);
+            });
+
             var faixasFormatadas = faixas.map(function(f, idx) {
                 var _id  = f.id    || f.label || '';
                 var _lbl = f.label || f.id    || '';
@@ -13039,8 +13046,14 @@
                         faixa:'Faixa', faixas:'Faixas', grau:'Grau', graus:'Graus',
                         confirmarBtn:'🥋 Treinei',
                         evolucaoTitulo:'Minha Evolução',
-                        roadmapTitulo:'🥋 ' + (mod.nome||mod.id),
-                        roadmapSub:'Sua jornada em ' + (mod.nome||mod.id)
+                        roadmapTitulo:(mod.icon || '🥋') + ' ' + (mod.nome||mod.id).toUpperCase(),
+                        roadmapSub:(function() {
+                            var _fs = (mod.faixas || []);
+                            if (_fs.length < 2) return 'Sua jornada em ' + (mod.nome||mod.id);
+                            // ordena por ordem
+                            var _fsOrd = _fs.slice().sort(function(a,b){ return (parseInt(a.ordem)||999)-(parseInt(b.ordem)||999); });
+                            return 'Da ' + (_fsOrd[0].label||_fsOrd[0].id) + ' à ' + (_fsOrd[_fsOrd.length-1].label||_fsOrd[_fsOrd.length-1].id);
+                        })()
                     },
                     ui: {
                         mostrarFaixa:    gradTipo === 'faixa_cintura',
@@ -13861,7 +13874,13 @@
             getFaixas: function(modId) {
                 var s = this.getSchema(modId);
                 if (!s || !s.graduacao.hasGraduacao) return [];
-                return s.graduacao.faixas || [];
+                // Garante ordem pela coluna 'ordem' da planilha em todo acesso
+                var fs = (s.graduacao.faixas || []).slice();
+                fs.sort(function(a, b) {
+                    return (parseInt(a.ordemProgresso) || parseInt(a.ordem) || 999) -
+                           (parseInt(b.ordemProgresso) || parseInt(b.ordem) || 999);
+                });
+                return fs;
             },
 
             /** Retorna um valor de nomenclatura — null se não configurado */
@@ -18456,15 +18475,48 @@
             track.innerHTML = '';
             track.appendChild(fillEl);
 
-            // Only call IBJJF belt functions for BJJ modalities
-            // modId é local de loadEvolucao; usa activeModality diretamente aqui
             var _modIdRoad = activeModality || (userModalidades && userModalidades[0]) || (currentUser && currentUser.modalidadePrincipal) || 'bjj';
-            var belts = (ModalidadeGuard.hasFaixa(_modIdRoad)) ? getIBJJFBelts() : [];
-            var faixaMap = (ModalidadeGuard.hasFaixa(_modIdRoad)) ? getFaixaToIBJJF() : {};
-            var isBJJ = ModalidadeGuard.hasFaixa(_modIdRoad);
-            var currentId = faixaMap[faixaAtual] || 'branca';
+            var _isBJJPuro = (_modIdRoad === 'bjj' || _modIdRoad === 'bjj_kids' || _modIdRoad === 'bjj_feminino');
+            var isBJJ = _isBJJPuro; // controla accordion de jornada, datas IBJJF etc.
+            var belts = [];
             var currentIdx = -1;
-            for (var ai = 0; ai < belts.length; ai++) { if (belts[ai].id === currentId) { currentIdx = ai; break; } }
+
+            if (_isBJJPuro) {
+                // ── BJJ: usa faixas hardcoded IBJJF ──
+                var _ibjjfBelts = getIBJJFBelts();
+                var faixaMap    = getFaixaToIBJJF();
+                var currentId   = faixaMap[faixaAtual] || 'branca';
+                belts = _ibjjfBelts;
+                for (var ai = 0; ai < belts.length; ai++) {
+                    if (belts[ai].id === currentId) { currentIdx = ai; break; }
+                }
+            } else {
+                // ── Outras modalidades: usa faixas da planilha ──
+                var _modFaixas = ModalidadeGuard.getFaixas(_modIdRoad);
+                if (_modFaixas && _modFaixas.length > 0) {
+                    belts = _modFaixas.map(function(f) {
+                        return {
+                            id:         f.id || f.label,
+                            name:       f.label || f.id,
+                            cls:        'ibjjf-band-custom',
+                            cor:        f.cor   || '#C9A23A',
+                            corRGB:     f.corRGB|| '201,162,58',
+                            emoji:      f.emoji || '🥋',
+                            graus:      (f.maxGrau !== undefined ? parseInt(f.maxGrau) : 4),
+                            age:        f.idadeMin > 0 ? f.idadeMin + '+' : '',
+                            minMonths:  f.minMeses  || 0,
+                            minTreinos: 0
+                        };
+                    });
+                    // Determina faixa atual pelo label ou id
+                    var _faixaNorm = (faixaAtual || '').toString().trim().toLowerCase();
+                    for (var ai2 = 0; ai2 < belts.length; ai2++) {
+                        var _bNorm = (belts[ai2].name || '').toString().trim().toLowerCase();
+                        var _bId   = (belts[ai2].id   || '').toString().trim().toLowerCase();
+                        if (_bNorm === _faixaNorm || _bId === _faixaNorm) { currentIdx = ai2; break; }
+                    }
+                }
+            }
             var nextIdx = currentIdx + 1;
 
             // ── Helpers de data ──
@@ -18521,7 +18573,10 @@
 
                 // ── Header ──
                 var h = '<div class="ibjjf-node-inner">';
-                h += '<div class="ibjjf-belt-band ' + belt.cls + '"></div>';
+                var _bandStyle = belt.cls === 'ibjjf-band-custom'
+                    ? ' style="background:' + (belt.cor || '#C9A23A') + ';border-radius:3px;"'
+                    : '';
+                h += '<div class="ibjjf-belt-band ' + belt.cls + '"' + _bandStyle + '></div>';
                 h += '<div class="ibjjf-belt-info">';
                 h += '<div class="ibjjf-belt-name">' + belt.name + '</div>';
                 var meta = [];
@@ -23216,8 +23271,7 @@
                     '<div style="padding:10px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;">' +
                     (fin.nomePlano ? '<div class="fam-fin-row"><span>Plano</span><span class="val">' + escapeHtml(fin.nomePlano) + '</span></div>' : '') +
                     '<div class="fam-fin-row"><span>Membros</span><span class="val">' + totalMembros + '</span></div>' +
-                    (fin.totalComDesconto > 0 ? '<div class="fam-fin-row"><span>Total c/ desconto</span><span class="val">R$ ' + fin.totalComDesconto.toFixed(2) + '/mês</span></div>' : '') +
-                    (fin.economia > 0 ? '<div class="fam-fin-row"><span>Economia</span><span class="val green">💰 R$ ' + fin.economia.toFixed(2) + '/mês</span></div>' : '') +
+                    /* Total c/ desconto e Economia removidos a pedido */
                     '</div>';
             } else if (resumo) {
                 resumo.innerHTML = '';
