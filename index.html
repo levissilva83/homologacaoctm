@@ -35702,7 +35702,23 @@
             if (n === 1) loadGatewayTokens();
             if (n === 2) { loadGatewayTokens(); loadVinculosCT(); }
             if (n === 3) loadPlanosList();
-            if (n === 4) { loadPagamentosAdmin(); _initCobWAConfig(); }
+            if (n === 4) {
+                // Carrega todos os CTs para popular o filtro (não só os com gateway)
+                secureFetch('getCTsList', {}).then(function(r) {
+                    if (r && r.cts) {
+                        window._ctsList = r.cts;
+                    } else if (r && r.success && Array.isArray(r.cts)) {
+                        window._ctsList = r.cts;
+                    }
+                    // Garante que vínculos também estão carregados
+                    return secureFetch('getVinculosCT', {});
+                }).then(function(vr) {
+                    if (vr && vr.success) { _gwVinculos = vr.vinculos || []; }
+                    _populateCTComGatewaySelect();
+                    loadPagamentosAdmin();
+                }).catch(function() { loadPagamentosAdmin(); });
+                _initCobWAConfig();
+            }
             if (n === 5) { loadBillingConfig(); loadMapModal(); }
         }
 
@@ -36159,31 +36175,45 @@
 
         // Popula selects de CT que têm gateway configurado (abas 3 e 4)
         function _populateCTComGatewaySelect() {
-            var ctNames = _gwVinculos.filter(function(v){ return v.ativo; }).map(function(v){ return v.ct; });
+            // CTs com gateway (para formulários que exigem gateway)
+            var ctNamesGw = _gwVinculos.filter(function(v){ return v.ativo; }).map(function(v){ return v.ct; });
 
-            // Aba 3: select de CT no formulário de plano
+            // Todos os CTs do sistema (para filtros de cobranças — inclui sem gateway)
+            var ctNamesTodos = [];
+            if (window._ctsList && window._ctsList.length) {
+                ctNamesTodos = window._ctsList.map(function(c){ return c.name || c; });
+            } else {
+                // Fallback: usar CTs com gateway + CTs detectados nos vínculos
+                ctNamesTodos = ctNamesGw.slice();
+            }
+            // Garantir que CTs com gateway também estão na lista todos
+            ctNamesGw.forEach(function(n) {
+                if (ctNamesTodos.indexOf(n) === -1) ctNamesTodos.push(n);
+            });
+
+            // Aba 3: select de CT no formulário de plano (só gateway)
             var planoCTSel = document.getElementById('mpPlanoCT');
             if (planoCTSel) {
                 planoCTSel.innerHTML = '<option value="">— Selecione o CT —</option>';
-                ctNames.forEach(function(n) {
+                ctNamesGw.forEach(function(n) {
                     planoCTSel.innerHTML += '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>';
                 });
             }
 
-            // Aba 3: select filtro
+            // Aba 3: select filtro (todos os CTs)
             var filtro3 = document.getElementById('planoCTFiltro');
             if (filtro3) {
                 filtro3.innerHTML = '<option value="">Todos</option>';
-                ctNames.forEach(function(n) {
+                ctNamesTodos.forEach(function(n) {
                     filtro3.innerHTML += '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>';
                 });
             }
 
-            // Aba 4: select filtro de cobranças
+            // Aba 4: select filtro de cobranças (todos os CTs)
             var filtro4 = document.getElementById('cobCTFiltro');
             if (filtro4) {
                 filtro4.innerHTML = '<option value="">Todos</option>';
-                ctNames.forEach(function(n) {
+                ctNamesTodos.forEach(function(n) {
                     filtro4.innerHTML += '<option value="' + escapeHtml(n) + '">' + escapeHtml(n) + '</option>';
                 });
             }
