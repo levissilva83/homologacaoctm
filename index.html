@@ -24958,8 +24958,124 @@
             }
         }
 
+        // ── Banner de vencimento da licença (5 dias antes) ─────────────────
+        async function _verificarBannerLicenca() {
+            try {
+                var data = await secureFetch('getLicencaVencimento', {});
+                if (!data || !data.success) return;
+
+                // Remove banner anterior
+                var old = document.getElementById('_licencaBannerVenc');
+                if (old) old.remove();
+
+                if (!data.venceEmBreve && !data.venceHoje && !data.vencido) return;
+
+                var banner = document.createElement('div');
+                banner.id = '_licencaBannerVenc';
+
+                if (data.vencido || data.status === 'RENOVACAO') {
+                    // Bloqueado — tela de renovação completa com QR Code
+                    banner.style.cssText = 'position:fixed;inset:0;background:rgba(10,16,32,0.97);z-index:99990;display:flex;align-items:center;justify-content:center;padding:20px;';
+                    banner.innerHTML =
+                        '<div style="max-width:400px;width:100%;background:var(--adm-bg-card,#12192e);border:1.5px solid rgba(248,113,113,0.3);border-radius:20px;padding:24px;text-align:center;">' +
+                        '<div style="font-size:32px;margin-bottom:8px;">🔒</div>' +
+                        '<div style="font-size:16px;font-weight:900;color:#f87171;margin-bottom:6px;">Assinatura Vencida</div>' +
+                        '<div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:20px;">Renove agora para continuar usando o CTM Manager</div>' +
+                        '<div id="_licencaRenovarArea">' +
+                        '<button onclick="_gerarPixRenovacao(this)" style="width:100%;padding:14px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;">🟢 Gerar PIX para Renovar</button>' +
+                        '</div>' +
+                        '</div>';
+                } else {
+                    // Aviso — banner fixo no topo
+                    var dias = data.diasRestantes;
+                    var urgente = dias <= 1 || data.venceHoje;
+                    var cor = urgente ? '#f87171' : '#fbbf24';
+                    var bg  = urgente ? 'rgba(248,113,113,0.1)' : 'rgba(251,191,36,0.08)';
+                    var msg = data.venceHoje
+                        ? '⚠️ Sua assinatura vence HOJE (' + data.dataVenc + ')! Renove agora.'
+                        : '⏰ Sua assinatura vence em ' + dias + ' dia' + (dias > 1 ? 's' : '') + ' (' + data.dataVenc + ')';
+                    banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9990;background:' + bg + ';border-bottom:1.5px solid ' + cor + ';padding:10px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px;';
+                    banner.innerHTML =
+                        '<div style="font-size:12px;font-weight:700;color:' + cor + ';flex:1;">' + msg + '</div>' +
+                        '<button onclick="switchAdminTab(&quot;adm-assinatura&quot;)" style="padding:6px 12px;background:' + cor + ';color:#000;border:none;border-radius:8px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap;">Renovar</button>' +
+                        '<button onclick="this.parentElement.remove()" style="padding:6px 8px;background:transparent;color:' + cor + ';border:none;font-size:14px;cursor:pointer;opacity:0.6;">✕</button>';
+                    // Empurra o conteúdo admin para baixo
+                    var adminScreen = document.getElementById('adminScreen');
+                    if (adminScreen) adminScreen.style.paddingTop = '44px';
+                }
+                document.body.appendChild(banner);
+            } catch(e) {}
+        }
+
+        async function _gerarPixRenovacao(btn) {
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Gerando PIX...'; }
+            try {
+                var lic = currentUser;
+                var res = await secureFetch('gerarPixAssinatura', {
+                    email:    lic.email,
+                    nomeAluno: lic.nome || lic.email,
+                    planoId:  lic.licPlano || 'premium'
+                });
+                if (!res || !res.success) {
+                    alert('❌ ' + (res && res.message ? res.message : 'Erro ao gerar PIX'));
+                    if (btn) { btn.disabled = false; btn.textContent = '🟢 Gerar PIX para Renovar'; }
+                    return;
+                }
+                var area = document.getElementById('_licencaRenovarArea');
+                if (!area) return;
+
+                var pixCode = res.pixCode || '';
+                var div = document.createElement('div');
+                div.style.cssText = 'text-align:center;';
+                var inner = '<div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:12px;">R$ ' + parseFloat(res.valor).toFixed(2) + ' · ' + escapeHtml(res.nomePlano || '') + '</div>';
+                if (res.qrBase64) inner += '<img src="data:image/png;base64,' + res.qrBase64 + '" style="width:180px;height:180px;border-radius:10px;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto;">';
+                inner += '<div style="font-size:10px;color:rgba(255,255,255,0.4);margin-bottom:12px;">⏱ Válido por 24h · Após pagar, aguarde a confirmação automática</div>';
+                div.innerHTML = inner;
+
+                if (pixCode) {
+                    var btnCopy = document.createElement('button');
+                    btnCopy.textContent = '📋 Copiar Código PIX';
+                    btnCopy.style.cssText = 'width:100%;padding:11px;background:rgba(168,85,247,0.15);border:1.5px solid rgba(168,85,247,0.3);border-radius:10px;color:#a855f7;font-size:12px;font-weight:800;cursor:pointer;margin-bottom:10px;';
+                    btnCopy.onclick = function() {
+                        if (navigator.clipboard) navigator.clipboard.writeText(pixCode);
+                        if (typeof showToast === 'function') showToast('Código copiado!', 'success');
+                    };
+                    div.appendChild(btnCopy);
+                }
+
+                area.innerHTML = '';
+                area.appendChild(div);
+
+                // Polling de confirmação
+                if (res.pixId) {
+                    var _pollLic = setInterval(async function() {
+                        try {
+                            var ps = await secureFetch('confirmarPixAssinatura', {
+                                email: currentUser.email,
+                                pixId: res.pixId
+                            });
+                            if (ps && ps.success && ps.ativo) {
+                                clearInterval(_pollLic);
+                                var bv = document.getElementById('_licencaBannerVenc');
+                                if (bv) bv.remove();
+                                var adminScreen = document.getElementById('adminScreen');
+                                if (adminScreen) adminScreen.style.paddingTop = '';
+                                if (typeof showToast === 'function') showToast('✅ Assinatura renovada! Bem-vindo de volta.', 'success');
+                                setTimeout(function(){ location.reload(); }, 2000);
+                            }
+                        } catch(_e) {}
+                    }, 12000);
+                }
+            } catch(e) {
+                alert('Erro de conexão: ' + e.message);
+                if (btn) { btn.disabled = false; btn.textContent = '🟢 Gerar PIX para Renovar'; }
+            }
+        }
+
         async function loadAdminPanel() {
             if (!currentUser || !isAdminOrProfessor()) return;
+            // Verifica vencimento da licença e exibe banner se necessário
+            _verificarBannerLicenca();
             // Carrega cronograma e aniversariantes sempre (não estão nas tabs)
             loadAdminCronograma();
             loadBirthdays();
@@ -36923,6 +37039,17 @@
                     h += '</div></div>';
                     h += '<span style="flex-shrink:0;padding:3px 9px;border-radius:20px;font-size:9px;font-weight:700;background:' + bg + ';color:' + cor + ';border:1px solid ' + cor + '33;">' + lbl + '</span>';
                     h += '</div>';
+
+                    // ── Dependentes (se houver) — apenas lista de nomes, sem cobrança própria ──
+                    var deps = p.dependentes || [];
+                    if (deps.length > 0) {
+                        h += '<div style="margin-top:6px;border-top:1px solid rgba(255,255,255,0.05);padding-top:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">';
+                        h += '<span style="font-size:9px;font-weight:700;color:var(--adm-text-3);">👨‍👧 Dependentes:</span>';
+                        deps.forEach(function(dep) {
+                            h += '<span style="font-size:10px;font-weight:600;color:var(--adm-text-2);background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:2px 9px;">' + escapeHtml(dep.nome) + '</span>';
+                        });
+                        h += '</div>';
+                    }
 
                     // Linha 2: ações
                     h += '<div style="display:flex;gap:5px;flex-wrap:wrap;">';
