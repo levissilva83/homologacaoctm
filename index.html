@@ -35872,12 +35872,14 @@
                 var h = '';
                 _gwTokens.forEach(function(t) {
                     var icon = gwIcon[t.gateway] || '⚪';
-                    h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:8px;margin-bottom:4px;">';
-                    h += '<div style="flex:1;min-width:0;">';
+                    h += '<div style="padding:9px 11px;background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:8px;margin-bottom:5px;">';
+                    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">';
                     h += '<div style="font-size:11px;font-weight:700;color:var(--adm-text-1);">' + icon + ' ' + escapeHtml(t.label) + '</div>';
-                    h += '<div style="font-size:9px;color:var(--adm-text-3);margin-top:1px;">' + escapeHtml(t.gateway) + (t.cadastrado ? ' · ' + escapeHtml(t.cadastrado) : '') + '</div>';
-                    h += '</div>';
-                    h += '<button onclick="removerGatewayToken(\'' + escapeHtml(t.gatewayId) + '\')" style="flex-shrink:0;margin-left:8px;padding:3px 8px;border-radius:5px;background:rgba(248,113,113,0.08);color:#f87171;border:1px solid rgba(248,113,113,0.2);font-size:9px;cursor:pointer;">✕ Remover</button>';
+                    h += '<div style="display:flex;gap:5px;">';
+                    h += '<button onclick="editarGatewayToken(' + JSON.stringify(t).replace(/"/g,'&quot;') + ')" style="padding:3px 8px;border-radius:5px;background:rgba(99,102,241,0.1);color:#818cf8;border:1px solid rgba(99,102,241,0.25);font-size:9px;cursor:pointer;">✏️ Editar</button>';
+                    h += '<button onclick="removerGatewayToken(\'' + escapeHtml(t.gatewayId) + '\')" style="padding:3px 8px;border-radius:5px;background:rgba(248,113,113,0.08);color:#f87171;border:1px solid rgba(248,113,113,0.2);font-size:9px;cursor:pointer;">🗑️ Excluir</button>';
+                    h += '</div></div>';
+                    h += '<div style="font-size:9px;color:var(--adm-text-3);">' + escapeHtml(t.gateway) + (t.cadastrado ? ' · cadastrado ' + escapeHtml(t.cadastrado) : '') + '</div>';
                     h += '</div>';
                 });
                 el.innerHTML = h;
@@ -35887,12 +35889,26 @@
         }
 
         async function removerGatewayToken(gatewayId) {
-            if (!confirm('Remover este token? CTs vinculados a ele perderão o gateway.')) return;
+            if (!confirm('⚠️ Excluir permanentemente este token?\nCTs vinculados a ele perderão o gateway.')) return;
             try {
                 var data = await secureFetch('removerGatewayToken', { gatewayId: gatewayId });
-                if (data.success) loadGatewayTokens();
+                if (data.success) { showToast && showToast('Token excluído!', 'success'); loadGatewayTokens(); }
                 else alert('❌ ' + data.message);
             } catch(e) { alert('Erro de conexão'); }
+        }
+
+        function editarGatewayToken(t) {
+            var gwSel  = document.getElementById('gwGateway');
+            var tokIn  = document.getElementById('gwAccessToken');
+            var lblIn  = document.getElementById('gwLabel');
+            if (gwSel) for (var i = 0; i < gwSel.options.length; i++) {
+                if (gwSel.options[i].value === t.gateway) { gwSel.selectedIndex = i; break; }
+            }
+            if (tokIn) tokIn.value = '';  // token oculto por segurança — admin redigita
+            if (lblIn) lblIn.value = t.label || '';
+            var form = document.getElementById('gwTokenForm') || gwSel && gwSel.closest('div');
+            if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (typeof showToast === 'function') showToast('Dados carregados — atualize o token e clique em Cadastrar', 'info');
         }
 
         function _populateGatewaySelects() {
@@ -35914,7 +35930,7 @@
             var ct       = (document.getElementById('vinCT').value || '').trim();
             var gwId     = (document.getElementById('vinGateway').value || '').trim();
             var chavePix = (document.getElementById('vinChavePix').value || '').trim();
-            var diaVenc  = (document.getElementById('vinDiaVenc').value || '10').trim();
+            var diaVenc  = (document.getElementById('vinDiaVenc').value || '').trim();
             var msg      = document.getElementById('vinMsg');
 
             if (!ct)   { msg.style.color='#f87171'; msg.textContent='Selecione um CT'; return; }
@@ -36089,14 +36105,16 @@
                 _mpPlanos.forEach(function(p) {
                     var vin   = _gwVinculos.find(function(v){ return v.ct === p.ct; });
                     var icon  = vin ? (gwIcon[vin.gateway] || '⚪') : '⚪';
-                    h += '<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 11px;background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:9px;margin-bottom:5px;">';
-                    h += '<div style="flex:1;min-width:0;">';
+                    h += '<div style="padding:10px 11px;background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:9px;margin-bottom:5px;">';
+                    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">';
                     h += '<div style="font-size:11px;font-weight:700;color:var(--adm-text-1);">' + escapeHtml(p.nome) + '</div>';
-                    h += '<div style="font-size:9px;color:var(--adm-text-3);margin-top:2px;">' + icon + ' ' + escapeHtml(p.ct || '—') + ' · R$ ' + parseFloat(p.valor||0).toFixed(2) + ' · ' + (freqLabel[p.frequencia] || p.frequencia || 'Mensal');
+                    h += '<div style="display:flex;gap:5px;">';
+                    h += '<button onclick="editarPlano(' + JSON.stringify(p).replace(/"/g,'&quot;') + ')" style="padding:3px 8px;border-radius:5px;background:rgba(99,102,241,0.1);color:#818cf8;border:1px solid rgba(99,102,241,0.25);font-size:9px;cursor:pointer;">✏️ Editar</button>';
+                    h += '<button onclick="deletarPlano(\'' + escapeHtml(p.id) + '\')" style="padding:3px 8px;border-radius:5px;background:rgba(248,113,113,0.08);color:#f87171;border:1px solid rgba(248,113,113,0.2);font-size:9px;cursor:pointer;">🗑️ Excluir</button>';
+                    h += '</div></div>';
+                    h += '<div style="font-size:9px;color:var(--adm-text-3);">' + icon + ' ' + escapeHtml(p.ct || '—') + ' · R$ ' + parseFloat(p.valor||0).toFixed(2) + ' · ' + (freqLabel[p.frequencia] || p.frequencia || 'Mensal');
                     if (p.descricao) h += ' · ' + escapeHtml(p.descricao);
                     h += '</div></div>';
-                    h += '<button onclick="deletarPlano(\'' + escapeHtml(p.id) + '\')" style="flex-shrink:0;margin-left:8px;padding:3px 8px;border-radius:5px;background:rgba(248,113,113,0.08);color:#f87171;border:1px solid rgba(248,113,113,0.2);font-size:9px;cursor:pointer;">✕</button>';
-                    h += '</div>';
                 });
                 el.innerHTML = h;
             } catch(e) {
@@ -36128,12 +36146,46 @@
         }
 
         async function deletarPlano(id) {
-            if (!confirm('Remover este plano?')) return;
+            if (!confirm('⚠️ Excluir permanentemente este plano?')) return;
             try {
                 var data = await secureFetch('deletarPlano', { id: id });
-                if (data.success) loadPlanosList();
+                if (data.success) { showToast && showToast('Plano excluído!', 'success'); loadPlanosList(); }
                 else alert('❌ ' + data.message);
             } catch(e) { alert('Erro de conexão'); }
+        }
+
+        function editarPlano(p) {
+            var ctSel   = document.getElementById('mpPlanoCT');
+            var nomeIn  = document.getElementById('mpPlanoNome');
+            var valIn   = document.getElementById('mpPlanoValor');
+            var freqSel = document.getElementById('mpPlanoFreq');
+            var descIn  = document.getElementById('mpPlanoDesc');
+            var idIn    = document.getElementById('mpPlanoId');
+
+            if (ctSel)   for (var i = 0; i < ctSel.options.length; i++) {
+                if (ctSel.options[i].value === p.ct) { ctSel.selectedIndex = i; break; }
+            }
+            if (nomeIn)  nomeIn.value  = p.nome  || '';
+            if (valIn)   valIn.value   = p.valor  || '';
+            if (freqSel) for (var j = 0; j < freqSel.options.length; j++) {
+                if (freqSel.options[j].value === p.frequencia) { freqSel.selectedIndex = j; break; }
+            }
+            if (descIn)  descIn.value  = p.descricao || '';
+            // Guarda o ID para que criarPlanoMP atualize em vez de criar
+            if (idIn) idIn.value = p.id || '';
+            else {
+                // Se não há campo oculto, cria um
+                var hidden = document.getElementById('_editPlanoId');
+                if (!hidden) {
+                    hidden = document.createElement('input');
+                    hidden.type = 'hidden'; hidden.id = '_editPlanoId';
+                    document.body.appendChild(hidden);
+                }
+                hidden.value = p.id || '';
+            }
+            var form = ctSel && ctSel.closest('[style*="border-radius"]');
+            if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (typeof showToast === 'function') showToast('Plano carregado — edite e clique em Criar Plano para salvar', 'info');
         }
 
         // ── ABA 4: Cobranças ──────────────────────────────────────
