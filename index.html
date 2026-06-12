@@ -16834,6 +16834,10 @@
                             else titleEl.textContent = ModalidadeUI.ctSectionLabel();
                         }
 
+                        // CTs liberados para este aluno (col AC)
+                        var _ctsLiberados = (currentUser.ctsliberados || '')
+                            .split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+
                         data.cts.forEach(ct => {
                             const name = typeof ct === 'string' ? ct : ct.name || ct.toString();
 
@@ -16841,49 +16845,56 @@
                             if (isKid && userCT && name !== userCT) return;
 
                             // Admin/Professor: mostra apenas os CTs onde dá aula
-                            // Se ctsProfessor não estiver configurado, mostra todos (fallback seguro)
                             if (isAdm) {
                                 var profCTsList = (currentUser.ctsProfessor || '').split(',').map(function(x){ return x.trim(); }).filter(Boolean);
                                 if (profCTsList.length > 0 && profCTsList.indexOf(name) === -1) return;
                             }
 
-                            var schedule = ctSchedules[name];
-                            // Admin: sem filtro por dia (pode dar aula em qualquer horário)
-                            // Kids/Aluno: filtra por dia de treino E por janela de horário
-                            if (!isAdm && schedule) {
-                                var temConfig = Object.values(schedule).some(function(v) { return v === true; });
-                                if (temConfig && !schedule[hoje]) return;
-                            }
+                            // Aluno normal:
+                            // CT do próprio perfil → SEMPRE aparece (sem filtro de janela)
+                            var ehCTProprioAluno = (userCT && name === userCT);
 
-                            // Filtro de horário: para alunos, só mostra CT se tiver
-                            // aula hoje com janela de check-in aberta ou abrindo em até 2h
+                            // CT liberado explicitamente para este aluno → aparece se tiver aula hoje
+                            var ehCTLiberado = _ctsLiberados.length > 0 && _ctsLiberados.indexOf(name) !== -1;
+
+                            // Outros CTs → só aparecem se tiverem janela de check-in ativa
                             if (!isAdm && !isKid) {
-                                var ctObj = data.cts.find(function(c) {
-                                    return typeof c === 'object' && (c.name || '') === name;
-                                });
-                                if (ctObj) {
-                                    var hpdCT = ctObj.horariosPorDia || {};
-                                    // Usa _getHorariosHoje com filtro de modalidade ativa
-                                    var horCT = _getHorariosHoje(hpdCT, hoje, ctObj.horarios || '', activeModality || '');
-                                    if (horCT.indexOf('1899') > -1 || horCT.indexOf('GMT') > -1) {
-                                        var mx = horCT.match(/(\d{1,2}:\d{2})/g);
-                                        horCT = mx ? mx.join(',') : '';
-                                    }
-                                    if (horCT) {
-                                        var nowMin = new Date().getHours() * 60 + new Date().getMinutes();
-                                        var temJanelaAtiva = false;
-                                        horCT.split(',').forEach(function(t) {
-                                            t = t.trim();
-                                            var pm = t.match(/^(\d{1,2}):(\d{2})$/);
-                                            if (!pm) return;
-                                            var startMin    = parseInt(pm[1]) * 60 + parseInt(pm[2]);
-                                            var alertaMin   = startMin - 120;
-                                            var checkinFim  = Math.min(startMin + 269, 1439);
-                                            if (nowMin >= alertaMin && nowMin <= checkinFim) {
-                                                temJanelaAtiva = true;
-                                            }
-                                        });
-                                        if (!temJanelaAtiva) return;
+                                var schedule = ctSchedules[name];
+                                // Filtra por dia da semana (col C-I da planilha CTs)
+                                if (schedule) {
+                                    var temConfig = Object.values(schedule).some(function(v){ return v === true; });
+                                    if (temConfig && !schedule[hoje]) return;
+                                }
+
+                                if (!ehCTProprioAluno) {
+                                    // Outros CTs: exige janela de check-in ativa
+                                    var ctObj = data.cts.find(function(c){
+                                        return typeof c === 'object' && (c.name || '') === name;
+                                    });
+                                    if (ctObj) {
+                                        var hpdCT = ctObj.horariosPorDia || {};
+                                        var horCT = _getHorariosHoje(hpdCT, hoje, ctObj.horarios || '', activeModality || '');
+                                        if (horCT.indexOf('1899') > -1 || horCT.indexOf('GMT') > -1) {
+                                            var mx = horCT.match(/(\d{1,2}:\d{2})/g);
+                                            horCT = mx ? mx.join(',') : '';
+                                        }
+                                        if (horCT) {
+                                            var nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+                                            var temJanelaAtiva = false;
+                                            horCT.split(',').forEach(function(t) {
+                                                t = t.trim();
+                                                var pm = t.match(/^(\d{1,2}):(\d{2})$/);
+                                                if (!pm) return;
+                                                var startMin = parseInt(pm[1]) * 60 + parseInt(pm[2]);
+                                                var _delay   = (ctObj && ctObj.checkinMinutos !== undefined) ? parseInt(ctObj.checkinMinutos) : 50;
+                                                var alertaMin   = startMin - 120;
+                                                var checkinFim  = Math.min(startMin + _delay + 219, 1439);
+                                                if (nowMin >= alertaMin && nowMin <= checkinFim) {
+                                                    temJanelaAtiva = true;
+                                                }
+                                            });
+                                            if (!temJanelaAtiva) return;
+                                        }
                                     }
                                 }
                             }
