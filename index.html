@@ -13647,6 +13647,9 @@
             try { localStorage.setItem('pwaDismissed', '1'); } catch(e) {}
             hideInstallBanner();
         }
+        // ── BUILD MARKER (diagnóstico de deploy/cache) ──
+        console.log('%c[CTM] BUILD 2026-06-12-ASNFIX-v2', 'background:#C9A23A;color:#000;font-weight:bold;padding:2px 8px;border-radius:4px;');
+        try { document.documentElement.setAttribute('data-ctm-build', '2026-06-12-ASNFIX-v2'); } catch(e) {}
         let currentUser = null;
         let selectedCT = null;
         let allCTs = [];
@@ -32752,8 +32755,11 @@
 
         // ── Carregar novidades — usa cache se já carregadas com asnCarregarTudo
         async function asnCarregarNovidades() {
-            // Se a aba já foi iniciada, os dados vieram no combo — não busca de novo
-            if (_iniciado) return;
+            // FIX 2026-06-12: '_iniciado' é variável PRIVADA do IIFE do módulo
+            // assinatura — referenciá-la aqui lançava ReferenceError e, como esta
+            // função roda junto de asnIniciarSeNecessario() na abertura da aba,
+            // o erro poluía o fluxo. Usa a flag global window._asnIniciado.
+            if (window._asnIniciado) return; // dados já vieram no combo asnCarregarTudo
             try {
                 var res = await secureFetch('getNovidades', {});
                 var items = (res && res.success && res.novidades) ? res.novidades : [];
@@ -44337,6 +44343,7 @@
         var _trocaSel   = null;
         var _assinatura = null;
         var _iniciado   = false;
+        window._asnIniciado = false; // espelho global (asnCarregarNovidades vive fora do IIFE)
 
         // ── Seleção de método de pagamento ────────────────────────────
         window._asnMetodo = 'cartao'; // padrão
@@ -44474,7 +44481,7 @@
             }
             _hideLoad();
             _render();
-            _iniciado = true;
+            _iniciado = true; window._asnIniciado = true;
             // Aplica locks após carregar limites
             setTimeout(_aplicarLocksPlano, 500);
         };
@@ -45043,7 +45050,7 @@
                 });
 
                 if (res && res.success) {
-                    _assinatura = res.assinatura; _iniciado = false;
+                    _assinatura = res.assinatura; _iniciado = false; window._asnIniciado = false;
                     _gmsg('🎉 Assinatura ativada com sucesso!', 'success');
                     _render();
                 } else {
