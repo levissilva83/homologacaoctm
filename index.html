@@ -41131,23 +41131,29 @@
             var base = _coletarTreinosBase();
             try {
                 var r = await secureFetch('saveTreinosBase', { email: email, treinosBase: base });
-                return r && r.success;
-            } catch(e) { return false; }
+                console.log('[saveTreinosBase] email='+email+' base='+JSON.stringify(base)+' resp='+JSON.stringify(r));
+                return r;
+            } catch(e) {
+                console.error('[saveTreinosBase] erro:', e);
+                return { success: false, message: 'Erro de conexão: ' + e.message };
+            }
         }
 
         async function _salvarTreinosBaseComFeedback() {
-            if (!stuModalEmail) return;
+            if (!stuModalEmail) { console.warn('[saveTreinosBase] stuModalEmail vazio'); return; }
             var msg = document.getElementById('stuTreinosBaseMsg');
             if (msg) { msg.style.color = 'var(--adm-text-3)'; msg.textContent = '⏳ Salvando...'; }
-            var ok = await _salvarTreinosBase(stuModalEmail);
+            var r = await _salvarTreinosBase(stuModalEmail);
             if (msg) {
-                if (ok) {
+                if (r && r.success) {
                     msg.style.color = '#4ade80';
                     msg.textContent = '✅ Saldo salvo com sucesso!';
                     setTimeout(function(){ if(msg) msg.textContent=''; }, 3000);
                 } else {
                     msg.style.color = '#f87171';
-                    msg.textContent = '❌ Erro ao salvar. Tente novamente.';
+                    // Mostra mensagem de erro do backend se disponível
+                    var errMsg = (r && r.message) ? r.message : 'Erro ao salvar. Tente novamente.';
+                    msg.textContent = '❌ ' + errMsg;
                 }
             }
         }
