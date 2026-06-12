@@ -12126,6 +12126,18 @@
                     </div>
                 </div>
 
+                <!-- Treinos Base (Migração) -->
+                <div class="stu-section" id="stuTreinosBaseSection">
+                    <div class="stu-section-title">📦 Saldo de Treinos (Migração)</div>
+                    <div style="font-size:11px;color:var(--text-3);margin-bottom:12px;line-height:1.6;">
+                        Para alunos migrando de outro sistema. Os treinos informados aqui são somados aos treinos reais registrados no CT Manager.
+                    </div>
+                    <div id="stuTreinosBaseGrid" style="display:flex;flex-direction:column;gap:8px;">
+                        <!-- Preenchido dinamicamente por openStuModal() -->
+                    </div>
+                    <button onclick="adicionarLinhatreinoBase()" style="margin-top:8px;padding:6px 12px;background:rgba(201,162,58,0.1);border:1px solid rgba(201,162,58,0.3);border-radius:7px;color:var(--adm-primary);font-size:11px;font-weight:700;cursor:pointer;">+ Modalidade</button>
+                </div>
+
                 <!-- Personal -->
                 <div class="stu-section">
                     <div class="stu-section-title">👤 Informações Pessoais</div>
@@ -13447,14 +13459,14 @@
                     labelFaixa: 'Faixa', labelGrau: 'Duan', labelGrauPlural: 'Duans',
                     maxGrausPorFaixa: null, simbolo: 'duan',
                     faixas: [
-                        { id:'Branca',       label:'Faixa Branca',                    emoji:'⬜', cor:'#f5f5f5', cssClass:'branca',  next:'Amarela',      minMeses: 3, ordemProgresso: 1 },
-                        { id:'Amarela',      label:'Faixa Amarela',                   emoji:'🟡', cor:'#EAB308', cssClass:'amarela', next:'Vermelha',     minMeses: 6, ordemProgresso: 2 },
-                        { id:'Vermelha',     label:'Faixa Vermelha',                  emoji:'🔴', cor:'#DC2626', cssClass:'vermelha',next:'Laranja',      minMeses: 6, ordemProgresso: 3 },
-                        { id:'Laranja',      label:'Faixa Laranja',                   emoji:'🟠', cor:'#EA580C', cssClass:'laranja', next:'Verde',        minMeses: 6, ordemProgresso: 4 },
-                        { id:'Verde',        label:'Faixa Verde — Instrutor',         emoji:'🟢', cor:'#16A34A', cssClass:'verde',   next:'Roxa',         minMeses:12, ordemProgresso: 5 },
-                        { id:'Roxa',         label:'Faixa Roxa — Instrutor',          emoji:'🟣', cor:'#7C3AED', cssClass:'roxa',    next:'Marrom',       minMeses:12, ordemProgresso: 6 },
-                        { id:'Marrom',       label:'Faixa Marrom — Instrutor',        emoji:'🟤', cor:'#92400E', cssClass:'marrom',  next:'Preta',        minMeses:12, ordemProgresso: 7 },
-                        { id:'Preta', label:'Faixa Preta (Duan 1°-10°)', emoji:'⚫', cor:'#1a1a1a', cssClass:'preta', next:null, minMeses:12, maxGrau:10, ordemProgresso:8 },
+                        { id:'Branca',  label:'Faixa Branca',            emoji:'⬜', cor:'#f5f5f5', cssClass:'branca',  next:'Amarela', minMeses: 3, ordemProgresso:1 },
+                        { id:'Amarela', label:'Faixa Amarela',           emoji:'🟡', cor:'#EAB308', cssClass:'amarela', next:'Laranja', minMeses: 6, ordemProgresso:2 },
+                        { id:'Laranja', label:'Faixa Laranja',           emoji:'🟠', cor:'#EA580C', cssClass:'laranja', next:'Verde',   minMeses: 6, ordemProgresso:3 },
+                        { id:'Verde',   label:'Faixa Verde — Instrutor', emoji:'🟢', cor:'#16A34A', cssClass:'verde',   next:'Azul',    minMeses:12, ordemProgresso:4 },
+                        { id:'Azul',    label:'Faixa Azul — Instrutor',  emoji:'🔵', cor:'#1D4ED8', cssClass:'azul',    next:'Roxa',    minMeses:12, ordemProgresso:5 },
+                        { id:'Roxa',    label:'Faixa Roxa — Instrutor',  emoji:'🟣', cor:'#7C3AED', cssClass:'roxa',    next:'Marrom',  minMeses:12, ordemProgresso:6 },
+                        { id:'Marrom',  label:'Faixa Marrom — Instrutor',emoji:'🟤', cor:'#92400E', cssClass:'marrom',  next:'Preta',   minMeses:12, ordemProgresso:7 },
+                        { id:'Preta',   label:'Faixa Preta (Duan 1°-10°)',emoji:'⚫', cor:'#1a1a1a', cssClass:'preta',  next:null,      minMeses:12, maxGrau:10, ordemProgresso:8 },
                     ],
                 },
                 nomenclatura: {
@@ -13462,7 +13474,7 @@
                     aluno: 'Discípulo', academia: 'Kwoon', faixa: 'Faixa', faixas: 'Faixas',
                     grau: 'Duan', graus: 'Duans', confirmarBtn: '🐉 Treinei',
                     evolucaoTitulo: 'Minha Progressão', roadmapTitulo: '🐉 Kung Fu',
-                    roadmapSub: 'Da Faixa Branca ao 10º Duan — Sigung',
+                    roadmapSub: 'Da Faixa Branca à Faixa Preta 10º Duan — Sigung',
                 },
                 ui: { mostrarFaixa:true, mostrarGraus:false, mostrarPrajied:false, mostrarRoadmap:true, mostrarFrequencia:true, mostrarCriterios:false, roadmapTipo:'cintura', iconeEvo:'🐉' },
             },
@@ -39490,6 +39502,8 @@
 
             // Carrega dependentes desta conta
             setTimeout(function() { loadStuDependentes(email); }, 300);
+            // Carrega TreinosBase (saldo de migração)
+            _loadStuTreinosBase(email);
 
             // Hero
             document.getElementById('stuAvatar').textContent = (s.name || '?').charAt(0).toUpperCase();
@@ -39945,6 +39959,97 @@
         }
         // ─────────────────────────────────────────────────────────────────────
 
+
+        // ── TreinosBase — Saldo de Migração ──────────────────────────────────
+        async function _loadStuTreinosBase(email) {
+            var grid = document.getElementById('stuTreinosBaseGrid');
+            if (!grid) return;
+            grid.innerHTML = '<div style="font-size:11px;color:var(--adm-text-3);">⏳ Carregando...</div>';
+            try {
+                var r = await secureFetch('getTreinosBase', { email: email });
+                var base = (r && r.success && r.base) ? r.base : {};
+                _renderTreinosBaseGrid(base);
+            } catch(e) { _renderTreinosBaseGrid({}); }
+        }
+
+        function _renderTreinosBaseGrid(base) {
+            var grid = document.getElementById('stuTreinosBaseGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            // Remove _legacy e chaves vazias, monta linhas
+            var mods = Object.keys(base).filter(function(k){ return k !== '_legacy' || base[k] > 0; });
+            // Sempre mostra pelo menos uma linha se não tem dados
+            if (mods.length === 0) mods = [''];
+            mods.forEach(function(modId) {
+                grid.appendChild(_criarLinhaTreinoBase(modId, base[modId] || 0));
+            });
+            // Se tinha _legacy, mostra como linha sem modalidade
+            if (base['_legacy'] > 0 && mods.indexOf('_legacy') === -1) {
+                grid.appendChild(_criarLinhaTreinoBase('', base['_legacy']));
+            }
+        }
+
+        function _criarLinhaTreinoBase(modId, qty) {
+            var row = document.createElement('div');
+            row.style.cssText = 'display:flex;gap:8px;align-items:center;';
+            // Select modalidade
+            var sel = document.createElement('select');
+            sel.className = 'tb-mod-sel';
+            sel.style.cssText = 'flex:1;padding:7px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:12px;';
+            var optEmpty = document.createElement('option');
+            optEmpty.value = ''; optEmpty.textContent = '— Geral (sem modalidade) —';
+            sel.appendChild(optEmpty);
+            (MODALIDADES_CATALOG || []).forEach(function(m) {
+                var opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = m.icon + ' ' + m.nome;
+                if (m.id === modId || (modId === '_legacy' && m.id === '')) opt.selected = true;
+                sel.appendChild(opt);
+            });
+            if (modId && modId !== '_legacy') sel.value = modId;
+            // Input quantidade
+            var inp = document.createElement('input');
+            inp.type = 'number'; inp.min = '0'; inp.max = '9999'; inp.value = qty || 0;
+            inp.style.cssText = 'width:80px;padding:7px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:13px;font-weight:700;text-align:center;';
+            inp.placeholder = '0';
+            // Botão remover
+            var del = document.createElement('button');
+            del.textContent = '✕';
+            del.style.cssText = 'padding:6px 9px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2);border-radius:7px;color:#f87171;font-size:12px;cursor:pointer;flex-shrink:0;';
+            del.onclick = function() { row.remove(); };
+            row.appendChild(sel); row.appendChild(inp); row.appendChild(del);
+            return row;
+        }
+
+        function adicionarLinhatreinoBase() {
+            var grid = document.getElementById('stuTreinosBaseGrid');
+            if (grid) grid.appendChild(_criarLinhaTreinoBase('', 0));
+        }
+
+        function _coletarTreinosBase() {
+            var base = {};
+            var grid = document.getElementById('stuTreinosBaseGrid');
+            if (!grid) return base;
+            grid.querySelectorAll('div').forEach(function(row) {
+                var sel = row.querySelector('select.tb-mod-sel');
+                var inp = row.querySelector('input[type="number"]');
+                if (!sel || !inp) return;
+                var modId = sel.value || '_legacy';
+                var qty   = Math.max(0, parseInt(inp.value) || 0);
+                if (qty > 0) base[modId] = (base[modId] || 0) + qty;
+            });
+            return base;
+        }
+
+        async function _salvarTreinosBase(email) {
+            var base = _coletarTreinosBase();
+            // Zerar entradas removidas (envia objeto completo)
+            try {
+                var r = await secureFetch('saveTreinosBase', { email: email, treinosBase: base });
+                return r && r.success;
+            } catch(e) { return false; }
+        }
+
         function closeStuModal() {
             document.getElementById('stuModal').style.display = 'none';
             document.body.style.overflow = '';
@@ -40031,6 +40136,8 @@
                 if (data.forbidden) { alert('⛔ Sem permissão'); return; }
                 var msg = document.getElementById('stuModalMsg');
                 if (data.success) {
+                    // Salva TreinosBase em paralelo (saldo de migração)
+                    _salvarTreinosBase(stuModalEmail).catch(function(){});
                     msg.className = 'stu-modal-msg success';
                     var _roleLbl = isAdminStu ? 'Administrador' : isProfStu ? 'Professor' : 'Aluno';
                     msg.textContent = '✅ ' + _roleLbl + ' atualizado com sucesso!';
