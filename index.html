@@ -32369,14 +32369,12 @@
                 console.log('[CTM] getPlanos response:', r, 'planos:', planos.length);
 
                 if (!planos.length) {
-                    listEl.innerHTML =
-                        '<div style="text-align:center;padding:24px;color:rgba(255,255,255,0.5);font-size:13px;line-height:1.6;">' +
-                        '⚠️ Nenhum plano disponível no momento.<br>' +
-                        '<span style="font-size:11px;opacity:.7;">Entre em contato com o suporte para ativar seu acesso imediatamente.</span>' +
-                        '<br><br><a href="https://wa.me/5511984760689?text=Preciso+ativar+meu+acesso+CTM+Manager+urgente" target="_blank" ' +
-                        'style="display:inline-block;padding:12px 20px;background:#25D366;color:#fff;border-radius:10px;font-weight:700;font-size:13px;text-decoration:none;">🟢 Falar com suporte agora</a>' +
-                        '</div>';
-                    return;
+                    // Fallback: exibe planos hardcoded se backend não retornou
+                    planos = [
+                        { id: 'basico',       nome: 'CT Manager Básico',   valor: 59.9,  frequencia: 'mensal', descricao: 'Até 100 alunos · 1 Modalidade' },
+                        { id: 'profissional', nome: 'CT Manager Pro',      valor: 69.9,  frequencia: 'mensal', descricao: 'Até 200 alunos · Cobrança · PIX+WhatsApp' },
+                        { id: 'premium',      nome: 'CT Manager Premium',  valor: 99.9,  frequencia: 'mensal', descricao: 'Até 500 alunos · 5 Modalidades · 3 Filiais' }
+                    ];
                 }
 
                 // Renderiza cartões de planos + form de cartão/pix
@@ -39015,6 +39013,103 @@
             });
         }
 
+
+        // ── Seletor de modalidade para adicionar ao CT ────────────────────────────
+        async function openAddModParaCT(encCt) {
+            var ctName = decodeURIComponent(encCt);
+
+            // Busca modalidades disponíveis no contrato deste cliente
+            var catalog = [];
+            try {
+                var res = await secureFetch('getModalidadesCT', { ct: ctName });
+                if (res && res.modalidades && res.modalidades.length > 0) {
+                    catalog = res.modalidades;
+                } else {
+                    catalog = MODALIDADES_CATALOG || [];
+                }
+            } catch(e) {
+                catalog = MODALIDADES_CATALOG || [];
+            }
+
+            // Modalidades já adicionadas neste CT
+            var jaAdicionadas = (_ctModsSelected[ctName] || []).map(function(m){ return m.id; });
+
+            // Filtra: só mostra as que ainda não estão no CT
+            var disponiveis = catalog.filter(function(m){
+                return jaAdicionadas.indexOf(m.id) === -1;
+            });
+
+            // Remove overlay anterior se existir
+            var old = document.getElementById('addModCTOverlay');
+            if (old) old.remove();
+
+            var overlay = document.createElement('div');
+            overlay.id = 'addModCTOverlay';
+            overlay.style.cssText = 'position:fixed;inset:0;z-index:10060;background:rgba(0,0,0,0.88);display:flex;align-items:flex-end;justify-content:center;';
+            overlay.onclick = function(e){ if(e.target===overlay) overlay.remove(); };
+
+            var modal = document.createElement('div');
+            modal.style.cssText = 'background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:18px 18px 0 0;width:100%;max-width:520px;max-height:75vh;display:flex;flex-direction:column;overflow:hidden;';
+
+            // Header
+            var hdr = document.createElement('div');
+            hdr.style.cssText = 'padding:14px 16px;border-bottom:1px solid var(--adm-border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;';
+            hdr.innerHTML = '<div style="font-size:14px;font-weight:800;color:var(--adm-text-1);">➕ Adicionar Modalidade — <span style="color:var(--adm-primary);">' + escapeHtml(ctName) + '</span></div>' +
+                '<button onclick="document.getElementById(&quot;addModCTOverlay&quot;).remove()" style="background:none;border:1px solid var(--adm-border);border-radius:6px;color:var(--adm-text-3);padding:4px 10px;cursor:pointer;font-size:12px;">✕</button>';
+            modal.appendChild(hdr);
+
+            // Body
+            var body = document.createElement('div');
+            body.style.cssText = 'flex:1;overflow-y:auto;padding:12px 16px;';
+
+            if (disponiveis.length === 0) {
+                body.innerHTML = '<div style="text-align:center;padding:24px;color:var(--adm-text-3);font-size:12px;">✅ Todas as modalidades do contrato já estão adicionadas neste CT.</div>';
+            } else {
+                var info = document.createElement('p');
+                info.style.cssText = 'font-size:11px;color:var(--adm-text-3);margin-bottom:12px;line-height:1.6;';
+                info.textContent = 'Selecione uma modalidade do seu contrato para adicionar ao CT ' + ctName + ':';
+                body.appendChild(info);
+
+                var grid = document.createElement('div');
+                grid.style.cssText = 'display:flex;flex-direction:column;gap:8px;';
+
+                disponiveis.forEach(function(mod) {
+                    var btn = document.createElement('button');
+                    btn.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--adm-bg-elevated);border:1.5px solid var(--adm-border);border-radius:10px;cursor:pointer;text-align:left;width:100%;transition:all 0.15s;';
+                    btn.onmouseover = function(){ this.style.borderColor = mod.cor || 'var(--adm-primary)'; this.style.background = 'rgba(' + (mod.corRGB||'201,162,58') + ',0.06)'; };
+                    btn.onmouseout  = function(){ this.style.borderColor = 'var(--adm-border)'; this.style.background = 'var(--adm-bg-elevated)'; };
+                    btn.innerHTML =
+                        '<span style="font-size:24px;flex-shrink:0;">' + escapeHtml(mod.icon || '🥋') + '</span>' +
+                        '<div style="flex:1;">' +
+                            '<div style="font-size:13px;font-weight:700;color:var(--adm-text-1);">' + escapeHtml(mod.nome) + '</div>' +
+                            '<div style="font-size:10px;color:var(--adm-text-3);">' + escapeHtml(mod.desc || mod.gradTipo || '') + '</div>' +
+                        '</div>' +
+                        '<span style="font-size:18px;color:var(--adm-text-3);">›</span>';
+
+                    btn.onclick = function() {
+                        overlay.remove();
+                        _adicionarModAoCT(ctName, mod);
+                    };
+                    grid.appendChild(btn);
+                });
+                body.appendChild(grid);
+            }
+            modal.appendChild(body);
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+        }
+
+        // Adiciona a modalidade selecionada ao CT e re-renderiza
+        function _adicionarModAoCT(ctName, mod) {
+            if (!_ctModsSelected[ctName]) _ctModsSelected[ctName] = [];
+            // Verifica se já existe
+            var jaExiste = _ctModsSelected[ctName].some(function(m){ return m.id === mod.id; });
+            if (jaExiste) return;
+            _ctModsSelected[ctName].push(mod);
+            // Re-renderiza o card do CT com a nova modalidade ativa
+            renderCTContent(ctName, mod.id);
+        }
+
         function openNewModalidadeModal() {
             var ov = document.getElementById('newModalidadeOverlay');
             if (!ov) return;
@@ -39221,7 +39316,7 @@
            • Cada aba tem cor própria, painel isolado, dados independentes
            • switchCTModTabV3 garante hide/show real (não só CSS class)
         ───────────────────────────────────────────────────────── */
-        function renderCTContent(ctName) {
+        function renderCTContent(ctName, _forceActiveModId) {
             var contentEl = document.getElementById('adminCTContent');
             if (!contentEl) return;
 
@@ -39257,7 +39352,8 @@
             if (!_ctActiveModId[ctName] || !ctMods.find(function(m){ return m.id === _ctActiveModId[ctName]; })) {
                 _ctActiveModId[ctName] = ctMods.length > 0 ? ctMods[0].id : '';
             }
-            var activeModId = _ctActiveModId[ctName];
+            var activeModId = _forceActiveModId || _ctActiveModId[ctName];
+            if (_forceActiveModId) _ctActiveModId[ctName] = _forceActiveModId;
             var safeCtEnc   = encodeURIComponent(ctName);
 
             // ── HTML ─────────────────────────────────────────────────────
@@ -39293,7 +39389,7 @@
                 html += '<button class="ct-mod-tab-v3-del" title="Remover aba" onclick="event.stopPropagation();removeCTModTab('+safeQ+',\''+mod.id+'\')">✕</button>';
                 html += '</button>';
             });
-            html += '<button class="ct-mod-tab-add" onclick="openNewModalidadeModal()">＋ Nova</button>';
+            html += '<button class="ct-mod-tab-add" onclick="openAddModParaCT(\'' + safeCtEnc + '\')">＋ Nova</button>';
             html += '</div>';
 
             // ── Painéis (um por modalidade, todos no DOM, só 1 visível) ──
