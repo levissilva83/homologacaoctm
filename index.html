@@ -13647,9 +13647,6 @@
             try { localStorage.setItem('pwaDismissed', '1'); } catch(e) {}
             hideInstallBanner();
         }
-        // ── BUILD MARKER (diagnóstico de deploy/cache) ──
-        console.log('%c[CTM] BUILD 2026-06-12-ASNFIX-v2', 'background:#C9A23A;color:#000;font-weight:bold;padding:2px 8px;border-radius:4px;');
-        try { document.documentElement.setAttribute('data-ctm-build', '2026-06-12-ASNFIX-v2'); } catch(e) {}
         let currentUser = null;
         let selectedCT = null;
         let allCTs = [];
@@ -32755,11 +32752,8 @@
 
         // ── Carregar novidades — usa cache se já carregadas com asnCarregarTudo
         async function asnCarregarNovidades() {
-            // FIX 2026-06-12: '_iniciado' é variável PRIVADA do IIFE do módulo
-            // assinatura — referenciá-la aqui lançava ReferenceError e, como esta
-            // função roda junto de asnIniciarSeNecessario() na abertura da aba,
-            // o erro poluía o fluxo. Usa a flag global window._asnIniciado.
-            if (window._asnIniciado) return; // dados já vieram no combo asnCarregarTudo
+            // Se a aba já foi iniciada, os dados vieram no combo — não busca de novo
+            if (_iniciado) return;
             try {
                 var res = await secureFetch('getNovidades', {});
                 var items = (res && res.success && res.novidades) ? res.novidades : [];
@@ -44343,7 +44337,6 @@
         var _trocaSel   = null;
         var _assinatura = null;
         var _iniciado   = false;
-        window._asnIniciado = false; // espelho global (asnCarregarNovidades vive fora do IIFE)
 
         // ── Seleção de método de pagamento ────────────────────────────
         window._asnMetodo = 'cartao'; // padrão
@@ -44393,57 +44386,14 @@
             el.value = v;
         };
 
-        window.asnIniciarSeNecessario = function () {
-            if (!_iniciado) { window.asnIniciar(); return; }
-            // FIX 2026-06-12: já iniciado → restaura o estado visual do painel.
-            // Ações como assinar/trocar plano/_showLoad escondem os cards e nem
-            // todo fluxo termina com _render(); ao reabrir a aba o painel ficava
-            // 100% vazio. Re-renderiza com os dados em memória e atualiza em
-            // background para refletir pagamentos/trocas recentes.
-            try { _hideLoad(); _render(); } catch(e) {}
-            window.asnRecarregarSilencioso();
-        };
-
-        // Re-busca dados sem mexer no loading (não pisca a tela)
-        window.asnRecarregarSilencioso = async function () {
-            try {
-                var email = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.email : null;
-                if (!email) return;
-                var res = await secureFetch('asnCarregarTudo', { email: email });
-                if (res) {
-                    _planos     = res.planos     || _planos;
-                    _assinatura = (res.assinatura !== undefined) ? res.assinatura : _assinatura;
-                    window._asnHistorico        = res.historicoPagamentos || window._asnHistorico || [];
-                    window._asnProximasDatas    = res.proximasDatas       || window._asnProximasDatas || [];
-                    window._asnJaPayouThisMonth = !!res.jaPayouThisMonth;
-                    _render();
-                }
-            } catch(e) { /* mantém o que está na tela */ }
-        };
+        window.asnIniciarSeNecessario = function () { if (!_iniciado) window.asnIniciar(); };
 
         window.asnIniciar = async function () {
-            // FIX 2026-06-12: returns silenciosos deixavam o painel 100% vazio
-            // (todo o conteúdo tem display:none por padrão). Agora: recupera a
-            // sessão do localStorage se currentUser ainda não populou (chamadas
-            // via setTimeout pós-login podiam disparar antes), e sempre exibe
-            // algo na tela (loading, conteúdo ou mensagem de acesso).
-            if ((typeof currentUser === 'undefined' || !currentUser || !currentUser.email)) {
-                try {
-                    var _sess = JSON.parse(localStorage.getItem('bjjUser') || 'null');
-                    if (_sess && _sess.email) currentUser = _sess;
-                } catch(e) {}
-            }
             var email = (typeof currentUser !== 'undefined' && currentUser) ? currentUser.email : null;
-            if (!email) {
-                _showLoad('Sessão não encontrada. Faça login novamente.');
-                return;
-            }
+            if (!email) return;
             var _m = document.querySelector('.main'); if (_m) _m.scrollTop = 0;
             var isAdm = currentUser && (currentUser.admin === true || currentUser.admin === 'TRUE' || currentUser.role === 'admin');
-            if (!isAdm) {
-                _showLoad('Acesso restrito ao administrador do CT.');
-                return;
-            }
+            if (!isAdm) return;
             _show('asnBloqueio', 'none');
             _show('asnConteudo', 'block');
             _showLoad('Carregando...');
@@ -44472,16 +44422,11 @@
                     window._asnProximasDatas    = (r2 && r2.proximasDatas)       ? r2.proximasDatas       : [];
                     window._asnJaPayouThisMonth = !!(r2 && r2.jaPayouThisMonth);
                     if (r2 && r2.limites) { _planLimits = r2.limites; _planId = r2.plano || ''; }
-                } catch(e2) {
-                    _planos = []; _assinatura = null;
-                    // FIX: deixa claro que foi falha de conexão/permissão — antes
-                    // renderizava o landing "Sem assinatura" silenciosamente
-                    setTimeout(function(){ try { _gmsg('Não foi possível carregar os dados da assinatura. Verifique a conexão e recarregue a página. (' + (e2 && e2.message ? e2.message : 'erro') + ')', 'danger'); } catch(_eg) {} }, 100);
-                }
+                } catch(e2) { _planos = []; _assinatura = null; }
             }
             _hideLoad();
             _render();
-            _iniciado = true; window._asnIniciado = true;
+            _iniciado = true;
             // Aplica locks após carregar limites
             setTimeout(_aplicarLocksPlano, 500);
         };
@@ -45050,7 +44995,7 @@
                 });
 
                 if (res && res.success) {
-                    _assinatura = res.assinatura; _iniciado = false; window._asnIniciado = false;
+                    _assinatura = res.assinatura; _iniciado = false;
                     _gmsg('🎉 Assinatura ativada com sucesso!', 'success');
                     _render();
                 } else {
