@@ -40156,8 +40156,6 @@
                 if (data.forbidden) { alert('⛔ Sem permissão'); return; }
                 var msg = document.getElementById('stuModalMsg');
                 if (data.success) {
-                    // Salva TreinosBase em paralelo (saldo de migração)
-                    _salvarTreinosBase(stuModalEmail).catch(function(){});
                     msg.className = 'stu-modal-msg success';
                     var _roleLbl = isAdminStu ? 'Administrador' : isProfStu ? 'Professor' : 'Aluno';
                     msg.textContent = '✅ ' + _roleLbl + ' atualizado com sucesso!';
