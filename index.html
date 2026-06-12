@@ -446,7 +446,7 @@
             border-top: 1px solid rgba(201,162,58,0.10);
             padding: 8px 16px 8px;
             box-shadow: 0 -1px 0 rgba(201,162,58,0.06), 0 -4px 24px rgba(0,0,0,0.5);
-            z-index: 100;
+            z-index: 9500;  /* acima de overlays (9999) nao — mas acima de conteúdo normal */
         }
 
         @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
@@ -9873,7 +9873,7 @@
                                 <div class="admin-section-title">🏢 Centros de Treinamento</div>
                                 <div style="display:flex;gap:6px;">
                                     <button class="admin-refresh-btn" onclick="loadCTScheduleAdmin()" title="Atualizar">↻</button>
-                                    <button onclick="openNewModalidadeModal()" style="padding:4px 10px;background:rgba(22,163,74,0.15);border:1px solid rgba(22,163,74,0.3);border-radius:6px;color:#4ade80;font-size:10px;font-weight:700;cursor:pointer;">+ Modalidade</button>
+                                    <button onclick="openAddModParaCT(encodeURIComponent(_ctActiveName||''))" style="padding:4px 10px;background:rgba(22,163,74,0.15);border:1px solid rgba(22,163,74,0.3);border-radius:6px;color:#4ade80;font-size:10px;font-weight:700;cursor:pointer;">+ Modalidade</button>
                                 </div>
                             </div>
                             <div style="padding:0 12px 8px;">
@@ -10890,54 +10890,1011 @@
 
                     <!-- 🏢 Centros de Treinamento movidos para Painel Admin → Cronograma tab -->
 
-                    <!-- Modal: Cadastrar nova modalidade -->
-                    <div id="newModalidadeOverlay" onclick="if(event.target===this)closeNewModalidadeModal()" style="display:none;position:fixed;inset:0;z-index:10010;background:rgba(0,0,0,0.88);align-items:center;justify-content:center;padding:20px;">
-                        <div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:16px;padding:20px;width:100%;max-width:400px;max-height:90vh;overflow-y:auto;">
-                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-                                <div style="font-size:15px;font-weight:800;color:var(--adm-text-1);">➕ Nova Modalidade</div>
-                                <button onclick="closeNewModalidadeModal()" style="background:none;border:none;color:var(--adm-text-3);font-size:20px;cursor:pointer;">✕</button>
+                    <!-- Modal: Cadastrar nova modalidade — movido para body -->
+
+                                        <!-- Overlay + Painel Nova Aula -->
+                    <div id="cronoAulaOverlay" onclick="closeCronoNewAulaPanel()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9099;"></div>
+
+                    <div id="cronoNewAulaPanel" style="display:none;position:fixed;bottom:60px;left:0;right:0;z-index:9100;background:var(--adm-bg-card);border:2px solid var(--adm-border);border-radius:18px 18px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,0.7);max-height:80vh;flex-direction:column;">
+                        <div style="flex-shrink:0;display:flex;justify-content:center;padding:8px 0 0;">
+                            <div style="width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,0.15);"></div>
+                        </div>
+                        <div style="flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-bottom:1px solid var(--adm-border);">
+                            <div style="font-size:15px;font-weight:800;color:var(--adm-text-1);">📚 Nova Aula</div>
+                            <button onclick="closeCronoNewAulaPanel()" style="width:30px;height:30px;border-radius:50%;background:var(--adm-bg-elevated);color:var(--adm-text-2);border:1px solid var(--adm-border);cursor:pointer;font-size:14px;">✕</button>
+                        </div>
+                        <div style="flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 16px;">
+                            <div style="margin-bottom:12px;">
+                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">CTs <span style="font-weight:400;text-transform:none;">(selecione um ou mais)</span></label>
+                                <div id="cronoNewCTChips" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
                             </div>
-                            <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:14px;line-height:1.6;">O sistema reconhecerá automaticamente o sistema de graduação com base no tipo escolhido.</div>
-                            <div style="margin-bottom:10px;">
-                                <label style="font-size:11px;color:var(--adm-text-3);display:block;margin-bottom:4px;">ID único (sem espaços)</label>
-                                <input type="text" id="newModId" placeholder="ex: kung_fu" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_]/g,'')" style="width:100%;box-sizing:border-box;padding:9px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;">
+                            <div style="margin-bottom:12px;">
+                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Modalidade <span style="font-weight:400;text-transform:none;">(selecione uma)</span></label>
+                                <div id="cronoNewModalidadeChips" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
                             </div>
-                            <div style="margin-bottom:10px;">
-                                <label style="font-size:11px;color:var(--adm-text-3);display:block;margin-bottom:4px;">Nome exibido</label>
-                                <input type="text" id="newModNome" placeholder="ex: Kung Fu" style="width:100%;box-sizing:border-box;padding:9px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;">
+                            <div style="margin-bottom:12px;">
+                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;">Datas selecionadas no calendário</label>
+                                <div id="cronoNewDatesChips" style="font-size:11px;color:var(--adm-primary);font-weight:600;min-height:20px;"></div>
                             </div>
-                            <div style="display:flex;gap:8px;margin-bottom:10px;">
-                                <div style="flex:1;">
-                                    <label style="font-size:11px;color:var(--adm-text-3);display:block;margin-bottom:4px;">Ícone (emoji)</label>
-                                    <input type="text" id="newModIcon" placeholder="🥋" maxlength="4" style="width:100%;box-sizing:border-box;padding:9px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:20px;text-align:center;">
+                            <div style="display:grid;grid-template-columns:110px 1fr;gap:10px;margin-bottom:12px;">
+                                <div>
+                                    <label style="font-size:10px;color:var(--adm-text-3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;">Horário</label>
+                                    <input type="time" id="cronoAdmHorario" style="width:100%;box-sizing:border-box;padding:10px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:14px;">
                                 </div>
-                                <div style="flex:1;">
-                                    <label style="font-size:11px;color:var(--adm-text-3);display:block;margin-bottom:4px;">Cor principal</label>
-                                    <input type="color" id="newModCor" value="#8B5CF6" style="width:100%;height:42px;border:1px solid var(--adm-border);border-radius:8px;cursor:pointer;">
+                                <div>
+                                    <label style="font-size:10px;color:var(--adm-text-3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;">Tema da aula *</label>
+                                    <input type="text" id="cronoAdmTema" placeholder="Ex: Guarda De La Riva" style="width:100%;box-sizing:border-box;padding:10px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;">
                                 </div>
                             </div>
-                            <div style="margin-bottom:14px;">
-                                <label style="font-size:11px;color:var(--adm-text-3);display:block;margin-bottom:6px;">Sistema de Graduação</label>
-                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                                    <label onclick="updateNewModPreview('faixa_cintura')" style="display:flex;align-items:center;gap:6px;padding:9px 10px;background:var(--adm-bg-elevated);border:1.5px solid var(--accent,#C9A23A);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--adm-text-1);" id="newModGrad_faixa">
-                                        <input type="radio" name="newModGrad" value="faixa_cintura" checked style="accent-color:var(--accent,#C9A23A);"> 🥋 Faixa Cintura
-                                    </label>
-                                    <label onclick="updateNewModPreview('prajied')" style="display:flex;align-items:center;gap:6px;padding:9px 10px;background:var(--adm-bg-elevated);border:1.5px solid var(--adm-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--adm-text-2);" id="newModGrad_prajied">
-                                        <input type="radio" name="newModGrad" value="prajied" style="accent-color:var(--accent,#C9A23A);"> 🥷 Prajied Braço
-                                    </label>
-                                    <label onclick="updateNewModPreview('corda')" style="display:flex;align-items:center;gap:6px;padding:9px 10px;background:var(--adm-bg-elevated);border:1.5px solid var(--adm-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--adm-text-2);" id="newModGrad_corda">
-                                        <input type="radio" name="newModGrad" value="corda" style="accent-color:var(--accent,#C9A23A);"> 🪢 Corda
-                                    </label>
-                                    <label onclick="updateNewModPreview('nenhum')" style="display:flex;align-items:center;gap:6px;padding:9px 10px;background:var(--adm-bg-elevated);border:1.5px solid var(--adm-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--adm-text-2);" id="newModGrad_nenhum">
-                                        <input type="radio" name="newModGrad" value="nenhum" style="accent-color:var(--accent,#C9A23A);"> ⚡ Sem Graduação
-                                    </label>
-                                </div>
-                                <div id="newModGradPreview" style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.04);border-radius:8px;font-size:11px;color:var(--adm-text-3);line-height:1.7;"></div>
+                            <div>
+                                <label style="font-size:10px;color:var(--adm-text-3);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:4px;">Descrição</label>
+                                <textarea id="cronoAdmDesc" placeholder="Detalhes, técnicas, observações..." rows="3" style="width:100%;box-sizing:border-box;padding:10px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;resize:none;font-family:inherit;"></textarea>
                             </div>
-                            <div id="newModMsg" style="font-size:11px;margin-bottom:10px;min-height:16px;"></div>
-                            <button onclick="cadastrarNovaModalidade()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;">Cadastrar Modalidade</button>
+                        </div>
+                        <div style="flex-shrink:0;padding:12px 16px 16px;border-top:1px solid var(--adm-border);background:var(--adm-bg-card);">
+                            <button onclick="saveCronogramaAula()" id="cronoAdmSaveBtn" style="width:100%;padding:15px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:12px;font-weight:800;font-size:15px;cursor:pointer;letter-spacing:0.3px;">📚 Salvar Aula(s)</button>
+                            <div id="cronoAdmMsg" style="margin-top:8px;text-align:center;font-size:12px;min-height:16px;"></div>
                         </div>
                     </div>
+
+                                        <!-- Aniversariantes -->
+                    <div class="admin-section">
+                        <div class="admin-section-header">
+                            <div class="admin-section-title">🎂 Aniversariantes <span class="admin-badge" id="adminBirthdayBadge" style="display:none">0</span></div>
+                            <button class="admin-refresh-btn" onclick="loadBirthdays()">↻</button>
+                        </div>
+                        <div id="adminBirthdayList"><div class="admin-empty">Carregando...</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: FEEDBACKS -->
+            <div id="adm-feedbacks" class="adm-tab">
+                <div class="admin-container">
+                    <div class="adm-page-title">
+                        <h2>💬 Feedbacks</h2>
+                        <p>Elogios, sugestões e problemas dos alunos</p>
+                    </div>
+                    <!-- Filtros tipo -->
+                    <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;">
+                        <button id="fbFilterAll"     onclick="setFbTabFilter(null)"          style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:800;cursor:pointer;border:1px solid var(--adm-primary);background:var(--adm-primary);color:#000;">Todos</button>
+                        <button id="fbFilterElogio"  onclick="setFbTabFilter('elogio')"      style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--adm-border);background:var(--adm-bg-elevated);color:var(--adm-text-2);">😊 Elogios</button>
+                        <button id="fbFilterSugest"  onclick="setFbTabFilter('sugestao')"    style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--adm-border);background:var(--adm-bg-elevated);color:var(--adm-text-2);">💡 Sugestões</button>
+                        <button id="fbFilterRecl"    onclick="setFbTabFilter('reclamacao')"  style="padding:5px 12px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--adm-border);background:var(--adm-bg-elevated);color:var(--adm-text-2);">😤 Problemas</button>
+                        <button onclick="loadFeedbacksTab()" style="padding:5px 10px;border-radius:6px;font-size:11px;cursor:pointer;border:1px solid var(--adm-border);background:var(--adm-bg-elevated);color:var(--adm-text-2);margin-left:auto;">↻</button>
+                    </div>
+                    <div id="fbTabList"><div class="admin-empty">Carregando...</div></div>
+                </div>
+            </div>
+
+            <!-- TAB: GRADUAÇÕES -->
+            <div id="adm-graduacoes" class="adm-tab">
+                <div class="admin-container">
+                    <div class="adm-page-title">
+                        <h2>🎓 Graduações</h2>
+                        <p>Solicitações pendentes e progresso dos alunos</p>
+                    </div>
+
+                    <!-- ===== CERTIFICADOS: ASSINATURA + LÍDER (admin/professor) ===== -->
+                        <!-- 🎨 PERSONALIZAR CERTIFICADO (só admin) -->
+                        <div class="perfil-section" id="perfilSecCertConfig" style="display:none;margin-top:16px;">
+                            <div class="perfil-section-title"><span>🎨</span> Personalizar Certificado</div>
+                            <div style="font-size:11px;color:var(--text-3);margin-bottom:12px;">Logo da academia, cor e textos que aparecem no certificado de todos os alunos.</div>
+
+                            <!-- Logos -->
+                            <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:6px;">Logos da academia <span style="color:var(--text-3);font-weight:400;">(2 logos = um em cada canto · 1 logo = centralizado)</span></div>
+                            <div style="display:flex;gap:10px;margin-bottom:14px;">
+                                <div style="flex:1;text-align:center;">
+                                    <div style="font-size:10px;color:var(--text-3);margin-bottom:5px;">Logo 1 (esquerda)</div>
+                                    <div style="width:100%;height:80px;border:1px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.03);overflow:hidden;">
+                                        <img id="certLogoPreview" style="max-width:100%;max-height:100%;display:none;">
+                                        <span id="certLogoEmpty" style="font-size:10px;color:var(--text-3);">sem logo</span>
+                                    </div>
+                                    <input type="file" id="certLogoInput" accept="image/*" style="display:none;" onchange="_certLogoUpload(this,1)">
+                                    <button style="width:100%;margin-top:5px;padding:6px;background:rgba(201,162,58,0.12);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.3);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;" onclick="document.getElementById('certLogoInput').click()">📁 Enviar</button>
+                                    <button onclick="_certLogoLimpar(1)" style="width:100%;margin-top:4px;padding:5px;background:transparent;border:1px solid var(--border);border-radius:7px;color:var(--text-3);font-size:10px;cursor:pointer;">🗑️ Remover</button>
+                                </div>
+                                <div style="flex:1;text-align:center;">
+                                    <div style="font-size:10px;color:var(--text-3);margin-bottom:5px;">Logo 2 (direita) — opcional</div>
+                                    <div style="width:100%;height:80px;border:1px dashed var(--border);border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.03);overflow:hidden;">
+                                        <img id="certLogoPreview2" style="max-width:100%;max-height:100%;display:none;">
+                                        <span id="certLogoEmpty2" style="font-size:10px;color:var(--text-3);">sem logo</span>
+                                    </div>
+                                    <input type="file" id="certLogoInput2" accept="image/*" style="display:none;" onchange="_certLogoUpload(this,2)">
+                                    <button style="width:100%;margin-top:5px;padding:6px;background:rgba(201,162,58,0.12);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.3);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;" onclick="document.getElementById('certLogoInput2').click()">📁 Enviar</button>
+                                    <button onclick="_certLogoLimpar(2)" style="width:100%;margin-top:4px;padding:5px;background:transparent;border:1px solid var(--border);border-radius:7px;color:var(--text-3);font-size:10px;cursor:pointer;">🗑️ Remover</button>
+                                </div>
+                            </div>
+
+                            <!-- Cor -->
+                            <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;">
+                                <div style="flex:1;">
+                                    <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:6px;">Cor de destaque</div>
+                                    <input type="color" id="certCorInput" value="#C9A23A" style="width:100%;height:40px;border:1px solid var(--border);border-radius:9px;background:transparent;cursor:pointer;">
+                                </div>
+                            </div>
+
+                            <!-- Título / Subtítulo -->
+                            <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:6px;">Título</div>
+                            <input type="text" id="certTituloInput" maxlength="40" placeholder="CERTIFICADO" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:9px;color:var(--text-1);font-size:13px;margin-bottom:10px;">
+                            <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:6px;">Subtítulo</div>
+                            <input type="text" id="certSubtInput" maxlength="40" placeholder="DE GRADUAÇÃO" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:9px;color:var(--text-1);font-size:13px;margin-bottom:12px;">
+
+                            <!-- Assinantes do certificado (até 4) -->
+                            <div style="font-size:11px;font-weight:700;color:var(--text-2);margin-bottom:4px;">✍️ Assinantes do certificado <span style="color:var(--text-3);font-weight:400;">(marque até 4 · só quem tem assinatura cadastrada)</span></div>
+                            <div style="font-size:10px;color:var(--text-3);margin-bottom:8px;">Se não marcar ninguém, o certificado usa o professor + líder da equipe.</div>
+                            <div id="certSignatariosList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px;">
+                                <div style="font-size:11px;color:var(--text-3);">Carregando professores...</div>
+                            </div>
+
+                            <div style="display:flex;gap:8px;">
+                                <button class="perfil-save-btn" style="flex:1" onclick="salvarCertConfig()">💾 Salvar</button>
+                                <button class="perfil-save-btn" style="flex:1;background:rgba(255,255,255,0.06);color:var(--text-1);border:1px solid var(--border);" onclick="previewCertificado()">👁️ Pré-visualizar</button>
+                            </div>
+                            <div id="certConfigMsg" style="font-size:11px;margin-top:6px;"></div>
+                        </div>
+
+                        <div class="perfil-section" id="perfilSecAssinatura" style="display:none;margin-top:16px;">
+                            <div class="perfil-section-title"><span>✍️</span> Minha Assinatura (certificados)</div>
+                            <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">Sua assinatura será usada nos certificados de graduação dos alunos.</div>
+                            <div style="display:flex;gap:6px;margin-bottom:10px;">
+                                <button id="assTabDraw" onclick="_assSetMode('draw')" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid #C9A23A;background:rgba(201,162,58,0.12);color:#C9A23A;font-size:12px;font-weight:700;cursor:pointer;">✏️ Desenhar</button>
+                                <button id="assTabUpload" onclick="_assSetMode('upload')" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.04);color:var(--text-3);font-size:12px;font-weight:700;cursor:pointer;">🖼️ Enviar imagem</button>
+                            </div>
+                            <div id="assDrawBox">
+                                <canvas id="assCanvas" width="500" height="180" style="width:100%;height:160px;background:#fff;border-radius:10px;border:1.5px solid var(--border);touch-action:none;cursor:crosshair;"></canvas>
+                                <button onclick="_assLimpar()" style="margin-top:6px;padding:5px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:7px;color:var(--text-3);font-size:11px;cursor:pointer;">🧹 Limpar</button>
+                            </div>
+                            <div id="assUploadBox" style="display:none;">
+                                <input type="file" id="assFile" accept="image/png,image/jpeg" onchange="_assUploadPreview(event)" style="font-size:12px;color:var(--text-3);">
+                                <img id="assPreview" style="display:none;max-width:100%;height:120px;object-fit:contain;background:#fff;border-radius:10px;margin-top:8px;border:1.5px solid var(--border);">
+                            </div>
+                            <div style="display:flex;flex-direction:column;gap:8px;margin-top:12px;">
+                                <input type="text" id="assNome" placeholder="Nome como aparece no certificado" style="padding:9px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:9px;color:var(--text-1);font-size:13px;">
+                                <input type="text" id="assTitulo" placeholder="Título (ex: Faixa Preta 3º grau)" style="padding:9px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:9px;color:var(--text-1);font-size:13px;">
+                            </div>
+                            <button class="perfil-save-btn" style="margin-top:10px" onclick="salvarAssinaturaProf()">💾 Salvar assinatura</button>
+                            <div id="assMsg" style="font-size:11px;margin-top:6px;"></div>
+                        </div>
+
+                        <!-- ===== LÍDER DA EQUIPE (só admin) ===== -->
+                        <div class="perfil-section" id="perfilSecLider" style="display:none;margin-top:16px;">
+                            <div class="perfil-section-title"><span>🏆</span> Líder da Equipe (certificados)</div>
+                            <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;">Quem assina TODOS os certificados junto com o professor do aluno (ex: o mestre/líder da equipe).</div>
+                            <select id="liderSelect" style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:9px;color:var(--text-1);font-size:13px;">
+                                <option value="">— Nenhum (só o professor assina) —</option>
+                            </select>
+                            <button class="perfil-save-btn" style="margin-top:10px" onclick="salvarLiderEquipe()">💾 Definir líder</button>
+                            <div id="liderMsg" style="font-size:11px;margin-top:6px;"></div>
+                        </div>
+
+
+
+                    <!-- ══ PAINEL TABBED: Graduações ══════════════════════════ -->
+                    <div class="admin-section" style="padding:0;overflow:hidden;">
+
+                        <!-- Tab Bar -->
+                        <div style="display:grid;grid-template-columns:repeat(4,1fr);background:rgba(255,255,255,0.02);border-bottom:1px solid var(--adm-border);" id="gradPainelTabBar">
+                            <button class="adm-painel-tab-btn active" id="gradPainelTabBtn1" onclick="switchGradPainelTab(1)"
+                                style="padding:9px 4px 7px;border:none;border-bottom:2px solid var(--adm-primary);background:rgba(201,162,58,0.08);color:var(--adm-primary);font-size:9px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2;">
+                                <span style="font-size:15px;">🔔</span><span>Solicitações <span class="admin-badge" id="adminGradBadge" style="display:none;">0</span></span>
+                            </button>
+                            <button class="adm-painel-tab-btn" id="gradPainelTabBtn2" onclick="switchGradPainelTab(2)"
+                                style="padding:9px 4px 7px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--adm-text-3);font-size:9px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2;">
+                                <span style="font-size:15px;">✅</span><span>Prontos <span class="admin-badge" id="gradTabProntoBadge" style="display:none;">0</span></span>
+                            </button>
+                            <button class="adm-painel-tab-btn" id="gradPainelTabBtn3" onclick="switchGradPainelTab(3)"
+                                style="padding:9px 4px 7px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--adm-text-3);font-size:9px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2;">
+                                <span style="font-size:15px;">⚡</span><span>Próximos</span>
+                            </button>
+                            <button class="adm-painel-tab-btn" id="gradPainelTabBtn4" onclick="switchGradPainelTab(4)"
+                                style="padding:9px 4px 7px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--adm-text-3);font-size:9px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2;">
+                                <span style="font-size:15px;">📊</span><span>Em progresso <span class="admin-badge blue" id="gradTabAllBadge" style="display:none;">0</span></span>
+                            </button>
+                        </div>
+
+                        <!-- ── Tab 1: Solicitações ── -->
+                        <div id="gradPainelTab1" style="padding:12px;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                                <div style="font-size:11px;color:var(--adm-text-3);">Solicitações enviadas pelos alunos pelo Perfil. Aprovar atualiza automaticamente a faixa/grau.</div>
+                                <button class="admin-refresh-btn" onclick="loadPendingGraduacoes()">↻</button>
+                            </div>
+                            <div id="adminGradList"><div class="admin-empty">Carregando...</div></div>
+                        </div>
+
+                        <!-- ── Tab 2: Prontos ── -->
+                        <div id="gradPainelTab2" style="display:none;padding:12px;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                                <div style="font-size:11px;color:var(--adm-text-3);">Alunos que atingiram todos os critérios para avançar de nível.</div>
+                                <button class="admin-refresh-btn" onclick="loadGradTab()">↻</button>
+                            </div>
+                            <!-- Filtros -->
+                            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">
+                                <div id="gradTabCTFilter" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+                                <div id="gradTabFaixaFilter" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+                            </div>
+                            <div id="gradTabProntoList"><div class="admin-empty">Carregando...</div></div>
+                        </div>
+
+                        <!-- ── Tab 3: Próximos 80–99% ── -->
+                        <div id="gradPainelTab3" style="display:none;padding:12px;">
+                            <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:10px;">Alunos entre 80% e 99% do critério — próximos de graduar.</div>
+                            <div id="gradTabNearList"><div class="admin-empty">—</div></div>
+                        </div>
+
+                        <!-- ── Tab 4: Em progresso ── -->
+                        <div id="gradPainelTab4" style="display:none;padding:12px;">
+                            <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:10px;">Todos os alunos com progresso registrado e previsão de graduação.</div>
+                            <div id="gradTabAllList"><div class="admin-empty">—</div></div>
+                        </div>
+
+                    </div>
+                    <!-- ══ FIM PAINEL TABBED Graduações ═══════════════════════ -->
+
+                    <!-- ─── 🎓 SISTEMA DE GRADUAÇÃO ─── -->
+                    <div class="admin-section" id="gradSistemaSection">
+                        <div class="admin-section-header">
+                            <div class="admin-section-title">🎓 Sistema de Graduação</div>
+                            <button class="admin-refresh-btn" onclick="initGradSistema()" title="Atualizar">↻</button>
+                        </div>
+                        <p style="font-size:11px;color:var(--adm-text-3);margin-bottom:12px;">Configure as regras de progressão independentemente para cada modalidade. Cada arte marcial tem sua própria cultura.</p>
+
+                        <!-- Abas por modalidade -->
+                        <div id="gradModTabs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;"></div>
+
+                        <!-- CT -->
+                        <div style="margin-bottom:10px;">
+                            <select id="gradConfigCT" onchange="onGradConfigCTChange()" style="width:100%;padding:9px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                <option value="Padrão">📌 Padrão (todos os CTs)</option>
+                            </select>
+                        </div>
+
+                        <!-- Tipo de critério — 5 opções -->
+                        <div style="margin-bottom:12px;">
+                            <div style="font-size:10px;font-weight:700;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Tipo de critério de progressão</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                                <label id="gradTipoLbl_aulas" style="display:flex;align-items:center;gap:6px;padding:9px 10px;background:rgba(201,162,58,0.08);border:1.5px solid var(--accent,#C9A23A);border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;color:var(--adm-text-1);">
+                                    <input type="radio" name="gradTipoSist" value="aulas" checked onchange="onGradTipoSistChange()" style="accent-color:var(--accent,#C9A23A);"> 🎯 Qtd. de Aulas
+                                </label>
+                                <label id="gradTipoLbl_tempo" style="display:flex;align-items:center;gap:6px;padding:9px 10px;background:var(--adm-bg-elevated);border:1.5px solid var(--adm-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--adm-text-2);">
+                                    <input type="radio" name="gradTipoSist" value="tempo" onchange="onGradTipoSistChange()" style="accent-color:var(--accent,#C9A23A);"> ⏳ Tempo (meses)
+                                </label>
+                                <label id="gradTipoLbl_hibrido" style="display:flex;align-items:center;gap:6px;padding:9px 10px;background:var(--adm-bg-elevated);border:1.5px solid var(--adm-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--adm-text-2);">
+                                    <input type="radio" name="gradTipoSist" value="hibrido" onchange="onGradTipoSistChange()" style="accent-color:var(--accent,#C9A23A);"> 🔀 Híbrido (aulas + meses)
+                                </label>
+                                <label id="gradTipoLbl_manual" style="display:flex;align-items:center;gap:6px;padding:9px 10px;background:var(--adm-bg-elevated);border:1.5px solid var(--adm-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--adm-text-2);">
+                                    <input type="radio" name="gradTipoSist" value="manual" onchange="onGradTipoSistChange()" style="accent-color:var(--accent,#C9A23A);"> ✋ Manual (professor decide)
+                                </label>
+                                <label id="gradTipoLbl_nenhum" style="display:flex;align-items:center;gap:6px;padding:9px 10px;background:var(--adm-bg-elevated);border:1.5px solid var(--adm-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--adm-text-2);grid-column:1/-1;">
+                                    <input type="radio" name="gradTipoSist" value="nenhum" onchange="onGradTipoSistChange()" style="accent-color:var(--accent,#C9A23A);"> ⛔ Nenhum (sem sistema de graduação)
+                                </label>
+                            </div>
+                            <!-- Dica contextual do critério selecionado -->
+                            <div id="gradTipoHint" style="margin-top:8px;padding:8px 10px;background:rgba(201,162,58,0.06);border-left:2px solid var(--accent,#C9A23A);border-radius:0 6px 6px 0;font-size:11px;color:var(--adm-text-2);line-height:1.5;transition:all .2s;">🎯 Configure o mínimo de aulas por nível abaixo.</div>
+                        </div>
+
+                        <!-- Painel dinâmico -->
+                        <div id="gradSystemList"></div>
+
+                        <div id="gradConfigMsg" style="margin-top:8px;min-height:20px;"></div>
+                        <button onclick="saveGradConfigMod()" style="margin-top:10px;width:100%;padding:12px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;">💾 Salvar Configuração</button>
+
+                        <!-- Legacy hidden inputs -->
+                        <input type="hidden" id="gradCfgBranca" value="30">
+                        <input type="hidden" id="gradCfgAzul" value="78">
+                        <input type="hidden" id="gradCfgRoxa" value="108">
+                        <input type="hidden" id="gradCfgMarrom" value="130">
+                        <input type="hidden" id="gradCfgKidsCinza" value="20">
+                        <input type="hidden" id="gradCfgKidsAmarela" value="25">
+                        <input type="hidden" id="gradCfgKidsLaranja" value="30">
+                        <input type="hidden" id="gradCfgKidsVerde" value="35">
+                        <input type="hidden" id="gradConfigGrid" value="">
+                        <div id="gradCfgSummary" style="display:none;"></div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- TAB: SUPER ADMIN -->
+            <div id="adm-superadmin" class="adm-tab">
+                <div class="admin-container" style="padding-bottom:40px;">
+
+                    <!-- ── PAGE HEADER ─────────────────────────────────── -->
+                    <div class="adm-page-title" style="margin-bottom:0;">
+                        <h2>🔑 Super Admin</h2>
+                        <p>Acesso restrito — administração de licenciados e contratos</p>
+                    </div>
+
+                    <!-- ── SUB-TABS ─────────────────────────────────────── -->
+                    <div style="display:flex;gap:6px;margin:16px 0;border-bottom:1px solid var(--adm-border);padding-bottom:0;">
+                        <button id="saTab_licenciados" onclick="saSubTab('licenciados')"
+                            style="padding:9px 16px;background:rgba(201,162,58,0.1);color:var(--adm-primary);border:none;border-bottom:2px solid var(--adm-primary);font-size:12px;font-weight:700;cursor:pointer;border-radius:8px 8px 0 0;">
+                            📋 Licenciados
+                        </button>
+                        <button id="saTab_contratos" onclick="saSubTab('contratos')"
+                            style="padding:9px 16px;background:transparent;color:var(--adm-text-3);border:none;border-bottom:2px solid transparent;font-size:12px;font-weight:700;cursor:pointer;border-radius:8px 8px 0 0;">
+                            📑 Contratos
+                        </button>
+
+                        <button id="saTab_trial" onclick="saSubTab('trial')"
+                            style="padding:9px 16px;background:transparent;color:var(--adm-text-3);border:none;border-bottom:2px solid transparent;font-size:12px;font-weight:700;cursor:pointer;border-radius:8px 8px 0 0;">
+                            ⏳ Trial
+                        </button>
+                    </div>
+
+                    <!-- ══ PAINEL: LICENCIADOS ═══════════════════════════ -->
+                    <div id="saPainel_licenciados">
+                        <!-- Stats -->
+                        <div id="cmStatsBar" style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:16px;"></div>
+
+                        <!-- Toolbar -->
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+                            <input id="cmFiltro" placeholder="Buscar cliente..." oninput="CTM_Contratos.ui.filtrar(this.value)"
+                                style="flex:1;min-width:140px;padding:8px 12px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                            <select id="cmFiltroStatus" onchange="CTM_Contratos.ui.filtrar()"
+                                style="padding:8px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                <option value="">Todos os status</option>
+                                <option value="ATIVO">✅ Ativo</option>
+                                <option value="TRIAL">⏳ Trial</option>
+                                <option value="CANCELADO">❌ Cancelado</option>
+                                <option value="INATIVO">⏸ Inativo</option>
+                                <option value="INADIMPLENTE">🔴 Inadimplente</option>
+                                <option value="SEM CONTRATO">📋 Sem contrato</option>
+                            </select>
+                            <button onclick="CTM_Contratos.data.carregar()"
+                                style="padding:8px 12px;background:transparent;color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;cursor:pointer;">↻</button>
+                        </div>
+
+                        <!-- Tabela -->
+                        <div class="admin-section" style="padding:0;overflow:hidden;margin-bottom:16px;">
+                            <div style="display:grid;grid-template-columns:1.8fr .9fr 1fr .9fr .9fr .8fr 80px;padding:8px 14px;background:rgba(0,0,0,0.25);border-bottom:1px solid var(--adm-border);">
+                                <div style="font-size:9px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.4px;">Cliente</div>
+                                <div style="font-size:9px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.4px;">Plano</div>
+                                <div style="font-size:9px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.4px;">Modalidades</div>
+                                <div style="font-size:9px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.4px;">Status</div>
+                                <div style="font-size:9px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.4px;">Início</div>
+                                <div style="font-size:9px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.4px;">Fim / Cob.</div>
+                                <div></div>
+                            </div>
+                            <div id="cmTabelaBody">
+                                <div style="text-align:center;padding:32px;color:var(--adm-text-3);font-size:12px;">⏳ Carregando...</div>
+                            </div>
+                        </div>
+
+                        <!-- Editor inline (abre ao clicar em Editar) -->
+                        <div id="cmPainelEditor" style="display:none;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(201,162,58,0.07);border:1.5px solid rgba(201,162,58,0.25);border-radius:12px 12px 0 0;">
+                                <div>
+                                    <div style="font-size:13px;font-weight:800;color:var(--adm-primary);" id="cmEditorTitulo">Editar Contrato</div>
+                                    <div style="font-size:10px;color:var(--adm-text-3);" id="cmEditorSub"></div>
+                                </div>
+                                <button onclick="CTM_Contratos.ui.fecharEditor()" style="padding:5px 12px;background:transparent;color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:7px;font-size:12px;cursor:pointer;">✕ Fechar</button>
+                            </div>
+
+                            <!-- Sub-abas do editor de contrato -->
+                            <div style="display:flex;gap:0;border:1.5px solid rgba(201,162,58,0.2);border-radius:0 0 0 0;border-bottom:none;overflow:hidden;">
+                                <button id="cmSubTab-form" onclick="switchCmSubTab('form')"
+                                    style="flex:1;padding:10px 8px;font-size:12px;font-weight:700;border:none;cursor:pointer;
+                                           background:var(--adm-primary);color:#000;transition:all .2s;">
+                                    📝 Formulário
+                                </button>
+                                <button id="cmSubTab-preview" onclick="switchCmSubTab('preview')"
+                                    style="flex:1;padding:10px 8px;font-size:12px;font-weight:700;border:none;cursor:pointer;
+                                           background:transparent;color:var(--adm-text-2);border-left:1px solid rgba(201,162,58,0.2);transition:all .2s;">
+                                    📄 Contrato Gerado
+                                </button>
+                            </div>
+                            <div style="border:1.5px solid rgba(201,162,58,0.2);border-top:none;border-radius:0 0 12px 12px;overflow:hidden;">
+
+                                <!-- ABA 1: Formulário -->
+                                <div id="cmSub-form" style="padding:16px;">
+
+                                    <!-- Bloco 1: Identificação -->
+                                    <div class="cm-bloco">
+                                        <div class="cm-bloco-title">① Identificação</div>
+                                        <div class="cm-campo">
+                                            <label class="cm-label">Nome / CT</label>
+                                            <input type="text" id="cmClienteNome" readonly style="width:100%;box-sizing:border-box;padding:8px;background:rgba(0,0,0,0.2);color:var(--adm-text-2);border:1px solid var(--adm-border);border-radius:7px;font-size:12px;">
+                                        </div>
+                                        <div class="cm-campo">
+                                            <label class="cm-label">E-mail admin</label>
+                                            <input type="email" id="cmClienteEmail" readonly style="width:100%;box-sizing:border-box;padding:8px;background:rgba(0,0,0,0.2);color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:7px;font-size:12px;">
+                                        </div>
+                                        <div class="cm-campo">
+                                            <label class="cm-label" style="color:#60a5fa;">Sheet ID</label>
+                                            <div style="display:flex;gap:6px;">
+                                                <input type="text" id="cmClienteSheetId" style="flex:1;padding:8px;background:var(--adm-bg-card);color:#60a5fa;border:1px solid rgba(96,165,250,0.2);border-radius:7px;font-size:11px;font-family:monospace;box-sizing:border-box;">
+                                                <button id="cmBtnAbrirSheet" style="padding:8px 10px;background:rgba(96,165,250,0.08);color:#60a5fa;border:1px solid rgba(96,165,250,0.2);border-radius:7px;font-size:13px;cursor:pointer;">↗</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bloco 2: Plano + Status -->
+                                    <div class="cm-bloco">
+                                        <div class="cm-bloco-title">② Plano & Status</div>
+                                        <div class="cm-campo">
+                                            <label class="cm-label">Plano</label>
+                                            <select id="cmPlanoSelect" onchange="CTM_Contratos.ui.onPlanoChange()" style="width:100%;padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:12px;"></select>
+                                        </div>
+                                        <div id="cmPlanoInfo" style="display:none;padding:8px 10px;background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.15);border-radius:8px;margin:4px 0 8px;font-size:10px;color:var(--adm-text-2);">
+                                            <span id="cmPlanoInfoNome"></span> · <span id="cmPlanoInfoValor" style="color:#60a5fa;font-weight:700;"></span>
+                                            <div id="cmPlanoInfoFreq" style="color:var(--adm-text-3);margin-top:2px;"></div>
+                                        </div>
+                                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                            <div class="cm-campo">
+                                                <label class="cm-label">Status</label>
+                                                <select id="cmStatus" onchange="CTM_Contratos.engine.gerarPreview()" style="width:100%;padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:12px;">
+                                                    <option value="TRIAL">⏳ TRIAL</option>
+                                                    <option value="ATIVO">✅ ATIVO</option>
+                                                    <option value="INATIVO">⏸ INATIVO</option>
+                                                    <option value="CANCELADO">❌ CANCELADO</option>
+                                                    <option value="INADIMPLENTE">🔴 INADIMPLENTE</option>
+                                                </select>
+                                            </div>
+                                            <div class="cm-campo">
+                                                <label class="cm-label">Próx. vencimento</label>
+                                                <input type="date" id="cmVencimento" style="width:100%;box-sizing:border-box;padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:11px;">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bloco 3: Trial -->
+                                    <div class="cm-bloco">
+                                        <div class="cm-bloco-title">③ Acesso / Trial</div>
+                                        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;">
+                                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--adm-text-1);">
+                                                <input type="radio" name="cmTrialModo" id="cmTrialModoTrial" value="trial" onchange="CTM_Contratos.ui.onTrialModoChange()" style="accent-color:#fbbf24;">
+                                                ⏳ <strong>Com trial</strong> — grátis por X dias
+                                            </label>
+                                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--adm-text-1);">
+                                                <input type="radio" name="cmTrialModo" id="cmTrialModoImediato" value="imediato" onchange="CTM_Contratos.ui.onTrialModoChange()" style="accent-color:#f87171;">
+                                                💳 <strong>Sem trial</strong> — pagar ao entrar
+                                            </label>
+                                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--adm-text-1);">
+                                                <input type="radio" name="cmTrialModo" id="cmTrialModoAtivo" value="ativo" onchange="CTM_Contratos.ui.onTrialModoChange()" style="accent-color:#4ade80;">
+                                                ✅ <strong>Ativo direto</strong> — já pagou
+                                            </label>
+                                        </div>
+                                        <div id="cmTrialCampos" style="display:none;background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.2);border-radius:8px;padding:10px;">
+                                            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                                                <div>
+                                                    <label class="cm-label">Dias</label>
+                                                    <input type="number" id="cmTrialDias" value="30" min="1" max="365" oninput="CTM_Contratos.engine.calcTrialDates()" style="width:100%;box-sizing:border-box;padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid rgba(251,191,36,0.3);border-radius:7px;font-size:13px;text-align:center;">
+                                                </div>
+                                                <div>
+                                                    <label class="cm-label">Início</label>
+                                                    <input type="date" id="cmTrialInicio" oninput="CTM_Contratos.engine.calcTrialDates()" style="width:100%;box-sizing:border-box;padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid rgba(251,191,36,0.3);border-radius:7px;font-size:11px;">
+                                                </div>
+                                                <div>
+                                                    <label class="cm-label">Término</label>
+                                                    <input type="text" id="cmTrialFim" readonly placeholder="Calculado" style="width:100%;box-sizing:border-box;padding:8px;background:rgba(0,0,0,0.2);color:#fbbf24;border:1px solid rgba(251,191,36,0.15);border-radius:7px;font-size:11px;font-weight:700;">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Bloco 4: Modalidades -->
+                                    <div class="cm-bloco">
+                                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                                            <div class="cm-bloco-title" style="margin:0;">④ Modalidades</div>
+                                            <div style="display:flex;gap:4px;">
+                                                <button onclick="CTM_Contratos.ui.selectAllMods(true)" style="padding:2px 7px;background:rgba(201,162,58,0.1);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.2);border-radius:5px;font-size:9px;font-weight:700;cursor:pointer;">Todas</button>
+                                                <button onclick="CTM_Contratos.ui.selectAllMods(false)" style="padding:2px 7px;background:transparent;color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:5px;font-size:9px;font-weight:700;cursor:pointer;">Nenhuma</button>
+                                            </div>
+                                        </div>
+                                        <div id="cmModsGrid" style="display:flex;flex-direction:column;gap:5px;"></div>
+                                        <div id="cmModsContador" style="font-size:10px;color:var(--adm-text-3);margin-top:6px;padding-top:6px;border-top:1px solid var(--adm-border);"></div>
+                                    </div>
+
+                                </div><!-- /aba formulário -->
+
+                                <!-- ABA 2: Preview + Ações -->
+                                <div id="cmSub-preview" style="padding:16px;background:rgba(0,0,0,0.08);display:none;flex-direction:column;gap:10px;">
+
+                                    <div class="cm-bloco-title">⑤ Contrato Gerado</div>
+                                    <div id="cmPreviewContrato" style="background:rgba(201,162,58,0.03);border:1px solid rgba(201,162,58,0.12);border-radius:8px;padding:12px;font-size:10px;color:var(--adm-text-2);line-height:1.65;min-height:220px;white-space:pre-wrap;font-family:monospace;flex:1;overflow-y:auto;">
+                                        Selecione um cliente para gerar...
+                                    </div>
+
+                                    <!-- Ações rápidas -->
+                                    <div style="display:flex;flex-direction:column;gap:6px;padding:12px;background:rgba(0,0,0,0.15);border-radius:8px;border:1px solid var(--adm-border);">
+                                        <div style="font-size:9px;font-weight:700;color:var(--adm-text-3);margin-bottom:2px;">AÇÕES</div>
+                                        <button id="cmBtnCobrar" onclick="CTM_Contratos.actions.cobrarAgora()"
+                                            style="padding:8px;background:rgba(74,222,128,0.08);color:#4ade80;border:1.5px solid rgba(74,222,128,0.25);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">
+                                            💸 Cobrar agora
+                                        </button>
+                                        <button id="cmBtnBloquear" onclick="CTM_Contratos.actions.bloquear()"
+                                            style="padding:8px;background:rgba(251,191,36,0.07);color:#fbbf24;border:1.5px solid rgba(251,191,36,0.25);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">
+                                            🔒 Bloquear acesso
+                                        </button>
+                                        <button id="cmBtnDesbloquear" onclick="CTM_Contratos.actions.desbloquear()"
+                                            style="padding:8px;background:rgba(37,99,235,0.08);color:#60a5fa;border:1.5px solid rgba(37,99,235,0.2);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">
+                                            🔓 Desbloquear
+                                        </button>
+                                        <button id="cmBtnExcluir" onclick="CTM_Contratos.actions.excluir()"
+                                            style="padding:8px;background:rgba(248,113,113,0.06);color:#f87171;border:1.5px solid rgba(248,113,113,0.2);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">
+                                            🗑️ Excluir contrato
+                                        </button>
+                                    </div>
+
+                                    <div id="cmEditorMsg" style="font-size:11px;text-align:center;min-height:14px;"></div>
+                                    <button onclick="CTM_Contratos.actions.salvar()"
+                                        style="width:100%;padding:13px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;">
+                                        💾 Salvar Contrato
+                                    </button>
+                                </div><!-- /aba preview -->
+                            </div><!-- /editor abas -->
+                        </div><!-- /cmPainelEditor -->
+                    </div><!-- /saPainel_licenciados -->
+
+                    <!-- ══ PAINEL: CONTRATOS ═══════════════════════════════ -->
+                    <div id="saPainel_contratos" style="display:none;">
+                        <!-- Header + Filtro -->
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+                            <div>
+                                <div style="font-size:13px;font-weight:800;color:var(--adm-text-1);">📑 Contratos Assinados</div>
+                                <div style="font-size:10px;color:var(--adm-text-3);">Clientes com subscription_id ativo (MP, cartão ou manual)</div>
+                            </div>
+                            <button onclick="renderContratosTab()" style="padding:7px 12px;background:transparent;color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:8px;font-size:11px;cursor:pointer;">↻ Atualizar</button>
+                        </div>
+                        <input id="contratosFiltro" placeholder="Filtrar por email ou subscription_id..."
+                            oninput="renderContratosTab()"
+                            style="width:100%;box-sizing:border-box;padding:8px 12px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:10px;">
+                        <div id="contratosTabBody">
+                            <div style="text-align:center;padding:24px;color:var(--adm-text-3);font-size:12px;">Carregando contratos...</div>
+                        </div>
+                        <!-- Compat: elementos ocultos para funções legadas -->
+                        <div style="display:none;">
+                            <div id="saModListaContratos"></div>
+                            <div id="saModForm"></div>
+                            <div id="saFormAbrirBtn"></div>
+                            <select id="saModEmailSelectLista"></select>
+                            <div id="saContratoStatusBar"></div>
+                            <div id="saContratoFormCampos"></div>
+                            <div id="saContratoVazio"></div>
+                            <select id="saFormPlano"></select>
+                            <select id="saFormStatus"></select>
+                            <input id="saFormVencimento" type="date">
+                            <input id="saFormSheetId" type="text">
+                            <input type="radio" name="saTrialModo" id="saTrialModoTrial">
+                            <input type="radio" name="saTrialModo" id="saTrialModoImediato">
+                            <input type="radio" name="saTrialModo" id="saTrialModoAtivo">
+                            <div id="saTrialDiasWrap"></div>
+                            <input id="saTrialDiasEdit" type="number">
+                            <input id="saTrialDataEdit" type="text">
+                            <div id="saFormModGrid2"></div>
+                            <div id="saFormContador2"></div>
+                            <button id="saFormExcluirBtn"></button>
+                            <div id="saFormMsg"></div>
+                            <div id="saModListaContratoPreview"></div>
+                        </div>
+                    </div>
+
+                    <!-- ══ PAINEL: NOVIDADES (desativado) ═══════════════════ -->
+                    <div id="saPainel_novidades" style="display:none;visibility:hidden;pointer-events:none;">
+                        <div class="admin-section">
+                            <div class="admin-section-header">
+                                <div class="admin-section-title">📣 Novidades do Sistema</div>
+                                <button class="admin-refresh-btn" onclick="saNovCarregar()">↻</button>
+                            </div>
+                            <p style="font-size:11px;color:var(--adm-text-3);margin-bottom:12px;">
+                                Publique novidades que aparecem na <strong style="color:var(--adm-text-2);">Central de Assinatura</strong> para clientes que ainda não assinaram.
+                            </p>
+                            <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+                                <input type="text" id="saNovTitulo" placeholder="Título da novidade"
+                                    style="padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                <textarea id="saNovTexto" placeholder="Descrição..." rows="3"
+                                    style="padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;resize:vertical;"></textarea>
+                                <button onclick="saNovPublicar()" style="padding:10px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;">
+                                    📣 Publicar
+                                </button>
+                            </div>
+                            <div id="saNovLista">
+                                <div style="text-align:center;padding:16px;color:var(--adm-text-3);font-size:12px;">Carregando...</div>
+                            </div>
+                            <div id="saNovMsg" style="font-size:11px;text-align:center;margin-top:8px;min-height:18px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- ══ PAINEL: TRIAL ══════════════════════════════════ -->
+                    <div id="saPainel_trial" style="display:none;">
+                        <div class="admin-section">
+                            <div class="admin-section-header">
+                                <div class="admin-section-title">⏳ Trial — Esta Planilha</div>
+                                <button class="admin-refresh-btn" onclick="loadSuperAdminTrialConfig()">↻</button>
+                            </div>
+                            <div id="saTrialStatus" style="font-size:12px;margin-bottom:10px;"></div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                                <div>
+                                    <label style="font-size:10px;color:var(--adm-text-3);font-weight:700;display:block;margin-bottom:3px;">Dias de trial</label>
+                                    <input type="number" id="saTrialDias" value="30" style="width:100%;box-sizing:border-box;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;text-align:center;">
+                                </div>
+                                <div>
+                                    <label style="font-size:10px;color:var(--adm-text-3);font-weight:700;display:block;margin-bottom:3px;">Motivo</label>
+                                    <input type="text" id="saTrialMotivo" placeholder="Motivo (opcional)" style="width:100%;box-sizing:border-box;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                </div>
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                                <button onclick="definirTrial()" style="padding:10px;background:rgba(201,162,58,0.1);color:var(--adm-primary);border:1.5px solid rgba(201,162,58,0.3);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">⏳ Definir Trial</button>
+                                <button onclick="bloquearTrial()" style="padding:10px;background:rgba(248,113,113,0.08);color:#f87171;border:1.5px solid rgba(248,113,113,0.25);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🔒 Bloquear</button>
+                                <button onclick="liberarCliente()" style="padding:10px;background:rgba(74,222,128,0.08);color:#4ade80;border:1.5px solid rgba(74,222,128,0.25);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">🔓 Liberar Acesso</button>
+                                <button onclick="resetarTrial()" style="padding:10px;background:rgba(255,255,255,0.04);color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">↺ Resetar</button>
+                            </div>
+                            <div id="saTrialMsg" style="font-size:11px;text-align:center;margin-top:10px;min-height:16px;"></div>
+                        </div>
+                    </div>
+
+                </div><!-- /admin-container -->
+
+                <!-- ══════════════════════════════════════════════════════ -->
+                <!-- PAINEL INADIMPLENTES (CTs / LICENCIADOS)              -->
+                <!-- ══════════════════════════════════════════════════════ -->
+                <div style="margin-top:18px;background:var(--adm-bg-card);border:1.5px solid rgba(248,113,113,0.25);border-radius:14px;padding:16px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                        <div>
+                            <div style="font-size:13px;font-weight:800;color:#f87171;">🚨 Inadimplentes — CTs Licenciados</div>
+                            <div style="font-size:10px;color:var(--adm-text-3);margin-top:2px;">Clientes com pagamento reprovado, Trial vencido ou PIX pendente</div>
+                        </div>
+                        <button onclick="loadInadimplentes()" style="padding:7px 12px;background:rgba(248,113,113,0.1);color:#f87171;border:1.5px solid rgba(248,113,113,0.3);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">↻ Atualizar</button>
+                    </div>
+
+                    <!-- Template de mensagem editável -->
+                    <div style="margin-bottom:10px;">
+                        <div style="font-size:10px;color:var(--adm-text-3);margin-bottom:4px;">✏️ Template da mensagem WhatsApp (editável)</div>
+                        <textarea id="inadMsgTemplate" rows="3" style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:11px;resize:vertical;">Olá {nome}! 👋 Identificamos que o pagamento do seu plano *{plano}* no CTM Matrix está em atraso desde {vencimento}. Por favor, regularize para manter seu acesso ativo. Qualquer dúvida estamos à disposição!</textarea>
+                    </div>
+
+                    <div id="inadListContainer" style="font-size:11px;color:var(--adm-text-3);text-align:center;padding:16px;">
+                        Clique em <strong>Atualizar</strong> para carregar.
+                    </div>
+                </div>
+
+            </div><!-- /adm-superadmin -->
+
+            <!-- TAB: ALUNOS -->
+            <div id="adm-alunos" class="adm-tab">
+                <div class="admin-container">
+                    <div class="adm-page-title">
+                        <h2>Gestão de Alunos</h2>
+                    </div>
+                    <div class="admin-section">
+                        <div class="admin-section-header">
+                            <div class="admin-section-title">👥 Alunos Cadastrados <span class="admin-badge green" id="adminStudentsBadge" style="display:none">0</span></div>
+                            <div style="display:flex;gap:6px;">
+                                <button onclick="adminAbrirNovoAluno()" style="padding:5px 10px;background:rgba(201,162,58,0.12);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.3);border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;">+ Novo Aluno</button>
+                                <button class="admin-refresh-btn" onclick="loadStudentsList()">↻</button>
+                            </div>
+                        </div>
+                        <div style="margin-bottom:8px;">
+                            <input type="text" id="adminStudentSearch" placeholder="Buscar por nome ou email..." oninput="filterStudentsList()" style="width:100%;box-sizing:border-box;">
+                        </div>
+                        <!-- Filtro por CT -->
+                        <div id="adminStudentCTFilter" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;"></div>
+                        <div id="adminStudentsList">
+                            <div class="admin-empty">Carregando...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CTs moved to Sistema tab -->
+
+            <!-- TAB: LISTA DE PRESENÇA + CHAMADA -->
+            <div id="adm-presenca" class="adm-tab">
+                <div class="admin-container">
+
+                    <!-- Sub-abas -->
+                    <div style="display:flex;gap:0;margin-bottom:16px;background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;overflow:hidden;">
+                        <button id="presSubTab-lista" onclick="switchPresSubTab('lista')"
+                            style="flex:1;padding:11px 8px;font-size:12px;font-weight:700;border:none;cursor:pointer;
+                                   background:var(--adm-primary);color:#000;border-radius:0;transition:all .2s;">
+                            📋 Lista de Presença
+                        </button>
+                        <button id="presSubTab-chamada" onclick="switchPresSubTab('chamada')"
+                            style="flex:1;padding:11px 8px;font-size:12px;font-weight:700;border:none;cursor:pointer;
+                                   background:transparent;color:var(--adm-text-2);border-radius:0;transition:all .2s;">
+                            📣 Lista de Chamada
+                        </button>
+                    </div>
+
+                    <!-- ══ SUB-ABA: LISTA DE PRESENÇA ═══════════════════════════ -->
+                    <div id="presSub-lista">
+                        <div class="adm-page-title" style="margin-bottom:12px;">
+                            <h2>📋 Lista de Presença</h2>
+                            <p>Histórico de quem treinou — por período, CT e modalidade</p>
+                        </div>
+                        <div class="admin-section">
+                            <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                                <select id="presListCT" onchange="onPresListCTChange()" style="flex:1;min-width:100px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <option value="">Todos os CTs</option>
+                                </select>
+                                <select id="presListMod" onchange="onPresListModChange()" style="flex:1;min-width:110px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <option value="">Todas as modalidades</option>
+                                </select>
+                                <input type="date" id="presListDate" onchange="loadPresencaList()" style="flex:1;min-width:120px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                            </div>
+                            <div id="presListHorarioFilter" style="display:none;margin-bottom:8px;">
+                                <select id="presListHorario" onchange="loadPresencaList()" style="width:100%;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <option value="">Todos os horários</option>
+                                </select>
+                            </div>
+                            <div style="display:flex;gap:4px;margin-bottom:12px;">
+                                <button class="admin-filter-btn active" onclick="setPresListPeriod('dia',this)">Dia</button>
+                                <button class="admin-filter-btn" onclick="setPresListPeriod('semana',this)">Semana</button>
+                                <button class="admin-filter-btn" onclick="setPresListPeriod('mes',this)">Mês</button>
+                            </div>
+                            <div id="presListKPI" style="display:none;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;"></div>
+                            <div id="presListResults"><div class="admin-empty">Selecione CT e data</div></div>
+                            <div style="margin-top:12px;text-align:center;">
+                                <button onclick="gerarRelatorioPresenca()" style="padding:10px 24px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">📊 Gerar Relatório</button>
+                            </div>
+                            <div id="presRelatorio" style="display:none;margin-top:12px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- ══ SUB-ABA: LISTA DE CHAMADA ════════════════════════════ -->
+                    <div id="presSub-chamada" style="display:none;">
+                        <div class="adm-page-title" style="margin-bottom:12px;">
+                            <h2>📣 Lista de Chamada</h2>
+                            <p>Selecione o horário da aula — confirme quem está presente</p>
+                        </div>
+                        <div class="admin-section">
+                            <!-- Filtros obrigatórios: CT + modalidade + horário + data -->
+                            <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+                                <select id="chamadaCT" onchange="onChamadaCTChange()" style="flex:1;min-width:120px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <option value="">Selecione o CT</option>
+                                </select>
+                                <input type="date" id="chamadaDate" onchange="loadListaChamada()" style="flex:1;min-width:120px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                            </div>
+                            <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+                                <select id="chamadaMod" onchange="onChamadaModChange()" style="flex:1;min-width:120px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <option value="">Todas as modalidades</option>
+                                </select>
+                                <select id="chamadaHorario" onchange="loadListaChamada()" style="flex:1;min-width:120px;padding:10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <option value="">Todos os horários</option>
+                                </select>
+                            </div>
+                            <!-- KPI chamada -->
+                            <div id="chamadaKPI" style="display:none;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;"></div>
+                            <!-- Lista de chamada -->
+                            <div id="chamadaResults"><div class="admin-empty">Selecione o CT, data e horário da aula</div></div>
+                            <!-- Botão confirmar tudo -->
+                            <div id="chamadaActions" style="display:none;margin-top:12px;">
+                                <button onclick="confirmarChamadaTodos()" style="width:100%;padding:12px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;border-radius:10px;font-weight:800;font-size:13px;cursor:pointer;letter-spacing:.3px;">
+                                    ✅ Confirmar Chamada — Registrar Treino de Todos
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- TAB: CAMPEONATO REMOVIDO -->
+            <div id="adm-campeonato" class="adm-tab" style="display:none!important;"></div>
+
+            <!-- TAB: SISTEMA (Manutenção + CTs + Check-in + Perfil) -->
+            <!-- placeholder needed --><div style="display:none"><!-- borrachinha_orphan_start -->
+                            <div class="admin-section-header">
+                                <div class="admin-section-title">🔵 Placar de Placar (por CT)</div>
+                                <button class="adm-refresh-btn" onclick="loadCampPlacarAdmin()">↻</button>
+                            </div>
+                            <div style="padding:12px;">
+                                <div class="ct-detail-row">
+                                    <div class="ct-detail-field">
+                                        <label>📅 Edição</label>
+                                        <select id="campPlacarEdicao" onchange="loadCampPlacarAdmin()">
+                                            <option value="">Selecione</option>
+                                        </select>
+                                    </div>
+                                    <div class="ct-detail-field">
+                                        <label>📍 CT</label>
+                                        <select id="campPlacarCT" onchange="onCampPlacarCTChange()">
+                                            <option value="">Selecione o CT</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="ct-detail-row">
+                                    <div class="ct-detail-field">
+                                        <label>🏷️ Categoria</label>
+                                        <select id="campPlacarCategoria" onchange="loadCampPlacarAdmin()">
+                                            <option value="Masculino">Masculino</option>
+                                            <option value="Feminino">Feminino</option>
+                                        <option value="Misto">Misto</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div style="margin:12px 0 8px;font-size:12px;font-weight:700;color:var(--text-2);">Selecione Edição + CT para gerenciar o placar daquele CT:</div>
+
+                                <!-- Adicionar aluno ao placar -->
+                                <div class="ct-detail-row" style="margin-bottom:10px;">
+                                    <div class="ct-detail-field" style="flex:2;">
+                                        <label>Adicionar Aluno</label>
+                                        <select id="campPlacarAddAluno">
+                                            <option value="">Selecione aluno</option>
+                                        </select>
+                                    </div>
+                                    <div class="ct-detail-field" style="flex:0 0 auto; align-self:flex-end;">
+                                        <button type="button" onclick="addAlunoPlacar()" style="padding:10px 16px;background:rgba(212,175,55,0.15);border:1px solid rgba(212,175,55,0.3);color:var(--gold);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">+ Adicionar</button>
+                                    </div>
+                                </div>
+
+                                <!-- Lista de participantes com inputs -->
+                                <div id="campPlacarRows" style="margin-bottom:12px;"></div>
+
+                                <div id="campPlacarMessage" style="margin:8px 0;"></div>
+                                <button class="ct-schedule-save" onclick="saveCampPlacar()" style="width:100%;padding:14px;font-size:14px;border-radius:12px;">🔵 Salvar Placar</button>
+                            </div>
+            </div><!-- borrachinha_orphan_end -->
+
+            <!-- TAB: SISTEMA (Manutenção + CTs + Check-in + Perfil) -->
+            <div id="adm-sistema" class="adm-tab">
+                <div class="admin-container">
+                    <div class="adm-page-title">
+                        <h2>Sistema & Manutenção</h2>
+                        <p>Saúde do sistema, configurações e perfil</p>
+                    </div>
+
+                    <!-- ── Sub-tab navigation ── -->
+                    <div class="sis-subtab-nav" id="sisStsNav">
+                        <button class="sis-subtab-btn active" id="sisBtnSistema"
+                            onclick="sisSwitchTab('sistema')">
+                            <span class="sis-stab-icon">🔧</span>Sistema
+                        </button>
+                        <button class="sis-subtab-btn" id="sisBtnAssinante"
+                            onclick="sisSwitchTab('assinante')"
+                            style="display:none;">
+                            <span class="sis-stab-icon">💳</span>Assinatura
+                        </button>
+                    </div>
+
+                    <!-- ════ SUB-TAB: SISTEMA (conteúdo original) ════ -->
+                    <div class="sis-subtab-panel active" id="sis-panel-sistema">
+
+                    <!-- AWS REKOGNITION -->
+                    <div id="awsConfigWrapper" style="margin-bottom:20px;display:none;">
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                            <span style="font-size:20px;">⚡</span>
+                            <div><div style="font-size:13px;font-weight:800;color:var(--adm-text-1);">AWS Rekognition</div>
+                            <div style="font-size:10px;color:var(--adm-text-3);">Reconhecimento facial preciso para check-in por foto</div></div>
+                        </div>
+                        <div id="awsConfigPanel" style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:12px;padding:14px;">
+                            <div style="text-align:center;color:var(--adm-text-3);font-size:12px;padding:8px;">Carregando...</div>
+                        </div>
+                    </div>
+                    <hr style="border:none;border-top:1px solid var(--adm-border);margin:0 0 20px;">
+
+                    <!-- ABOUT / VERSÃO -->
+                    <!-- ABOUT -->
+                    <div style="text-align:center;padding:16px 0 14px;border-bottom:1px solid var(--adm-border);margin-bottom:20px;">
+                        <div style="font-size:13px;font-weight:800;color:var(--adm-text-1);letter-spacing:.4px;">CTM Manager</div>
+                        <div style="font-size:11px;color:var(--adm-text-3);margin-top:5px;">Versão <strong id="ctm-about-version" style="color:var(--adm-text-2);">—</strong></div>
+                        <div style="font-size:10px;color:var(--adm-text-3);margin-top:4px;">© <span id="ctm-about-year">2025</span> IDESystems Tecnologia. Todos os direitos reservados.</div>
+                    </div>
+                    <script>(function(){
+                        var b=typeof _CTM_BUILD!=='undefined'?_CTM_BUILD:'—';
+                        var v=document.getElementById('ctm-about-version');
+                        var y=document.getElementById('ctm-about-year');
+                        if(v) v.textContent=b;
+                        if(y) y.textContent=new Date().getFullYear();
+                    })();</script>
+
+
+                    <!-- QR CODE CHECK-IN -->
+                    <div id="qrCodeSection" class="admin-section">
+                        <div class="admin-section-header">
+                            <div class="admin-section-title">📲 QR Code de Check-in</div>
+                            <button class="admin-refresh-btn" onclick="loadQRCodes()">↻</button>
+                        </div>
+                        <p style="font-size:11px;color:var(--adm-text-3);margin-bottom:12px;">Gere e imprima o QR Code do seu CT. O aluno escaneia e é redirecionado direto para o check-in.</p>
+                        <div id="qrCodesList" style="display:flex;flex-direction:column;gap:12px;"></div>
+                    </div>
+
+                    <!-- REDES DE BENEFÍCIO: Wellhub & TotalPass -->
+                    <div id="redesBeneficioSection" class="admin-section" style="text-align:center;padding:32px 20px;">
+                        <div style="font-size:36px;margin-bottom:14px;">🏗️</div>
+                        <div style="font-size:16px;font-weight:800;color:var(--adm-primary);margin-bottom:8px;">💪 Redes de Benefício</div>
+                        <div style="font-size:13px;color:var(--adm-text-2);margin-bottom:6px;">Em construção</div>
+                        <div style="font-size:12px;color:var(--adm-text-3);line-height:1.7;max-width:320px;margin:0 auto;">
+                            Em breve iremos integrar com<br>
+                            <strong style="color:#22c55e;">Wellhub (Gympass)</strong> e <strong style="color:#3b82f6;">TotalPass</strong>.<br>
+                            Os check-ins dos usuários dessas redes<br>serão registrados automaticamente.
+                        </div>
+                        <div style="margin-top:20px;display:flex;justify-content:center;gap:16px;">
+                            <div style="padding:8px 16px;border-radius:8px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);font-size:12px;color:#22c55e;font-weight:700;">🟢 Wellhub</div>
+                            <div style="padding:8px 16px;border-radius:8px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);font-size:12px;color:#3b82f6;font-weight:700;">🔵 TotalPass</div>
+                        </div>
+                    </div>
+
+                    <!-- card Pagamentos removido — acesso via aba Financeiro na navbar -->
+
+                    <!-- ── CONTRATOS DO ALUNO ─────────────────────────────────── -->
+                    <div class="admin-section" id="contratosAdminSection">
+                        <div class="admin-section-header">
+                            <div class="admin-section-title">📋 Contratos do Aluno</div>
+                        </div>
+                        <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:12px;">
+                            Personalize os termos que o aluno aceita no cadastro.<br>
+                            Os marcados como <strong style="color:#DC2626;">Obrigatório</strong> bloqueiam o cadastro se não aceitos.
+                        </div>
+                        <div id="adminContratosContainer">
+                            <div style="text-align:center;padding:20px;color:var(--adm-text-3);font-size:12px;">⏳ Carregando contratos...</div>
+                        </div>
+                    </div>
+
+                    <!-- SYSADMIN: Gerenciamento de Licenças (visível só para dono do SaaS) -->
+
+                    <div class="admin-section" id="sysAdminLicSection" style="display:none;">
+                        <div class="admin-section-header">
+                            <div class="admin-section-title">🔑 Licenças dos CTs <span class="admin-badge" id="licBadge" style="display:none;">0</span></div>
+                            <button class="admin-refresh-btn" onclick="loadLicencas()">↻</button>
+                        </div>
+                        <div style="padding:12px;">
+                            <!-- Expiry warning area -->
+                            <div id="licExpiryWarn" style="display:none;"></div>
+                            <!-- List of licenses -->
+                            <div id="licencasList"><div class="admin-empty">Carregando...</div></div>
+                            <!-- Add / Edit form -->
+                            <div class="lic-add-form" id="licAddForm" style="display:none;">
+                                <div style="font-size:12px;font-weight:800;color:var(--adm-text-1);margin-bottom:10px;" id="licFormTitle">+ Nova Licença</div>
+                                <div style="margin-bottom:8px;">
+                                    <div style="font-size:10px;color:var(--adm-text-3);font-weight:600;margin-bottom:4px;">Email do Administrador / Professor:</div>
+                                    <input type="email" id="licFormEmail" placeholder="professor@ct.com" style="width:100%;padding:9px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <div id="licAdminSuggest" style="margin-top:4px;display:flex;flex-wrap:wrap;gap:3px;"></div>
+                                </div>
+                                <div style="margin-bottom:10px;">
+                                    <div style="font-size:10px;color:var(--adm-text-3);font-weight:600;margin-bottom:6px;">Plano:</div>
+                                    <div style="display:flex;flex-wrap:wrap;gap:5px;">
+                                        <button class="lic-plan-btn" data-plano="starter"   onclick="selectLicPlano('starter',this)">🥋 Starter</button>
+                                        <button class="lic-plan-btn" data-plano="professor" onclick="selectLicPlano('professor',this)">📚 Professor</button>
+                                        <button class="lic-plan-btn active academia" data-plano="academia" onclick="selectLicPlano('academia',this)">🏆 Academia</button>
+                                        <button class="lic-plan-btn" data-plano="completo"  onclick="selectLicPlano('completo',this)">💎 Completo</button>
+                                    </div>
+                                    <div id="licPlanoModulos" style="margin-top:6px;font-size:10px;color:var(--adm-text-3);padding:6px 8px;background:rgba(201,162,58,0.03);border-radius:6px;border:1px solid var(--adm-border);"></div>
+                                </div>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                                    <div>
+                                        <div style="font-size:10px;color:var(--adm-text-3);font-weight:600;margin-bottom:3px;">Expira em:</div>
+                                        <input type="date" id="licFormExpiracao" style="width:100%;padding:8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    </div>
+                                    <div>
+                                        <div style="font-size:10px;color:var(--adm-text-3);font-weight:600;margin-bottom:3px;">Status:</div>
+                                        <select id="licFormAtivo" style="width:100%;padding:8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                            <option value="true">✅ Ativo</option>
+                                            <option value="false">🔴 Suspenso</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div style="margin-bottom:10px;">
+                                    <div style="font-size:10px;color:var(--adm-text-3);font-weight:600;margin-bottom:3px;">Observação (uso interno):</div>
+                                    <input type="text" id="licFormObs" placeholder="Ex: Pago até mar/2026 · Pix" style="width:100%;padding:8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                </div>
+                                <div style="display:flex;gap:6px;">
+                                    <button onclick="saveLicenca()" id="licSaveBtn" style="flex:1;padding:11px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:9px;font-weight:800;font-size:12px;cursor:pointer;">💾 Salvar Licença</button>
+                                    <button onclick="closeLicForm()" style="padding:11px 14px;background:var(--adm-bg-card);color:var(--adm-text-2);border:1px solid var(--adm-border);border-radius:9px;font-weight:700;font-size:12px;cursor:pointer;">Cancelar</button>
+                                </div>
+                                <div id="licSaveMsg" style="margin-top:6px;"></div>
+                            </div>
+                            <button onclick="openLicForm()" id="licAddBtn" style="width:100%;margin-top:8px;padding:11px;background:var(--adm-bg-elevated);color:var(--adm-primary);border:1px dashed rgba(201,162,58,0.25);border-radius:10px;font-weight:700;font-size:12px;cursor:pointer;">+ Nova Licença</button>
+                        </div>
+                    </div>
+
+                    <!-- Módulos do Aluno (visível para admin/professor) -->
+                    <div class="admin-section" id="adminModulosSection">
+                        <div class="admin-section-header">
+                            <div class="admin-section-title">🧩 Módulos do Aluno</div>
+                            <button class="admin-refresh-btn" onclick="loadModulesConfig()">↻</button>
+                        </div>
+                        <!-- Plan badge + info -->
+                        <div id="modulosPlanInfo" style="padding:10px 12px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;"></div>
+                        <div id="modulesToggleList" style="padding:12px;"><div class="admin-empty">Carregando...</div></div>
+                        <div id="modulesMsg" style="padding:0 12px 8px;"></div>
+                    </div>
+
+                    <!-- 🏢 Centros de Treinamento movidos para Painel Admin → Cronograma tab -->
+
+                    <!-- Modal: Cadastrar nova modalidade -->
 
                     <!-- Graduation Config per CT -->
                     <!-- Treinos Customizados -->
@@ -11775,58 +12732,9 @@
         <!-- end main -->
 
         <!-- STUDENT BOTTOM NAV -->
-        <div class="bnav" id="bottomNav">
-            <div class="bnav-inner">
-                <button class="bnav-btn active" id="bnavTreinoBtn" data-modtab="treino" onclick="switchTab('treino-tab', event)">
-                    <span class="bnav-icon" id="bnavTreinoIcon">🥋</span>
-                    <span class="bnav-label" id="bnavTreinoLabel">Treino</span>
-                </button>
-                <button class="bnav-btn" data-modtab="prepfisica" data-module="musculacao" onclick="switchTab('prepfisica-tab', event)">
-                    <span class="bnav-icon">💪</span>
-                    <span class="bnav-label">Prep. Física</span>
-                </button>
-                <button class="bnav-btn" data-modtab="ranking" onclick="switchTab('ranking-tab', event)">
-                    <span class="bnav-icon">🏆</span>
-                    <span class="bnav-label">Ranking</span>
-                </button>
-                <button class="bnav-btn" data-module="jogos" onclick="switchTab('quiz-tab', event)">
-                    <span class="bnav-icon">🎮</span>
-                    <span class="bnav-label">Jogos</span>
-                </button>
-                <button class="bnav-btn" data-module="perfil" onclick="switchTab('perfil', event)">
-                    <span class="bnav-icon">👤</span>
-                    <span class="bnav-label">Perfil</span>
-                </button>
-            </div>
-        </div>
 
 
 
-                <div class="bnav" id="adminNav" style="display:none;">
-            <div class="bnav-inner">
-                <button class="bnav-btn active" onclick="switchAdminTab('adm-painel', event)">
-                    <span class="bnav-icon">🏠</span><span class="bnav-label">Painel</span>
-                </button>
-                <button class="bnav-btn" onclick="switchAdminTab('adm-alunos', event)">
-                    <span class="bnav-icon">👥</span><span class="bnav-label">Alunos</span>
-                </button>
-                <button class="bnav-btn" onclick="switchAdminTab('adm-graduacoes', event)">
-                    <span class="bnav-icon">🎓</span><span class="bnav-label">Graduações</span>
-                </button>
-                <button class="bnav-btn" onclick="switchAdminTab('adm-presenca', event)">
-                    <span class="bnav-icon">📋</span><span class="bnav-label">Presença</span>
-                </button>
-                <button class="bnav-btn" onclick="switchAdminTab('adm-sistema', event)">
-                    <span class="bnav-icon">🔧</span><span class="bnav-label">Sistema</span>
-                </button>
-                <button class="bnav-btn" id="bnavFinanceiro" onclick="switchAdminTab('adm-financeiro', event)">
-                    <span class="bnav-icon">💰</span><span class="bnav-label">Financeiro</span>
-                </button>
-                <button class="bnav-btn" id="bnavSuperAdmin" onclick="switchAdminTab('adm-superadmin', event)" style="display:none;">
-                    <span class="bnav-icon">🔑</span><span class="bnav-label">Super</span>
-                </button>
-            </div>
-        </div>
 
     </div>
     <!-- end app -->
@@ -12124,6 +13032,22 @@
                             </select>
                         </div>
                     </div>
+                </div>
+
+                <!-- Treinos Base (Migração) -->
+                <div class="stu-section" id="stuTreinosBaseSection">
+                    <div class="stu-section-title">📦 Saldo de Treinos (Migração)</div>
+                    <div style="font-size:11px;color:var(--text-3);margin-bottom:12px;line-height:1.6;">
+                        Para alunos migrando de outro sistema. Os treinos informados aqui são <strong>somados</strong> aos treinos reais do CT Manager.
+                    </div>
+                    <div id="stuTreinosBaseGrid" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;">
+                        <!-- Preenchido dinamicamente por openStuModal() -->
+                    </div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <button onclick="adicionarLinhatreinoBase()" style="padding:7px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--adm-border);border-radius:8px;color:var(--adm-text-2);font-size:11px;font-weight:700;cursor:pointer;">➕ Adicionar modalidade</button>
+                        <button onclick="_salvarTreinosBaseComFeedback()" style="padding:7px 14px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);border-radius:8px;color:#4ade80;font-size:11px;font-weight:700;cursor:pointer;">💾 Salvar saldo</button>
+                    </div>
+                    <div id="stuTreinosBaseMsg" style="font-size:11px;margin-top:6px;min-height:16px;"></div>
                 </div>
 
                 <!-- Personal -->
@@ -13447,14 +14371,14 @@
                     labelFaixa: 'Faixa', labelGrau: 'Duan', labelGrauPlural: 'Duans',
                     maxGrausPorFaixa: null, simbolo: 'duan',
                     faixas: [
-                        { id:'Branca',       label:'Faixa Branca',                    emoji:'⬜', cor:'#f5f5f5', cssClass:'branca',  next:'Amarela',      minMeses: 3, ordemProgresso: 1 },
-                        { id:'Amarela',      label:'Faixa Amarela',                   emoji:'🟡', cor:'#EAB308', cssClass:'amarela', next:'Vermelha',     minMeses: 6, ordemProgresso: 2 },
-                        { id:'Vermelha',     label:'Faixa Vermelha',                  emoji:'🔴', cor:'#DC2626', cssClass:'vermelha',next:'Laranja',      minMeses: 6, ordemProgresso: 3 },
-                        { id:'Laranja',      label:'Faixa Laranja',                   emoji:'🟠', cor:'#EA580C', cssClass:'laranja', next:'Verde',        minMeses: 6, ordemProgresso: 4 },
-                        { id:'Verde',        label:'Faixa Verde — Instrutor',         emoji:'🟢', cor:'#16A34A', cssClass:'verde',   next:'Roxa',         minMeses:12, ordemProgresso: 5 },
-                        { id:'Roxa',         label:'Faixa Roxa — Instrutor',          emoji:'🟣', cor:'#7C3AED', cssClass:'roxa',    next:'Marrom',       minMeses:12, ordemProgresso: 6 },
-                        { id:'Marrom',       label:'Faixa Marrom — Instrutor',        emoji:'🟤', cor:'#92400E', cssClass:'marrom',  next:'Preta',        minMeses:12, ordemProgresso: 7 },
-                        { id:'Preta', label:'Faixa Preta (Duan 1°-10°)', emoji:'⚫', cor:'#1a1a1a', cssClass:'preta', next:null, minMeses:12, maxGrau:10, ordemProgresso:8 },
+                        { id:'Branca',  label:'Faixa Branca',            emoji:'⬜', cor:'#f5f5f5', cssClass:'branca',  next:'Amarela', minMeses: 3, ordemProgresso:1 },
+                        { id:'Amarela', label:'Faixa Amarela',           emoji:'🟡', cor:'#EAB308', cssClass:'amarela', next:'Laranja', minMeses: 6, ordemProgresso:2 },
+                        { id:'Laranja', label:'Faixa Laranja',           emoji:'🟠', cor:'#EA580C', cssClass:'laranja', next:'Verde',   minMeses: 6, ordemProgresso:3 },
+                        { id:'Verde',   label:'Faixa Verde — Instrutor', emoji:'🟢', cor:'#16A34A', cssClass:'verde',   next:'Azul',    minMeses:12, ordemProgresso:4 },
+                        { id:'Azul',    label:'Faixa Azul — Instrutor',  emoji:'🔵', cor:'#1D4ED8', cssClass:'azul',    next:'Roxa',    minMeses:12, ordemProgresso:5 },
+                        { id:'Roxa',    label:'Faixa Roxa — Instrutor',  emoji:'🟣', cor:'#7C3AED', cssClass:'roxa',    next:'Marrom',  minMeses:12, ordemProgresso:6 },
+                        { id:'Marrom',  label:'Faixa Marrom — Instrutor',emoji:'🟤', cor:'#92400E', cssClass:'marrom',  next:'Preta',   minMeses:12, ordemProgresso:7 },
+                        { id:'Preta',   label:'Faixa Preta (Duan 1°-10°)',emoji:'⚫', cor:'#1a1a1a', cssClass:'preta',  next:null,      minMeses:12, maxGrau:10, ordemProgresso:8 },
                     ],
                 },
                 nomenclatura: {
@@ -13462,7 +14386,7 @@
                     aluno: 'Discípulo', academia: 'Kwoon', faixa: 'Faixa', faixas: 'Faixas',
                     grau: 'Duan', graus: 'Duans', confirmarBtn: '🐉 Treinei',
                     evolucaoTitulo: 'Minha Progressão', roadmapTitulo: '🐉 Kung Fu',
-                    roadmapSub: 'Da Faixa Branca ao 10º Duan — Sigung',
+                    roadmapSub: 'Da Faixa Branca à Faixa Preta 10º Duan — Sigung',
                 },
                 ui: { mostrarFaixa:true, mostrarGraus:false, mostrarPrajied:false, mostrarRoadmap:true, mostrarFrequencia:true, mostrarCriterios:false, roadmapTipo:'cintura', iconeEvo:'🐉' },
             },
@@ -13865,6 +14789,36 @@
                            (parseInt(b.ordemProgresso) || parseInt(b.ordem) || 999);
                 });
                 return fs;
+            },
+
+            /** Retorna faixas filtradas pela idade do aluno (idadeMin/idadeMax) */
+            getFaixasPorIdade: function(modId, nascimento) {
+                var todas = this.getFaixas(modId);
+                if (!todas.length) return todas;
+                // Verifica se há alguma faixa com restrição de idade
+                var temFiltro = todas.some(function(f){ return (f.idadeMin > 0) || (f.idadeMax > 0); });
+                if (!temFiltro) return todas;
+                // Calcula idade
+                var idade = null;
+                try {
+                    var nasc = nascimento instanceof Date ? nascimento : new Date(
+                        typeof nascimento === 'string' && nascimento.indexOf('/') > -1
+                            ? nascimento.split('/').reverse().join('-')
+                            : nascimento
+                    );
+                    if (!isNaN(nasc.getTime())) {
+                        var hoje = new Date();
+                        idade = hoje.getFullYear() - nasc.getFullYear();
+                        var m = hoje.getMonth() - nasc.getMonth();
+                        if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+                    }
+                } catch(e) {}
+                if (idade === null) return todas;
+                return todas.filter(function(f) {
+                    var minOk = !f.idadeMin || idade >= f.idadeMin;
+                    var maxOk = !f.idadeMax || idade <= f.idadeMax;
+                    return minOk && maxOk;
+                });
             },
 
             /** Retorna um valor de nomenclatura — null se não configurado */
@@ -16818,6 +17772,10 @@
                             else titleEl.textContent = ModalidadeUI.ctSectionLabel();
                         }
 
+                        // CTs liberados para este aluno (col AC)
+                        var _ctsLiberados = (currentUser.ctsliberados || '')
+                            .split(',').map(function(x){ return x.trim(); }).filter(Boolean);
+
                         data.cts.forEach(ct => {
                             const name = typeof ct === 'string' ? ct : ct.name || ct.toString();
 
@@ -16825,49 +17783,56 @@
                             if (isKid && userCT && name !== userCT) return;
 
                             // Admin/Professor: mostra apenas os CTs onde dá aula
-                            // Se ctsProfessor não estiver configurado, mostra todos (fallback seguro)
                             if (isAdm) {
                                 var profCTsList = (currentUser.ctsProfessor || '').split(',').map(function(x){ return x.trim(); }).filter(Boolean);
                                 if (profCTsList.length > 0 && profCTsList.indexOf(name) === -1) return;
                             }
 
-                            var schedule = ctSchedules[name];
-                            // Admin: sem filtro por dia (pode dar aula em qualquer horário)
-                            // Kids/Aluno: filtra por dia de treino E por janela de horário
-                            if (!isAdm && schedule) {
-                                var temConfig = Object.values(schedule).some(function(v) { return v === true; });
-                                if (temConfig && !schedule[hoje]) return;
-                            }
+                            // Aluno normal:
+                            // CT do próprio perfil → SEMPRE aparece (sem filtro de janela)
+                            var ehCTProprioAluno = (userCT && name === userCT);
 
-                            // Filtro de horário: para alunos, só mostra CT se tiver
-                            // aula hoje com janela de check-in aberta ou abrindo em até 2h
+                            // CT liberado explicitamente para este aluno → aparece se tiver aula hoje
+                            var ehCTLiberado = _ctsLiberados.length > 0 && _ctsLiberados.indexOf(name) !== -1;
+
+                            // Outros CTs → só aparecem se tiverem janela de check-in ativa
                             if (!isAdm && !isKid) {
-                                var ctObj = data.cts.find(function(c) {
-                                    return typeof c === 'object' && (c.name || '') === name;
-                                });
-                                if (ctObj) {
-                                    var hpdCT = ctObj.horariosPorDia || {};
-                                    // Usa _getHorariosHoje com filtro de modalidade ativa
-                                    var horCT = _getHorariosHoje(hpdCT, hoje, ctObj.horarios || '', activeModality || '');
-                                    if (horCT.indexOf('1899') > -1 || horCT.indexOf('GMT') > -1) {
-                                        var mx = horCT.match(/(\d{1,2}:\d{2})/g);
-                                        horCT = mx ? mx.join(',') : '';
-                                    }
-                                    if (horCT) {
-                                        var nowMin = new Date().getHours() * 60 + new Date().getMinutes();
-                                        var temJanelaAtiva = false;
-                                        horCT.split(',').forEach(function(t) {
-                                            t = t.trim();
-                                            var pm = t.match(/^(\d{1,2}):(\d{2})$/);
-                                            if (!pm) return;
-                                            var startMin    = parseInt(pm[1]) * 60 + parseInt(pm[2]);
-                                            var alertaMin   = startMin - 120;
-                                            var checkinFim  = Math.min(startMin + 269, 1439);
-                                            if (nowMin >= alertaMin && nowMin <= checkinFim) {
-                                                temJanelaAtiva = true;
-                                            }
-                                        });
-                                        if (!temJanelaAtiva) return;
+                                var schedule = ctSchedules[name];
+                                // Filtra por dia da semana (col C-I da planilha CTs)
+                                if (schedule) {
+                                    var temConfig = Object.values(schedule).some(function(v){ return v === true; });
+                                    if (temConfig && !schedule[hoje]) return;
+                                }
+
+                                if (!ehCTProprioAluno) {
+                                    // Outros CTs: exige janela de check-in ativa
+                                    var ctObj = data.cts.find(function(c){
+                                        return typeof c === 'object' && (c.name || '') === name;
+                                    });
+                                    if (ctObj) {
+                                        var hpdCT = ctObj.horariosPorDia || {};
+                                        var horCT = _getHorariosHoje(hpdCT, hoje, ctObj.horarios || '', activeModality || '');
+                                        if (horCT.indexOf('1899') > -1 || horCT.indexOf('GMT') > -1) {
+                                            var mx = horCT.match(/(\d{1,2}:\d{2})/g);
+                                            horCT = mx ? mx.join(',') : '';
+                                        }
+                                        if (horCT) {
+                                            var nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+                                            var temJanelaAtiva = false;
+                                            horCT.split(',').forEach(function(t) {
+                                                t = t.trim();
+                                                var pm = t.match(/^(\d{1,2}):(\d{2})$/);
+                                                if (!pm) return;
+                                                var startMin = parseInt(pm[1]) * 60 + parseInt(pm[2]);
+                                                var _delay   = (ctObj && ctObj.checkinMinutos !== undefined) ? parseInt(ctObj.checkinMinutos) : 50;
+                                                var alertaMin   = startMin - 120;
+                                                var checkinFim  = Math.min(startMin + _delay + 219, 1439);
+                                                if (nowMin >= alertaMin && nowMin <= checkinFim) {
+                                                    temJanelaAtiva = true;
+                                                }
+                                            });
+                                            if (!temJanelaAtiva) return;
+                                        }
                                     }
                                 }
                             }
@@ -17284,7 +18249,7 @@
                             label: t,
                             startMin: classeStart,
                             endMin: classeStart + 60,                        // aula dura 60min — sobrescrito se fim disponível
-                            checkinOpen: Math.min(classeStart + 50, 1439),   // check-in abre 50min após início
+                            checkinOpen: Math.min(classeStart + ((ct && ct.checkinMinutos !== undefined) ? parseInt(ct.checkinMinutos) : 50), 1439),
                             checkinClose: Math.min(classeStart + 269, 1439), // check-in fecha 4h29 após início
                             ct: ctName
                         };
@@ -17491,8 +18456,9 @@
                 var h = parseInt(parts[1]);
                 var m = parseInt(parts[2]);
                 var classeStart = h * 60 + m;
-                var startMin = Math.min(classeStart + 50, 1439);  // check-in abre 50min após início
-                var endMin   = Math.min(classeStart + 269, 1439); // fecha 4h29 após início
+                var _delay   = (ct && ct.checkinMinutos !== undefined) ? parseInt(ct.checkinMinutos) : 50;
+                var startMin = Math.min(classeStart + _delay, 1439);               // check-in abre após delay configurado
+                var endMin   = Math.min(classeStart + _delay + 219, 1439);         // fecha 3h39 após abertura
                 windows.push({ start: startMin, end: endMin, label: t, classeStart: classeStart });
             }
 
@@ -17522,7 +18488,8 @@
 
             var msg = '⚠️ Fora do horário de check-in.';
             if (proximaHoje) {
-                msg += '<br>Check-in libera às ' + formatMinutes(proximaHoje.start) + ' (50min após início da aula das ' + proximaHoje.label + ')';
+                var _delayMsg = (ct && ct.checkinMinutos !== undefined) ? parseInt(ct.checkinMinutos) : 50;
+            msg += '<br>Check-in libera às ' + formatMinutes(proximaHoje.start) + ' (' + _delayMsg + 'min após início da aula das ' + proximaHoje.label + ')';
             } else {
                 msg += '<br>Janelas de hoje já encerraram.';
             }
@@ -31284,18 +32251,18 @@
                     : (data.bloqueado ? 'Acesso bloqueado — entre em contato com o suporte' : '');
             }
 
-            // Carrega planos imediatamente — sem exigir login antes
-            _trialCarregarPlanos();
             // Pré-preenche e-mail se disponível
             var emailSalvo = localStorage.getItem('lastEmail') || '';
             var emailEl = document.getElementById('trialLoginEmail');
             if (emailEl && emailSalvo) emailEl.value = emailSalvo;
-            // Se já logado, preenche também a senha (não — mas podemos marcar)
             if (typeof currentUser !== 'undefined' && currentUser && currentUser.email) {
                 if (emailEl) emailEl.value = currentUser.email;
             }
 
+            // Exibe overlay PRIMEIRO, depois carrega planos (overlay precisa estar visível)
             overlay.style.display = 'block';
+            // Aguarda render do DOM antes de popular a lista de planos
+            setTimeout(function() { _trialCarregarPlanos(); }, 100);
             ['appScreen','adminScreen','loginScreen','bottomNav','adminNav'].forEach(function(id){
                 var el = document.getElementById(id); if (el) el.style.display = 'none';
             });
@@ -31359,7 +32326,8 @@
 
             try {
                 // Fetch direto sem auth (getPlanos é público)
-                var _ctmIdParaPlanos = (typeof _currentCtmId !== 'undefined' && _currentCtmId) ? _currentCtmId : '';
+                var _ctmIdParaPlanos = window._ctmIdGlobal || (typeof _currentCtmId !== 'undefined' ? _currentCtmId : '') || '';
+                console.log('[trialCarregarPlanos] ctmId=', _ctmIdParaPlanos);
                 // GAS exige Content-Type + redirect:follow para retornar JSON corretamente
                 var resp = await fetch(SCRIPT_URL, {
                     method:   'POST',
@@ -31383,29 +32351,30 @@
                 console.log('[CTM] getPlanos response:', r, 'planos:', planos.length);
 
                 if (!planos.length) {
-                    listEl.innerHTML =
-                        '<div style="text-align:center;padding:24px;color:rgba(255,255,255,0.5);font-size:13px;line-height:1.6;">' +
-                        '⚠️ Nenhum plano disponível no momento.<br>' +
-                        '<span style="font-size:11px;opacity:.7;">Entre em contato com o suporte para ativar seu acesso imediatamente.</span>' +
-                        '<br><br><a href="https://wa.me/5511984760689?text=Preciso+ativar+meu+acesso+CTM+Manager+urgente" target="_blank" ' +
-                        'style="display:inline-block;padding:12px 20px;background:#25D366;color:#fff;border-radius:10px;font-weight:700;font-size:13px;text-decoration:none;">🟢 Falar com suporte agora</a>' +
-                        '</div>';
-                    return;
+                    // Fallback: exibe planos hardcoded se backend não retornou
+                    planos = [
+                        { id: 'basico',       nome: 'CT Manager Básico',   valor: 59.9,  frequencia: 'mensal', descricao: 'Até 100 alunos · 1 Modalidade' },
+                        { id: 'profissional', nome: 'CT Manager Pro',      valor: 69.9,  frequencia: 'mensal', descricao: 'Até 200 alunos · Cobrança · PIX+WhatsApp' },
+                        { id: 'premium',      nome: 'CT Manager Premium',  valor: 99.9,  frequencia: 'mensal', descricao: 'Até 500 alunos · 5 Modalidades · 3 Filiais' }
+                    ];
                 }
 
                 // Renderiza cartões de planos + form de cartão/pix
+                // Bug fix: não recriar id="trialPlanosList" dentro de si mesmo
                 var html = '<div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:14px;text-align:center;">Escolha o plano para reativar o acesso</div>';
-                html += '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;" id="trialPlanosList">';
-                planos.forEach(function(p, i) {
-                    var pid   = p.id || p.id_plano || '';
-                    var freq  = {mensal:'/ mês', trimestral:'/ trim.', semestral:'/ sem.', anual:'/ ano'}[p.frequencia] || '/ mês';
+                html += '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">';
+                planos.forEach(function(p) {
+                    var pid  = p.id || p.id_plano || '';
+                    var nome = p.nome || pid;
+                    var val  = p.valor || p.preco || 0;
+                    var freq = {mensal:'/ mês', trimestral:'/ trim.', semestral:'/ sem.', anual:'/ ano'}[p.frequencia] || '/ mês';
                     html +=
-                        '<div data-planoid="'+pid+'" onclick="_trialSelecionarPlano(this)" ' +
+                        '<div data-planoid="'+escapeHtml(pid)+'" onclick="_trialSelecionarPlano(this)" ' +
                         'style="padding:14px 16px;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.08);border-radius:12px;cursor:pointer;transition:all .15s;" ' +
                         'class="trial-plan-card">' +
                         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-                        '<span style="font-size:13px;font-weight:700;color:#fff;">'+escapeHtml(p.nome)+'</span>' +
-                        '<span style="font-size:16px;font-weight:800;color:#C9A23A;">' + (p.valor ? 'R$ '+parseFloat(p.valor).toFixed(2) : '') + ' <span style="font-size:10px;font-weight:500;color:rgba(255,255,255,0.4);">'+freq+'</span></span>' +
+                        '<span style="font-size:13px;font-weight:700;color:#fff;">'+escapeHtml(nome)+'</span>' +
+                        (val ? '<span style="font-size:16px;font-weight:800;color:#C9A23A;">R$ '+parseFloat(val).toFixed(2)+' <span style="font-size:10px;font-weight:500;color:rgba(255,255,255,0.4);">'+freq+'</span></span>' : '') +
                         '</div>' +
                         (p.descricao ? '<div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:4px;">'+escapeHtml(p.descricao)+'</div>' : '') +
                         '</div>';
@@ -32897,17 +33866,37 @@
             setTimeout(_saModAtualizarContador, 10);
         }
 
+        // Extrai prefixo da modalidade — variantes _kids/_feminino não contam separado
+        function _getPrefixoMod(modId) {
+            var id = (modId || '').toString().trim().toLowerCase();
+            var sufixos = ['_kids','_feminino','_feminina','_infantil','_adults','_adult','_junior','_juvenil','_senior'];
+            for (var s = 0; s < sufixos.length; s++) {
+                if (id.endsWith(sufixos[s])) return id.slice(0, id.length - sufixos[s].length);
+            }
+            return id;
+        }
+
+        // Conta prefixos únicos nos checkboxes marcados
+        function _contarPrefixosUnicos() {
+            var cbs = document.querySelectorAll('#saModCheckboxes input[type=checkbox]:checked');
+            var prefixos = {};
+            cbs.forEach(function(c) {
+                var p = _getPrefixoMod(c.value || c.dataset.modId || c.id || '');
+                prefixos[p] = true;
+            });
+            return Object.keys(prefixos).length;
+        }
+
         function _saModOnCheck(cb, cor, corRGB) {
             var lim    = window._saModLimitesAtual || { modalidades: 99 };
             var maxMod = lim.modalidades || 99;
 
             if (cb.checked && maxMod < 99) {
-                // Conta quantas já estão marcadas (excluindo esta)
-                var marcadas = document.querySelectorAll('#saModCheckboxes input[type=checkbox]:checked').length;
-                if (marcadas > maxMod) {
-                    // Reverte e avisa
+                // Conta prefixos únicos já marcados (variantes não contam separado)
+                var uniqueCount = _contarPrefixosUnicos();
+                if (uniqueCount > maxMod) {
                     cb.checked = false;
-                    _saModMsg('⚠️ Limite do plano: máximo ' + maxMod + ' modalidade(s). Faça upgrade para liberar mais.', 'error');
+                    _saModMsg('⚠️ Limite do plano: máximo ' + maxMod + ' modalidade(s) principal(is). Variantes (Kids/Feminino) não contam separado. Faça upgrade para liberar mais.', 'error');
                     return;
                 }
             }
@@ -32917,20 +33906,26 @@
             lbl.style.background  = cb.checked ? 'rgba(' + corRGB + ',0.07)' : 'var(--adm-bg-card)';
             lbl.style.borderColor = cb.checked ? cor : 'var(--adm-border)';
 
-            // Atualiza contador
             _saModAtualizarContador();
         }
 
         function _saModAtualizarContador() {
             var lim    = window._saModLimitesAtual || { modalidades: 99 };
             var maxMod = lim.modalidades || 99;
-            var marcadas = document.querySelectorAll('#saModCheckboxes input[type=checkbox]:checked').length;
+            var marcadas  = document.querySelectorAll('#saModCheckboxes input[type=checkbox]:checked').length;
+            var unicas    = _contarPrefixosUnicos(); // conta apenas prefixos únicos
             var ctr = document.getElementById('saModContador');
             if (!ctr) return;
-            if (maxMod >= 99) { ctr.textContent = marcadas + ' selecionada(s)'; ctr.style.color = 'var(--adm-text-3)'; return; }
-            var restam = maxMod - marcadas;
-            ctr.textContent = marcadas + '/' + maxMod + ' modalidade(s)' + (restam > 0 ? ' · ' + restam + ' disponível(is)' : ' · LIMITE ATINGIDO');
-            ctr.style.color = marcadas >= maxMod ? '#f87171' : (marcadas === maxMod - 1 ? '#fbbf24' : 'var(--adm-text-3)');
+            if (maxMod >= 99) {
+                ctr.textContent = marcadas + ' selecionada(s) · ' + unicas + ' modalidade(s) principal(is)';
+                ctr.style.color = 'var(--adm-text-3)';
+                return;
+            }
+            var restam = maxMod - unicas;
+            ctr.textContent = unicas + '/' + maxMod + ' principal(is)' +
+                              (marcadas > unicas ? ' (' + marcadas + ' com variantes)' : '') +
+                              (restam > 0 ? ' · ' + restam + ' disponível(is)' : ' · LIMITE ATINGIDO');
+            ctr.style.color = unicas >= maxMod ? '#f87171' : (unicas === maxMod - 1 ? '#fbbf24' : 'var(--adm-text-3)');
         }
 
         // ── Salva contrato ──────────────────────────────────────
@@ -37978,6 +38973,7 @@
         var ctScheduleCache = {};
         var _ctAdminData    = [];   // dados completos dos CTs
         var _ctActiveName   = '';   // CT selecionado na aba
+        window._ctActiveName = _ctActiveName; // exposto globalmente para o botão do header
         var _ctActiveModId  = {};   // { ctName: modId } — sub-aba ativa por CT
 
         // ── Graduação preview para nova modalidade ──
@@ -38001,6 +38997,103 @@
                 lbl.style.borderColor = isActive ? 'var(--accent,#C9A23A)' : 'var(--adm-border)';
                 lbl.style.color       = isActive ? 'var(--adm-text-1)' : 'var(--adm-text-2)';
             });
+        }
+
+
+        // ── Seletor de modalidade para adicionar ao CT ────────────────────────────
+        async function openAddModParaCT(encCt) {
+            var ctName = decodeURIComponent(encCt);
+
+            // Busca modalidades disponíveis no contrato deste cliente
+            var catalog = [];
+            try {
+                var res = await secureFetch('getModalidadesCT', { ct: ctName });
+                if (res && res.modalidades && res.modalidades.length > 0) {
+                    catalog = res.modalidades;
+                } else {
+                    catalog = MODALIDADES_CATALOG || [];
+                }
+            } catch(e) {
+                catalog = MODALIDADES_CATALOG || [];
+            }
+
+            // Modalidades já adicionadas neste CT
+            var jaAdicionadas = (_ctModsSelected[ctName] || []).map(function(m){ return m.id; });
+
+            // Filtra: só mostra as que ainda não estão no CT
+            var disponiveis = catalog.filter(function(m){
+                return jaAdicionadas.indexOf(m.id) === -1;
+            });
+
+            // Remove overlay anterior se existir
+            var old = document.getElementById('addModCTOverlay');
+            if (old) old.remove();
+
+            var overlay = document.createElement('div');
+            overlay.id = 'addModCTOverlay';
+            overlay.style.cssText = 'position:fixed;inset:0;z-index:10060;background:rgba(0,0,0,0.88);display:flex;align-items:flex-end;justify-content:center;';
+            overlay.onclick = function(e){ if(e.target===overlay) overlay.remove(); };
+
+            var modal = document.createElement('div');
+            modal.style.cssText = 'background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:18px 18px 0 0;width:100%;max-width:520px;max-height:75vh;display:flex;flex-direction:column;overflow:hidden;';
+
+            // Header
+            var hdr = document.createElement('div');
+            hdr.style.cssText = 'padding:14px 16px;border-bottom:1px solid var(--adm-border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;';
+            hdr.innerHTML = '<div style="font-size:14px;font-weight:800;color:var(--adm-text-1);">➕ Adicionar Modalidade — <span style="color:var(--adm-primary);">' + escapeHtml(ctName) + '</span></div>' +
+                '<button onclick="document.getElementById(&quot;addModCTOverlay&quot;).remove()" style="background:none;border:1px solid var(--adm-border);border-radius:6px;color:var(--adm-text-3);padding:4px 10px;cursor:pointer;font-size:12px;">✕</button>';
+            modal.appendChild(hdr);
+
+            // Body
+            var body = document.createElement('div');
+            body.style.cssText = 'flex:1;overflow-y:auto;padding:12px 16px;';
+
+            if (disponiveis.length === 0) {
+                body.innerHTML = '<div style="text-align:center;padding:24px;color:var(--adm-text-3);font-size:12px;">✅ Todas as modalidades do contrato já estão adicionadas neste CT.</div>';
+            } else {
+                var info = document.createElement('p');
+                info.style.cssText = 'font-size:11px;color:var(--adm-text-3);margin-bottom:12px;line-height:1.6;';
+                info.textContent = 'Selecione uma modalidade do seu contrato para adicionar ao CT ' + ctName + ':';
+                body.appendChild(info);
+
+                var grid = document.createElement('div');
+                grid.style.cssText = 'display:flex;flex-direction:column;gap:8px;';
+
+                disponiveis.forEach(function(mod) {
+                    var btn = document.createElement('button');
+                    btn.style.cssText = 'display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--adm-bg-elevated);border:1.5px solid var(--adm-border);border-radius:10px;cursor:pointer;text-align:left;width:100%;transition:all 0.15s;';
+                    btn.onmouseover = function(){ this.style.borderColor = mod.cor || 'var(--adm-primary)'; this.style.background = 'rgba(' + (mod.corRGB||'201,162,58') + ',0.06)'; };
+                    btn.onmouseout  = function(){ this.style.borderColor = 'var(--adm-border)'; this.style.background = 'var(--adm-bg-elevated)'; };
+                    btn.innerHTML =
+                        '<span style="font-size:24px;flex-shrink:0;">' + escapeHtml(mod.icon || '🥋') + '</span>' +
+                        '<div style="flex:1;">' +
+                            '<div style="font-size:13px;font-weight:700;color:var(--adm-text-1);">' + escapeHtml(mod.nome) + '</div>' +
+                            '<div style="font-size:10px;color:var(--adm-text-3);">' + escapeHtml(mod.desc || mod.gradTipo || '') + '</div>' +
+                        '</div>' +
+                        '<span style="font-size:18px;color:var(--adm-text-3);">›</span>';
+
+                    btn.onclick = function() {
+                        overlay.remove();
+                        _adicionarModAoCT(ctName, mod);
+                    };
+                    grid.appendChild(btn);
+                });
+                body.appendChild(grid);
+            }
+            modal.appendChild(body);
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+        }
+
+        // Adiciona a modalidade selecionada ao CT e re-renderiza
+        function _adicionarModAoCT(ctName, mod) {
+            if (!_ctModsSelected[ctName]) _ctModsSelected[ctName] = [];
+            // Verifica se já existe
+            var jaExiste = _ctModsSelected[ctName].some(function(m){ return m.id === mod.id; });
+            if (jaExiste) return;
+            _ctModsSelected[ctName].push(mod);
+            // Re-renderiza o card do CT com a nova modalidade ativa
+            renderCTContent(ctName, mod.id);
         }
 
         function openNewModalidadeModal() {
@@ -38195,6 +39288,7 @@
                 btn.textContent = '📍 ' + name;
                 btn.onclick = function() {
                     _ctActiveName = name;
+                    window._ctActiveName = name; // sync global para botao header
                     document.querySelectorAll('.ct-admin-tab').forEach(function(b){ b.classList.remove('active'); });
                     btn.classList.add('active');
                     renderCTContent(name);
@@ -38209,7 +39303,7 @@
            • Cada aba tem cor própria, painel isolado, dados independentes
            • switchCTModTabV3 garante hide/show real (não só CSS class)
         ───────────────────────────────────────────────────────── */
-        function renderCTContent(ctName) {
+        function renderCTContent(ctName, _forceActiveModId) {
             var contentEl = document.getElementById('adminCTContent');
             if (!contentEl) return;
 
@@ -38245,7 +39339,8 @@
             if (!_ctActiveModId[ctName] || !ctMods.find(function(m){ return m.id === _ctActiveModId[ctName]; })) {
                 _ctActiveModId[ctName] = ctMods.length > 0 ? ctMods[0].id : '';
             }
-            var activeModId = _ctActiveModId[ctName];
+            var activeModId = _forceActiveModId || _ctActiveModId[ctName];
+            if (_forceActiveModId) _ctActiveModId[ctName] = _forceActiveModId;
             var safeCtEnc   = encodeURIComponent(ctName);
 
             // ── HTML ─────────────────────────────────────────────────────
@@ -38281,7 +39376,7 @@
                 html += '<button class="ct-mod-tab-v3-del" title="Remover aba" onclick="event.stopPropagation();removeCTModTab('+safeQ+',\''+mod.id+'\')">✕</button>';
                 html += '</button>';
             });
-            html += '<button class="ct-mod-tab-add" onclick="openNewModalidadeModal()">＋ Nova</button>';
+            html += '<button class="ct-mod-tab-add" onclick="openAddModParaCT(\'' + safeCtEnc + '\')">＋ Nova</button>';
             html += '</div>';
 
             // ── Painéis (um por modalidade, todos no DOM, só 1 visível) ──
@@ -38306,6 +39401,17 @@
                 // ── Seção 1: Horários por dia ──
                 html += '<div class="ct-mod-section-label">📅 Grade Horária</div>';
                 html += _renderDayRows(ctName, mod.id, schedule, modHpd);
+
+                // ── Check-in Minutos — configurável por CT ──
+                var _cmVal = (typeof ctObj === 'object' && ctObj.checkinMinutos !== undefined) ? ctObj.checkinMinutos : 50;
+                var _cmId  = 'ctCheckinMin_' + encodeURIComponent(ctName);
+                html += '<div style="margin-top:14px;background:rgba(255,255,255,0.03);border:1px solid var(--adm-border);border-radius:10px;padding:12px;">';
+                html += '<div style="font-size:10px;font-weight:700;color:var(--adm-text-3);margin-bottom:8px;">⏱️ TEMPO PARA CONFIRMAR PRESENÇA</div>';
+                html += '<div style="display:flex;align-items:center;gap:10px;">';
+                html += '<input type="number" id="'+_cmId+'" value="'+_cmVal+'" min="0" max="180" step="5" ';
+                html += 'style="width:70px;padding:8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:14px;font-weight:700;text-align:center;">';
+                html += '<div style="font-size:11px;color:var(--adm-text-3);">minutos após o início da aula<br><span style="font-size:10px;opacity:0.6;">Padrão: 50 min · Mín: 0 · Máx: 180</span></div>';
+                html += '</div></div>';
 
                 // ── Botão salvar grade horária ──
                 html += '<div style="margin-top:14px;">';
@@ -38362,24 +39468,14 @@
             var ctName = decodeURIComponent(encCt);
             var selected = _ctModsSelected[ctName] || [];
 
-            // ── Busca modalidades do contrato deste CT via LICENCIADOS ────
-            // Isso garante que só aparecem as modalidades contratadas
-            var catalog = [];
+            // Usa catálogo global de modalidades já carregado
+            var catalog = MODALIDADES_CATALOG || [];
             try {
-                var res = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({ action: 'getModalidadesCT', ct: ctName })
-                });
-                var data = await res.json();
-                if (data && data.modalidades && data.modalidades.length > 0) {
-                    catalog = data.modalidades;
-                } else {
-                    // Fallback: usa catálogo global (SuperAdmin vê tudo)
-                    catalog = MODALIDADES_CATALOG || [];
+                var _res = await secureFetch('getModalidades', { ct: ctName });
+                if (_res && _res.modalidades && _res.modalidades.length > 0) {
+                    catalog = _res.modalidades;
                 }
-            } catch(e) {
-                catalog = MODALIDADES_CATALOG || [];
-            }
+            } catch(e) {}
 
             var overlay = document.createElement('div');
             overlay.id = 'ctModModalOverlay';
@@ -38932,14 +40028,19 @@
             // 2. Envia
             try {
                 var token = getSessionToken();
+                // Lê checkinMinutos do input do painel
+                var _cmEl = document.getElementById('ctCheckinMin_' + encodeURIComponent(ctName));
+                var _cmVal = _cmEl ? (parseInt(_cmEl.value) || 50) : 50;
+
                 var payload = JSON.stringify({
-                    action:   'saveCTDetails',
-                    ctName:   ctName,
-                    modId:    activeModId,
-                    modHpd:   JSON.stringify(modData),
-                    clearMod: Object.keys(modData).length === 0 ? '1' : '0',
-                    token:    token,
-                    _origin:  window.location.href.split('?')[0]
+                    action:          'saveCTDetails',
+                    ctName:          ctName,
+                    modId:           activeModId,
+                    modHpd:          JSON.stringify(modData),
+                    clearMod:        Object.keys(modData).length === 0 ? '1' : '0',
+                    checkinMinutos:  _cmVal,
+                    token:           token,
+                    _origin:         window.location.href.split('?')[0]
                 });
 
                 var resp = await fetch(SCRIPT_URL, { method: 'POST', body: payload });
@@ -38950,6 +40051,19 @@
                 if (r && r.success) {
                     var badge = document.getElementById('ctStatusBadge');
                     if (badge) { badge.textContent='salvo ✓'; badge.className='ct-schedule-status saved'; }
+                    // ── Atualiza allCTs em memória com o novo checkinMinutos ──
+                    if (typeof allCTs !== 'undefined' && allCTs) {
+                        var _ctIdx = allCTs.findIndex(function(c){ return (c.name || c) === ctName; });
+                        if (_ctIdx >= 0 && typeof allCTs[_ctIdx] === 'object') {
+                            allCTs[_ctIdx].checkinMinutos = _cmVal;
+                        }
+                    }
+                    // Recarrega lista de CTs para garantir sincronia (checkinMinutos e horários)
+                    try {
+                        secureFetch('getCTsList', {}).then(function(ctR) {
+                            if (ctR && ctR.cts) allCTs = ctR.cts;
+                        });
+                    } catch(_eR) {}
                     // Atualiza o botão se encontrar
                     var btn = document.getElementById('ctSaveBtn_' + safeKey)
                            || document.querySelector('button[onclick*="saveCTFull2"]');
@@ -39459,6 +40573,8 @@
 
             // Carrega dependentes desta conta
             setTimeout(function() { loadStuDependentes(email); }, 300);
+            // Carrega TreinosBase (saldo de migração)
+            _loadStuTreinosBase(email);
 
             // Hero
             document.getElementById('stuAvatar').textContent = (s.name || '?').charAt(0).toUpperCase();
@@ -39913,6 +41029,119 @@
             }
         }
         // ─────────────────────────────────────────────────────────────────────
+
+
+        // ── TreinosBase — Saldo de Migração ──────────────────────────────────
+        async function _loadStuTreinosBase(email) {
+            var grid = document.getElementById('stuTreinosBaseGrid');
+            if (!grid) return;
+            grid.innerHTML = '<div style="font-size:11px;color:var(--adm-text-3);">⏳ Carregando...</div>';
+            try {
+                var r = await secureFetch('getTreinosBase', { email: email });
+                var base = (r && r.success && r.base) ? r.base : {};
+                _renderTreinosBaseGrid(base);
+            } catch(e) { _renderTreinosBaseGrid({}); }
+        }
+
+        function _renderTreinosBaseGrid(base) {
+            var grid = document.getElementById('stuTreinosBaseGrid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            // Remove _legacy e chaves vazias, monta linhas
+            var mods = Object.keys(base).filter(function(k){ return k !== '_legacy' || base[k] > 0; });
+            // Sempre mostra pelo menos uma linha se não tem dados
+            if (mods.length === 0) mods = [''];
+            mods.forEach(function(modId) {
+                grid.appendChild(_criarLinhaTreinoBase(modId, base[modId] || 0));
+            });
+            // Se tinha _legacy, mostra como linha sem modalidade
+            if (base['_legacy'] > 0 && mods.indexOf('_legacy') === -1) {
+                grid.appendChild(_criarLinhaTreinoBase('', base['_legacy']));
+            }
+        }
+
+        function _criarLinhaTreinoBase(modId, qty) {
+            var row = document.createElement('div');
+            row.style.cssText = 'display:flex;gap:8px;align-items:center;';
+            // Select modalidade
+            var sel = document.createElement('select');
+            sel.className = 'tb-mod-sel';
+            sel.style.cssText = 'flex:1;padding:7px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:12px;';
+            var optEmpty = document.createElement('option');
+            optEmpty.value = ''; optEmpty.textContent = '— Geral (sem modalidade) —';
+            sel.appendChild(optEmpty);
+            (MODALIDADES_CATALOG || []).forEach(function(m) {
+                var opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = m.icon + ' ' + m.nome;
+                if (m.id === modId || (modId === '_legacy' && m.id === '')) opt.selected = true;
+                sel.appendChild(opt);
+            });
+            if (modId && modId !== '_legacy') sel.value = modId;
+            // Input quantidade
+            var inp = document.createElement('input');
+            inp.type = 'number'; inp.min = '0'; inp.max = '9999'; inp.value = qty || 0;
+            inp.style.cssText = 'width:80px;padding:7px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:13px;font-weight:700;text-align:center;';
+            inp.placeholder = '0';
+            // Botão remover
+            var del = document.createElement('button');
+            del.textContent = '✕';
+            del.style.cssText = 'padding:6px 9px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2);border-radius:7px;color:#f87171;font-size:12px;cursor:pointer;flex-shrink:0;';
+            del.onclick = function() { row.remove(); };
+            row.appendChild(sel); row.appendChild(inp); row.appendChild(del);
+            return row;
+        }
+
+        function adicionarLinhatreinoBase() {
+            var grid = document.getElementById('stuTreinosBaseGrid');
+            if (grid) grid.appendChild(_criarLinhaTreinoBase('', 0));
+        }
+
+        function _coletarTreinosBase() {
+            var base = {};
+            var grid = document.getElementById('stuTreinosBaseGrid');
+            if (!grid) return base;
+            grid.querySelectorAll('div').forEach(function(row) {
+                var sel = row.querySelector('select.tb-mod-sel');
+                var inp = row.querySelector('input[type="number"]');
+                if (!sel || !inp) return;
+                var modId = sel.value || '_legacy';
+                var qty   = Math.max(0, parseInt(inp.value) || 0);
+                if (qty > 0) base[modId] = (base[modId] || 0) + qty;
+            });
+            return base;
+        }
+
+        async function _salvarTreinosBase(email) {
+            var base = _coletarTreinosBase();
+            try {
+                var r = await secureFetch('saveTreinosBase', { email: email, treinosBase: base });
+                console.log('[saveTreinosBase] email='+email+' base='+JSON.stringify(base)+' resp='+JSON.stringify(r));
+                return r;
+            } catch(e) {
+                console.error('[saveTreinosBase] erro:', e);
+                return { success: false, message: 'Erro de conexão: ' + e.message };
+            }
+        }
+
+        async function _salvarTreinosBaseComFeedback() {
+            if (!stuModalEmail) { console.warn('[saveTreinosBase] stuModalEmail vazio'); return; }
+            var msg = document.getElementById('stuTreinosBaseMsg');
+            if (msg) { msg.style.color = 'var(--adm-text-3)'; msg.textContent = '⏳ Salvando...'; }
+            var r = await _salvarTreinosBase(stuModalEmail);
+            if (msg) {
+                if (r && r.success) {
+                    msg.style.color = '#4ade80';
+                    msg.textContent = '✅ Saldo salvo com sucesso!';
+                    setTimeout(function(){ if(msg) msg.textContent=''; }, 3000);
+                } else {
+                    msg.style.color = '#f87171';
+                    // Mostra mensagem de erro do backend se disponível
+                    var errMsg = (r && r.message) ? r.message : 'Erro ao salvar. Tente novamente.';
+                    msg.textContent = '❌ ' + errMsg;
+                }
+            }
+        }
 
         function closeStuModal() {
             document.getElementById('stuModal').style.display = 'none';
@@ -43924,6 +45153,112 @@
         });
       }
     </script>
+
+<!-- Modal: Cadastrar nova modalidade -->
+
+
+<!-- Modal: Cadastrar nova modalidade (position:fixed — fora de adm-tabs) -->
+                    <div id="newModalidadeOverlay" onclick="if(event.target===this)closeNewModalidadeModal()" style="display:none;position:fixed;inset:0;z-index:10010;background:rgba(0,0,0,0.88);align-items:center;justify-content:center;padding:20px;">
+                        <div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:16px;padding:20px;width:100%;max-width:400px;max-height:90vh;overflow-y:auto;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                                <div style="font-size:15px;font-weight:800;color:var(--adm-text-1);">➕ Nova Modalidade</div>
+                                <button onclick="closeNewModalidadeModal()" style="background:none;border:none;color:var(--adm-text-3);font-size:20px;cursor:pointer;">✕</button>
+                            </div>
+                            <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:14px;line-height:1.6;">O sistema reconhecerá automaticamente o sistema de graduação com base no tipo escolhido.</div>
+                            <div style="margin-bottom:10px;">
+                                <label style="font-size:11px;color:var(--adm-text-3);display:block;margin-bottom:4px;">ID único (sem espaços)</label>
+                                <input type="text" id="newModId" placeholder="ex: kung_fu" oninput="this.value=this.value.toLowerCase().replace(/[^a-z0-9_]/g,'')" style="width:100%;box-sizing:border-box;padding:9px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;">
+                            </div>
+                            <div style="margin-bottom:10px;">
+                                <label style="font-size:11px;color:var(--adm-text-3);display:block;margin-bottom:4px;">Nome exibido</label>
+                                <input type="text" id="newModNome" placeholder="ex: Kung Fu" style="width:100%;box-sizing:border-box;padding:9px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:13px;">
+                            </div>
+                            <div style="display:flex;gap:8px;margin-bottom:10px;">
+                                <div style="flex:1;">
+                                    <label style="font-size:11px;color:var(--adm-text-3);display:block;margin-bottom:4px;">Ícone (emoji)</label>
+                                    <input type="text" id="newModIcon" placeholder="🥋" maxlength="4" style="width:100%;box-sizing:border-box;padding:9px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:20px;text-align:center;">
+                                </div>
+                                <div style="flex:1;">
+                                    <label style="font-size:11px;color:var(--adm-text-3);display:block;margin-bottom:4px;">Cor principal</label>
+                                    <input type="color" id="newModCor" value="#8B5CF6" style="width:100%;height:42px;border:1px solid var(--adm-border);border-radius:8px;cursor:pointer;">
+                                </div>
+                            </div>
+                            <div style="margin-bottom:14px;">
+                                <label style="font-size:11px;color:var(--adm-text-3);display:block;margin-bottom:6px;">Sistema de Graduação</label>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                    <label onclick="updateNewModPreview('faixa_cintura')" style="display:flex;align-items:center;gap:6px;padding:9px 10px;background:var(--adm-bg-elevated);border:1.5px solid var(--accent,#C9A23A);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--adm-text-1);" id="newModGrad_faixa">
+                                        <input type="radio" name="newModGrad" value="faixa_cintura" checked style="accent-color:var(--accent,#C9A23A);"> 🥋 Faixa Cintura
+                                    </label>
+                                    <label onclick="updateNewModPreview('prajied')" style="display:flex;align-items:center;gap:6px;padding:9px 10px;background:var(--adm-bg-elevated);border:1.5px solid var(--adm-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--adm-text-2);" id="newModGrad_prajied">
+                                        <input type="radio" name="newModGrad" value="prajied" style="accent-color:var(--accent,#C9A23A);"> 🥷 Prajied Braço
+                                    </label>
+                                    <label onclick="updateNewModPreview('corda')" style="display:flex;align-items:center;gap:6px;padding:9px 10px;background:var(--adm-bg-elevated);border:1.5px solid var(--adm-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--adm-text-2);" id="newModGrad_corda">
+                                        <input type="radio" name="newModGrad" value="corda" style="accent-color:var(--accent,#C9A23A);"> 🪢 Corda
+                                    </label>
+                                    <label onclick="updateNewModPreview('nenhum')" style="display:flex;align-items:center;gap:6px;padding:9px 10px;background:var(--adm-bg-elevated);border:1.5px solid var(--adm-border);border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--adm-text-2);" id="newModGrad_nenhum">
+                                        <input type="radio" name="newModGrad" value="nenhum" style="accent-color:var(--accent,#C9A23A);"> ⚡ Sem Graduação
+                                    </label>
+                                </div>
+                                <div id="newModGradPreview" style="margin-top:10px;padding:10px;background:rgba(255,255,255,0.04);border-radius:8px;font-size:11px;color:var(--adm-text-3);line-height:1.7;"></div>
+                            </div>
+                            <div id="newModMsg" style="font-size:11px;margin-bottom:10px;min-height:16px;"></div>
+                            <button onclick="cadastrarNovaModalidade()" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;">Cadastrar Modalidade</button>
+                        </div>
+                    </div>
+
+
+<!-- Navigation bars — fora do .app para evitar overflow:hidden no iOS -->
+        <div class="bnav" id="bottomNav">
+            <div class="bnav-inner">
+                <button class="bnav-btn active" id="bnavTreinoBtn" data-modtab="treino" onclick="switchTab('treino-tab', event)">
+                    <span class="bnav-icon" id="bnavTreinoIcon">🥋</span>
+                    <span class="bnav-label" id="bnavTreinoLabel">Treino</span>
+                </button>
+                <button class="bnav-btn" data-modtab="prepfisica" data-module="musculacao" onclick="switchTab('prepfisica-tab', event)">
+                    <span class="bnav-icon">💪</span>
+                    <span class="bnav-label">Prep. Física</span>
+                </button>
+                <button class="bnav-btn" data-modtab="ranking" onclick="switchTab('ranking-tab', event)">
+                    <span class="bnav-icon">🏆</span>
+                    <span class="bnav-label">Ranking</span>
+                </button>
+                <button class="bnav-btn" data-module="jogos" onclick="switchTab('quiz-tab', event)">
+                    <span class="bnav-icon">🎮</span>
+                    <span class="bnav-label">Jogos</span>
+                </button>
+                <button class="bnav-btn" data-module="perfil" onclick="switchTab('perfil', event)">
+                    <span class="bnav-icon">👤</span>
+                    <span class="bnav-label">Perfil</span>
+                </button>
+            </div>
+        </div>
+
+                <div class="bnav" id="adminNav" style="display:none;">
+            <div class="bnav-inner">
+                <button class="bnav-btn active" onclick="switchAdminTab('adm-painel', event)">
+                    <span class="bnav-icon">🏠</span><span class="bnav-label">Painel</span>
+                </button>
+                <button class="bnav-btn" onclick="switchAdminTab('adm-alunos', event)">
+                    <span class="bnav-icon">👥</span><span class="bnav-label">Alunos</span>
+                </button>
+                <button class="bnav-btn" onclick="switchAdminTab('adm-graduacoes', event)">
+                    <span class="bnav-icon">🎓</span><span class="bnav-label">Graduações</span>
+                </button>
+                <button class="bnav-btn" onclick="switchAdminTab('adm-presenca', event)">
+                    <span class="bnav-icon">📋</span><span class="bnav-label">Presença</span>
+                </button>
+                <button class="bnav-btn" onclick="switchAdminTab('adm-sistema', event)">
+                    <span class="bnav-icon">🔧</span><span class="bnav-label">Sistema</span>
+                </button>
+                <button class="bnav-btn" id="bnavFinanceiro" onclick="switchAdminTab('adm-financeiro', event)">
+                    <span class="bnav-icon">💰</span><span class="bnav-label">Financeiro</span>
+                </button>
+                <button class="bnav-btn" id="bnavSuperAdmin" onclick="switchAdminTab('adm-superadmin', event)" style="display:none;">
+                    <span class="bnav-icon">🔑</span><span class="bnav-label">Super</span>
+                </button>
+            </div>
+        </div>
+
 </body>
 
 </html>
