@@ -32270,18 +32270,18 @@
                     : (data.bloqueado ? 'Acesso bloqueado — entre em contato com o suporte' : '');
             }
 
-            // Carrega planos imediatamente — sem exigir login antes
-            _trialCarregarPlanos();
             // Pré-preenche e-mail se disponível
             var emailSalvo = localStorage.getItem('lastEmail') || '';
             var emailEl = document.getElementById('trialLoginEmail');
             if (emailEl && emailSalvo) emailEl.value = emailSalvo;
-            // Se já logado, preenche também a senha (não — mas podemos marcar)
             if (typeof currentUser !== 'undefined' && currentUser && currentUser.email) {
                 if (emailEl) emailEl.value = currentUser.email;
             }
 
+            // Exibe overlay PRIMEIRO, depois carrega planos (overlay precisa estar visível)
             overlay.style.display = 'block';
+            // Aguarda render do DOM antes de popular a lista de planos
+            setTimeout(function() { _trialCarregarPlanos(); }, 100);
             ['appScreen','adminScreen','loginScreen','bottomNav','adminNav'].forEach(function(id){
                 var el = document.getElementById(id); if (el) el.style.display = 'none';
             });
@@ -32345,7 +32345,8 @@
 
             try {
                 // Fetch direto sem auth (getPlanos é público)
-                var _ctmIdParaPlanos = (typeof _currentCtmId !== 'undefined' && _currentCtmId) ? _currentCtmId : '';
+                var _ctmIdParaPlanos = window._ctmIdGlobal || (typeof _currentCtmId !== 'undefined' ? _currentCtmId : '') || '';
+                console.log('[trialCarregarPlanos] ctmId=', _ctmIdParaPlanos);
                 // GAS exige Content-Type + redirect:follow para retornar JSON corretamente
                 var resp = await fetch(SCRIPT_URL, {
                     method:   'POST',
@@ -32378,18 +32379,21 @@
                 }
 
                 // Renderiza cartões de planos + form de cartão/pix
+                // Bug fix: não recriar id="trialPlanosList" dentro de si mesmo
                 var html = '<div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:14px;text-align:center;">Escolha o plano para reativar o acesso</div>';
-                html += '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;" id="trialPlanosList">';
-                planos.forEach(function(p, i) {
-                    var pid   = p.id || p.id_plano || '';
-                    var freq  = {mensal:'/ mês', trimestral:'/ trim.', semestral:'/ sem.', anual:'/ ano'}[p.frequencia] || '/ mês';
+                html += '<div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">';
+                planos.forEach(function(p) {
+                    var pid  = p.id || p.id_plano || '';
+                    var nome = p.nome || pid;
+                    var val  = p.valor || p.preco || 0;
+                    var freq = {mensal:'/ mês', trimestral:'/ trim.', semestral:'/ sem.', anual:'/ ano'}[p.frequencia] || '/ mês';
                     html +=
-                        '<div data-planoid="'+pid+'" onclick="_trialSelecionarPlano(this)" ' +
+                        '<div data-planoid="'+escapeHtml(pid)+'" onclick="_trialSelecionarPlano(this)" ' +
                         'style="padding:14px 16px;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.08);border-radius:12px;cursor:pointer;transition:all .15s;" ' +
                         'class="trial-plan-card">' +
                         '<div style="display:flex;justify-content:space-between;align-items:center;">' +
-                        '<span style="font-size:13px;font-weight:700;color:#fff;">'+escapeHtml(p.nome)+'</span>' +
-                        '<span style="font-size:16px;font-weight:800;color:#C9A23A;">' + (p.valor ? 'R$ '+parseFloat(p.valor).toFixed(2) : '') + ' <span style="font-size:10px;font-weight:500;color:rgba(255,255,255,0.4);">'+freq+'</span></span>' +
+                        '<span style="font-size:13px;font-weight:700;color:#fff;">'+escapeHtml(nome)+'</span>' +
+                        (val ? '<span style="font-size:16px;font-weight:800;color:#C9A23A;">R$ '+parseFloat(val).toFixed(2)+' <span style="font-size:10px;font-weight:500;color:rgba(255,255,255,0.4);">'+freq+'</span></span>' : '') +
                         '</div>' +
                         (p.descricao ? '<div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:4px;">'+escapeHtml(p.descricao)+'</div>' : '') +
                         '</div>';
