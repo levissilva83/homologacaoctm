@@ -12130,12 +12130,16 @@
                 <div class="stu-section" id="stuTreinosBaseSection">
                     <div class="stu-section-title">📦 Saldo de Treinos (Migração)</div>
                     <div style="font-size:11px;color:var(--text-3);margin-bottom:12px;line-height:1.6;">
-                        Para alunos migrando de outro sistema. Os treinos informados aqui são somados aos treinos reais registrados no CT Manager.
+                        Para alunos migrando de outro sistema. Os treinos informados aqui são <strong>somados</strong> aos treinos reais do CT Manager.
                     </div>
-                    <div id="stuTreinosBaseGrid" style="display:flex;flex-direction:column;gap:8px;">
+                    <div id="stuTreinosBaseGrid" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;">
                         <!-- Preenchido dinamicamente por openStuModal() -->
                     </div>
-                    <button onclick="adicionarLinhatreinoBase()" style="margin-top:8px;padding:6px 12px;background:rgba(201,162,58,0.1);border:1px solid rgba(201,162,58,0.3);border-radius:7px;color:var(--adm-primary);font-size:11px;font-weight:700;cursor:pointer;">+ Modalidade</button>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <button onclick="adicionarLinhatreinoBase()" style="padding:7px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--adm-border);border-radius:8px;color:var(--adm-text-2);font-size:11px;font-weight:700;cursor:pointer;">➕ Adicionar modalidade</button>
+                        <button onclick="_salvarTreinosBaseComFeedback()" style="padding:7px 14px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);border-radius:8px;color:#4ade80;font-size:11px;font-weight:700;cursor:pointer;">💾 Salvar saldo</button>
+                    </div>
+                    <div id="stuTreinosBaseMsg" style="font-size:11px;margin-top:6px;min-height:16px;"></div>
                 </div>
 
                 <!-- Personal -->
@@ -40043,11 +40047,27 @@
 
         async function _salvarTreinosBase(email) {
             var base = _coletarTreinosBase();
-            // Zerar entradas removidas (envia objeto completo)
             try {
                 var r = await secureFetch('saveTreinosBase', { email: email, treinosBase: base });
                 return r && r.success;
             } catch(e) { return false; }
+        }
+
+        async function _salvarTreinosBaseComFeedback() {
+            if (!stuModalEmail) return;
+            var msg = document.getElementById('stuTreinosBaseMsg');
+            if (msg) { msg.style.color = 'var(--adm-text-3)'; msg.textContent = '⏳ Salvando...'; }
+            var ok = await _salvarTreinosBase(stuModalEmail);
+            if (msg) {
+                if (ok) {
+                    msg.style.color = '#4ade80';
+                    msg.textContent = '✅ Saldo salvo com sucesso!';
+                    setTimeout(function(){ if(msg) msg.textContent=''; }, 3000);
+                } else {
+                    msg.style.color = '#f87171';
+                    msg.textContent = '❌ Erro ao salvar. Tente novamente.';
+                }
+            }
         }
 
         function closeStuModal() {
