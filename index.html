@@ -31346,7 +31346,6 @@
 
                 var r = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'checkTrialStatus', token: token, email: email })
                 });
                 var data = await r.json();
@@ -31378,9 +31377,16 @@
             if (oldBanner) oldBanner.remove();
 
             // Determina título — trial ou assinatura
-            // isTrial = true SOMENTE se o licStatus for explicitamente TRIAL (ou ausente/não logado).
-            // ATIVO/PAGO/RENOVACAO/EXPIRADO/CANCELADO/INADIMPLENTE = sempre cliente efetivo → "Assinatura Vencida"
-            var isTrial = !currentUser || !currentUser.licStatus || currentUser.licStatus === 'TRIAL';
+            // Fonte primária: data.modoTrial (vem do checkTrialStatus, disponível mesmo
+            // antes do login/restauração da sessão). false = cliente efetivo (RENOVACAO/
+            // VENCIDO/EXPIRADO/INADIMPLENTE/ENCERRADO) → "Assinatura Vencida".
+            // Fallback: currentUser.licStatus, para quando data não traz modoTrial.
+            var isTrial;
+            if (data && typeof data.modoTrial === 'boolean') {
+                isTrial = data.modoTrial === true;
+            } else {
+                isTrial = !currentUser || !currentUser.licStatus || currentUser.licStatus === 'TRIAL';
+            }
             var titulo  = isTrial ? 'Período de teste encerrado' : 'Assinatura Vencida';
             var subtit  = isTrial
                 ? (data && data.dataExpiracao
@@ -31482,7 +31488,6 @@
                 var resp = await fetch(SCRIPT_URL, {
                     method:   'POST',
                     redirect: 'follow',
-                    headers:  { 'Content-Type': 'application/json' },
                     body:     JSON.stringify({ action: 'getPlanos', ctmId: _ctmIdParaPlanos }),
                     signal:   _controller.signal
                 });
@@ -40331,7 +40336,6 @@
             try {
                 var res = await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         action: 'solicitarTrial',
                         nomeDojo: nomeDojo.trim(),
@@ -40342,7 +40346,16 @@
                         modalidades: _strModsSelecionadas.join(',')
                     })
                 });
-                var data = await res.json();
+
+                var rawText = await res.text();
+                var data;
+                try {
+                    data = JSON.parse(rawText);
+                } catch(parseErr) {
+                    console.error('Resposta não-JSON do servidor:', rawText.substring(0, 500));
+                    if (msg) { msg.style.color = '#f87171'; msg.textContent = '❌ Erro no servidor (HTTP ' + res.status + '). Tente novamente em alguns instantes.'; }
+                    return;
+                }
 
                 if (data && data.success) {
                     if (msg) { msg.style.color = '#4ade80'; msg.textContent = '✅ Conta criada com sucesso!'; }
