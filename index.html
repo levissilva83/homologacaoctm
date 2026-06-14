@@ -30705,7 +30705,7 @@
                 renderStats() {
                     var el = document.getElementById('cmStatsBar');
                     if (!el) return;
-                    var counts = { ATIVO:0, TRIAL:0, CANCELADO:0, INATIVO:0, INADIMPLENTE:0 };
+                    var counts = { ATIVO:0, TRIAL:0, CANCELADO:0, INATIVO:0, INADIMPLENTE:0, EXPIRADO:0, RENOVACAO:0, VENCIDO:0 };
                     var contratosAtivos = 0;
                     var trialDatas = []; // coleta datas dos trials para mostrar range
                     state.clientes.forEach(function(c){
@@ -30735,6 +30735,7 @@
                         { lbl:'Ativos',       val: counts.ATIVO,                       clr:'#4ade80', sub:'' },
                         { lbl:'Contratos',    val: contratosAtivos,                    clr:'#60a5fa', sub:'assinados' },
                         { lbl:'Trial',        val: counts.TRIAL,                       clr:'#fbbf24', sub: trialSub },
+                        { lbl:'Expirados',    val: counts.EXPIRADO+counts.RENOVACAO+counts.VENCIDO, clr:'#fb923c', sub:'precisam renovar' },
                         { lbl:'Inativo/Canc', val: counts.CANCELADO+counts.INATIVO+counts.INADIMPLENTE, clr:'#f87171', sub:'' }
                     ];
 
