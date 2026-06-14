@@ -8052,7 +8052,7 @@
                         </div>
                         <button class="btn btn-outline" onclick="showRegister()">Criar Nova Conta</button>
                         <button class="btn" onclick="showForgotPassword()" style="background:transparent;color:var(--text-3);font-size:13px;margin-top:4px;text-decoration:underline;border:none;cursor:pointer;">Esqueci minha senha</button>
-                        <button class="btn" onclick="showSolicitarTrial()" style="background:transparent;color:#C9A23A;font-size:13px;margin-top:10px;text-decoration:underline;border:none;cursor:pointer;font-weight:700;">🥋 Sou professor — Cadastrar minha academia (7 dias grátis)</button>
+                        
                     </div>
 
                     <div id="registerTab" style="display: none;">
@@ -15421,6 +15421,15 @@
 
         // ===== INIT =====
         window.addEventListener('load', async function() {
+            // Landing page — só na página raiz (sem ?ctm=)
+            try {
+                var _urlParams = new URLSearchParams(window.location.search);
+                if (!_urlParams.get('ctm')) {
+                    showLanding();
+                    return; // não roda checkTrialStatus/login na landing
+                }
+            } catch(_eLanding) {}
+
             // Verifica bloqueio ANTES de restaurar sessão
             var bloqueado = await checkTrialStatus();
             if (bloqueado) return;
@@ -40273,6 +40282,38 @@
         ];
         var _strModsSelecionadas = [];
 
+
+        // ═══ Landing page (ctapp.online sem ?ctm=) ═══
+        function showLanding() {
+            ['loginScreen','appScreen','adminScreen','bottomNav','adminNav'].forEach(function(id){
+                var el = document.getElementById(id); if (el) el.style.display = 'none';
+            });
+            var landing = document.getElementById('landingScreen');
+            if (!landing) return;
+            // Logo CT Manager
+            var logoImg = document.getElementById('landingLogoImg');
+            if (logoImg && !logoImg.src) {
+                logoImg.src = (typeof _CTM_ICON_512 !== 'undefined') ? _CTM_ICON_512 : '';
+            }
+            // Popular modalidades suportadas (mesma lista do formulário de cadastro) — tema claro
+            var cont = document.getElementById('landingModalidades');
+            if (cont && !cont.dataset.filled) {
+                cont.innerHTML = _STR_MODALIDADES.map(function(m){
+                    return '<span style="padding:6px 12px;background:#fff;border:1px solid #e3e7ee;'+
+                        'border-radius:20px;color:#0d2a4a;font-size:12px;font-weight:700;">'+m.nome+'</span>';
+                }).join('');
+                cont.dataset.filled = '1';
+            }
+            landing.style.display = 'block';
+        }
+
+        function hideLanding() {
+            var landing = document.getElementById('landingScreen');
+            if (landing) landing.style.display = 'none';
+            var ls = document.getElementById('loginScreen');
+            if (ls) ls.style.display = '';
+        }
+
         function showSolicitarTrial() {
             var ov = document.getElementById('solicitarTrialOverlay');
             if (!ov) return;
@@ -40286,7 +40327,7 @@
                 }).join('');
                 cont.dataset.filled = '1';
             }
-            ['loginScreen','appScreen','adminScreen'].forEach(function(id){
+            ['loginScreen','appScreen','adminScreen','landingScreen'].forEach(function(id){
                 var el = document.getElementById(id); if(el) el.style.display='none';
             });
             ov.style.display = 'block';
@@ -40295,6 +40336,11 @@
         function closeSolicitarTrial() {
             var ov = document.getElementById('solicitarTrialOverlay');
             if (ov) ov.style.display = 'none';
+            // Volta para a landing se não há ?ctm= na URL, senão para o login do CT
+            try {
+                var _p = new URLSearchParams(window.location.search);
+                if (!_p.get('ctm')) { showLanding(); return; }
+            } catch(_e) {}
             var ls = document.getElementById('loginScreen');
             if (ls) ls.style.display = 'flex';
         }
@@ -44408,6 +44454,118 @@
         });
       }
     </script>
+
+    
+    <!-- ═══ LANDING PAGE — ctapp.online sem ?ctm= (tema claro) ═══ -->
+    <div id="landingScreen" style="display:none;position:fixed;inset:0;background:#f4f5f7;z-index:9980;overflow-y:auto;font-family:inherit;">
+        <div style="max-width:480px;margin:0 auto;padding:28px 20px 60px;">
+
+            <!-- Logo -->
+            <div style="text-align:center;margin-bottom:20px;">
+                <img id="landingLogoImg" src="" alt="CT Manager" style="width:88px;height:88px;border-radius:50%;object-fit:cover;">
+            </div>
+
+            <!-- Headline -->
+            <div style="text-align:center;margin-bottom:20px;">
+                <div style="font-size:28px;font-weight:900;color:#0d2a4a;line-height:1.25;letter-spacing:0.5px;">
+                    GESTÃO PARA<br>CTs DE<br><span style="color:#C9A23A;">ARTES MARCIAIS</span>
+                </div>
+            </div>
+
+            <!-- Benefícios -->
+            <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;padding:0 8px;">
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:18px;">✅</span>
+                    <span style="font-size:14px;color:#33415c;">Mais <b style="color:#0d2a4a;">organização</b>.</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:18px;">📊</span>
+                    <span style="font-size:14px;color:#33415c;">Mais <b style="color:#0d2a4a;">controle</b>.</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:18px;">⏱️</span>
+                    <span style="font-size:14px;color:#33415c;">Mais <b style="color:#0d2a4a;">tempo</b> no tatame.</span>
+                </div>
+            </div>
+
+            <!-- Grid de funcionalidades -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:24px;">
+                <div style="background:#fff;border:1px solid #e3e7ee;border-radius:12px;padding:14px 8px;text-align:center;">
+                    <div style="font-size:22px;margin-bottom:6px;">👥</div>
+                    <div style="font-size:11px;font-weight:800;color:#0d2a4a;letter-spacing:0.3px;">ALUNOS</div>
+                </div>
+                <div style="background:#fff;border:1px solid #e3e7ee;border-radius:12px;padding:14px 8px;text-align:center;">
+                    <div style="font-size:22px;margin-bottom:6px;">📅</div>
+                    <div style="font-size:11px;font-weight:800;color:#0d2a4a;letter-spacing:0.3px;">AULAS</div>
+                </div>
+                <div style="background:#fff;border:1px solid #e3e7ee;border-radius:12px;padding:14px 8px;text-align:center;">
+                    <div style="font-size:22px;margin-bottom:6px;">💰</div>
+                    <div style="font-size:11px;font-weight:800;color:#0d2a4a;letter-spacing:0.3px;">FINANCEIRO</div>
+                </div>
+                <div style="background:#fff;border:1px solid #e3e7ee;border-radius:12px;padding:14px 8px;text-align:center;">
+                    <div style="font-size:22px;margin-bottom:6px;">✅</div>
+                    <div style="font-size:11px;font-weight:800;color:#0d2a4a;letter-spacing:0.3px;">PRESENÇA</div>
+                </div>
+                <div style="background:#fff;border:1px solid #e3e7ee;border-radius:12px;padding:14px 8px;text-align:center;">
+                    <div style="font-size:22px;margin-bottom:6px;">🥋</div>
+                    <div style="font-size:11px;font-weight:800;color:#0d2a4a;letter-spacing:0.3px;">GRADUAÇÃO</div>
+                </div>
+                <div style="background:#fff;border:1px solid #e3e7ee;border-radius:12px;padding:14px 8px;text-align:center;">
+                    <div style="font-size:22px;margin-bottom:6px;">📈</div>
+                    <div style="font-size:11px;font-weight:800;color:#0d2a4a;letter-spacing:0.3px;">RELATÓRIOS</div>
+                </div>
+            </div>
+
+            <!-- Banner Teste Grátis -->
+            <button onclick="showSolicitarTrial()" style="width:100%;display:flex;align-items:center;gap:14px;background:#0d2a4a;border:none;border-radius:14px;padding:16px 18px;cursor:pointer;margin-bottom:14px;text-align:left;">
+                <span style="font-size:30px;">🚀</span>
+                <span>
+                    <span style="display:block;font-size:14px;font-weight:800;color:#fff;letter-spacing:0.5px;">TESTE 7 DIAS</span>
+                    <span style="display:block;font-size:22px;font-weight:900;color:#C9A23A;letter-spacing:1px;">GRÁTIS</span>
+                </span>
+            </button>
+
+            <!-- Planos -->
+            <div style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid #e3e7ee;border-radius:14px;padding:14px 18px;margin-bottom:20px;">
+                <span style="font-size:24px;">🛡️</span>
+                <span style="font-size:13px;color:#33415c;">Planos a partir de<br><b style="font-size:18px;color:#0d2a4a;">R$ 59,90</b></span>
+            </div>
+
+            <!-- Modalidades suportadas -->
+            <div style="font-size:12px;font-weight:800;color:#0d2a4a;margin-bottom:10px;letter-spacing:0.5px;text-align:center;">MODALIDADES SUPORTADAS</div>
+            <div id="landingModalidades" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:28px;">
+                <!-- preenchido via JS -->
+            </div>
+
+            <!-- CTA final -->
+            <button onclick="showSolicitarTrial()" style="width:100%;padding:16px;background:linear-gradient(135deg,#C9A23A,#a07820);color:#0d2a4a;border:none;border-radius:12px;font-size:16px;font-weight:900;cursor:pointer;margin-bottom:16px;letter-spacing:0.3px;">
+                Criar minha conta grátis
+            </button>
+
+            <!-- Rodapé selos -->
+            <div style="display:flex;justify-content:space-around;text-align:center;margin-bottom:20px;">
+                <div style="font-size:11px;color:#6b7a90;max-width:90px;">
+                    <div style="font-size:20px;margin-bottom:4px;">🎓</div>
+                    Treinamento completo
+                </div>
+                <div style="font-size:11px;color:#6b7a90;max-width:90px;">
+                    <div style="font-size:20px;margin-bottom:4px;">🎧</div>
+                    Suporte na configuração
+                </div>
+                <div style="font-size:11px;color:#6b7a90;max-width:90px;">
+                    <div style="font-size:20px;margin-bottom:4px;">🔒</div>
+                    Seus dados protegidos
+                </div>
+            </div>
+
+            <!-- Já tem conta -->
+            <div style="text-align:center;">
+                <button onclick="hideLanding()" style="background:transparent;color:#6b7a90;font-size:13px;text-decoration:underline;border:none;cursor:pointer;padding:8px;">
+                    Já tenho uma conta — fazer login
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- ═══ CADASTRO DE NOVA ACADEMIA — Trial automático ═══ -->
     <div id="solicitarTrialOverlay" style="display:none;position:fixed;inset:0;background:rgba(6,6,7,0.97);z-index:9990;overflow-y:auto;">
