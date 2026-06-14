@@ -10181,6 +10181,44 @@
                         <!-- Painel dinâmico -->
                         <div id="gradSystemList"></div>
 
+                        <!-- ─── EDITAR FAIXAS/NÍVEIS DA MODALIDADE ─── -->
+                        <div class="admin-section" style="margin-top:14px;">
+                            <div class="admin-section-header" style="cursor:pointer;" onclick="toggleFaixasEditor()">
+                                <div class="admin-section-title">✏️ Editar Faixas/Níveis</div>
+                                <span id="faixasEditorArrow" style="font-size:11px;color:var(--adm-text-3);">▶ expandir</span>
+                            </div>
+                            <div id="faixasEditorBody" style="display:none;padding-top:8px;">
+                                <p style="font-size:11px;color:var(--adm-text-3);margin-bottom:10px;">
+                                    Cadastre as faixas/níveis da modalidade selecionada acima. Útil para modalidades
+                                    fora do catálogo padrão — defina nome, emoji, cor e ordem de progressão.
+                                </p>
+                                <div id="faixasEditorList" style="margin-bottom:10px;"><div class="admin-empty">Carregando...</div></div>
+
+                                <!-- Formulário de nova/edição de faixa -->
+                                <div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;padding:10px;">
+                                    <div style="font-size:11px;font-weight:800;color:var(--adm-primary);margin-bottom:8px;" id="faixaFormTitle">➕ Nova Faixa/Nível</div>
+                                    <input type="hidden" id="faixaRowIndex" value="0">
+                                    <div style="display:flex;gap:6px;margin-bottom:6px;">
+                                        <input id="faixaEmoji" type="text" placeholder="🥋" maxlength="4" style="width:50px;text-align:center;padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:14px;">
+                                        <input id="faixaLabel" type="text" placeholder="Nome (ex: Faixa Verde)" style="flex:1;padding:8px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:12px;">
+                                    </div>
+                                    <div style="display:flex;gap:6px;margin-bottom:6px;align-items:center;">
+                                        <label style="font-size:10px;color:var(--adm-text-3);">Cor</label>
+                                        <input id="faixaCor" type="color" value="#C9A23A" style="width:40px;height:30px;padding:2px;background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:6px;cursor:pointer;">
+                                        <label style="font-size:10px;color:var(--adm-text-3);margin-left:8px;">Máx. graus</label>
+                                        <input id="faixaMaxGrau" type="number" min="0" max="10" value="0" style="width:55px;padding:6px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:12px;text-align:center;">
+                                        <label style="font-size:10px;color:var(--adm-text-3);margin-left:8px;">Tempo mín. (meses)</label>
+                                        <input id="faixaMinMeses" type="number" min="0" max="120" value="0" style="width:55px;padding:6px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:12px;text-align:center;">
+                                    </div>
+                                    <div id="faixaFormMsg" style="font-size:11px;min-height:16px;margin-bottom:6px;"></div>
+                                    <div style="display:flex;gap:6px;">
+                                        <button onclick="salvarFaixaCustom()" style="flex:1;padding:9px;background:var(--adm-primary);color:#000;border:none;border-radius:8px;font-weight:800;font-size:12px;cursor:pointer;">💾 Salvar Faixa</button>
+                                        <button onclick="cancelarEdicaoFaixa()" id="faixaCancelBtn" style="display:none;padding:9px 14px;background:transparent;color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;cursor:pointer;">Cancelar</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div id="gradConfigMsg" style="margin-top:8px;min-height:20px;"></div>
                         <button onclick="saveGradConfigMod()" style="margin-top:10px;width:100%;padding:12px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;">💾 Salvar Configuração</button>
 
@@ -10751,6 +10789,10 @@
                             onclick="sisSwitchTab('assinante')"
                             style="display:none;">
                             <span class="sis-stab-icon">💳</span>Assinatura
+                        </button>
+                        <button class="sis-subtab-btn" id="sisBtnRelatorios"
+                            onclick="sisSwitchTab('relatorios')">
+                            <span class="sis-stab-icon">📊</span>Relatórios
                         </button>
                     </div>
 
@@ -11484,6 +11526,105 @@
 
 
                     </div><!-- /sis-panel-assinante -->
+
+                    <!-- ════ SUB-TAB: RELATÓRIOS ════ -->
+                    <div class="sis-subtab-panel" id="sis-panel-relatorios" style="display:none;">
+
+                        <!-- Filtros -->
+                        <div class="admin-card" style="margin-bottom:12px;">
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+                                <button class="rpt-quick-btn active" onclick="setRptQuickPeriod('hoje', this)" style="padding:6px 14px;border-radius:8px;background:rgba(201,162,58,0.12);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.3);font-size:11px;font-weight:700;cursor:pointer;">Hoje</button>
+                                <button class="rpt-quick-btn" onclick="setRptQuickPeriod('semana', this)" style="padding:6px 14px;border-radius:8px;background:var(--adm-bg-card);color:var(--adm-text-2);border:1px solid var(--adm-border);font-size:11px;font-weight:700;cursor:pointer;">Esta semana</button>
+                                <button class="rpt-quick-btn" onclick="setRptQuickPeriod('mes', this)" style="padding:6px 14px;border-radius:8px;background:var(--adm-bg-card);color:var(--adm-text-2);border:1px solid var(--adm-border);font-size:11px;font-weight:700;cursor:pointer;">Este mês</button>
+                                <button class="rpt-quick-btn" onclick="setRptQuickPeriod('ano', this)" style="padding:6px 14px;border-radius:8px;background:var(--adm-bg-card);color:var(--adm-text-2);border:1px solid var(--adm-border);font-size:11px;font-weight:700;cursor:pointer;">Este ano</button>
+                            </div>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                                <div style="display:flex;flex-direction:column;gap:2px;">
+                                    <label style="font-size:9px;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:0.5px;">De</label>
+                                    <input type="date" id="rptDateFrom" onchange="generateReport()" style="padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                </div>
+                                <div style="display:flex;flex-direction:column;gap:2px;">
+                                    <label style="font-size:9px;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:0.5px;">Até</label>
+                                    <input type="date" id="rptDateTo" onchange="generateReport()" style="padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                </div>
+                                <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:120px;">
+                                    <label style="font-size:9px;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:0.5px;">CT</label>
+                                    <select id="rptCTSelect" onchange="generateReport()" style="padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;width:100%;">
+                                        <option value="">Todos os CTs</option>
+                                    </select>
+                                </div>
+                                <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:120px;">
+                                    <label style="font-size:9px;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:0.5px;">Turno</label>
+                                    <select id="rptTurnoSelect" onchange="if(_rptData) renderReport(_rptData)" style="padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;width:100%;">
+                                        <option value="">Todos</option>
+                                        <option value="manha">🌅 Manhã</option>
+                                        <option value="noite">🌙 Noite</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">
+                                <div id="rptPeriodLabel" style="font-size:11px;color:var(--adm-text-3);"></div>
+                                <button onclick="exportReportCSV()" style="padding:7px 14px;border-radius:8px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;font-size:11px;font-weight:800;cursor:pointer;">⬇️ Exportar CSV</button>
+                            </div>
+                        </div>
+
+                        <div id="rptLoading" style="text-align:center;padding:30px;color:var(--adm-text-3);font-size:12px;">Carregando relatório...</div>
+
+                        <div id="rptContent" style="display:none;">
+
+                            <!-- KPIs -->
+                            <div class="rpt-kpi-grid" id="rptKPICards"></div>
+
+                            <!-- Central de Ações -->
+                            <div class="admin-card" id="rptAcoesSection" style="display:none;margin-bottom:12px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                                    <div style="font-size:12px;font-weight:800;color:var(--adm-text-1);">🎯 Central de Ações</div>
+                                    <span id="rptAcoesCount" style="font-size:10px;color:var(--adm-text-3);"></span>
+                                </div>
+                                <div id="rptAcoes"></div>
+                            </div>
+
+                            <!-- Visão por turno -->
+                            <div class="admin-card" style="margin-bottom:12px;">
+                                <div style="font-size:12px;font-weight:800;color:var(--adm-text-1);margin-bottom:8px;">🕐 Visão por Turno</div>
+                                <div id="rptTurnoCards"></div>
+                            </div>
+
+                            <!-- Visão por CT -->
+                            <div class="admin-card" style="margin-bottom:12px;">
+                                <div style="font-size:12px;font-weight:800;color:var(--adm-text-1);margin-bottom:8px;">🏢 Visão por CT</div>
+                                <div id="rptCTCards"></div>
+                            </div>
+
+                            <!-- Presença por horário -->
+                            <div class="admin-card" style="margin-bottom:12px;">
+                                <div class="rpt-acao-header open" onclick="toggleRptSection(this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
+                                    <div style="font-size:12px;font-weight:800;color:var(--adm-text-1);">📅 Presença por Horário</div>
+                                    <span class="rpt-acao-arrow">▶</span>
+                                </div>
+                                <div id="rptHourlySummary" style="margin-top:8px;"></div>
+                            </div>
+
+                            <!-- Faltas acumuladas -->
+                            <div class="admin-card" style="margin-bottom:12px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                                    <div style="font-size:12px;font-weight:800;color:var(--adm-text-1);">❌ Faltas Acumuladas</div>
+                                    <span id="rptFaltasBadge" style="font-size:10px;color:var(--adm-text-3);background:var(--adm-bg-card);padding:2px 8px;border-radius:10px;"></span>
+                                </div>
+                                <div id="rptFaltasList"></div>
+                            </div>
+
+                            <!-- Elegíveis a avaliação -->
+                            <div class="admin-card" style="margin-bottom:12px;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                                    <div style="font-size:12px;font-weight:800;color:var(--adm-text-1);">🎓 Elegíveis para Avaliação</div>
+                                    <span id="rptPromoBadge" style="font-size:10px;color:var(--adm-text-3);background:var(--adm-bg-card);padding:2px 8px;border-radius:10px;"></span>
+                                </div>
+                                <div id="rptPromo"></div>
+                            </div>
+
+                        </div>
+                    </div><!-- /sis-panel-relatorios -->
 
                 </div><!-- /admin-container -->
             </div><!-- /adm-sistema -->
@@ -24999,7 +25140,7 @@
                 _toastAssinatura('Regularize sua assinatura para acessar esta área.');
                 tab = 'assinante';
             }
-            ['sistema','assinante'].forEach(function(t) {
+            ['sistema','assinante','relatorios'].forEach(function(t) {
                 var panel = document.getElementById('sis-panel-' + t);
                 var btn   = document.getElementById('sisBtn' + t.charAt(0).toUpperCase() + t.slice(1));
                 if (panel) {
@@ -25016,6 +25157,11 @@
                 var mainEl = document.querySelector('.main');
                 if (mainEl) mainEl.scrollTop = 0;
                 setTimeout(function(){ asnIniciarSeNecessario(); asnCarregarNovidades(); }, 60);
+            }
+            // Relatórios — admin apenas, carrega dados ao abrir
+            if (tab === 'relatorios') {
+                if (!isAdmin()) { sisSwitchTab('sistema'); return; }
+                setTimeout(function(){ if (typeof loadNewReportData === 'function') loadNewReportData(); }, 60);
             }
         }
 
@@ -26244,6 +26390,180 @@
 
         function renderGradSystemAdmin() { initGradSistema(); }  // alias
 
+        // ════════════════════════════════════════════════════════════
+        // EDITOR DE FAIXAS/NÍVEIS CUSTOMIZADOS POR MODALIDADE
+        // ════════════════════════════════════════════════════════════
+        var _faixasEditorCache = []; // faixas da modalidade ativa (com rowIndex)
+
+        function toggleFaixasEditor() {
+            var body  = document.getElementById('faixasEditorBody');
+            var arrow = document.getElementById('faixasEditorArrow');
+            if (!body) return;
+            var open = body.style.display !== 'none';
+            body.style.display = open ? 'none' : 'block';
+            if (arrow) arrow.textContent = open ? '▶ expandir' : '▼ recolher';
+            if (!open) loadFaixasEditor(_gradActiveModId);
+        }
+
+        async function loadFaixasEditor(modId) {
+            var list = document.getElementById('faixasEditorList');
+            if (!list || !modId) return;
+            list.innerHTML = '<div class="admin-empty">Carregando...</div>';
+            try {
+                var res = await secureFetch('getFaixasModalidade', { modId: modId });
+                if (!res || !res.success) { list.innerHTML = '<div class="admin-empty">Erro ao carregar faixas</div>'; return; }
+                _faixasEditorCache = res.faixas || [];
+                _renderFaixasEditorList();
+            } catch(e) {
+                list.innerHTML = '<div class="admin-empty">Erro de conexão</div>';
+            }
+        }
+
+        function _renderFaixasEditorList() {
+            var list = document.getElementById('faixasEditorList');
+            if (!list) return;
+            if (_faixasEditorCache.length === 0) {
+                list.innerHTML = '<div class="admin-empty">Nenhuma faixa cadastrada ainda. Adicione a primeira abaixo.</div>';
+                return;
+            }
+            var h = '';
+            _faixasEditorCache.forEach(function(f, idx) {
+                h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:8px;margin-bottom:6px;'+(f.ativo===false?'opacity:0.5;':'')+'">';
+                h += '<div style="display:flex;flex-direction:column;gap:2px;">';
+                h += '<button onclick="moverFaixaCustom('+idx+',-1)" '+(idx===0?'disabled':'')+' style="background:none;border:none;color:var(--adm-text-3);cursor:pointer;font-size:11px;padding:0;line-height:1;">▲</button>';
+                h += '<button onclick="moverFaixaCustom('+idx+',1)" '+(idx===_faixasEditorCache.length-1?'disabled':'')+' style="background:none;border:none;color:var(--adm-text-3);cursor:pointer;font-size:11px;padding:0;line-height:1;">▼</button>';
+                h += '</div>';
+                h += '<span style="font-size:18px;width:24px;text-align:center;">'+escapeHtml(f.emoji||'🥋')+'</span>';
+                h += '<span style="width:14px;height:14px;border-radius:50%;background:'+escapeHtml(f.cor||'#C9A23A')+';flex-shrink:0;border:1px solid rgba(255,255,255,0.2);"></span>';
+                h += '<div style="flex:1;">';
+                h += '<div style="font-size:12px;font-weight:700;color:var(--adm-text-1);">'+escapeHtml(f.label||f.faixaId)+'</div>';
+                var metaParts = [];
+                if (f.maxGrau > 0) metaParts.push(f.maxGrau+' grau(s)');
+                if (f.minMeses > 0) metaParts.push(f.minMeses+' meses mín.');
+                if (f.ativo===false) metaParts.push('inativa');
+                h += '<div style="font-size:10px;color:var(--adm-text-3);">'+(metaParts.join(' · ')||'—')+'</div>';
+                h += '</div>';
+                h += '<button onclick="editarFaixaCustom('+idx+')" style="padding:5px 9px;background:rgba(201,162,58,0.08);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.25);border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;">✏️</button>';
+                h += '<button onclick="excluirFaixaCustom('+idx+')" style="padding:5px 9px;background:rgba(248,113,113,0.08);color:#f87171;border:1px solid rgba(248,113,113,0.25);border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;">🗑️</button>';
+                h += '</div>';
+            });
+            list.innerHTML = h;
+        }
+
+        function editarFaixaCustom(idx) {
+            var f = _faixasEditorCache[idx];
+            if (!f) return;
+            document.getElementById('faixaRowIndex').value = f.rowIndex;
+            document.getElementById('faixaEmoji').value    = f.emoji || '🥋';
+            document.getElementById('faixaLabel').value    = f.label || '';
+            document.getElementById('faixaCor').value      = f.cor || '#C9A23A';
+            document.getElementById('faixaMaxGrau').value  = f.maxGrau || 0;
+            document.getElementById('faixaMinMeses').value = f.minMeses || 0;
+            document.getElementById('faixaFormTitle').textContent = '✏️ Editando: ' + (f.label || f.faixaId);
+            document.getElementById('faixaCancelBtn').style.display = '';
+            document.getElementById('faixaFormMsg').textContent = '';
+            var formEl = document.getElementById('faixaFormTitle');
+            if (formEl) formEl.scrollIntoView({ behavior:'smooth', block:'nearest' });
+        }
+
+        function cancelarEdicaoFaixa() {
+            document.getElementById('faixaRowIndex').value = 0;
+            document.getElementById('faixaEmoji').value    = '';
+            document.getElementById('faixaLabel').value    = '';
+            document.getElementById('faixaCor').value      = '#C9A23A';
+            document.getElementById('faixaMaxGrau').value  = 0;
+            document.getElementById('faixaMinMeses').value = 0;
+            var t = document.getElementById('faixaFormTitle'); if (t) t.textContent = '➕ Nova Faixa/Nível';
+            var c = document.getElementById('faixaCancelBtn'); if (c) c.style.display = 'none';
+            var m = document.getElementById('faixaFormMsg'); if (m) m.textContent = '';
+        }
+
+        function _corParaRGB(hex) {
+            hex = (hex||'#C9A23A').replace('#','');
+            var r = parseInt(hex.substring(0,2),16)||0, g = parseInt(hex.substring(2,4),16)||0, b = parseInt(hex.substring(4,6),16)||0;
+            return r+','+g+','+b;
+        }
+
+        async function salvarFaixaCustom() {
+            var modId = _gradActiveModId;
+            var msg = document.getElementById('faixaFormMsg');
+            var label = (document.getElementById('faixaLabel')||{}).value.trim();
+            if (!modId) { if(msg){msg.style.color='#f87171';msg.textContent='⚠️ Selecione uma modalidade';} return; }
+            if (!label) { if(msg){msg.style.color='#f87171';msg.textContent='⚠️ Digite o nome da faixa/nível';} return; }
+
+            var rowIndex = parseInt((document.getElementById('faixaRowIndex')||{}).value) || 0;
+            var emoji    = (document.getElementById('faixaEmoji')||{}).value.trim() || '🥋';
+            var cor      = (document.getElementById('faixaCor')||{}).value || '#C9A23A';
+            var maxGrau  = parseInt((document.getElementById('faixaMaxGrau')||{}).value) || 0;
+            var minMeses = parseInt((document.getElementById('faixaMinMeses')||{}).value) || 0;
+
+            if(msg){msg.style.color='var(--adm-primary)';msg.textContent='Salvando...';}
+            try {
+                var payload = {
+                    modId: modId, rowIndex: rowIndex, label: label,
+                    emoji: emoji, cor: cor, corRGB: _corParaRGB(cor),
+                    maxGrau: maxGrau, minMeses: minMeses, ativo: true
+                };
+                // Preserva faixaId se estiver editando
+                if (rowIndex > 1) {
+                    var existing = _faixasEditorCache.find(function(f){ return f.rowIndex===rowIndex; });
+                    if (existing) payload.faixaId = existing.faixaId;
+                }
+                var res = await secureFetch('saveFaixaModalidade', payload);
+                if (res && res.success) {
+                    if(msg){msg.style.color='#4ade80';msg.textContent='✅ '+res.message;}
+                    cancelarEdicaoFaixa();
+                    await loadFaixasEditor(modId);
+                    // Recarrega catálogo para refletir nova faixa no resto do app
+                    if (typeof _carregarCatalogModalidades === 'function') _carregarCatalogModalidades();
+                } else {
+                    if(msg){msg.style.color='#f87171';msg.textContent='❌ '+((res&&res.message)||'Erro ao salvar');}
+                }
+            } catch(e) {
+                if(msg){msg.style.color='#f87171';msg.textContent='❌ Erro de conexão';}
+            }
+        }
+
+        async function excluirFaixaCustom(idx) {
+            var f = _faixasEditorCache[idx];
+            if (!f) return;
+            if (!confirm('Excluir a faixa/nível "'+(f.label||f.faixaId)+'"?\n\nSe houver alunos nesta faixa, a exclusão será bloqueada.')) return;
+            try {
+                var res = await secureFetch('deleteFaixaModalidade', { modId: _gradActiveModId, rowIndex: f.rowIndex });
+                if (res && res.success) {
+                    await loadFaixasEditor(_gradActiveModId);
+                    if (typeof _carregarCatalogModalidades === 'function') _carregarCatalogModalidades();
+                } else {
+                    alert((res&&res.message) || 'Erro ao excluir');
+                }
+            } catch(e) { alert('Erro de conexão'); }
+        }
+
+        async function moverFaixaCustom(idx, dir) {
+            var novoIdx = idx + dir;
+            if (novoIdx < 0 || novoIdx >= _faixasEditorCache.length) return;
+            // Troca posições localmente
+            var tmp = _faixasEditorCache[idx];
+            _faixasEditorCache[idx] = _faixasEditorCache[novoIdx];
+            _faixasEditorCache[novoIdx] = tmp;
+            _renderFaixasEditorList();
+            // Envia nova ordem ao backend
+            var ordemIds = _faixasEditorCache.map(function(f){ return f.faixaId; });
+            try {
+                var res = await secureFetch('reorderFaixasModalidade', { modId: _gradActiveModId, ordem: ordemIds });
+                if (!res || !res.success) {
+                    // Reverte em caso de erro
+                    await loadFaixasEditor(_gradActiveModId);
+                    alert((res&&res.message) || 'Erro ao reordenar');
+                } else {
+                    if (typeof _carregarCatalogModalidades === 'function') _carregarCatalogModalidades();
+                }
+            } catch(e) {
+                await loadFaixasEditor(_gradActiveModId);
+                alert('Erro de conexão ao reordenar');
+            }
+        }
+
         function switchGradModTab(modId) {
             _gradActiveModId = modId;
             var tabsEl = document.getElementById('gradModTabs');
@@ -26260,6 +26580,10 @@
             if (radio) radio.checked = true;
             _updateTipoLabels(tipoToSet);
             _renderGradModPanel(modId);
+            // Recarrega editor de faixas se estiver expandido
+            var feb = document.getElementById('faixasEditorBody');
+            if (feb && feb.style.display !== 'none') loadFaixasEditor(modId);
+            cancelarEdicaoFaixa();
         }
 
         function onGradConfigCTChange() {
@@ -33527,6 +33851,7 @@
                 'vincularGatewayCT','salvarPlano','deletarPlano',
                 'getPagamentosAdmin','atribuirPlanoAluno','marcarPago','setDiaCobrancaAluno','getDiaCobrancaAluno','setModalidadesAluno',
                 'salvarConfigMP','saveWellnessConfig','saveModalidade','deleteModalidade',
+                'getFaixasModalidade','saveFaixaModalidade','deleteFaixaModalidade','reorderFaixasModalidade',
                 'painelCriarCliente','ativarClienteAdmin','getContratos','cobrarAgora',
             ],
             professor: [
@@ -37148,8 +37473,9 @@
                     var kTotal    = allPags.length;
                     var kPago     = allPags.filter(function(p){ return (p.status||'').toUpperCase() === 'PAGO'; }).length;
                     var kAtrasado = allPags.filter(function(p){ return (p.status||'').toUpperCase() === 'ATRASADO'; }).length;
-                    var kSemPlano   = allPags.filter(function(p){ return (p.status||'').toUpperCase() === 'SEM_PLANO' || !p.planoId; }).length;
+                    var kSemPlano   = allPags.filter(function(p){ var s=(p.status||'').toUpperCase(); return (s === 'SEM_PLANO' || (!p.planoId && s !== 'BOLSISTA')); }).length;
                     var kNuncaPagou = allPags.filter(function(p){ return (p.status||'').toUpperCase() === 'NUNCA_PAGOU'; }).length;
+                    var kBolsista   = allPags.filter(function(p){ return (p.status||'').toUpperCase() === 'BOLSISTA'; }).length;
 
                     // Receita total dos pagamentos PAGO
                     var pagosFiltro = allPags.filter(function(p){ return (p.status||'').toUpperCase() === 'PAGO'; });
@@ -37182,6 +37508,7 @@
                         '<div class="cob-kpi cob-kpi-red"><span class="cob-kpi-num">' + kAtrasado + '</span><span class="cob-kpi-lbl">Atrasados</span></div>' +
                         '<div class="cob-kpi cob-kpi-yellow"><span class="cob-kpi-num">' + kSemPlano + '</span><span class="cob-kpi-lbl">Sem plano</span></div>' +
                         '<div class="cob-kpi cob-kpi-red" style="cursor:pointer;" onclick="_filtrarNuncaPagou()"><span class="cob-kpi-num">' + kNuncaPagou + '</span><span class="cob-kpi-lbl">Nunca pagou</span></div>' +
+                        '<div class="cob-kpi" style="cursor:pointer;" onclick="filtrarCobrancas(\'BOLSISTA\',this)"><span class="cob-kpi-num" style="color:#60a5fa;">' + kBolsista + '</span><span class="cob-kpi-lbl">🎓 Bolsistas</span></div>' +
                         '<div class="cob-kpi" id="receitaMensalKpi" style="cursor:pointer;" onclick="abrirReceitaMensal()">' +
                             '<span class="cob-kpi-num" style="font-size:11px;">R$' + receitaTotal.toFixed(0) + '</span>' +
                             '<span class="cob-kpi-lbl">Receita ▸</span>' +
@@ -37202,19 +37529,22 @@
                     PAGO:'✅ Em dia', PENDENTE:'⏳ Aguardando',
                     NUNCA_PAGOU:'❗ Nunca pagou',
                     ATRASADO:'🔴 Atrasado', VENCENDO:'🟡 Vencendo',
-                    SEM_PLANO:'📋 Sem plano', CANCELADO:'⛔ Cancelado'
+                    SEM_PLANO:'📋 Sem plano', CANCELADO:'⛔ Cancelado',
+                    BOLSISTA:'🎓 Bolsista'
                 };
                 var statusColor = {
                     PAGO:'#4ade80', PENDENTE:'#fbbf24',
                     NUNCA_PAGOU:'#f87171',
                     ATRASADO:'#f87171', VENCENDO:'#fb923c',
-                    SEM_PLANO:'#94a3b8', CANCELADO:'#64748b'
+                    SEM_PLANO:'#94a3b8', CANCELADO:'#64748b',
+                    BOLSISTA:'#60a5fa'
                 };
                 var statusBg = {
                     PAGO:'rgba(74,222,128,0.08)', PENDENTE:'rgba(251,191,36,0.08)',
                     NUNCA_PAGOU:'rgba(248,113,113,0.10)',
                     ATRASADO:'rgba(248,113,113,0.08)', VENCENDO:'rgba(251,146,60,0.08)',
-                    SEM_PLANO:'rgba(148,163,184,0.06)', CANCELADO:'rgba(100,116,139,0.06)'
+                    SEM_PLANO:'rgba(148,163,184,0.06)', CANCELADO:'rgba(100,116,139,0.06)',
+                    BOLSISTA:'rgba(96,165,250,0.08)'
                 };
                 var gwIcon = { mercadopago:'🔵', infinitypay:'🟣', pix_manual:'🟢', manual:'🖐' };
 
@@ -37275,16 +37605,22 @@
 
                     // Linha 2: ações
                     h += '<div style="display:flex;gap:5px;flex-wrap:wrap;">';
-                    if (st !== 'PAGO') {
-                        h += '<button onclick="confirmarPagtoManual(\'' + escapeHtml(p.email) + '\',\'' + escapeHtml(p.planoId||'') + '\',\'' + escapeHtml(p.planoNome||'') + '\',' + parseFloat(p.planoValor||0) + ')" style="padding:4px 10px;border-radius:7px;background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.25);font-size:9px;font-weight:700;cursor:pointer;">✅ Confirmar pago</button>';
+                    if (st === 'BOLSISTA') {
+                        h += '<button onclick="toggleBolsista(\'' + escapeHtml(p.email) + '\',false,this)" style="padding:4px 10px;border-radius:7px;background:rgba(96,165,250,0.1);color:#60a5fa;border:1px solid rgba(96,165,250,0.3);font-size:9px;font-weight:700;cursor:pointer;">🎓 Remover bolsa</button>';
+                        h += '<button onclick="abrirCobrancaAvulsa(\'' + escapeHtml(p.email) + '\',\'' + escapeHtml(p.nome||p.email) + '\')" style="padding:4px 10px;border-radius:7px;background:rgba(168,85,247,0.1);color:#a855f7;border:1px solid rgba(168,85,247,0.25);font-size:9px;font-weight:700;cursor:pointer;" title="Ex: taxa de exame de faixa, evento, etc.">💰 Cobrança avulsa</button>';
+                    } else {
+                        if (st !== 'PAGO') {
+                            h += '<button onclick="confirmarPagtoManual(\'' + escapeHtml(p.email) + '\',\'' + escapeHtml(p.planoId||'') + '\',\'' + escapeHtml(p.planoNome||'') + '\',' + parseFloat(p.planoValor||0) + ')" style="padding:4px 10px;border-radius:7px;background:rgba(74,222,128,0.1);color:#4ade80;border:1px solid rgba(74,222,128,0.25);font-size:9px;font-weight:700;cursor:pointer;">✅ Confirmar pago</button>';
+                        }
+                        if (st === 'PENDENTE' || st === 'ATRASADO' || st === 'SEM_PLANO') {
+                            h += '<button onclick="cobrarAgoraAlunoPainel(\'' + escapeHtml(p.email) + '\',this)" style="padding:4px 10px;border-radius:7px;background:rgba(201,162,58,0.15);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.35);font-size:9px;font-weight:700;cursor:pointer;">⚡ Cobrar agora</button>';
+                            h += '<button onclick="cobrarViaWhatsApp(\'' + escapeHtml(p.email) + '\',\'' + escapeHtml(p.nome||'') + '\',\'' + escapeHtml(p.vencimento||'') + '\',' + parseFloat(p.planoValor||0) + ',\'' + escapeHtml(p.planoNome||'') + '\')" style="padding:4px 10px;border-radius:7px;background:rgba(37,211,102,0.12);color:#25D366;border:1px solid rgba(37,211,102,0.3);font-size:9px;font-weight:700;cursor:pointer;">🟢 PIX + WhatsApp</button>';
+                        }
+                        h += '<button onclick="atribuirPlanoModal(\'' + escapeHtml(p.email) + '\')" style="padding:4px 10px;border-radius:7px;background:rgba(201,162,58,0.08);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.2);font-size:9px;font-weight:700;cursor:pointer;">📋 Atribuir plano</button>';
+                        h += '<button onclick="definirDiaCobrancaAluno(\'' + escapeHtml(p.email) + '\',' + (p.diaCobranca||0) + ')" style="padding:4px 10px;border-radius:7px;background:rgba(37,99,235,0.08);color:#60a5fa;border:1px solid rgba(37,99,235,0.2);font-size:9px;font-weight:700;cursor:pointer;" title="Definir dia de cobrança individual">📅 Dia ' + (p.diaCobranca ? p.diaCobranca : 'padrão') + '</button>';
+                        h += '<button onclick="abrirCobrancaAvulsa(\'' + escapeHtml(p.email) + '\',\'' + escapeHtml(p.nome||p.email) + '\')" style="padding:4px 10px;border-radius:7px;background:rgba(168,85,247,0.1);color:#a855f7;border:1px solid rgba(168,85,247,0.25);font-size:9px;font-weight:700;cursor:pointer;">💰 Cobrança avulsa</button>';
+                        h += '<button onclick="toggleBolsista(\'' + escapeHtml(p.email) + '\',true,this)" style="padding:4px 10px;border-radius:7px;background:rgba(96,165,250,0.08);color:#60a5fa;border:1px solid rgba(96,165,250,0.2);font-size:9px;font-weight:700;cursor:pointer;">🎓 Marcar bolsista</button>';
                     }
-                    if (st === 'PENDENTE' || st === 'ATRASADO' || st === 'SEM_PLANO') {
-                        h += '<button onclick="cobrarAgoraAlunoPainel(\'' + escapeHtml(p.email) + '\',this)" style="padding:4px 10px;border-radius:7px;background:rgba(201,162,58,0.15);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.35);font-size:9px;font-weight:700;cursor:pointer;">⚡ Cobrar agora</button>';
-                        h += '<button onclick="cobrarViaWhatsApp(\'' + escapeHtml(p.email) + '\',\'' + escapeHtml(p.nome||'') + '\',\'' + escapeHtml(p.vencimento||'') + '\',' + parseFloat(p.planoValor||0) + ',\'' + escapeHtml(p.planoNome||'') + '\')" style="padding:4px 10px;border-radius:7px;background:rgba(37,211,102,0.12);color:#25D366;border:1px solid rgba(37,211,102,0.3);font-size:9px;font-weight:700;cursor:pointer;">🟢 PIX + WhatsApp</button>';
-                    }
-                    h += '<button onclick="atribuirPlanoModal(\'' + escapeHtml(p.email) + '\')" style="padding:4px 10px;border-radius:7px;background:rgba(201,162,58,0.08);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.2);font-size:9px;font-weight:700;cursor:pointer;">📋 Atribuir plano</button>';
-                    h += '<button onclick="definirDiaCobrancaAluno(\'' + escapeHtml(p.email) + '\',' + (p.diaCobranca||0) + ')" style="padding:4px 10px;border-radius:7px;background:rgba(37,99,235,0.08);color:#60a5fa;border:1px solid rgba(37,99,235,0.2);font-size:9px;font-weight:700;cursor:pointer;" title="Definir dia de cobrança individual">📅 Dia ' + (p.diaCobranca ? p.diaCobranca : 'padrão') + '</button>';
-                    h += '<button onclick="abrirCobrancaAvulsa(\'' + escapeHtml(p.email) + '\',\'' + escapeHtml(p.nome||p.email) + '\')" style="padding:4px 10px;border-radius:7px;background:rgba(168,85,247,0.1);color:#a855f7;border:1px solid rgba(168,85,247,0.25);font-size:9px;font-weight:700;cursor:pointer;">💰 Cobrança avulsa</button>';
                     h += '</div>';
 
                     h += '</div>';
@@ -37307,6 +37643,37 @@
         }
 
         // ── Calendário de cobrança (bottom sheet, 2 modos) ───────────────────
+        async function toggleBolsista(email, marcar, btn) {
+            var confirmMsg = marcar
+                ? 'Marcar este aluno como BOLSISTA?\n\nEle deixará de aparecer nas cobranças e não receberá nenhuma mensalidade.'
+                : 'Remover o status de bolsista deste aluno?\n\nEle voltará a aparecer normalmente nas cobranças (de acordo com o plano atribuído).';
+            if (!confirm(confirmMsg)) return;
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvando...'; }
+            try {
+                var r = await secureFetch('setCategoriaFinanceira', {
+                    email: email,
+                    categoria: marcar ? 'bolsista' : 'normal'
+                });
+                if (r.success) {
+                    var t = document.createElement('div');
+                    t.style.cssText = 'position:fixed;top:10px;left:50%;transform:translateX(-50%);'
+                        + 'background:#1e293b;color:#4ade80;padding:10px 18px;border-radius:10px;'
+                        + 'font-size:12px;z-index:99999;max-width:320px;text-align:center;'
+                        + 'border:1px solid #475569;box-shadow:0 4px 12px rgba(0,0,0,0.5);';
+                    t.textContent = '✅ ' + r.message;
+                    document.body.appendChild(t);
+                    setTimeout(function(){ t.remove(); }, 3500);
+                    if (typeof loadPagamentosAdmin === 'function') loadPagamentosAdmin();
+                } else {
+                    alert('❌ ' + (r.message || 'Erro ao salvar'));
+                    if (btn) { btn.disabled = false; btn.textContent = marcar ? '🎓 Marcar bolsista' : '🎓 Remover bolsa'; }
+                }
+            } catch(e) {
+                alert('❌ Erro: ' + e.message);
+                if (btn) { btn.disabled = false; btn.textContent = marcar ? '🎓 Marcar bolsista' : '🎓 Remover bolsa'; }
+            }
+        }
+
         function definirDiaCobrancaAluno(email, diaAtual) {
             var old = document.getElementById('vencSheet'); if (old) old.remove();
             var t = new Date(), iso = t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');
