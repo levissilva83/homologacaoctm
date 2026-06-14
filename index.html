@@ -2522,9 +2522,10 @@
 
         .ibjjf-grau-entry {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
+            flex-wrap: wrap;
             gap: 10px;
-            padding: 7px 0;
+            padding: 8px 0;
             border-bottom: 1px solid rgba(255,255,255,0.04);
         }
         .ibjjf-grau-entry:last-child { border-bottom: none; padding-bottom: 0; }
@@ -2534,11 +2535,12 @@
             background: var(--bg-elevated);
             border: 1.5px solid var(--text-3);
             flex-shrink: 0;
+            margin-top: 4px;
         }
         .ibjjf-grau-entry-dot.filled   { background: var(--accent); border-color: var(--accent); }
         .ibjjf-grau-entry-dot.faixa-dot { background: #9b5cf6; border-color: #9b5cf6; }
         .ibjjf-grau-entry-dot.start-dot { background: #2ecc71; border-color: #2ecc71; }
-        .ibjjf-grau-entry-info  { flex: 1; display: flex; align-items: center; justify-content: space-between; }
+        .ibjjf-grau-entry-info  { flex: 1; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; justify-content: space-between; min-width: 0; }
         .ibjjf-grau-entry-label { font-size: 11px; font-weight: 600; color: var(--text-2); }
         .ibjjf-grau-entry-label.filled    { color: var(--text-1); }
         .ibjjf-grau-entry-label.faixa-lbl { color: #a78bfa; font-weight: 700; }
@@ -2547,6 +2549,32 @@
         .ibjjf-grau-entry-date.empty { color: var(--text-3); font-weight: 400; font-style: italic; }
         .ibjjf-node.completed { opacity: 0.72; }
         .ibjjf-node.completed.has-history { opacity: 0.88; }
+
+        /* Formulário de data de graduação — sempre em sua própria linha, largura total */
+        .grau-date-form {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            margin-top: 6px;
+            padding: 8px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(201,162,58,0.15);
+            border-radius: 8px;
+        }
+        .grau-date-form input[type="date"] {
+            flex: 1;
+            min-width: 130px;
+            font-size: 13px;
+            padding: 8px 10px;
+            background: rgba(255,255,255,0.07);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px;
+            color: var(--text-1);
+            color-scheme: dark;
+        }
+        .grau-date-form button { flex-shrink: 0; }
 
         .ibjjf-grau-dot.filled {
             background: var(--accent);
@@ -18335,10 +18363,10 @@
 
                 var btnHtml = '';
                 if ((isPast || isCurrent) && !dataStr && !pending) {
-                    btnHtml = '<form id="' + _cid + '_form" style="display:none;margin-top:3px;align-items:center;gap:4px;">'
-                            + '<input type="date" id="' + _cid + '_dt" style="font-size:11px;padding:3px 5px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:var(--text-1);">'
-                            + '<button type="button" data-faixa="' + escapeHtml(cord.cordao||cord.id) + '" data-grau="0" data-pid="' + _cid + '" onclick="_submeterGrauBtn(this)" style="font-size:10px;padding:3px 8px;background:rgba(201,162,58,0.15);border:1px solid rgba(201,162,58,0.4);border-radius:6px;color:#C9A23A;cursor:pointer;">Enviar</button>'
-                            + '<button type="button" onclick="_toggleGrauForm(\'' + _cid + '\')" style="font-size:10px;padding:3px 6px;background:transparent;border:none;color:rgba(255,255,255,0.3);cursor:pointer;">✕</button>'
+                    btnHtml = '<form id="' + _cid + '_form" class="grau-date-form" style="display:none;">'
+                            + '<input type="date" id="' + _cid + '_dt">'
+                            + '<button type="button" data-faixa="' + escapeHtml(cord.cordao||cord.id) + '" data-grau="0" data-pid="' + _cid + '" onclick="_submeterGrauBtn(this)" style="font-size:11px;padding:8px 14px;background:rgba(201,162,58,0.15);border:1px solid rgba(201,162,58,0.4);border-radius:6px;color:#C9A23A;cursor:pointer;font-weight:700;">Enviar</button>'
+                            + '<button type="button" onclick="_toggleGrauForm(\'' + _cid + '\')" style="font-size:11px;padding:8px 10px;background:transparent;border:none;color:rgba(255,255,255,0.3);cursor:pointer;">✕</button>'
                             + '</form>'
                             + '<button type="button" id="' + _cid + '_btn" onclick="_toggleGrauForm(\'' + _cid + '\')" style="font-size:10px;padding:2px 8px;background:rgba(201,162,58,0.08);border:1px solid rgba(201,162,58,0.25);border-radius:6px;color:#C9A23A;cursor:pointer;margin-top:3px;">📅 Informar data</button>';
                 }
@@ -18842,7 +18870,7 @@
 
                 // ── Accordion body (só para BJJ) ──
                 if (isBJJ) {
-                    h += '<div class="ibjjf-node-body">';
+                    h += '<div class="ibjjf-node-body" onclick="event.stopPropagation()">';
 
                     // Início da jornada (só no 1º nó)
                     if (i === 0 && inicioDate) {
@@ -18885,10 +18913,10 @@
                                 else               dateHtml = '';
                                 var _btnGrau = '';
                                 if (!ghDate && !ghPend) {
-                                    _btnGrau = '<form id="' + _grauId + '_form" style="display:none;margin-top:4px;align-items:center;gap:4px;">'
-                                             + '<input type="date" id="' + _grauId + '_dt" style="font-size:11px;padding:4px 6px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:var(--text-1);">'
-                                     + '<button type="button" data-faixa="' + escapeHtml(belt.name) + '" data-grau="' + gh + '" data-pid="' + _grauId + '" onclick="_submeterGrauBtn(this)" style="font-size:11px;padding:4px 8px;background:rgba(201,162,58,0.15);border:1px solid rgba(201,162,58,0.4);border-radius:6px;color:#C9A23A;cursor:pointer;">Enviar</button>'
-                                             + '<button type="button" onclick="_toggleGrauForm(\'' + _grauId + '\')" style="font-size:11px;padding:4px 6px;background:transparent;border:none;color:rgba(255,255,255,0.3);cursor:pointer;">✕</button>'
+                                    _btnGrau = '<form id="' + _grauId + '_form" class="grau-date-form" style="display:none;">'
+                                             + '<input type="date" id="' + _grauId + '_dt">'
+                                             + '<button type="button" data-faixa="' + escapeHtml(belt.name) + '" data-grau="' + gh + '" data-pid="' + _grauId + '" onclick="_submeterGrauBtn(this)" style="font-size:11px;padding:8px 14px;background:rgba(201,162,58,0.15);border:1px solid rgba(201,162,58,0.4);border-radius:6px;color:#C9A23A;cursor:pointer;font-weight:700;">Enviar</button>'
+                                             + '<button type="button" onclick="_toggleGrauForm(\'' + _grauId + '\')" style="font-size:11px;padding:8px 10px;background:transparent;border:none;color:rgba(255,255,255,0.3);cursor:pointer;">✕</button>'
                                              + '</form>'
                                              + '<button type="button" id="' + _grauId + '_btn" onclick="_toggleGrauForm(\'' + _grauId + '\')" '
                                              + 'style="font-size:10px;padding:3px 8px;background:rgba(201,162,58,0.08);border:1px solid rgba(201,162,58,0.25);border-radius:6px;color:#C9A23A;cursor:pointer;margin-top:3px;">📅 Informar data</button>';
@@ -18951,8 +18979,6 @@
             if (!form) return;
             var open = form.style.display !== 'none';
             form.style.display = open ? 'none' : 'flex';
-            form.style.alignItems = 'center';
-            form.style.gap = '4px';
             if (btn) btn.style.display = open ? '' : 'none';
         }
 
