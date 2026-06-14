@@ -8052,6 +8052,7 @@
                         </div>
                         <button class="btn btn-outline" onclick="showRegister()">Criar Nova Conta</button>
                         <button class="btn" onclick="showForgotPassword()" style="background:transparent;color:var(--text-3);font-size:13px;margin-top:4px;text-decoration:underline;border:none;cursor:pointer;">Esqueci minha senha</button>
+                        <button class="btn" onclick="showSolicitarTrial()" style="background:transparent;color:#C9A23A;font-size:13px;margin-top:10px;text-decoration:underline;border:none;cursor:pointer;font-weight:700;">🥋 Sou professor — Cadastrar minha academia (7 dias grátis)</button>
                     </div>
 
                     <div id="registerTab" style="display: none;">
@@ -31377,10 +31378,9 @@
             if (oldBanner) oldBanner.remove();
 
             // Determina título — trial ou assinatura
-            var isTrial = !currentUser
-                       || !currentUser.licStatus
-                       || (currentUser.licStatus !== 'RENOVACAO' && currentUser.licStatus !== 'EXPIRADO'
-                           && currentUser.licStatus !== 'CANCELADO' && currentUser.licStatus !== 'INADIMPLENTE');
+            // isTrial = true SOMENTE se o licStatus for explicitamente TRIAL (ou ausente/não logado).
+            // ATIVO/PAGO/RENOVACAO/EXPIRADO/CANCELADO/INADIMPLENTE = sempre cliente efetivo → "Assinatura Vencida"
+            var isTrial = !currentUser || !currentUser.licStatus || currentUser.licStatus === 'TRIAL';
             var titulo  = isTrial ? 'Período de teste encerrado' : 'Assinatura Vencida';
             var subtit  = isTrial
                 ? (data && data.dataExpiracao
@@ -40248,6 +40248,143 @@
             } catch(e) { alert('Erro de conexão'); }
         }
 
+
+        // ═══ Auto-cadastro de academia (trial automático) ═══
+        var _STR_MODALIDADES = [
+            { id: 'bjj',              nome: 'BJJ' },
+            { id: 'muay_thai',        nome: 'Muay Thai' },
+            { id: 'karate',           nome: 'Karatê' },
+            { id: 'karate_kyokushin', nome: 'Kyokushin' },
+            { id: 'judo',             nome: 'Judô' },
+            { id: 'taekwondo',        nome: 'Taekwondo' },
+            { id: 'kickboxing',       nome: 'Kickboxing' },
+            { id: 'capoeira',         nome: 'Capoeira' },
+            { id: 'kung_fu',          nome: 'Kung Fu' },
+            { id: 'mma',              nome: 'MMA' },
+            { id: 'boxe',             nome: 'Boxe' },
+            { id: 'wrestling',        nome: 'Wrestling' },
+            { id: 'luta_livre',       nome: 'Luta Livre' },
+            { id: 'wushu_sanda',      nome: 'Wushu Sanda' }
+        ];
+        var _strModsSelecionadas = [];
+
+        function showSolicitarTrial() {
+            var ov = document.getElementById('solicitarTrialOverlay');
+            if (!ov) return;
+            // Popular modalidades
+            var cont = document.getElementById('strModalidades');
+            if (cont && !cont.dataset.filled) {
+                cont.innerHTML = _STR_MODALIDADES.map(function(m){
+                    return '<button type="button" onclick="_strToggleMod(\''+m.id+'\',this)" '+
+                        'style="padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);'+
+                        'border-radius:20px;color:rgba(255,255,255,0.7);font-size:12px;cursor:pointer;">'+m.nome+'</button>';
+                }).join('');
+                cont.dataset.filled = '1';
+            }
+            ['loginScreen','appScreen','adminScreen'].forEach(function(id){
+                var el = document.getElementById(id); if(el) el.style.display='none';
+            });
+            ov.style.display = 'block';
+        }
+
+        function closeSolicitarTrial() {
+            var ov = document.getElementById('solicitarTrialOverlay');
+            if (ov) ov.style.display = 'none';
+            var ls = document.getElementById('loginScreen');
+            if (ls) ls.style.display = 'flex';
+        }
+
+        function _strToggleMod(modId, btn) {
+            var idx = _strModsSelecionadas.indexOf(modId);
+            if (idx === -1) {
+                _strModsSelecionadas.push(modId);
+                btn.style.background = 'rgba(201,162,58,0.2)';
+                btn.style.borderColor = '#C9A23A';
+                btn.style.color = '#C9A23A';
+            } else {
+                _strModsSelecionadas.splice(idx, 1);
+                btn.style.background = 'rgba(255,255,255,0.05)';
+                btn.style.borderColor = 'rgba(255,255,255,0.15)';
+                btn.style.color = 'rgba(255,255,255,0.7)';
+            }
+        }
+
+        async function enviarSolicitarTrial() {
+            var nomeDojo    = (document.getElementById('strNomeDojo')    || {}).value || '';
+            var nome        = (document.getElementById('strNome')        || {}).value || '';
+            var email       = (document.getElementById('strEmail')       || {}).value || '';
+            var telefone    = (document.getElementById('strTelefone')    || {}).value || '';
+            var nascimento  = (document.getElementById('strNascimento')  || {}).value || '';
+            var msg = document.getElementById('strMsg');
+
+            if (!nomeDojo.trim() || !nome.trim() || !email.trim() || !telefone.trim()) {
+                if (msg) { msg.style.color = '#fbbf24'; msg.textContent = '⚠️ Preencha todos os campos obrigatórios (*)'; }
+                return;
+            }
+            if (_strModsSelecionadas.length === 0) {
+                if (msg) { msg.style.color = '#fbbf24'; msg.textContent = '⚠️ Selecione pelo menos uma modalidade'; }
+                return;
+            }
+
+            if (msg) { msg.style.color = 'var(--text-3)'; msg.textContent = '⏳ Criando sua conta...'; }
+
+            try {
+                var res = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'solicitarTrial',
+                        nomeDojo: nomeDojo.trim(),
+                        nome: nome.trim(),
+                        emailAdmin: email.trim().toLowerCase(),
+                        telefone: telefone.trim(),
+                        nascimento: nascimento,
+                        modalidades: _strModsSelecionadas.join(',')
+                    })
+                });
+                var data = await res.json();
+
+                if (data && data.success) {
+                    if (msg) { msg.style.color = '#4ade80'; msg.textContent = '✅ Conta criada com sucesso!'; }
+                    // Mostrar tela de sucesso com credenciais + onboarding
+                    var ov = document.getElementById('solicitarTrialOverlay');
+                    if (ov) {
+                        var ob = data.onboarding || {};
+                        var onboardingHtml = '';
+                        if (ob.grupoWhatsApp || ob.videoTreinamento || ob.canalYoutube) {
+                            var linkStyle = 'display:flex;align-items:center;gap:8px;padding:10px 0;color:#fff;text-decoration:none;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.08);';
+                            var linkStyleLast = 'display:flex;align-items:center;gap:8px;padding:10px 0;color:#fff;text-decoration:none;font-size:13px;';
+                            onboardingHtml =
+                                '<div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:12px;padding:16px;text-align:left;margin-bottom:20px;">' +
+                                '<div style="font-size:12px;font-weight:800;color:#4ade80;margin-bottom:10px;">📚 Comece por aqui</div>' +
+                                (ob.grupoWhatsApp ? '<a href="'+ob.grupoWhatsApp+'" target="_blank" style="'+linkStyle+'">💬 <span>Entrar no grupo do WhatsApp</span></a>' : '') +
+                                (ob.videoTreinamento ? '<a href="'+ob.videoTreinamento+'" target="_blank" style="'+linkStyle+'">🎥 <span>Vídeo de treinamento (obrigatório)</span></a>' : '') +
+                                (ob.canalYoutube ? '<a href="'+ob.canalYoutube+'" target="_blank" style="'+linkStyleLast+'">📺 <span>Canal com mais vídeos</span></a>' : '') +
+                                '</div>';
+                        }
+                        ov.querySelector('div').innerHTML =
+                            '<div style="text-align:center;padding:40px 0;">' +
+                            '<div style="font-size:48px;margin-bottom:16px;">🎉</div>' +
+                            '<div style="font-size:18px;font-weight:900;color:#4ade80;margin-bottom:8px;">Conta criada!</div>' +
+                            '<div style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:24px;">' + data.diasTrial + ' dias de acesso grátis liberados</div>' +
+                            '<div style="background:rgba(255,255,255,0.05);border-radius:12px;padding:16px;text-align:left;font-size:13px;line-height:1.8;margin-bottom:16px;">' +
+                            '<div><b>Link de acesso:</b><br><span style="color:#C9A23A;word-break:break-all;">' + data.linkCliente + '</span></div>' +
+                            '<div style="margin-top:10px;"><b>Email:</b> ' + data.emailAdmin + '</div>' +
+                            '<div style="margin-top:4px;"><b>Senha temporária:</b> <span style="color:#C9A23A;">' + data.senhaTemp + '</span></div>' +
+                            '<div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,0.4);">⚠️ Altere sua senha após o primeiro acesso.</div>' +
+                            '</div>' +
+                            onboardingHtml +
+                            '<button onclick="window.location.href=\'' + data.linkCliente + '\'" style="width:100%;padding:14px;background:linear-gradient(135deg,#C9A23A,#a07820);color:#000;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">🚀 Acessar agora</button>' +
+                            '</div>';
+                    }
+                } else {
+                    if (msg) { msg.style.color = '#f87171'; msg.textContent = '❌ ' + (data && data.message ? data.message : 'Erro ao criar conta'); }
+                }
+            } catch(e) {
+                if (msg) { msg.style.color = '#f87171'; msg.textContent = '❌ Erro de conexão. Tente novamente.'; }
+            }
+        }
+
         function closeStuModal() {
             document.getElementById('stuModal').style.display = 'none';
             document.body.style.overflow = '';
@@ -44258,6 +44395,57 @@
         });
       }
     </script>
+
+    <!-- ═══ CADASTRO DE NOVA ACADEMIA — Trial automático ═══ -->
+    <div id="solicitarTrialOverlay" style="display:none;position:fixed;inset:0;background:rgba(6,6,7,0.97);z-index:9990;overflow-y:auto;">
+        <div style="max-width:420px;margin:0 auto;padding:24px 20px 60px;">
+            <div style="text-align:center;margin-bottom:24px;">
+                <div style="font-size:40px;margin-bottom:8px;">🥋</div>
+                <div style="font-size:20px;font-weight:900;color:#C9A23A;">Cadastre sua academia</div>
+                <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px;">7 dias grátis — acesso completo, sem cartão de crédito</div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:12px;">
+                <div>
+                    <label style="font-size:11px;color:var(--text-3,#999);display:block;margin-bottom:4px;">Nome do seu Dojo/Academia *</label>
+                    <input id="strNomeDojo" type="text" placeholder="Ex: Academia Guerreiros BJJ" style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-size:14px;">
+                </div>
+                <div>
+                    <label style="font-size:11px;color:var(--text-3,#999);display:block;margin-bottom:4px;">Seu nome completo *</label>
+                    <input id="strNome" type="text" placeholder="Seu nome" style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-size:14px;">
+                </div>
+                <div>
+                    <label style="font-size:11px;color:var(--text-3,#999);display:block;margin-bottom:4px;">E-mail *</label>
+                    <input id="strEmail" type="email" placeholder="seu@email.com" style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-size:14px;">
+                </div>
+                <div>
+                    <label style="font-size:11px;color:var(--text-3,#999);display:block;margin-bottom:4px;">WhatsApp *</label>
+                    <input id="strTelefone" type="tel" placeholder="(00) 00000-0000" style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-size:14px;">
+                </div>
+                <div>
+                    <label style="font-size:11px;color:var(--text-3,#999);display:block;margin-bottom:4px;">Data de nascimento</label>
+                    <input id="strNascimento" type="date" style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-size:14px;">
+                </div>
+
+                <div>
+                    <label style="font-size:11px;color:var(--text-3,#999);display:block;margin-bottom:8px;">Modalidades que você ensina * (selecione 1 ou mais)</label>
+                    <div id="strModalidades" style="display:flex;flex-wrap:wrap;gap:6px;">
+                        <!-- preenchido via JS -->
+                    </div>
+                </div>
+
+                <div id="strMsg" style="font-size:12px;text-align:center;min-height:18px;"></div>
+
+                <button onclick="enviarSolicitarTrial()" style="width:100%;padding:14px;background:linear-gradient(135deg,#C9A23A,#a07820);color:#000;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;margin-top:4px;">
+                    🚀 Criar minha conta grátis
+                </button>
+                <button onclick="closeSolicitarTrial()" style="width:100%;padding:10px;background:transparent;color:rgba(255,255,255,0.4);border:none;font-size:12px;cursor:pointer;">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>
