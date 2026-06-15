@@ -8080,7 +8080,6 @@
                         </div>
                         <button class="btn btn-outline" onclick="showRegister()">Criar Nova Conta</button>
                         <button class="btn" onclick="showForgotPassword()" style="background:transparent;color:var(--text-3);font-size:13px;margin-top:4px;text-decoration:underline;border:none;cursor:pointer;">Esqueci minha senha</button>
-                        
                     </div>
 
                     <div id="registerTab" style="display: none;">
@@ -11869,6 +11868,9 @@
                                     <span id="cobNomeFiltroLimpar" onclick="limparFiltroCobNome()" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--adm-text-3);font-size:14px;">✕</span>
                                 </div>
 
+                                <!-- Previsão de Faturamento -->
+                                <div id="cobPrevisao" style="display:none;margin-bottom:10px;"></div>
+
                                 <!-- KPIs -->
                                 <div id="cobKPIs" style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:10px;"></div>
 
@@ -12063,7 +12065,7 @@
             <!-- Cabeçalho -->
             <div style="text-align:center;margin-bottom:28px;">
                 <div style="font-size:36px;margin-bottom:8px;">💳</div>
-                <div style="font-size:20px;font-weight:800;color:#C9A23A;">Período de teste encerrado</div>
+                <div style="font-size:20px;font-weight:800;color:#C9A23A;">Seu período de assinatura foi encerrado</div>
                 <div id="trialBlockedSub" style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:4px;"></div>
             </div>
 
@@ -14778,10 +14780,6 @@
                 var firstBtn = document.querySelector('#bottomNav .bnav-btn');
                 if (firstBtn) firstBtn.classList.add('active');
 
-                // Reaplica visibilidade dos módulos (Preparação Física, Jogos, etc.)
-                // — garante consistência ao entrar/trocar de modalidade
-                if (typeof applyModulesVisibility === 'function') applyModulesVisibility();
-
                 setTimeout(function() { treino.classList.remove('mod-entering'); }, 420);
 
                 // Renderiza chips (só aparece se 2+ modalidades)
@@ -15594,15 +15592,6 @@
 
         // ===== INIT =====
         window.addEventListener('load', async function() {
-            // Landing page — só na página raiz (sem ?ctm=)
-            try {
-                var _urlParams = new URLSearchParams(window.location.search);
-                if (!_urlParams.get('ctm')) {
-                    showLanding();
-                    return; // não roda checkTrialStatus/login na landing
-                }
-            } catch(_eLanding) {}
-
             // Verifica bloqueio ANTES de restaurar sessão
             var bloqueado = await checkTrialStatus();
             if (bloqueado) return;
@@ -26394,28 +26383,6 @@
         var _gradActiveModId  = '';
         var _gradModConfigs   = {};   // { "modId::CT": { tipo, regras:[{nivel,minAulas,minMeses}] } }
 
-        // ─── initGradSistema ─────────────────────────────────────────────
-        function initGradSistema() {
-            var mods = MODALIDADES_CATALOG || [];
-            var tabsEl    = document.getElementById('gradModTabs');
-            var container = document.getElementById('gradSystemList');
-            if (!tabsEl || !container) return;
-            if (!mods.length) { container.innerHTML = '<div class="admin-empty">Nenhuma modalidade cadastrada</div>'; return; }
-            if (!_gradActiveModId || !mods.find(function(m){ return m.id===_gradActiveModId; }))
-                _gradActiveModId = mods[0].id;
-            var tabHtml = '';
-            mods.forEach(function(mod) {
-                var act = mod.id===_gradActiveModId;
-                tabHtml += '<button class="ct-mod-tab'+(act?' active':'')+'" ';
-                tabHtml += 'style="--ct-mod-cor:'+mod.cor+';--ct-mod-rgb:'+(mod.corRGB||'201,162,58')+';" ';
-                tabHtml += 'onclick="switchGradModTab(\''+mod.id+'\')"><span class="ct-mod-tab-dot"></span>'+mod.icon+' '+mod.nome+'</button>';
-            });
-            tabsEl.innerHTML = tabHtml;
-            loadGradConfigMod().then(function(){ _renderGradModPanel(_gradActiveModId); });
-        }
-
-        function renderGradSystemAdmin() { initGradSistema(); }  // alias
-
         // ════════════════════════════════════════════════════════════
         // EDITOR DE FAIXAS/NÍVEIS CUSTOMIZADOS POR MODALIDADE
         // ════════════════════════════════════════════════════════════
@@ -26493,12 +26460,12 @@
         }
 
         function cancelarEdicaoFaixa() {
-            document.getElementById('faixaRowIndex').value = 0;
-            document.getElementById('faixaEmoji').value    = '';
-            document.getElementById('faixaLabel').value    = '';
-            document.getElementById('faixaCor').value      = '#C9A23A';
-            document.getElementById('faixaMaxGrau').value  = 0;
-            document.getElementById('faixaMinMeses').value = 0;
+            var ri = document.getElementById('faixaRowIndex'); if (ri) ri.value = 0;
+            var em = document.getElementById('faixaEmoji'); if (em) em.value = '';
+            var lb = document.getElementById('faixaLabel'); if (lb) lb.value = '';
+            var co = document.getElementById('faixaCor'); if (co) co.value = '#C9A23A';
+            var mg = document.getElementById('faixaMaxGrau'); if (mg) mg.value = 0;
+            var mm = document.getElementById('faixaMinMeses'); if (mm) mm.value = 0;
             var t = document.getElementById('faixaFormTitle'); if (t) t.textContent = '➕ Nova Faixa/Nível';
             var c = document.getElementById('faixaCancelBtn'); if (c) c.style.display = 'none';
             var m = document.getElementById('faixaFormMsg'); if (m) m.textContent = '';
@@ -26589,6 +26556,28 @@
                 alert('Erro de conexão ao reordenar');
             }
         }
+
+        // ─── initGradSistema ─────────────────────────────────────────────
+        function initGradSistema() {
+            var mods = MODALIDADES_CATALOG || [];
+            var tabsEl    = document.getElementById('gradModTabs');
+            var container = document.getElementById('gradSystemList');
+            if (!tabsEl || !container) return;
+            if (!mods.length) { container.innerHTML = '<div class="admin-empty">Nenhuma modalidade cadastrada</div>'; return; }
+            if (!_gradActiveModId || !mods.find(function(m){ return m.id===_gradActiveModId; }))
+                _gradActiveModId = mods[0].id;
+            var tabHtml = '';
+            mods.forEach(function(mod) {
+                var act = mod.id===_gradActiveModId;
+                tabHtml += '<button class="ct-mod-tab'+(act?' active':'')+'" ';
+                tabHtml += 'style="--ct-mod-cor:'+mod.cor+';--ct-mod-rgb:'+(mod.corRGB||'201,162,58')+';" ';
+                tabHtml += 'onclick="switchGradModTab(\''+mod.id+'\')"><span class="ct-mod-tab-dot"></span>'+mod.icon+' '+mod.nome+'</button>';
+            });
+            tabsEl.innerHTML = tabHtml;
+            loadGradConfigMod().then(function(){ _renderGradModPanel(_gradActiveModId); });
+        }
+
+        function renderGradSystemAdmin() { initGradSistema(); }  // alias
 
         function switchGradModTab(modId) {
             _gradActiveModId = modId;
@@ -31709,6 +31698,7 @@
 
                 var r = await fetch(SCRIPT_URL, {
                     method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'checkTrialStatus', token: token, email: email })
                 });
                 var data = await r.json();
@@ -31740,17 +31730,11 @@
             if (oldBanner) oldBanner.remove();
 
             // Determina título — trial ou assinatura
-            // Fonte primária: data.modoTrial (vem do checkTrialStatus, disponível mesmo
-            // antes do login/restauração da sessão). false = cliente efetivo (RENOVACAO/
-            // VENCIDO/EXPIRADO/INADIMPLENTE/ENCERRADO) → "Assinatura Vencida".
-            // Fallback: currentUser.licStatus, para quando data não traz modoTrial.
-            var isTrial;
-            if (data && typeof data.modoTrial === 'boolean') {
-                isTrial = data.modoTrial === true;
-            } else {
-                isTrial = !currentUser || !currentUser.licStatus || currentUser.licStatus === 'TRIAL';
-            }
-            var titulo  = isTrial ? 'Período de teste encerrado' : 'Assinatura Vencida';
+            var isTrial = !currentUser
+                       || !currentUser.licStatus
+                       || (currentUser.licStatus !== 'RENOVACAO' && currentUser.licStatus !== 'EXPIRADO'
+                           && currentUser.licStatus !== 'CANCELADO' && currentUser.licStatus !== 'INADIMPLENTE');
+            var titulo  = 'Seu período de assinatura foi encerrado';
             var subtit  = isTrial
                 ? (data && data.dataExpiracao
                     ? 'Período encerrado em ' + new Date(data.dataExpiracao).toLocaleDateString('pt-BR')
@@ -31851,6 +31835,7 @@
                 var resp = await fetch(SCRIPT_URL, {
                     method:   'POST',
                     redirect: 'follow',
+                    headers:  { 'Content-Type': 'application/json' },
                     body:     JSON.stringify({ action: 'getPlanos', ctmId: _ctmIdParaPlanos }),
                     signal:   _controller.signal
                 });
@@ -32067,7 +32052,7 @@
             var banner = document.createElement('div');
             banner.id = 'trialExpiredBanner';
             banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9998;background:#C9A23A;color:#000;text-align:center;padding:8px 16px;font-size:12px;font-weight:800;';
-            banner.textContent = '⏰ Período de teste encerrado — escolha um plano para continuar';
+            banner.textContent = '⏰ Seu período de assinatura foi encerrado — escolha um plano para continuar';
             document.body.prepend(banner);
         }
 
@@ -34095,7 +34080,6 @@
         // ─── Apply modules visibility (student side) ──────────
         var _activeModules  = null;
         var _userModulePrefs = null;
-        var _modulesPollInterval = null;
 
         async function loadAndApplyModules() {
             try {
@@ -34106,21 +34090,6 @@
                 else { _userModulePrefs = {}; }
                 applyModulesVisibility();
             } catch(e) { console.error('loadModules:', e); }
-
-            // Mantém os módulos sincronizados com o que o admin configurou,
-            // sem exigir logout/login do aluno. Roda só uma vez (não acumula intervals).
-            if (!_modulesPollInterval) {
-                _modulesPollInterval = setInterval(async function() {
-                    if (!currentUser || isAdmin()) return;
-                    try {
-                        var d = await secureFetch('getModulesConfig', {});
-                        if (d.success && d.modules) {
-                            _activeModules = d.modules;
-                            applyModulesVisibility();
-                        }
-                    } catch(eP) {}
-                }, 30000); // a cada 30s
-            }
         }
 
         function isModuleVisible(modId) {
@@ -37509,6 +37478,53 @@
                     var receitaLiquid = pagosFiltro.reduce(function(acc, p){ return acc + (p.valorLiquido ? parseFloat(p.valorLiquido) : parseFloat(p.planoValor||0)); }, 0);
                     var taxaTotal     = Math.round((receitaTotal - receitaLiquid) * 100) / 100;
 
+                    // ── Previsão de Faturamento (MRR) ──
+                    // Soma o valor do plano de TODOS os alunos com plano ativo,
+                    // independente de já terem pago este mês ou não.
+                    // Exclui bolsistas (não geram cobrança) e quem não tem plano.
+                    var statusComPlano = ['PAGO','PENDENTE','ATRASADO','VENCENDO','NUNCA_PAGOU'];
+                    var alunosComPlano = allPags.filter(function(p){
+                        var s = (p.status||'').toUpperCase();
+                        return p.planoId && statusComPlano.indexOf(s) !== -1;
+                    });
+                    var previstoTotal = alunosComPlano.reduce(function(acc, p){ return acc + parseFloat(p.planoValor||0); }, 0);
+                    var aReceberTotal = Math.max(0, previstoTotal - receitaTotal);
+                    var pctRecebido   = previstoTotal > 0 ? Math.round(receitaTotal / previstoTotal * 100) : 0;
+
+                    var previsaoEl = document.getElementById('cobPrevisao');
+                    if (previsaoEl) {
+                        if (previstoTotal > 0) {
+                            previsaoEl.style.display = 'block';
+                            previsaoEl.innerHTML =
+                                '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:14px;">' +
+                                    '<div style="font-size:11px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">📈 Previsão deste mês</div>' +
+                                    '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">' +
+                                        '<div style="flex:1;min-width:100px;">' +
+                                            '<div style="font-size:9px;color:var(--adm-text-3);margin-bottom:2px;">Previsto (todos os planos ativos)</div>' +
+                                            '<div style="font-size:20px;font-weight:800;color:var(--adm-text-1);">R$ ' + previstoTotal.toFixed(2).replace('.',',') + '</div>' +
+                                            '<div style="font-size:9px;color:var(--adm-text-3);">' + alunosComPlano.length + ' aluno(s) com plano</div>' +
+                                        '</div>' +
+                                        '<div style="flex:1;min-width:100px;">' +
+                                            '<div style="font-size:9px;color:var(--adm-text-3);margin-bottom:2px;">✅ Já recebido</div>' +
+                                            '<div style="font-size:20px;font-weight:800;color:#4ade80;">R$ ' + receitaTotal.toFixed(2).replace('.',',') + '</div>' +
+                                            '<div style="font-size:9px;color:var(--adm-text-3);">' + kPago + ' pagamento(s) confirmado(s)</div>' +
+                                        '</div>' +
+                                        '<div style="flex:1;min-width:100px;">' +
+                                            '<div style="font-size:9px;color:var(--adm-text-3);margin-bottom:2px;">⏳ Falta receber</div>' +
+                                            '<div style="font-size:20px;font-weight:800;color:#fbbf24;">R$ ' + aReceberTotal.toFixed(2).replace('.',',') + '</div>' +
+                                            '<div style="font-size:9px;color:var(--adm-text-3);">se todos pagarem</div>' +
+                                        '</div>' +
+                                    '</div>' +
+                                    '<div style="background:rgba(255,255,255,0.05);border-radius:6px;height:8px;overflow:hidden;margin-bottom:4px;">' +
+                                        '<div style="background:linear-gradient(90deg,#4ade80,#22c55e);height:100%;width:' + Math.min(100,pctRecebido) + '%;border-radius:6px;transition:width 0.3s;"></div>' +
+                                    '</div>' +
+                                    '<div style="font-size:10px;color:var(--adm-text-3);text-align:right;">' + pctRecebido + '% do previsto já recebido</div>' +
+                                '</div>';
+                        } else {
+                            previsaoEl.style.display = 'none';
+                        }
+                    }
+
                     // Separa PIX manual vs Gateway (MP, InfinityPay etc)
                     var isManual = function(p) {
                         var m = (p.metodo || '').toLowerCase();
@@ -37672,7 +37688,7 @@
         async function toggleBolsista(email, marcar, btn) {
             var confirmMsg = marcar
                 ? 'Marcar este aluno como BOLSISTA?\n\nEle deixará de aparecer nas cobranças e não receberá nenhuma mensalidade.'
-                : 'Remover o status de bolsista deste aluno?\n\nEle voltará a aparecer normalmente nas cobranças (de acordo com o plano atribuído).';
+                : 'Remover o status de bolsista deste aluno?\n\nEle voltará a aparecer normalmente nas cobranças (de acordo com o plano atual).';
             if (!confirm(confirmMsg)) return;
             if (btn) { btn.disabled = true; btn.textContent = '⏳ Salvando...'; }
             try {
@@ -40673,188 +40689,6 @@
                 if (r && r.success) { loadCTsCompartilhados(); }
                 else { alert('Erro: '+(r&&r.message?r.message:'desconhecido')); }
             } catch(e) { alert('Erro de conexão'); }
-        }
-
-
-        // ═══ Auto-cadastro de academia (trial automático) ═══
-        var _STR_MODALIDADES = [
-            { id: 'bjj',              nome: 'BJJ' },
-            { id: 'muay_thai',        nome: 'Muay Thai' },
-            { id: 'karate',           nome: 'Karatê' },
-            { id: 'karate_kyokushin', nome: 'Kyokushin' },
-            { id: 'judo',             nome: 'Judô' },
-            { id: 'taekwondo',        nome: 'Taekwondo' },
-            { id: 'kickboxing',       nome: 'Kickboxing' },
-            { id: 'capoeira',         nome: 'Capoeira' },
-            { id: 'kung_fu',          nome: 'Kung Fu' },
-            { id: 'mma',              nome: 'MMA' },
-            { id: 'boxe',             nome: 'Boxe' },
-            { id: 'wrestling',        nome: 'Wrestling' },
-            { id: 'luta_livre',       nome: 'Luta Livre' },
-            { id: 'wushu_sanda',      nome: 'Wushu Sanda' }
-        ];
-        var _strModsSelecionadas = [];
-
-
-        // ═══ Landing page (ctapp.online sem ?ctm=) ═══
-        function showLanding() {
-            ['loginScreen','appScreen','adminScreen','bottomNav','adminNav'].forEach(function(id){
-                var el = document.getElementById(id); if (el) el.style.display = 'none';
-            });
-            var landing = document.getElementById('landingScreen');
-            if (!landing) return;
-            // Logo CT Manager
-            var logoImg = document.getElementById('landingLogoImg');
-            if (logoImg && !logoImg.src) {
-                logoImg.src = (typeof _CTM_ICON_512 !== 'undefined') ? _CTM_ICON_512 : '';
-            }
-            // Popular modalidades suportadas (mesma lista do formulário de cadastro)
-            var cont = document.getElementById('landingModalidades');
-            if (cont && !cont.dataset.filled) {
-                cont.innerHTML = _STR_MODALIDADES.map(function(m){
-                    return '<span style="padding:7px 14px;background:#F7F8FA;border:1px solid #EAEBEF;'+
-                        'border-radius:20px;color:#0B0E14;font-size:12.5px;font-weight:700;">'+m.nome+'</span>';
-                }).join('');
-                cont.dataset.filled = '1';
-            }
-            landing.style.display = 'block';
-        }
-
-        function hideLanding() {
-            var landing = document.getElementById('landingScreen');
-            if (landing) landing.style.display = 'none';
-            var ls = document.getElementById('loginScreen');
-            if (ls) ls.style.display = '';
-        }
-
-        function showSolicitarTrial() {
-            var ov = document.getElementById('solicitarTrialOverlay');
-            if (!ov) return;
-            // Popular modalidades
-            var cont = document.getElementById('strModalidades');
-            if (cont && !cont.dataset.filled) {
-                cont.innerHTML = _STR_MODALIDADES.map(function(m){
-                    return '<button type="button" onclick="_strToggleMod(\''+m.id+'\',this)" '+
-                        'style="padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);'+
-                        'border-radius:20px;color:rgba(255,255,255,0.7);font-size:12px;cursor:pointer;">'+m.nome+'</button>';
-                }).join('');
-                cont.dataset.filled = '1';
-            }
-            ['loginScreen','appScreen','adminScreen','landingScreen'].forEach(function(id){
-                var el = document.getElementById(id); if(el) el.style.display='none';
-            });
-            ov.style.display = 'block';
-        }
-
-        function closeSolicitarTrial() {
-            var ov = document.getElementById('solicitarTrialOverlay');
-            if (ov) ov.style.display = 'none';
-            // Volta para a landing se não há ?ctm= na URL, senão para o login do CT
-            try {
-                var _p = new URLSearchParams(window.location.search);
-                if (!_p.get('ctm')) { showLanding(); return; }
-            } catch(_e) {}
-            var ls = document.getElementById('loginScreen');
-            if (ls) ls.style.display = 'flex';
-        }
-
-        function _strToggleMod(modId, btn) {
-            var idx = _strModsSelecionadas.indexOf(modId);
-            if (idx === -1) {
-                _strModsSelecionadas.push(modId);
-                btn.style.background = 'rgba(201,162,58,0.2)';
-                btn.style.borderColor = '#C9A23A';
-                btn.style.color = '#C9A23A';
-            } else {
-                _strModsSelecionadas.splice(idx, 1);
-                btn.style.background = 'rgba(255,255,255,0.05)';
-                btn.style.borderColor = 'rgba(255,255,255,0.15)';
-                btn.style.color = 'rgba(255,255,255,0.7)';
-            }
-        }
-
-        async function enviarSolicitarTrial() {
-            var nomeDojo    = (document.getElementById('strNomeDojo')    || {}).value || '';
-            var nome        = (document.getElementById('strNome')        || {}).value || '';
-            var email       = (document.getElementById('strEmail')       || {}).value || '';
-            var telefone    = (document.getElementById('strTelefone')    || {}).value || '';
-            var nascimento  = (document.getElementById('strNascimento')  || {}).value || '';
-            var msg = document.getElementById('strMsg');
-
-            if (!nomeDojo.trim() || !nome.trim() || !email.trim() || !telefone.trim()) {
-                if (msg) { msg.style.color = '#fbbf24'; msg.textContent = '⚠️ Preencha todos os campos obrigatórios (*)'; }
-                return;
-            }
-            if (_strModsSelecionadas.length === 0) {
-                if (msg) { msg.style.color = '#fbbf24'; msg.textContent = '⚠️ Selecione pelo menos uma modalidade'; }
-                return;
-            }
-
-            if (msg) { msg.style.color = 'var(--text-3)'; msg.textContent = '⏳ Criando sua conta...'; }
-
-            try {
-                var res = await fetch(SCRIPT_URL, {
-                    method: 'POST',
-                    body: JSON.stringify({
-                        action: 'solicitarTrial',
-                        nomeDojo: nomeDojo.trim(),
-                        nome: nome.trim(),
-                        emailAdmin: email.trim().toLowerCase(),
-                        telefone: telefone.trim(),
-                        nascimento: nascimento,
-                        modalidades: _strModsSelecionadas.join(',')
-                    })
-                });
-
-                var rawText = await res.text();
-                var data;
-                try {
-                    data = JSON.parse(rawText);
-                } catch(parseErr) {
-                    console.error('Resposta não-JSON do servidor:', rawText.substring(0, 500));
-                    if (msg) { msg.style.color = '#f87171'; msg.textContent = '❌ Erro no servidor (HTTP ' + res.status + '). Tente novamente em alguns instantes.'; }
-                    return;
-                }
-
-                if (data && data.success) {
-                    if (msg) { msg.style.color = '#4ade80'; msg.textContent = '✅ Conta criada com sucesso!'; }
-                    // Mostrar tela de sucesso com credenciais + onboarding
-                    var ov = document.getElementById('solicitarTrialOverlay');
-                    if (ov) {
-                        var ob = data.onboarding || {};
-                        var onboardingHtml = '';
-                        if (ob.grupoWhatsApp || ob.videoTreinamento || ob.canalYoutube) {
-                            var linkStyle = 'display:flex;align-items:center;gap:8px;padding:10px 0;color:#fff;text-decoration:none;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.08);';
-                            var linkStyleLast = 'display:flex;align-items:center;gap:8px;padding:10px 0;color:#fff;text-decoration:none;font-size:13px;';
-                            onboardingHtml =
-                                '<div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:12px;padding:16px;text-align:left;margin-bottom:20px;">' +
-                                '<div style="font-size:12px;font-weight:800;color:#4ade80;margin-bottom:10px;">📚 Comece por aqui</div>' +
-                                (ob.grupoWhatsApp ? '<a href="'+ob.grupoWhatsApp+'" target="_blank" style="'+linkStyle+'">💬 <span>Entrar no grupo do WhatsApp</span></a>' : '') +
-                                (ob.videoTreinamento ? '<a href="'+ob.videoTreinamento+'" target="_blank" style="'+linkStyle+'">🎥 <span>Vídeo de treinamento (obrigatório)</span></a>' : '') +
-                                (ob.canalYoutube ? '<a href="'+ob.canalYoutube+'" target="_blank" style="'+linkStyleLast+'">📺 <span>Canal com mais vídeos</span></a>' : '') +
-                                '</div>';
-                        }
-                        ov.querySelector('div').innerHTML =
-                            '<div style="text-align:center;padding:40px 0;">' +
-                            '<div style="font-size:48px;margin-bottom:16px;">🎉</div>' +
-                            '<div style="font-size:18px;font-weight:900;color:#4ade80;margin-bottom:8px;">Conta criada!</div>' +
-                            '<div style="font-size:13px;color:rgba(255,255,255,0.6);margin-bottom:24px;">' + data.diasTrial + ' dias de acesso grátis liberados</div>' +
-                            '<div style="background:rgba(255,255,255,0.05);border-radius:12px;padding:16px;text-align:left;font-size:13px;line-height:1.8;margin-bottom:16px;">' +
-                            '<div><b>Link de acesso:</b><br><span style="color:#C9A23A;word-break:break-all;">' + data.linkCliente + '</span></div>' +
-                            '<div style="margin-top:10px;"><b>Email:</b> ' + data.emailAdmin + '</div>' +
-                            '<div style="margin-top:4px;"><b>Senha temporária:</b> <span style="color:#C9A23A;">' + data.senhaTemp + '</span></div>' +
-                            '<div style="margin-top:10px;font-size:11px;color:rgba(255,255,255,0.4);">⚠️ Altere sua senha após o primeiro acesso.</div>' +
-                            '</div>' +
-                            onboardingHtml +
-                            '<button onclick="window.location.href=\'' + data.linkCliente + '\'" style="width:100%;padding:14px;background:linear-gradient(135deg,#C9A23A,#a07820);color:#000;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;">🚀 Acessar agora</button>' +
-                            '</div>';
-                    }
-                } else {
-                    if (msg) { msg.style.color = '#f87171'; msg.textContent = '❌ ' + (data && data.message ? data.message : 'Erro ao criar conta'); }
-                }
-            } catch(e) {
-                if (msg) { msg.style.color = '#f87171'; msg.textContent = '❌ Erro de conexão. Tente novamente.'; }
-            }
         }
 
         function closeStuModal() {
@@ -44867,348 +44701,6 @@
         });
       }
     </script>
-
-    
-                <!-- ═══ LANDING PAGE — ctapp.online sem ?ctm= (premium, mobile-first) ═══ -->
-    <div id="landingScreen" style="display:none;position:fixed;inset:0;background:#fff;z-index:9980;overflow-y:auto;font-family:'DM Sans',sans-serif;">
-    <style>
-        #landingScreen .lp-wrap { max-width:560px; margin:0 auto; padding:0 24px; }
-        #landingScreen section { animation: lpFadeUp .6s ease both; }
-        @keyframes lpFadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
-
-        /* HERO */
-        #landingScreen .lp-hero { padding:56px 0 40px; text-align:center; }
-        #landingScreen .lp-logo { width:64px; height:64px; border-radius:50%; object-fit:cover; margin-bottom:28px; box-shadow:0 6px 20px rgba(11,14,20,0.12); }
-        #landingScreen .lp-eyebrow { font-size:12px; font-weight:800; letter-spacing:3px; color:#C9A23A; text-transform:uppercase; margin-bottom:18px; }
-        #landingScreen .lp-h1 { font-family:'Sora',sans-serif; font-size:38px; font-weight:900; letter-spacing:-1px; line-height:1.12; color:#0B0E14; margin-bottom:18px; }
-        #landingScreen .lp-h1 em { font-style:normal; color:#C9A23A; }
-        #landingScreen .lp-sub { font-size:16px; line-height:1.6; color:#5B6472; max-width:380px; margin:0 auto 32px; }
-        #landingScreen .lp-cta-primary { display:inline-flex; align-items:center; gap:10px; padding:17px 32px; background:#0B0E14; color:#fff; border:none; border-radius:14px; font-size:15px; font-weight:800; cursor:pointer; letter-spacing:0.2px; box-shadow:0 8px 24px rgba(11,14,20,0.18); }
-        #landingScreen .lp-cta-note { font-size:12px; color:#A8AFBC; margin-top:14px; letter-spacing:0.3px; }
-
-        /* DOR → SOLUÇÃO */
-        #landingScreen .lp-pain { background:#F7F8FA; padding:56px 0; }
-        #landingScreen .lp-pain-title { font-family:'Sora',sans-serif; font-size:26px; font-weight:900; letter-spacing:-0.5px; color:#0B0E14; text-align:center; margin-bottom:8px; line-height:1.25; }
-        #landingScreen .lp-pain-sub { font-size:14px; color:#5B6472; text-align:center; margin-bottom:36px; }
-        #landingScreen .lp-row { display:flex; flex-direction:column; gap:10px; padding:16px 0; border-bottom:1px solid #EAEBEF; }
-        #landingScreen .lp-row:last-child { border-bottom:none; }
-        #landingScreen .lp-row-before, #landingScreen .lp-row-after { display:flex; align-items:flex-start; gap:8px; font-size:13.5px; line-height:1.4; }
-        #landingScreen .lp-row-before { color:#9CA3B0; text-decoration:line-through; text-decoration-color:#D1485A55; }
-        #landingScreen .lp-row-after { color:#0B0E14; font-weight:700; padding-left:26px; }
-        #landingScreen .lp-row-arrow { display:none; }
-        @media (min-width: 600px) {
-            #landingScreen .lp-row { flex-direction:row; align-items:center; gap:10px; }
-            #landingScreen .lp-row-before, #landingScreen .lp-row-after { flex:1; align-items:center; }
-            #landingScreen .lp-row-after { padding-left:0; }
-            #landingScreen .lp-row-arrow { display:block; flex-shrink:0; }
-        }
-
-        /* FEATURES */
-        #landingScreen .lp-feat-section { padding:64px 0; }
-        #landingScreen .lp-feat-eyebrow { font-size:12px; font-weight:800; letter-spacing:3px; color:#C9A23A; text-transform:uppercase; text-align:center; margin-bottom:12px; }
-        #landingScreen .lp-feat-title { font-family:'Sora',sans-serif; font-size:26px; font-weight:900; letter-spacing:-0.5px; color:#0B0E14; text-align:center; margin-bottom:40px; }
-        #landingScreen .lp-feat-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-        #landingScreen .lp-feature { border:1px solid #EAEBEF; border-radius:16px; padding:20px 18px; }
-        #landingScreen .lp-feature-icon { margin-bottom:14px; }
-        #landingScreen .lp-feature-title { font-size:14px; font-weight:800; color:#0B0E14; margin-bottom:6px; letter-spacing:-0.2px; }
-        #landingScreen .lp-feature-desc { font-size:12.5px; color:#5B6472; line-height:1.5; }
-
-        /* IMPLEMENTAÇÃO ASSISTIDA */
-        #landingScreen .lp-impl { background:#0B0E14; border-radius:24px; padding:40px 28px; color:#fff; margin:0 0 64px; }
-        #landingScreen .lp-impl-eyebrow { font-size:12px; font-weight:800; letter-spacing:3px; color:#C9A23A; text-transform:uppercase; margin-bottom:10px; }
-        #landingScreen .lp-impl-title { font-family:'Sora',sans-serif; font-size:24px; font-weight:900; letter-spacing:-0.5px; margin-bottom:8px; }
-        #landingScreen .lp-impl-sub { font-size:13.5px; color:#B8BDC9; line-height:1.6; margin-bottom:26px; }
-        #landingScreen .lp-impl-item { display:flex; align-items:center; gap:10px; padding:9px 0; font-size:13.5px; color:#E5E7EC; border-bottom:1px solid rgba(255,255,255,0.08); }
-        #landingScreen .lp-impl-item:last-child { border-bottom:none; }
-        #landingScreen .lp-impl-check { flex-shrink:0; display:flex; }
-
-        /* PLANOS */
-        #landingScreen .lp-plans { padding:0 0 64px; }
-        #landingScreen .lp-plans-title { font-family:'Sora',sans-serif; font-size:26px; font-weight:900; letter-spacing:-0.5px; color:#0B0E14; text-align:center; margin-bottom:36px; }
-        #landingScreen .lp-plans-grid { display:flex; flex-direction:column; gap:14px; }
-        #landingScreen .lp-plan { border:1px solid #EAEBEF; border-radius:18px; padding:24px; }
-        #landingScreen .lp-plan.featured { border-color:#C9A23A; background:linear-gradient(180deg,#FFFBF0,#fff); position:relative; box-shadow:0 12px 32px rgba(201,162,58,0.14); }
-        #landingScreen .lp-plan-badge { position:absolute; top:-11px; right:24px; background:#C9A23A; color:#0B0E14; font-size:11px; font-weight:800; letter-spacing:0.5px; padding:4px 12px; border-radius:20px; }
-        #landingScreen .lp-plan-name { font-size:13px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:#5B6472; margin-bottom:10px; }
-        #landingScreen .lp-plan.featured .lp-plan-name { color:#9A7A1E; }
-        #landingScreen .lp-plan-price { font-family:'Sora',sans-serif; font-size:30px; font-weight:900; color:#0B0E14; letter-spacing:-1px; }
-        #landingScreen .lp-plan-price span { font-size:14px; font-weight:600; color:#5B6472; }
-
-        /* CTA FINAL */
-        #landingScreen .lp-final { background:#F7F8FA; padding:64px 0 72px; text-align:center; }
-        #landingScreen .lp-final-title { font-family:'Sora',sans-serif; font-size:28px; font-weight:900; letter-spacing:-0.5px; color:#0B0E14; margin-bottom:28px; line-height:1.25; }
-        #landingScreen .lp-cta-gold { display:inline-flex; align-items:center; gap:10px; width:100%; max-width:340px; justify-content:center; padding:18px 32px; background:linear-gradient(135deg,#C9A23A,#A9821F); color:#0B0E14; border:none; border-radius:14px; font-size:16px; font-weight:900; cursor:pointer; letter-spacing:0.2px; box-shadow:0 10px 28px rgba(201,162,58,0.32); }
-
-        @media (min-width: 600px) {
-            #landingScreen .lp-h1 { font-family:'Sora',sans-serif; font-size:48px; }
-            #landingScreen .lp-feat-grid { grid-template-columns:1fr 1fr; }
-        }
-    </style>
-
-        <!-- HERO -->
-        <section class="lp-hero">
-            <div class="lp-wrap">
-                <img id="landingLogoImg" class="lp-logo" src="" alt="CT Manager">
-                <div class="lp-eyebrow">CT Manager</div>
-                <div class="lp-h1">Menos planilhas.<br>Mais alunos.<br><em>Mais resultado.</em></div>
-                <div class="lp-sub">O sistema de gestão para CTs de artes marciais — feito para quem vive a rotina do tatame, não atrás de uma mesa.</div>
-                <button class="lp-cta-primary" onclick="showSolicitarTrial()">
-                    Testar gratuitamente <svg width="18" height="18" style="color:#fff;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                </button>
-                <div class="lp-cta-note">7 dias grátis · sem cartão de crédito</div>
-            </div>
-        </section>
-
-        <!-- DOR → SOLUÇÃO -->
-        <section class="lp-pain">
-            <div class="lp-wrap">
-                <div class="lp-pain-title">Você ensina.<br>O CT Manager organiza.</div>
-                <div class="lp-pain-sub">O que muda no seu dia a dia:</div>
-                
-                <div class="lp-row">
-                    <div class="lp-row-before">
-                        <svg width="18" height="18" style="color:#D1485A;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                        <span>Cobranças atrasadas</span>
-                    </div>
-                    <div class="lp-row-arrow"><svg width="16" height="16" style="color:#C9C2B0;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
-                    <div class="lp-row-after">
-                        <svg width="18" height="18" style="color:#C9A23A;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                        <span>Status de pagamento em tempo real, por aluno</span>
-                    </div>
-                </div>
-                <div class="lp-row">
-                    <div class="lp-row-before">
-                        <svg width="18" height="18" style="color:#D1485A;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                        <span>Controle no caderno ou papel</span>
-                    </div>
-                    <div class="lp-row-arrow"><svg width="16" height="16" style="color:#C9C2B0;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
-                    <div class="lp-row-after">
-                        <svg width="18" height="18" style="color:#C9A23A;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                        <span>Tudo registrado e acessível pelo celular</span>
-                    </div>
-                </div>
-                <div class="lp-row">
-                    <div class="lp-row-before">
-                        <svg width="18" height="18" style="color:#D1485A;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                        <span>Alunos faltando sem ninguém notar</span>
-                    </div>
-                    <div class="lp-row-arrow"><svg width="16" height="16" style="color:#C9C2B0;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
-                    <div class="lp-row-after">
-                        <svg width="18" height="18" style="color:#C9A23A;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                        <span>Frequência e presença em cada aula</span>
-                    </div>
-                </div>
-                <div class="lp-row">
-                    <div class="lp-row-before">
-                        <svg width="18" height="18" style="color:#D1485A;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                        <span>Planilhas espalhadas em arquivos diferentes</span>
-                    </div>
-                    <div class="lp-row-arrow"><svg width="16" height="16" style="color:#C9C2B0;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
-                    <div class="lp-row-after">
-                        <svg width="18" height="18" style="color:#C9A23A;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                        <span>Um painel único para o CT inteiro</span>
-                    </div>
-                </div>
-                <div class="lp-row">
-                    <div class="lp-row-before">
-                        <svg width="18" height="18" style="color:#D1485A;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                        <span>Graduações sem histórico</span>
-                    </div>
-                    <div class="lp-row-arrow"><svg width="16" height="16" style="color:#C9C2B0;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
-                    <div class="lp-row-after">
-                        <svg width="18" height="18" style="color:#C9A23A;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                        <span>Linha do tempo de faixas e graus por aluno</span>
-                    </div>
-                </div>
-                <div class="lp-row">
-                    <div class="lp-row-before">
-                        <svg width="18" height="18" style="color:#D1485A;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
-                        <span>Nenhum indicador pra decidir</span>
-                    </div>
-                    <div class="lp-row-arrow"><svg width="16" height="16" style="color:#C9C2B0;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></div>
-                    <div class="lp-row-after">
-                        <svg width="18" height="18" style="color:#C9A23A;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                        <span>Relatórios prontos sobre alunos e financeiro</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- FUNCIONALIDADES -->
-        <section class="lp-feat-section">
-            <div class="lp-wrap">
-                <div class="lp-feat-eyebrow">Tudo em um só lugar</div>
-                <div class="lp-feat-title">O que o CT Manager gerencia</div>
-                <div class="lp-feat-grid">
-                    
-                <div class="lp-feature">
-                    <div class="lp-feature-icon"><svg width="22" height="22" style="color:#0B0E14;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-                    <div class="lp-feature-title">Gestão de alunos</div>
-                    <div class="lp-feature-desc">Cadastro completo, contatos, responsáveis e turmas em um só lugar.</div>
-                </div>
-                <div class="lp-feature">
-                    <div class="lp-feature-icon"><svg width="22" height="22" style="color:#0B0E14;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="m9 16 2 2 4-4"/></svg></div>
-                    <div class="lp-feature-title">Presença e check-in</div>
-                    <div class="lp-feature-desc">Cada treino registrado — frequência por aluno, turma e modalidade.</div>
-                </div>
-                <div class="lp-feature">
-                    <div class="lp-feature-icon"><svg width="22" height="22" style="color:#0B0E14;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M15 9.5c0-1.5-1.5-2.5-3-2.5s-3 1-3 2.5 1.5 2 3 2.5 3 1 3 2.5-1.5 2.5-3 2.5-3-1-3-2.5"/></svg></div>
-                    <div class="lp-feature-title">Financeiro</div>
-                    <div class="lp-feature-desc">Mensalidades, status de pagamento e PIX integrado.</div>
-                </div>
-                <div class="lp-feature">
-                    <div class="lp-feature-icon"><svg width="22" height="22" style="color:#0B0E14;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8c0-1 .5-2 2-2h12c1.5 0 2 1 2 2v3c0 1-.5 2-2 2h-3l-3 3-3-3H6c-1.5 0-2-1-2-2z"/><path d="M9 11l1.5 1.5L9 14"/><path d="M15 11l-1.5 1.5L15 14"/></svg></div>
-                    <div class="lp-feature-title">Graduação</div>
-                    <div class="lp-feature-desc">Sistemas oficiais de faixa e grau, por modalidade.</div>
-                </div>
-                <div class="lp-feature">
-                    <div class="lp-feature-icon"><svg width="22" height="22" style="color:#0B0E14;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-                    <div class="lp-feature-title">Múltiplos CTs</div>
-                    <div class="lp-feature-desc">Vários centros de treinamento sob uma mesma gestão.</div>
-                </div>
-                <div class="lp-feature">
-                    <div class="lp-feature-icon"><svg width="22" height="22" style="color:#0B0E14;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg></div>
-                    <div class="lp-feature-title">Relatórios</div>
-                    <div class="lp-feature-desc">Indicadores de alunos, presença e financeiro.</div>
-                </div>
-                <div class="lp-feature">
-                    <div class="lp-feature-icon"><svg width="22" height="22" style="color:#0B0E14;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg></div>
-                    <div class="lp-feature-title">App do aluno</div>
-                    <div class="lp-feature-desc">Funciona como aplicativo — sem loja, sempre atualizado.</div>
-                </div>
-                <div class="lp-feature">
-                    <div class="lp-feature-icon"><svg width="22" height="22" style="color:#0B0E14;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 10v6M4.22 4.22l4.24 4.24m7.08 7.08 4.24 4.24M1 12h6m10 0h6M4.22 19.78l4.24-4.24m7.08-7.08 4.24-4.24"/></svg></div>
-                    <div class="lp-feature-title">Multi-modalidade</div>
-                    <div class="lp-feature-desc">BJJ, Muay Thai, Karatê, Judô, MMA e mais, no mesmo CT.</div>
-                </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- IMPLEMENTAÇÃO ASSISTIDA -->
-        <section class="lp-feat-section" style="padding-top:0;">
-            <div class="lp-wrap">
-                <div class="lp-impl">
-                    <div class="lp-impl-eyebrow">Implementação assistida</div>
-                    <div class="lp-impl-title">Deixe que a gente faz.</div>
-                    <div class="lp-impl-sub">Você não perde tempo configurando sistema. A gente entrega tudo pronto para o seu CT começar a usar.</div>
-                    
-                <div class="lp-impl-item">
-                    <span class="lp-impl-check"><svg width="16" height="16" style="color:#C9A23A;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-                    <span>Configuração completa do seu CT</span>
-                </div>
-                <div class="lp-impl-item">
-                    <span class="lp-impl-check"><svg width="16" height="16" style="color:#C9A23A;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-                    <span>Cadastro inicial de alunos e turmas</span>
-                </div>
-                <div class="lp-impl-item">
-                    <span class="lp-impl-check"><svg width="16" height="16" style="color:#C9A23A;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-                    <span>Modalidades e graduações configuradas</span>
-                </div>
-                <div class="lp-impl-item">
-                    <span class="lp-impl-check"><svg width="16" height="16" style="color:#C9A23A;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-                    <span>Treinamento da equipe</span>
-                </div>
-                <div class="lp-impl-item">
-                    <span class="lp-impl-check"><svg width="16" height="16" style="color:#C9A23A;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-                    <span>Suporte direto durante a configuração</span>
-                </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- PLANOS -->
-        <section class="lp-plans">
-            <div class="lp-wrap">
-                <div class="lp-plans-title">Planos para o tamanho do seu CT</div>
-                <div class="lp-plans-grid">
-                    <div class="lp-plan">
-                        <div class="lp-plan-name">Básico</div>
-                        <div class="lp-plan-price">R$ 59<span>,90/mês</span></div>
-                    </div>
-                    <div class="lp-plan featured">
-                        <div class="lp-plan-badge">Mais escolhido</div>
-                        <div class="lp-plan-name">Profissional</div>
-                        <div class="lp-plan-price">R$ 69<span>,90/mês</span></div>
-                    </div>
-                    <div class="lp-plan">
-                        <div class="lp-plan-name">Premium</div>
-                        <div class="lp-plan-price">R$ 99<span>,90/mês</span></div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- CTA FINAL -->
-        <section class="lp-final">
-            <div class="lp-wrap">
-                <div class="lp-final-title">Seu CT merece mais<br>que planilhas.</div>
-                <button class="lp-cta-gold" onclick="showSolicitarTrial()">
-                    Começar agora <svg width="18" height="18" style="color:#0B0E14;flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                </button>
-            </div>
-        </section>
-
-        <!-- MODALIDADES SUPORTADAS -->
-        <section class="lp-feat-section" style="padding-top:0;padding-bottom:0;">
-            <div class="lp-wrap">
-                <div class="lp-feat-eyebrow">Multi-modalidade</div>
-                <div class="lp-feat-title" style="margin-bottom:24px;">Modalidades suportadas</div>
-                <div id="landingModalidades" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-bottom:8px;"></div>
-            </div>
-        </section>
-    </div>
-
-    <!-- ═══ CADASTRO DE NOVA ACADEMIA — Trial automático ═══ -->
-    <div id="solicitarTrialOverlay" style="display:none;position:fixed;inset:0;background:rgba(6,6,7,0.97);z-index:9990;overflow-y:auto;">
-        <div style="max-width:420px;margin:0 auto;padding:24px 20px 60px;">
-            <div style="text-align:center;margin-bottom:24px;">
-                <div style="font-size:40px;margin-bottom:8px;">🥋</div>
-                <div style="font-size:20px;font-weight:900;color:#C9A23A;">Cadastre sua academia</div>
-                <div style="font-size:12px;color:rgba(255,255,255,0.5);margin-top:4px;">7 dias grátis — acesso completo, sem cartão de crédito</div>
-            </div>
-
-            <div style="display:flex;flex-direction:column;gap:12px;">
-                <div>
-                    <label style="font-size:11px;color:var(--text-3,#999);display:block;margin-bottom:4px;">Nome do seu Dojo/Academia *</label>
-                    <input id="strNomeDojo" type="text" placeholder="Ex: Academia Guerreiros BJJ" style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-size:14px;">
-                </div>
-                <div>
-                    <label style="font-size:11px;color:var(--text-3,#999);display:block;margin-bottom:4px;">Seu nome completo *</label>
-                    <input id="strNome" type="text" placeholder="Seu nome" style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-size:14px;">
-                </div>
-                <div>
-                    <label style="font-size:11px;color:var(--text-3,#999);display:block;margin-bottom:4px;">E-mail *</label>
-                    <input id="strEmail" type="email" placeholder="seu@email.com" style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-size:14px;">
-                </div>
-                <div>
-                    <label style="font-size:11px;color:var(--text-3,#999);display:block;margin-bottom:4px;">WhatsApp *</label>
-                    <input id="strTelefone" type="tel" placeholder="(00) 00000-0000" style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-size:14px;">
-                </div>
-                <div>
-                    <label style="font-size:11px;color:var(--text-3,#999);display:block;margin-bottom:4px;">Data de nascimento</label>
-                    <input id="strNascimento" type="date" style="width:100%;padding:12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#fff;font-size:14px;">
-                </div>
-
-                <div>
-                    <label style="font-size:11px;color:var(--text-3,#999);display:block;margin-bottom:8px;">Modalidades que você ensina * (selecione 1 ou mais)</label>
-                    <div id="strModalidades" style="display:flex;flex-wrap:wrap;gap:6px;">
-                        <!-- preenchido via JS -->
-                    </div>
-                </div>
-
-                <div id="strMsg" style="font-size:12px;text-align:center;min-height:18px;"></div>
-
-                <button onclick="enviarSolicitarTrial()" style="width:100%;padding:14px;background:linear-gradient(135deg,#C9A23A,#a07820);color:#000;border:none;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;margin-top:4px;">
-                    🚀 Criar minha conta grátis
-                </button>
-                <button onclick="closeSolicitarTrial()" style="width:100%;padding:10px;background:transparent;color:rgba(255,255,255,0.4);border:none;font-size:12px;cursor:pointer;">
-                    Cancelar
-                </button>
-            </div>
-        </div>
-    </div>
-
 </body>
 
 </html>
