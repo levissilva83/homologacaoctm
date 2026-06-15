@@ -424,6 +424,36 @@
             background-clip: text;
         }
 
+        /* Toggles compactos de acessibilidade na barra de título */
+        .hdr-a11y {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .hdr-a11y-btn {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            line-height: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            color: var(--text-2);
+            cursor: pointer;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }
+        .hdr-a11y-btn.active {
+            background: var(--accent-dim);
+            border-color: var(--border-accent);
+            color: var(--accent);
+        }
+
         .hdr-user {
             display: none;
             -webkit-box-align: center;
@@ -8145,6 +8175,11 @@
                 <button class="mode-switch-opt" id="modeOptAluno" onclick="switchViewMode('aluno')">🥋 Aluno</button>
                 <button class="mode-switch-opt active admin-active" id="modeOptAdmin" onclick="switchViewMode('admin')">⚙️ Admin</button>
             </div>
+            <!-- Acessibilidade: toggles compactos (Alto Contraste / Modo Claro) -->
+            <div class="hdr-a11y" id="hdrA11y">
+                <button type="button" id="hcToggleHdr" class="hdr-a11y-btn" onclick="toggleHighContrast({checked: !this.classList.contains('active')})" title="Alto Contraste (letras maiores)" aria-label="Alternar Alto Contraste">🔆</button>
+                <button type="button" id="lmToggleHdr" class="hdr-a11y-btn" onclick="toggleLightMode({checked: !this.classList.contains('active')})" title="Modo Claro" aria-label="Alternar Modo Claro">☀️</button>
+            </div>
             <div class="hdr-user" id="headerUser" onclick="handleLogout()">
                 <div class="hdr-avatar" id="userInitial">L</div>
                 <div class="hdr-name" id="headerUserName">User</div>
@@ -8160,24 +8195,6 @@
                     <h1 class="login-title" id="loginTitle">CT Manager</h1>
                     <p class="login-sub">Gestão de CTs</p>
                 </div>
-
-                <!-- Acessibilidade: Alto Contraste -->
-                <label for="hcToggleLogin" style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;">
-                    <span style="font-size:13px;color:var(--text-1);display:flex;align-items:center;gap:8px;">
-                        <span style="font-size:18px;">🔆</span>
-                        Modo Alto Contraste (letras maiores)
-                    </span>
-                    <input type="checkbox" id="hcToggleLogin" onchange="toggleHighContrast(this)" style="width:22px;height:22px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;">
-                </label>
-
-                <!-- Acessibilidade: Light Mode (opcional) -->
-                <label for="lmToggleLogin" style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:14px;cursor:pointer;">
-                    <span style="font-size:13px;color:var(--text-1);display:flex;align-items:center;gap:8px;">
-                        <span style="font-size:18px;">☀️</span>
-                        Modo Claro (fundo branco)
-                    </span>
-                    <input type="checkbox" id="lmToggleLogin" onchange="toggleLightMode(this)" style="width:22px;height:22px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;">
-                </label>
 
                 <div class="login-box">
                     <div id="loginTab">
@@ -9033,24 +9050,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Acessibilidade: Alto Contraste -->
-                        <label for="hcTogglePerfil" style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:0 0 8px;cursor:pointer;">
-                            <span style="font-size:13px;color:var(--text-1);display:flex;align-items:center;gap:8px;">
-                                <span style="font-size:18px;">🔆</span>
-                                Modo Alto Contraste (letras maiores)
-                            </span>
-                            <input type="checkbox" id="hcTogglePerfil" onchange="toggleHighContrast(this)" style="width:22px;height:22px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;">
-                        </label>
-
-                        <!-- Acessibilidade: Light Mode (opcional) -->
-                        <label for="lmTogglePerfil" style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:0 0 14px;cursor:pointer;">
-                            <span style="font-size:13px;color:var(--text-1);display:flex;align-items:center;gap:8px;">
-                                <span style="font-size:18px;">☀️</span>
-                                Modo Claro (fundo branco)
-                            </span>
-                            <input type="checkbox" id="lmTogglePerfil" onchange="toggleLightMode(this)" style="width:22px;height:22px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;">
-                        </label>
 
                         <!-- ══════════════════════════════════════════ -->
                         <!-- ABAS DO PERFIL                             -->
@@ -15960,18 +15959,15 @@
             setLightMode(!!(checkbox && checkbox.checked));
         }
 
-        // Mantém todos os toggles (login + perfil) sincronizados com o estado atual
+        // Mantém os botões de acessibilidade da barra de título sincronizados
+        // com o estado salvo (classe .active = modo ligado)
         function _syncHighContrastToggles() {
             var hc = isHighContrastEnabled();
             var lm = isLightModeEnabled();
-            ['hcToggleLogin', 'hcTogglePerfil'].forEach(function(id) {
-                var el = document.getElementById(id);
-                if (el) el.checked = hc;
-            });
-            ['lmToggleLogin', 'lmTogglePerfil'].forEach(function(id) {
-                var el = document.getElementById(id);
-                if (el) el.checked = lm;
-            });
+            var hcBtn = document.getElementById('hcToggleHdr');
+            if (hcBtn) hcBtn.classList.toggle('active', hc);
+            var lmBtn = document.getElementById('lmToggleHdr');
+            if (lmBtn) lmBtn.classList.toggle('active', lm);
         }
 
         // ===== PASSWORD UTILITIES =====
