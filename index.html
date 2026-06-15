@@ -97,6 +97,82 @@
             :root { --safe-bottom: env(safe-area-inset-bottom, 0px); }
         }
 
+        /* ════════════════════════════════════════════════════════════
+           MODO ALTO CONTRASTE — acessibilidade para baixa visão
+           Ativado via classe .high-contrast no <html>, persistido em
+           localStorage ('ctmHighContrast'). Mantém o tema escuro, mas:
+           - aumenta o tamanho geral da interface (zoom)
+           - aumenta o contraste de textos secundários/terciários e bordas
+           ════════════════════════════════════════════════════════════ */
+        html.high-contrast {
+            /* zoom escala toda a interface (texto, botões, ícones, padding)
+               proporcionalmente — suportado em WebKit/Blink (iOS/Android),
+               que são os navegadores-alvo deste PWA. */
+            zoom: 1.18;
+
+            /* Textos secundários e terciários ganham muito mais contraste
+               contra o fundo escuro (--bg-deep: #060607) */
+            --text-2: #E5DFCE;
+            --text-3: #B8B0A0;
+
+            /* Bordas mais visíveis para separar cards/seções */
+            --border:        rgba(201, 162, 58, 0.35);
+            --border-accent: rgba(201, 162, 58, 0.55);
+
+            /* Painel admin também respeita o alto contraste (índigo) */
+            --adm-text-2: #C9CBE8;
+            --adm-text-3: #9598C0;
+            --adm-border: rgba(129,140,248,0.35);
+            --adm-border-accent: rgba(129,140,248,0.55);
+        }
+
+        /* Fallback para navegadores sem suporte a `zoom` (ex: Firefox):
+           aumenta a fonte base. Como a maioria do app usa px fixo, o efeito
+           é parcial, mas ainda ajuda na legibilidade do texto corrido. */
+        @supports not (zoom: 1) {
+            html.high-contrast { font-size: 118%; }
+        }
+
+        /* ════════════════════════════════════════════════════════════
+           LIGHT MODE (opcional) — ativado via classe .light-mode no
+           <html>, persistido em localStorage ('ctmLightMode').
+           Técnica: inverte a luminância de toda a paleta (preto↔branco)
+           com filter: invert(1), SEM hue-rotate. Isso preserva melhor o
+           contraste geral (testado: dourado/verde/vermelho/texto
+           secundário ficam acima de 4.5:1), ao custo de as cores
+           mudarem de tonalidade (dourado→azul, vermelho→ciano, etc).
+           Evita reescrever as milhares de cores fixas do app, mantendo
+           o mesmo layout. Imagens/canvas/vídeo recebem uma segunda
+           inversão para permanecerem com as cores originais (fotos,
+           logos, QR codes, assinaturas).
+           ════════════════════════════════════════════════════════════ */
+        html.light-mode {
+            filter: invert(1);
+            background: #fff;
+
+            /* --text-3 e --adm-text-3 originais (#5C5548 / #5C5E80) ficam
+               com contraste fraco (~2.2:1) após o invert puro. Clareamos
+               o valor pré-invert para que, invertido, fique um cinza
+               médio (~4.7:1 contra fundo branco). Aplica-se apenas quando
+               o Alto Contraste não está ativo (que já sobrescreve essas
+               variáveis com valores que funcionam bem). */
+            --text-3: #8f8f8f;
+            --adm-text-3: #8f8f8f;
+        }
+        html.light-mode.high-contrast {
+            /* Quando Alto Contraste também está ativo, usa os valores de
+               --text-3/--adm-text-3 definidos por .high-contrast (que já
+               resultam em ótimo contraste sob invert puro) em vez do
+               override abaixo, que é específico para o light mode "puro". */
+            --text-3: #B8B0A0;
+            --adm-text-3: #9598C0;
+        }
+        html.light-mode img,
+        html.light-mode canvas,
+        html.light-mode video {
+            filter: invert(1);
+        }
+
         html, body {
             width: 100%;
             height: 100%;
@@ -3144,6 +3220,18 @@
         input, textarea, select {
             max-width: 100%;
             box-sizing: border-box;
+        }
+
+        /* ===== MOBILE: tamanho mínimo de fonte em campos de formulário =====
+           Muitos inputs/selects têm font-size inline menor que 16px, o que
+           causa zoom automático indesejado ao focar no iOS Safari e dificulta
+           a leitura. Esta regra sobrescreve qualquer font-size menor que 16px
+           definido inline, sem alterar padding/cores/layout. */
+        @media (max-width: 768px) {
+            input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]),
+            select, textarea {
+                font-size: 16px !important;
+            }
         }
 
         @media (max-width: 360px) {
@@ -7736,6 +7824,21 @@
 </style>
 
     <script>
+    // Aplica os modos de acessibilidade o mais cedo possível (antes do
+    // <body> renderizar) para evitar "flash" do tema padrão.
+    (function() {
+        try {
+            if (localStorage.getItem('ctmHighContrast') === '1') {
+                document.documentElement.classList.add('high-contrast');
+            }
+            if (localStorage.getItem('ctmLightMode') === '1') {
+                document.documentElement.classList.add('light-mode');
+            }
+        } catch(e) {}
+    })();
+    </script>
+
+    <script>
     // ═══ CTM MANAGER — PROTEÇÃO DE CÓDIGO ════════════════════════
     (function(){
         'use strict';
@@ -8057,6 +8160,24 @@
                     <h1 class="login-title" id="loginTitle">CT Manager</h1>
                     <p class="login-sub">Gestão de CTs</p>
                 </div>
+
+                <!-- Acessibilidade: Alto Contraste -->
+                <label for="hcToggleLogin" style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;">
+                    <span style="font-size:13px;color:var(--text-1);display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:18px;">🔆</span>
+                        Modo Alto Contraste (letras maiores)
+                    </span>
+                    <input type="checkbox" id="hcToggleLogin" onchange="toggleHighContrast(this)" style="width:22px;height:22px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;">
+                </label>
+
+                <!-- Acessibilidade: Light Mode (opcional) -->
+                <label for="lmToggleLogin" style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:14px;cursor:pointer;">
+                    <span style="font-size:13px;color:var(--text-1);display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:18px;">☀️</span>
+                        Modo Claro (fundo branco)
+                    </span>
+                    <input type="checkbox" id="lmToggleLogin" onchange="toggleLightMode(this)" style="width:22px;height:22px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;">
+                </label>
 
                 <div class="login-box">
                     <div id="loginTab">
@@ -8912,6 +9033,24 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Acessibilidade: Alto Contraste -->
+                        <label for="hcTogglePerfil" style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:0 0 8px;cursor:pointer;">
+                            <span style="font-size:13px;color:var(--text-1);display:flex;align-items:center;gap:8px;">
+                                <span style="font-size:18px;">🔆</span>
+                                Modo Alto Contraste (letras maiores)
+                            </span>
+                            <input type="checkbox" id="hcTogglePerfil" onchange="toggleHighContrast(this)" style="width:22px;height:22px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;">
+                        </label>
+
+                        <!-- Acessibilidade: Light Mode (opcional) -->
+                        <label for="lmTogglePerfil" style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin:0 0 14px;cursor:pointer;">
+                            <span style="font-size:13px;color:var(--text-1);display:flex;align-items:center;gap:8px;">
+                                <span style="font-size:18px;">☀️</span>
+                                Modo Claro (fundo branco)
+                            </span>
+                            <input type="checkbox" id="lmTogglePerfil" onchange="toggleLightMode(this)" style="width:22px;height:22px;accent-color:var(--accent);flex-shrink:0;cursor:pointer;">
+                        </label>
 
                         <!-- ══════════════════════════════════════════ -->
                         <!-- ABAS DO PERFIL                             -->
@@ -10913,19 +11052,82 @@
                     </div>
 
                     <!-- REDES DE BENEFÍCIO: Wellhub & TotalPass -->
-                    <div id="redesBeneficioSection" class="admin-section" style="text-align:center;padding:32px 20px;">
-                        <div style="font-size:36px;margin-bottom:14px;">🏗️</div>
-                        <div style="font-size:16px;font-weight:800;color:var(--adm-primary);margin-bottom:8px;">💪 Redes de Benefício</div>
-                        <div style="font-size:13px;color:var(--adm-text-2);margin-bottom:6px;">Em construção</div>
-                        <div style="font-size:12px;color:var(--adm-text-3);line-height:1.7;max-width:320px;margin:0 auto;">
-                            Em breve iremos integrar com<br>
-                            <strong style="color:#22c55e;">Wellhub (Gympass)</strong> e <strong style="color:#3b82f6;">TotalPass</strong>.<br>
-                            Os check-ins dos usuários dessas redes<br>serão registrados automaticamente.
+                    <div id="redesBeneficioSection" class="admin-section">
+                        <div class="admin-section-header">
+                            <div class="admin-section-title">💪 Redes de Benefício</div>
+                            <button class="admin-refresh-btn" onclick="loadWellnessConfig()">↻</button>
                         </div>
-                        <div style="margin-top:20px;display:flex;justify-content:center;gap:16px;">
-                            <div style="padding:8px 16px;border-radius:8px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);font-size:12px;color:#22c55e;font-weight:700;">🟢 Wellhub</div>
-                            <div style="padding:8px 16px;border-radius:8px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);font-size:12px;color:#3b82f6;font-weight:700;">🔵 TotalPass</div>
+
+                        <!-- Aviso: módulo em teste -->
+                        <div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;gap:8px;align-items:flex-start;">
+                            <span style="font-size:16px;">🧪</span>
+                            <div style="font-size:11px;color:#fbbf24;line-height:1.5;">
+                                <strong>Módulo em teste.</strong> A integração com Wellhub (Gympass) e TotalPass está
+                                disponível para configuração, mas pode passar por ajustes. Recomendamos testar com
+                                um aluno antes de divulgar para toda a base. Em caso de dúvida, fale com o suporte.
+                            </div>
                         </div>
+
+                        <p style="font-size:11px;color:var(--adm-text-3);margin-bottom:12px;">
+                            Configure abaixo o GymID e as credenciais fornecidas pela rede de benefício. Após salvar,
+                            os check-ins feitos pelos usuários dessas redes serão registrados automaticamente no seu CT.
+                        </p>
+
+                        <!-- Guia explicativo (colapsável) -->
+                        <div class="admin-section" style="margin-bottom:12px;">
+                            <div class="admin-section-header" style="cursor:pointer;" onclick="toggleWellnessGuia()">
+                                <div class="admin-section-title">📘 Guia: como configurar</div>
+                                <span id="wellnessGuiaArrow" style="font-size:11px;color:var(--adm-text-3);">▶ expandir</span>
+                            </div>
+                            <div id="wellnessGuiaBody" style="display:none;padding-top:8px;font-size:11px;color:var(--adm-text-2);line-height:1.7;">
+                                <p style="margin:0 0 8px;"><strong style="color:#22c55e;">🟢 Wellhub (Gympass)</strong></p>
+                                <ol style="margin:0 0 12px;padding-left:18px;">
+                                    <li>Acesse o <strong>Portal de Parceiros Gympass/Wellhub</strong> (gympass.com/business ou portal de academias).</li>
+                                    <li>Localize o <strong>GymID</strong> da sua unidade (identificador único da sua academia na rede).</li>
+                                    <li>Solicite ao suporte Wellhub o <strong>Client ID</strong> e <strong>Client Secret</strong> para integração via API (acesso de parceiro/integrador).</li>
+                                    <li>Cole os 3 dados no formulário abaixo, selecione o CT correspondente (se tiver mais de uma unidade) e clique em <strong>Salvar</strong>.</li>
+                                    <li>Marque como <strong>Ativo</strong> para começar a aceitar check-ins.</li>
+                                </ol>
+                                <p style="margin:0 0 8px;"><strong style="color:#3b82f6;">🔵 TotalPass</strong></p>
+                                <ol style="margin:0 0 12px;padding-left:18px;">
+                                    <li>Acesse o <strong>Portal TotalPass para Academias Parceiras</strong>.</li>
+                                    <li>Localize o <strong>GymID</strong> (código da sua unidade cadastrado na TotalPass).</li>
+                                    <li>Solicite ao suporte TotalPass uma <strong>API Key</strong> (usada no campo Client Secret) para validação de check-ins.</li>
+                                    <li><strong>Webhook Secret</strong> é opcional — usado apenas se a TotalPass exigir assinatura de segurança nas chamadas.</li>
+                                    <li>Preencha o formulário, selecione o CT e <strong>Salve</strong>.</li>
+                                </ol>
+                                <div style="background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.2);border-radius:8px;padding:8px 10px;margin-bottom:8px;">
+                                    <strong style="color:#60a5fa;">🔗 URL de check-in (envie para a rede, se solicitado):</strong><br>
+                                    <code id="wellnessWebhookUrl" onclick="copiarWebhookUrl()" style="font-size:10px;word-break:break-all;color:#38bdf8;cursor:pointer;" title="Clique para copiar">carregando...</code>
+                                </div>
+                                <div style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:8px;padding:8px 10px;">
+                                    <strong style="color:#4ade80;">💡 Testar sem credenciais ainda?</strong><br>
+                                    Preencha o <strong>GymID</strong> com qualquer valor e deixe Client ID/Secret em branco —
+                                    o sistema entra em <strong>modo sandbox</strong> e simula um check-in de teste, sem
+                                    validar token real. Ideal para conferir se o check-in aparece corretamente em "Presença".
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Formulário de configuração -->
+                        <div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;padding:10px;margin-bottom:12px;">
+                            <div style="display:flex;gap:6px;margin-bottom:6px;">
+                                <select id="wellnessRede" style="flex:1;padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:12px;">
+                                    <option value="wellhub">🟢 Wellhub (Gympass)</option>
+                                    <option value="totalpass">🔵 TotalPass</option>
+                                </select>
+                                <select id="wellnessCT" style="flex:1;padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:12px;"></select>
+                            </div>
+                            <input id="wellnessGymId" type="text" placeholder="GymID (obrigatório)" style="width:100%;padding:8px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:12px;margin-bottom:6px;box-sizing:border-box;">
+                            <input id="wellnessClientId" type="text" placeholder="Client ID (opcional p/ sandbox)" style="width:100%;padding:8px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:12px;margin-bottom:6px;box-sizing:border-box;">
+                            <input id="wellnessClientSecret" type="text" placeholder="Client Secret / API Key (opcional p/ sandbox)" style="width:100%;padding:8px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:12px;margin-bottom:6px;box-sizing:border-box;">
+                            <input id="wellnessWebhookSecret" type="text" placeholder="Webhook Secret (opcional — só TotalPass, se exigido)" style="width:100%;padding:8px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:12px;margin-bottom:8px;box-sizing:border-box;">
+                            <div id="wellnessConfigMsg" style="font-size:11px;min-height:16px;margin-bottom:6px;"></div>
+                            <button onclick="salvarWellnessConfig()" style="width:100%;padding:10px;background:var(--adm-primary);color:#000;border:none;border-radius:8px;font-weight:800;font-size:12px;cursor:pointer;">💾 Salvar Configuração</button>
+                        </div>
+
+                        <!-- Configurações salvas -->
+                        <div id="wellnessConfigsList"></div>
                     </div>
 
                     <!-- card Pagamentos removido — acesso via aba Financeiro na navbar -->
@@ -11594,6 +11796,22 @@
                                 <button onclick="exportReportCSV()" style="padding:7px 14px;border-radius:8px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;font-size:11px;font-weight:800;cursor:pointer;">⬇️ Exportar CSV</button>
                             </div>
                         </div>
+
+                        <!-- Relatório Completo de Alunos -->
+                        <div class="admin-card" style="margin-bottom:12px;">
+                            <div style="font-size:12px;font-weight:800;color:var(--adm-text-1);margin-bottom:4px;">📋 Relatório Completo de Alunos</div>
+                            <p style="font-size:11px;color:var(--adm-text-3);margin:0 0 10px;line-height:1.6;">
+                                Exporta dados cadastrais, CT, modalidades matriculadas (com nível/grau atual),
+                                plano financeiro e situação de cada contrato (LGPD, imagem, etc) para todos os alunos ativos.
+                            </p>
+                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                <button onclick="exportRelatorioAlunosCompleto(this)" style="flex:1;min-width:120px;padding:10px;border-radius:8px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;font-size:12px;font-weight:800;cursor:pointer;">⬇️ CSV</button>
+                                <button onclick="exportRelatorioAlunosXLSX(this)" style="flex:1;min-width:120px;padding:10px;border-radius:8px;background:#21a366;color:#fff;border:none;font-size:12px;font-weight:800;cursor:pointer;">⬇️ Excel (.xlsx)</button>
+                                <button onclick="exportRelatorioAlunosPDF(this)" style="flex:1;min-width:120px;padding:10px;border-radius:8px;background:#dc2626;color:#fff;border:none;font-size:12px;font-weight:800;cursor:pointer;">⬇️ PDF</button>
+                            </div>
+                            <div id="rptAlunosCompletoMsg" style="font-size:11px;min-height:16px;margin-top:6px;"></div>
+                        </div>
+
 
                         <div id="rptLoading" style="text-align:center;padding:30px;color:var(--adm-text-3);font-size:12px;">Carregando relatório...</div>
 
@@ -13083,10 +13301,7 @@
                 _lockByPlan('pagamentosAdminSection',  '💳 Sistema de Cobrança', 'profissional');
                 _lockByPlan('admPagamentos',           '💳 Sistema de Cobrança', 'profissional');
             }
-            // Redes de Benefício (Básico não tem)
-            if (_planLimits.redesBeneficio === false) {
-                _lockByPlan('redesBeneficioSection', '🏪 Redes de Benefício', 'profissional');
-            }
+            // Redes de Benefício — liberado para todos os planos (módulo em teste)
             // QR Code (Básico não tem)
             if (_planLimits.qrCode === false) {
                 _lockByPlan('qrCodeSection', '📲 QR Code de Check-in', 'profissional');
@@ -15592,6 +15807,9 @@
 
         // ===== INIT =====
         window.addEventListener('load', async function() {
+            // Sincroniza toggles de Alto Contraste (login + perfil) com o estado salvo
+            try { _syncHighContrastToggles(); } catch(e) {}
+
             // Verifica bloqueio ANTES de restaurar sessão
             var bloqueado = await checkTrialStatus();
             if (bloqueado) return;
@@ -15710,6 +15928,50 @@
             } catch (err) {
                 showMessage('loginMessage', 'Erro de conexão: ' + err.message, 'danger');
             }
+        }
+
+        // ===== ACESSIBILIDADE: MODO ALTO CONTRASTE =====
+        function isHighContrastEnabled() {
+            try { return localStorage.getItem('ctmHighContrast') === '1'; } catch(e) { return false; }
+        }
+
+        function setHighContrast(enabled) {
+            try { localStorage.setItem('ctmHighContrast', enabled ? '1' : '0'); } catch(e) {}
+            document.documentElement.classList.toggle('high-contrast', !!enabled);
+            _syncHighContrastToggles();
+        }
+
+        function toggleHighContrast(checkbox) {
+            setHighContrast(!!(checkbox && checkbox.checked));
+        }
+
+        // ===== ACESSIBILIDADE: LIGHT MODE (opcional) =====
+        function isLightModeEnabled() {
+            try { return localStorage.getItem('ctmLightMode') === '1'; } catch(e) { return false; }
+        }
+
+        function setLightMode(enabled) {
+            try { localStorage.setItem('ctmLightMode', enabled ? '1' : '0'); } catch(e) {}
+            document.documentElement.classList.toggle('light-mode', !!enabled);
+            _syncHighContrastToggles();
+        }
+
+        function toggleLightMode(checkbox) {
+            setLightMode(!!(checkbox && checkbox.checked));
+        }
+
+        // Mantém todos os toggles (login + perfil) sincronizados com o estado atual
+        function _syncHighContrastToggles() {
+            var hc = isHighContrastEnabled();
+            var lm = isLightModeEnabled();
+            ['hcToggleLogin', 'hcTogglePerfil'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.checked = hc;
+            });
+            ['lmToggleLogin', 'lmTogglePerfil'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.checked = lm;
+            });
         }
 
         // ===== PASSWORD UTILITIES =====
@@ -26373,6 +26635,160 @@
             link.href = URL.createObjectURL(blob);
             link.download = 'relatorio_' + (d.dateFrom||'') + '_' + (d.dateTo||'') + '.csv';
             link.click();
+        }
+
+        // Escapa um valor para uma célula CSV (aspas duplas + quebras de linha)
+        function _csvCell(val) {
+            var s = (val === null || val === undefined) ? '' : val.toString();
+            if (s.indexOf(',') !== -1 || s.indexOf('"') !== -1 || s.indexOf('\n') !== -1 || s.indexOf(';') !== -1) {
+                s = '"' + s.replace(/"/g, '""') + '"';
+            }
+            return s;
+        }
+
+        var _RPT_ALUNOS_HEADERS = ['Nome','Email','CT','Faixa Atual','Grau Atual','Nascimento','Telefone','Status','Categoria Financeira','Modalidades (nível/grau)','Plano','Contratos'];
+
+        function _rptAlunosRowToArray(r) {
+            return [r.nome, r.email, r.ct, r.faixa, r.grauAtual, r.nascimento, r.telefone, r.status, r.categoriaFinanceira, r.modalidades, r.plano, r.contratos];
+        }
+
+        // Busca os registros do relatório — retorna {registros} ou null (e já trata mensagens de erro/loading)
+        async function _fetchRelatorioAlunos(btn, btnLabel, msg) {
+            var ctSel = document.getElementById('rptCTSelect');
+            var filterCT = ctSel ? ctSel.value : '';
+            if (btn) { btn.disabled = true; btn.dataset._origLabel = btn.textContent; btn.textContent = '⏳ Gerando...'; }
+            if (msg) { msg.style.color = 'var(--adm-text-3)'; msg.textContent = 'Coletando dados de todos os alunos...'; }
+            try {
+                var res = await secureFetch('getRelatorioAlunosCompleto', { filterCT: filterCT });
+                if (!res || !res.success) {
+                    if (msg) { msg.style.color = '#f87171'; msg.textContent = '❌ ' + ((res && res.message) || 'Erro ao gerar relatório'); }
+                    return null;
+                }
+                var registros = res.registros || [];
+                if (registros.length === 0) {
+                    if (msg) { msg.style.color = '#fbbf24'; msg.textContent = '⚠️ Nenhum aluno encontrado.'; }
+                    return null;
+                }
+                return registros;
+            } catch(e) {
+                if (msg) { msg.style.color = '#f87171'; msg.textContent = '❌ Erro de conexão'; }
+                return null;
+            } finally {
+                if (btn) { btn.disabled = false; if (btn.dataset._origLabel) btn.textContent = btn.dataset._origLabel; }
+            }
+        }
+
+        async function exportRelatorioAlunosCompleto(btn) {
+            var msg = document.getElementById('rptAlunosCompletoMsg');
+            var registros = await _fetchRelatorioAlunos(btn, '⬇️ CSV', msg);
+            if (!registros) return;
+
+            var csv = '\uFEFF' + _RPT_ALUNOS_HEADERS.map(_csvCell).join(',') + '\n';
+            registros.forEach(function(r) {
+                csv += _rptAlunosRowToArray(r).map(_csvCell).join(',') + '\n';
+            });
+
+            var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+            var link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            var hoje = new Date().toISOString().slice(0,10);
+            link.download = 'relatorio_alunos_completo_' + hoje + '.csv';
+            link.click();
+
+            if (msg) { msg.style.color = '#4ade80'; msg.textContent = '✅ ' + registros.length + ' aluno(s) exportado(s)!'; }
+        }
+
+        // Carrega a biblioteca SheetJS (xlsx) sob demanda — só quando o admin clicar em "Exportar Excel"
+        var _xlsxLibLoaded = false;
+        function _loadXLSXLib() {
+            return new Promise(function(resolve, reject) {
+                if (_xlsxLibLoaded || (typeof XLSX !== 'undefined')) { _xlsxLibLoaded = true; resolve(); return; }
+                var script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+                script.onload = function() { _xlsxLibLoaded = true; resolve(); };
+                script.onerror = function() { reject(new Error('Falha ao carregar biblioteca de Excel')); };
+                document.head.appendChild(script);
+            });
+        }
+
+        async function exportRelatorioAlunosXLSX(btn) {
+            var msg = document.getElementById('rptAlunosCompletoMsg');
+            var registros = await _fetchRelatorioAlunos(btn, '⬇️ Excel (.xlsx)', msg);
+            if (!registros) return;
+
+            try {
+                if (msg) { msg.style.color = 'var(--adm-text-3)'; msg.textContent = 'Preparando arquivo Excel...'; }
+                await _loadXLSXLib();
+
+                var data = [_RPT_ALUNOS_HEADERS];
+                registros.forEach(function(r) { data.push(_rptAlunosRowToArray(r)); });
+
+                var ws = XLSX.utils.aoa_to_sheet(data);
+                // Larguras de coluna aproximadas para boa leitura
+                ws['!cols'] = [
+                    {wch:24},{wch:26},{wch:14},{wch:12},{wch:10},{wch:12},{wch:14},{wch:10},{wch:14},{wch:34},{wch:28},{wch:40}
+                ];
+                var wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, 'Alunos');
+
+                var hoje = new Date().toISOString().slice(0,10);
+                XLSX.writeFile(wb, 'relatorio_alunos_completo_' + hoje + '.xlsx');
+
+                if (msg) { msg.style.color = '#4ade80'; msg.textContent = '✅ ' + registros.length + ' aluno(s) exportado(s)!'; }
+            } catch(e) {
+                if (msg) { msg.style.color = '#f87171'; msg.textContent = '❌ ' + (e.message || 'Erro ao gerar Excel'); }
+            }
+        }
+
+        async function exportRelatorioAlunosPDF(btn) {
+            var msg = document.getElementById('rptAlunosCompletoMsg');
+            var registros = await _fetchRelatorioAlunos(btn, '⬇️ PDF', msg);
+            if (!registros) return;
+
+            try {
+                if (msg) { msg.style.color = 'var(--adm-text-3)'; msg.textContent = 'Gerando PDF...'; }
+
+                var ctSel = document.getElementById('rptCTSelect');
+                var ctLabel = (ctSel && ctSel.value) ? ctSel.value : 'Todos os CTs';
+                var agora = new Date().toLocaleString('pt-BR');
+
+                var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Relatório de Alunos</title><style>' +
+                    'body{font-family:Arial,sans-serif;margin:20px;color:#1a1a1a;}' +
+                    'h1{font-size:18px;margin:0 0 4px;}' +
+                    '.meta{font-size:11px;color:#666;margin-bottom:16px;}' +
+                    'table{width:100%;border-collapse:collapse;font-size:9px;}' +
+                    'th{background:#C9A23A;color:#000;text-align:left;padding:5px 6px;border:1px solid #999;}' +
+                    'td{padding:4px 6px;border:1px solid #ccc;vertical-align:top;}' +
+                    'tr:nth-child(even){background:#f7f5ef;}' +
+                    '@media print{@page{size:A4 landscape;margin:1cm;} body{margin:0;}}' +
+                    '</style></head><body>' +
+                    '<h1>📋 Relatório Completo de Alunos</h1>' +
+                    '<div class="meta">' + ctLabel + ' · Gerado em ' + agora + ' · ' + registros.length + ' aluno(s)</div>' +
+                    '<table><thead><tr>' +
+                    _RPT_ALUNOS_HEADERS.map(function(h){ return '<th>' + h + '</th>'; }).join('') +
+                    '</tr></thead><tbody>';
+
+                registros.forEach(function(r) {
+                    html += '<tr>' + _rptAlunosRowToArray(r).map(function(v){
+                        return '<td>' + escapeHtml((v === null || v === undefined) ? '' : v.toString()) + '</td>';
+                    }).join('') + '</tr>';
+                });
+
+                html += '</tbody></table></body></html>';
+
+                var win = window.open('', '_blank', 'width=1000,height=700');
+                if (!win) {
+                    if (msg) { msg.style.color = '#f87171'; msg.textContent = '❌ O navegador bloqueou a janela. Permita pop-ups para gerar o PDF.'; }
+                    return;
+                }
+                win.document.write(html);
+                win.document.close();
+                setTimeout(function(){ win.print(); }, 600);
+
+                if (msg) { msg.style.color = '#4ade80'; msg.textContent = '✅ ' + registros.length + ' aluno(s) — use "Salvar como PDF" na janela de impressão.'; }
+            } catch(e) {
+                if (msg) { msg.style.color = '#f87171'; msg.textContent = '❌ ' + (e.message || 'Erro ao gerar PDF'); }
+            }
         }
 
         // ===== SYSTEM HEALTH =====
@@ -40928,16 +41344,20 @@
                 var data = await secureFetch('getPendingAccounts', {});
                 console.log('getPendingAccounts response:', JSON.stringify(data));
                 if (data.success && data.accounts && data.accounts.length > 0) {
+                    var accounts = data.accounts.slice().sort(function(a, b) {
+                        var da = a.data ? new Date(a.data).getTime() : 0;
+                        var db = b.data ? new Date(b.data).getTime() : 0;
+                        return da - db; // mais antigo primeiro = mais urgente no topo
+                    });
                     var html = '';
-                    for (var i = 0; i < data.accounts.length; i++) {
-                        var acc = data.accounts[i];
-                        html += renderAccountCard(acc, i);
+                    for (var i = 0; i < accounts.length; i++) {
+                        html += renderAccountCard(accounts[i], i);
                     }
                     container.innerHTML = html;
                     var badge = document.getElementById('adminAccBadge');
-                    badge.textContent = data.accounts.length;
+                    badge.textContent = accounts.length;
                     badge.style.display = 'inline-block';
-                    document.getElementById('adminPendingAccountsCount').textContent = data.accounts.length;
+                    document.getElementById('adminPendingAccountsCount').textContent = accounts.length;
                 } else {
                     container.innerHTML = '<div class="admin-empty">Nenhum cadastro pendente 🎉</div>';
                     document.getElementById('adminAccBadge').style.display = 'none';
@@ -40951,8 +41371,26 @@
 
         function renderAccountCard(acc, idx) {
             var initial = (acc.name || '?').charAt(0).toUpperCase();
-            var dataStr = acc.data ? new Date(acc.data).toLocaleDateString('pt-BR') : '-';
+            var dataObj = acc.data ? new Date(acc.data) : null;
+            var dataStr = dataObj ? dataObj.toLocaleDateString('pt-BR') : '-';
             var emailSafe = (acc.email || '').replace(/'/g, "\\'");
+
+            // ── SLA visual: quantos dias a solicitação está pendente ──
+            var diasPendente = 0;
+            if (dataObj && !isNaN(dataObj.getTime())) {
+                var hoje0 = new Date(); hoje0.setHours(0,0,0,0);
+                var data0 = new Date(dataObj); data0.setHours(0,0,0,0);
+                diasPendente = Math.max(0, Math.round((hoje0 - data0) / 86400000));
+            }
+            var slaHtml = '', cardBorder = '';
+            if (diasPendente >= 3) {
+                slaHtml = '<span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px;background:rgba(248,113,113,0.15);color:#f87171;border:1px solid rgba(248,113,113,0.35);margin-left:6px;">⏳ ' + diasPendente + ' dias aguardando</span>';
+                cardBorder = 'border:1px solid rgba(248,113,113,0.4);';
+            } else if (diasPendente >= 1) {
+                slaHtml = '<span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:10px;background:rgba(251,191,36,0.12);color:#fbbf24;border:1px solid rgba(251,191,36,0.3);margin-left:6px;">⏳ ' + diasPendente + (diasPendente===1?' dia':' dias') + '</span>';
+            } else {
+                slaHtml = '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(74,222,128,0.10);color:#4ade80;border:1px solid rgba(74,222,128,0.25);margin-left:6px;">🆕 Hoje</span>';
+            }
 
             // Modalidades solicitadas
             var modsSol = (acc.modalidadesSolicitadas || '').split(',').filter(function(m){ return m; });
@@ -40975,11 +41413,11 @@
             }
             var ctSelectId = 'accCardCT' + idx;
 
-            return '<div class="admin-card" id="accCard' + idx + '">' +
+            return '<div class="admin-card" id="accCard' + idx + '" style="' + cardBorder + '">' +
                 '<div class="admin-card-top">' +
                     '<div class="admin-card-avatar">' + initial + '</div>' +
                     '<div class="admin-card-info">' +
-                        '<div class="admin-card-name">' + escapeHtml(acc.name || 'Sem nome') + '</div>' +
+                        '<div class="admin-card-name">' + escapeHtml(acc.name || 'Sem nome') + slaHtml + '</div>' +
                         '<div class="admin-card-meta">' + escapeHtml(acc.email || '') + ' · 📅 ' + dataStr + '</div>' +
                     '</div>' +
                 '</div>' +
@@ -41486,6 +41924,15 @@
         // ===== REDES DE BENEFÍCIO: Wellhub & TotalPass =====
 
         var _wellnessConfigs = [];
+
+        function toggleWellnessGuia() {
+            var body  = document.getElementById('wellnessGuiaBody');
+            var arrow = document.getElementById('wellnessGuiaArrow');
+            if (!body) return;
+            var open = body.style.display !== 'none';
+            body.style.display = open ? 'none' : 'block';
+            if (arrow) arrow.textContent = open ? '▶ expandir' : '▼ recolher';
+        }
 
         async function loadWellnessConfig() {
             // Popula select de CTs
