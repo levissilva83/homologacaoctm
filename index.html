@@ -11829,53 +11829,160 @@
                     </div><!-- /sis-panel-assinante -->
 
                     <!-- ════ SUB-TAB: RELATÓRIOS ════ -->
+                    <!-- ════ RELATÓRIOS INTELIGENTES ════ -->
                     <div class="sis-subtab-panel" id="sis-panel-relatorios" style="display:none;">
-                        <!-- Relatório Completo de Alunos -->
-                        <div class="admin-card" style="margin-bottom:12px;">
 
-                            <div style="font-size:12px;font-weight:800;color:var(--adm-text-1);margin-bottom:4px;">📋 Relatório Completo de Alunos</div>
-                            <p style="font-size:11px;color:var(--adm-text-3);margin:0 0 10px;line-height:1.6;">
-                                Exporta dados cadastrais, CT, modalidades matriculadas (com nível/grau atual),
-                                plano financeiro e situação de cada contrato (LGPD, imagem, etc) para todos os alunos ativos.
-                            </p>
-                            <div style="display:flex;gap:6px;flex-wrap:wrap;">
-                                <button onclick="exportRelatorioAlunosCompleto(this)" style="flex:1;min-width:120px;padding:10px;border-radius:8px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;font-size:12px;font-weight:800;cursor:pointer;">⬇️ CSV</button>
-                                <button onclick="exportRelatorioAlunosXLSX(this)" style="flex:1;min-width:120px;padding:10px;border-radius:8px;background:#21a366;color:#fff;border:none;font-size:12px;font-weight:800;cursor:pointer;">⬇️ Excel (.xlsx)</button>
-                                <button onclick="exportRelatorioAlunosPDF(this)" style="flex:1;min-width:120px;padding:10px;border-radius:8px;background:#dc2626;color:#fff;border:none;font-size:12px;font-weight:800;cursor:pointer;">⬇️ PDF</button>
-                            </div>
-                            <div id="rptAlunosCompletoMsg" style="font-size:11px;min-height:16px;margin-top:6px;"></div>
+                        <!-- Navegação por categoria -->
+                        <div id="rptNavBar" style="display:flex;overflow-x:auto;scrollbar-width:none;gap:4px;padding:12px 16px 0;background:var(--adm-bg);border-bottom:1px solid var(--adm-border);position:sticky;top:0;z-index:8;">
+                            <button class="rptNavBtn active" data-cat="dashboard" onclick="switchRptCat('dashboard')" style="flex-shrink:0;padding:8px 14px;border-radius:8px 8px 0 0;border:1px solid var(--adm-border);border-bottom:none;background:var(--adm-bg-card);color:var(--adm-primary);font-size:11px;font-weight:800;cursor:pointer;">📊 Dashboard</button>
+                            <button class="rptNavBtn" data-cat="alunos" onclick="switchRptCat('alunos')" style="flex-shrink:0;padding:8px 14px;border-radius:8px 8px 0 0;border:1px solid var(--adm-border);border-bottom:none;background:transparent;color:var(--adm-text-3);font-size:11px;font-weight:700;cursor:pointer;">👥 Alunos</button>
+                            <button class="rptNavBtn" data-cat="retencao" onclick="switchRptCat('retencao')" style="flex-shrink:0;padding:8px 14px;border-radius:8px 8px 0 0;border:1px solid var(--adm-border);border-bottom:none;background:transparent;color:var(--adm-text-3);font-size:11px;font-weight:700;cursor:pointer;">🔔 Retenção</button>
+                            <button class="rptNavBtn" data-cat="frequencia" onclick="switchRptCat('frequencia')" style="flex-shrink:0;padding:8px 14px;border-radius:8px 8px 0 0;border:1px solid var(--adm-border);border-bottom:none;background:transparent;color:var(--adm-text-3);font-size:11px;font-weight:700;cursor:pointer;">📅 Frequência</button>
+                            <button class="rptNavBtn" data-cat="financeiro" onclick="switchRptCat('financeiro')" style="flex-shrink:0;padding:8px 14px;border-radius:8px 8px 0 0;border:1px solid var(--adm-border);border-bottom:none;background:transparent;color:var(--adm-text-3);font-size:11px;font-weight:700;cursor:pointer;">💰 Financeiro</button>
+                            <button class="rptNavBtn" data-cat="graduacao" onclick="switchRptCat('graduacao')" style="flex-shrink:0;padding:8px 14px;border-radius:8px 8px 0 0;border:1px solid var(--adm-border);border-bottom:none;background:transparent;color:var(--adm-text-3);font-size:11px;font-weight:700;cursor:pointer;">🥋 Graduação</button>
+                            <button class="rptNavBtn" data-cat="aluno360" onclick="switchRptCat('aluno360')" style="flex-shrink:0;padding:8px 14px;border-radius:8px 8px 0 0;border:1px solid var(--adm-border);border-bottom:none;background:transparent;color:var(--adm-text-3);font-size:11px;font-weight:700;cursor:pointer;">🎯 Ficha 360°</button>
                         </div>
 
-                        <!-- Relatório 360° Individual -->
-                        <div class="admin-card" style="margin-bottom:12px;">
-                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-                                <div style="font-size:18px;">🎯</div>
-                                <div>
-                                    <div style="font-size:12px;font-weight:800;color:var(--adm-text-1);">Relatório 360° do Aluno</div>
-                                    <div style="font-size:10px;color:var(--adm-text-3);">Visão completa: frequência, evolução, financeiro e scores de engajamento</div>
-                                </div>
-                            </div>
-                            <div style="display:flex;gap:6px;align-items:flex-end;">
-                                <div style="flex:1;">
-                                    <label style="font-size:9px;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:3px;">Buscar aluno</label>
-                                    <input type="text" id="rpt360Search" placeholder="Nome ou e-mail do aluno..." oninput="rpt360FilterAlunos()" style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
-                                </div>
-                                <button onclick="rpt360Abrir()" style="padding:8px 14px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;">🎯 Ver Relatório</button>
-                            </div>
-                            <div id="rpt360Suggestions" style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:8px;margin-top:4px;display:none;max-height:180px;overflow-y:auto;"></div>
+                        <!-- Estado: carregando -->
+                        <div id="rptIntLoading" style="text-align:center;padding:48px 16px;color:var(--adm-text-3);">
+                            <div style="font-size:28px;margin-bottom:12px;">⏳</div>
+                            <div style="font-size:13px;">Carregando dados...</div>
                         </div>
+
+                        <!-- Estado: erro -->
+                        <div id="rptIntError" style="display:none;text-align:center;padding:40px 16px;">
+                            <div style="font-size:28px;margin-bottom:10px;">❌</div>
+                            <div id="rptIntErrorMsg" style="font-size:12px;color:#f87171;"></div>
+                            <button onclick="loadRptIntelig()" style="margin-top:12px;padding:8px 20px;background:var(--adm-primary);color:#000;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Tentar novamente</button>
+                        </div>
+
+                        <!-- Conteúdo principal -->
+                        <div id="rptIntContent" style="display:none;padding:16px;">
+
+                            <!-- DASHBOARD -->
+                            <div id="rptCat-dashboard" class="rptCatPanel">
+                                <div id="rptDashKpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;"></div>
+                                <div id="rptDashCharts" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;"></div>
+                                <div id="rptDashAlerts"></div>
+                            </div>
+
+                            <!-- ALUNOS -->
+                            <div id="rptCat-alunos" class="rptCatPanel" style="display:none;">
+                                <div id="rptKpi-alunos" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;"></div>
+                                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
+                                    <input type="text" id="rptF-alunos-nome" placeholder="🔍 Buscar por nome..." oninput="rptRender('alunos')" style="flex:1;min-width:150px;padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <select id="rptF-alunos-status" onchange="rptRender('alunos')" style="padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;"><option value="">Todos os status</option><option value="ATIVO">Ativos</option><option value="INATIVO">Inativos</option></select>
+                                    <select id="rptF-alunos-faixa" onchange="rptRender('alunos')" style="padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;"><option value="">Todas as faixas</option></select>
+                                    <select id="rptF-alunos-ct" onchange="rptRender('alunos')" style="padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;"><option value="">Todos os CTs</option></select>
+                                    <button onclick="rptExportCSV('alunos')" style="padding:7px 12px;background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:8px;color:var(--adm-text-2);font-size:11px;font-weight:700;cursor:pointer;">⬇️ CSV</button>
+                                    <button onclick="rptExportPDF()" style="padding:7px 12px;background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:8px;color:var(--adm-text-2);font-size:11px;font-weight:700;cursor:pointer;">🖨️ PDF</button>
+                                </div>
+                                <div id="rptTable-alunos"></div>
+                            </div>
+
+                            <!-- RETENÇÃO -->
+                            <div id="rptCat-retencao" class="rptCatPanel" style="display:none;">
+                                <div id="rptKpi-retencao" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;"></div>
+                                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
+                                    <select id="rptF-retencao-dias" onchange="rptRender('retencao')" style="padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                        <option value="0">Todos sem treinar</option>
+                                        <option value="7">+7 dias</option>
+                                        <option value="15" selected>+15 dias</option>
+                                        <option value="30">+30 dias</option>
+                                        <option value="60">+60 dias</option>
+                                    </select>
+                                    <select id="rptF-retencao-ct" onchange="rptRender('retencao')" style="padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;"><option value="">Todos os CTs</option></select>
+                                    <input type="text" id="rptF-retencao-nome" placeholder="🔍 Buscar nome..." oninput="rptRender('retencao')" style="flex:1;min-width:130px;padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <button onclick="rptExportCSV('retencao')" style="padding:7px 12px;background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:8px;color:var(--adm-text-2);font-size:11px;font-weight:700;cursor:pointer;">⬇️ CSV</button>
+                                </div>
+                                <div id="rptTable-retencao"></div>
+                            </div>
+
+                            <!-- FREQUÊNCIA -->
+                            <div id="rptCat-frequencia" class="rptCatPanel" style="display:none;">
+                                <div id="rptKpi-frequencia" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;"></div>
+                                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
+                                    <select id="rptF-frequencia-periodo" onchange="rptRender('frequencia')" style="padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                        <option value="p30">Últimos 30 dias</option>
+                                        <option value="p90">Últimos 90 dias</option>
+                                    </select>
+                                    <select id="rptF-frequencia-ct" onchange="rptRender('frequencia')" style="padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;"><option value="">Todos os CTs</option></select>
+                                    <input type="text" id="rptF-frequencia-nome" placeholder="🔍 Buscar nome..." oninput="rptRender('frequencia')" style="flex:1;min-width:130px;padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <button onclick="rptExportCSV('frequencia')" style="padding:7px 12px;background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:8px;color:var(--adm-text-2);font-size:11px;font-weight:700;cursor:pointer;">⬇️ CSV</button>
+                                </div>
+                                <div id="rptTable-frequencia"></div>
+                            </div>
+
+                            <!-- FINANCEIRO -->
+                            <div id="rptCat-financeiro" class="rptCatPanel" style="display:none;">
+                                <div id="rptKpi-financeiro" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;"></div>
+                                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
+                                    <select id="rptF-financeiro-status" onchange="rptRender('financeiro')" style="padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                        <option value="">Todos</option>
+                                        <option value="ATRASADO">Em atraso</option>
+                                        <option value="PAGO">Em dia</option>
+                                        <option value="PENDENTE_PIX">PIX pendente</option>
+                                    </select>
+                                    <select id="rptF-financeiro-ct" onchange="rptRender('financeiro')" style="padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;"><option value="">Todos os CTs</option></select>
+                                    <input type="text" id="rptF-financeiro-nome" placeholder="🔍 Buscar nome..." oninput="rptRender('financeiro')" style="flex:1;min-width:130px;padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <button onclick="rptExportCSV('financeiro')" style="padding:7px 12px;background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:8px;color:var(--adm-text-2);font-size:11px;font-weight:700;cursor:pointer;">⬇️ CSV</button>
+                                </div>
+                                <div id="rptTable-financeiro"></div>
+                            </div>
+
+                            <!-- GRADUAÇÃO -->
+                            <div id="rptCat-graduacao" class="rptCatPanel" style="display:none;">
+                                <div id="rptKpi-graduacao" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;"></div>
+                                <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center;">
+                                    <select id="rptF-graduacao-faixa" onchange="rptRender('graduacao')" style="padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;"><option value="">Todas as faixas</option></select>
+                                    <select id="rptF-graduacao-minMeses" onchange="rptRender('graduacao')" style="padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                        <option value="0">Todos</option>
+                                        <option value="6" selected>+6 meses na faixa</option>
+                                        <option value="12">+12 meses na faixa</option>
+                                        <option value="18">+18 meses na faixa</option>
+                                    </select>
+                                    <select id="rptF-graduacao-ct" onchange="rptRender('graduacao')" style="padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;"><option value="">Todos os CTs</option></select>
+                                    <input type="text" id="rptF-graduacao-nome" placeholder="🔍 Buscar nome..." oninput="rptRender('graduacao')" style="flex:1;min-width:130px;padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    <button onclick="rptExportCSV('graduacao')" style="padding:7px 12px;background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:8px;color:var(--adm-text-2);font-size:11px;font-weight:700;cursor:pointer;">⬇️ CSV</button>
+                                </div>
+                                <div id="rptTable-graduacao"></div>
+                            </div>
+
+                            <!-- FICHA 360° -->
+                            <div id="rptCat-aluno360" class="rptCatPanel" style="display:none;">
+                                <div style="font-size:12px;color:var(--adm-text-3);margin-bottom:12px;line-height:1.6;">
+                                    Consulte a ficha completa e individual de qualquer aluno: frequência, evolução técnica, histórico de graduações, situação financeira e score de retenção.
+                                </div>
+                                <div style="display:flex;gap:6px;align-items:flex-end;">
+                                    <div style="flex:1;">
+                                        <label style="font-size:9px;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:3px;">Buscar aluno</label>
+                                        <input type="text" id="rpt360Search" placeholder="Nome ou e-mail do aluno..." oninput="rpt360FilterAlunos()" style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                    </div>
+                                    <button onclick="rpt360Abrir()" style="padding:8px 14px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;">🎯 Ver Ficha</button>
+                                </div>
+                                <div id="rpt360Suggestions" style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:8px;margin-top:4px;display:none;max-height:180px;overflow-y:auto;"></div>
+                                <div style="margin-top:14px;padding:12px;background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:10px;">
+                                    <div style="font-size:10px;font-weight:700;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px;">O que a ficha inclui</div>
+                                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px;color:var(--adm-text-3);">
+                                        <div>✅ Heatmap de frequência</div><div>✅ Gráfico de tendência</div>
+                                        <div>✅ Score de engajamento</div><div>✅ Score de retenção</div>
+                                        <div>✅ Histórico de graduações</div><div>✅ Barra de progresso</div>
+                                        <div>✅ Histórico financeiro</div><div>✅ LTV do aluno</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div><!-- /rptIntContent -->
 
                         <!-- Modal 360° -->
                         <div id="rpt360Modal" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.82);overflow-y:auto;">
                             <div style="min-height:100%;display:flex;align-items:flex-start;justify-content:center;padding:12px;">
                                 <div id="rpt360Content" style="background:var(--adm-bg);border-radius:16px;width:100%;max-width:580px;overflow:hidden;">
-                                    <!-- header do modal -->
                                     <div id="rpt360Header" style="padding:16px;"></div>
                                     <div id="rpt360Body" style="padding:0 16px 24px;"></div>
                                 </div>
                             </div>
                         </div>
-
 
                     </div><!-- /sis-panel-relatorios -->
 
@@ -25561,7 +25668,7 @@
             // Relatórios — admin apenas, carrega dados ao abrir
             if (tab === 'relatorios') {
                 if (!isAdmin()) { sisSwitchTab('sistema'); return; }
-                setTimeout(function(){ if (typeof loadNewReportData === 'function') loadNewReportData(); }, 60);
+                setTimeout(function(){ if (typeof loadRptIntelig === 'function' && !_rptData) loadRptIntelig(); }, 60);
             }
         }
 
@@ -27071,6 +27178,383 @@
                     + '</div>';
             }).join('');
         }
+
+        // ══════════════════════════════════════════════════════════════
+        // RELATÓRIOS INTELIGENTES
+        // ══════════════════════════════════════════════════════════════
+        var _rptData = null;
+        var _rptCat  = 'dashboard';
+        var _rptSort = {};  // { cat: { col, asc } }
+
+        // Carrega dados e abre dashboard
+        async function loadRptIntelig() {
+            var loading = document.getElementById('rptIntLoading');
+            var error   = document.getElementById('rptIntError');
+            var content = document.getElementById('rptIntContent');
+            if (loading) loading.style.display = 'block';
+            if (error)   error.style.display   = 'none';
+            if (content) content.style.display = 'none';
+            try {
+                var res = await secureFetch('getRelatoriosInteligentes', {});
+                if (!res || !res.success) throw new Error(res && res.message ? res.message : 'Erro ao carregar dados');
+                _rptData = res;
+                _rptPopulateFilterOptions(res.students);
+                if (loading) loading.style.display = 'none';
+                if (content) content.style.display = 'block';
+                switchRptCat(_rptCat);
+            } catch(e) {
+                if (loading) loading.style.display = 'none';
+                if (error)   { error.style.display = 'block'; var em = document.getElementById('rptIntErrorMsg'); if (em) em.textContent = e.message; }
+            }
+        }
+
+        // Popula selects de filtro com valores únicos do dataset
+        function _rptPopulateFilterOptions(students) {
+            var faixas = {}, cts = {};
+            students.forEach(function(s) {
+                if (s.faixa) faixas[s.faixa] = true;
+                if (s.ct)    cts[s.ct]       = true;
+            });
+            var faixaOpts = '<option value="">Todas as faixas</option>' + Object.keys(faixas).sort().map(function(f){ return '<option value="'+escapeHtml(f)+'">'+escapeHtml(f)+'</option>'; }).join('');
+            var ctOpts    = '<option value="">Todos os CTs</option>'    + Object.keys(cts).sort().map(function(c){ return '<option value="'+escapeHtml(c)+'">'+escapeHtml(c)+'</option>'; }).join('');
+            ['rptF-alunos-faixa','rptF-alunos-ct','rptF-retencao-ct','rptF-frequencia-ct','rptF-financeiro-ct','rptF-graduacao-faixa','rptF-graduacao-ct'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                if (id.indexOf('-faixa') >= 0) el.innerHTML = faixaOpts;
+                else el.innerHTML = ctOpts;
+            });
+        }
+
+        // Troca de categoria
+        function switchRptCat(cat) {
+            _rptCat = cat;
+            document.querySelectorAll('.rptNavBtn').forEach(function(btn) {
+                var isCat = btn.getAttribute('data-cat') === cat;
+                btn.style.background  = isCat ? 'var(--adm-bg-card)' : 'transparent';
+                btn.style.color       = isCat ? 'var(--adm-primary)' : 'var(--adm-text-3)';
+                btn.style.borderBottomColor = isCat ? 'var(--adm-bg-card)' : 'var(--adm-border)';
+            });
+            document.querySelectorAll('.rptCatPanel').forEach(function(el) { el.style.display = 'none'; });
+            var panel = document.getElementById('rptCat-' + cat);
+            if (panel) panel.style.display = 'block';
+            if (_rptData && cat !== 'aluno360') rptRender(cat);
+        }
+
+        // Dispatch de render por categoria
+        function rptRender(cat) {
+            if (!_rptData) return;
+            switch(cat) {
+                case 'dashboard':  _rptRenderDashboard(_rptData); break;
+                case 'alunos':     _rptRenderAlunos(_rptData.students); break;
+                case 'retencao':   _rptRenderRetencao(_rptData.students); break;
+                case 'frequencia': _rptRenderFrequencia(_rptData.students); break;
+                case 'financeiro': _rptRenderFinanceiro(_rptData.students); break;
+                case 'graduacao':  _rptRenderGraduacao(_rptData.students); break;
+            }
+        }
+
+        // ── KPI Card helper ────────────────────────────────────────────
+        function _rptKpi(val, label, color) {
+            color = color || 'var(--adm-text-1)';
+            return '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:10px;padding:12px;text-align:center;">'
+                + '<div style="font-size:22px;font-weight:900;color:' + color + ';">' + val + '</div>'
+                + '<div style="font-size:10px;color:var(--adm-text-3);margin-top:3px;">' + label + '</div>'
+                + '</div>';
+        }
+
+        // ── Tabela helper ──────────────────────────────────────────────
+        function _rptTable(containerId, cols, rows, cat) {
+            var el = document.getElementById(containerId); if (!el) return;
+            if (!rows || rows.length === 0) {
+                el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--adm-text-3);font-size:12px;">Nenhum resultado com os filtros aplicados.</div>';
+                return;
+            }
+            var sortState = _rptSort[cat] || { col: null, asc: true };
+            var h = '<div style="overflow-x:auto;border-radius:10px;border:1px solid var(--adm-border);">';
+            h += '<table style="width:100%;border-collapse:collapse;font-size:11px;">';
+            h += '<thead><tr style="background:var(--adm-bg-card);">';
+            cols.forEach(function(col, ci) {
+                var sorted = sortState.col === ci;
+                h += '<th onclick="_rptSortBy(\''+cat+'\','+ci+')" style="padding:9px 10px;text-align:left;font-size:10px;font-weight:700;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.4px;cursor:pointer;white-space:nowrap;user-select:none;border-bottom:1px solid var(--adm-border);">'
+                    + escapeHtml(col) + (sorted ? (sortState.asc ? ' ↑' : ' ↓') : '') + '</th>';
+            });
+            h += '</tr></thead><tbody>';
+            rows.forEach(function(row, ri) {
+                var bg = ri % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)';
+                var rowStyle = row._rowStyle || '';
+                h += '<tr style="background:' + bg + ';' + rowStyle + '">';
+                row._cells.forEach(function(cell) { h += '<td style="padding:8px 10px;color:var(--adm-text-1);border-bottom:1px solid rgba(255,255,255,0.04);">' + cell + '</td>'; });
+                h += '</tr>';
+            });
+            h += '</tbody></table></div>';
+            h += '<div style="font-size:10px;color:var(--adm-text-3);margin-top:6px;text-align:right;">' + rows.length + ' resultado(s)</div>';
+            el.innerHTML = h;
+        }
+
+        function _rptSortBy(cat, colIdx) {
+            if (!_rptSort[cat]) _rptSort[cat] = { col: colIdx, asc: true };
+            else if (_rptSort[cat].col === colIdx) _rptSort[cat].asc = !_rptSort[cat].asc;
+            else { _rptSort[cat].col = colIdx; _rptSort[cat].asc = true; }
+            rptRender(cat);
+        }
+
+        function _rptSortRows(rows, cat, defaultCol, defaultAsc) {
+            var s = _rptSort[cat];
+            var col = s ? s.col : (defaultCol !== undefined ? defaultCol : 0);
+            var asc = s ? s.asc  : (defaultAsc !== undefined ? defaultAsc  : true);
+            if (col === null || col === undefined) return rows;
+            return rows.slice().sort(function(a, b) {
+                var va = (a._raw && a._raw[col] !== undefined) ? a._raw[col] : '';
+                var vb = (b._raw && b._raw[col] !== undefined) ? b._raw[col] : '';
+                var na = parseFloat(va), nb = parseFloat(vb);
+                if (!isNaN(na) && !isNaN(nb)) return asc ? na - nb : nb - na;
+                var sa = String(va).toLowerCase(), sb = String(vb).toLowerCase();
+                return asc ? sa.localeCompare(sb) : sb.localeCompare(sa);
+            });
+        }
+
+        function _rptBadge(label, color) {
+            return '<span style="display:inline-block;padding:2px 7px;border-radius:10px;font-size:10px;font-weight:700;background:' + color + '22;color:' + color + ';border:1px solid ' + color + '44;">' + label + '</span>';
+        }
+
+        function _rptBtn360(email, nome) {
+            return '<button onclick="rpt360SelectAluno(\'' + escapeHtml(email) + '\',\'' + escapeHtml(nome) + '\');switchRptCat(\'aluno360\');rpt360Abrir();" style="padding:2px 7px;background:rgba(201,162,58,0.1);border:1px solid rgba(201,162,58,0.3);border-radius:5px;color:var(--adm-primary);font-size:10px;font-weight:700;cursor:pointer;">360°</button>';
+        }
+
+        // ── DASHBOARD ──────────────────────────────────────────────────
+        function _rptRenderDashboard(d) {
+            var k = d.kpis;
+            var kpiEl = document.getElementById('rptDashKpis');
+            if (kpiEl) {
+                var risc   = k.emRisco > 0 ? '#f87171' : '#4ade80';
+                var inadc  = k.inadimplentes > 0 ? '#f87171' : '#4ade80';
+                kpiEl.innerHTML =
+                    _rptKpi(k.total,         'Total de alunos', 'var(--adm-text-1)')
+                    + _rptKpi(k.ativos,      'Ativos', '#4ade80')
+                    + _rptKpi(k.inativos,    'Inativos', '#9ca3af')
+                    + _rptKpi(k.inadimplentes, 'Inadimplentes', inadc)
+                    + _rptKpi(k.emRisco,     'Em risco de evasão', risc)
+                    + _rptKpi(k.freqMedia,   'Treinos/mês (média)', 'var(--adm-primary)')
+                    + _rptKpi(k.novos30,     'Novos (30 dias)', '#818cf8')
+                    + _rptKpi(d.students.filter(function(s){ return s.diasNaFaixa > 180 && s.status === 'ATIVO'; }).length, 'Elegíveis graduação', '#fbbf24');
+            }
+            // Alertas top
+            var alertEl = document.getElementById('rptDashAlerts'); if (!alertEl) return;
+            var h = '';
+            if (k.emRisco > 0) {
+                h += '<div style="background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;" onclick="switchRptCat(\'retencao\')">';
+                h += '<div style="font-size:12px;font-weight:700;color:#f87171;margin-bottom:3px;">🔴 ' + k.emRisco + ' aluno(s) há mais de 15 dias sem treinar</div>';
+                h += '<div style="font-size:11px;color:var(--adm-text-3);">Clique para ver a lista completa em Retenção →</div></div>';
+            }
+            if (k.inadimplentes > 0) {
+                h += '<div style="background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;" onclick="switchRptCat(\'financeiro\')">';
+                h += '<div style="font-size:12px;font-weight:700;color:#fbbf24;margin-bottom:3px;">🟡 ' + k.inadimplentes + ' aluno(s) com situação financeira pendente</div>';
+                h += '<div style="font-size:11px;color:var(--adm-text-3);">Clique para ver a lista completa em Financeiro →</div></div>';
+            }
+            // Top 3 mais em risco
+            var maisEmRisco = d.students.filter(function(s){ return s.status==='ATIVO'&&s.diasSemTreinar<999; }).sort(function(a,b){ return b.diasSemTreinar-a.diasSemTreinar; }).slice(0,5);
+            if (maisEmRisco.length > 0) {
+                h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:10px;padding:12px 14px;margin-bottom:8px;">';
+                h += '<div style="font-size:11px;font-weight:700;color:var(--adm-text-2);margin-bottom:8px;">⚡ Alunos que precisam de atenção agora</div>';
+                maisEmRisco.forEach(function(s) {
+                    var dc = s.diasSemTreinar > 30 ? '#f87171' : s.diasSemTreinar > 15 ? '#fbbf24' : '#4ade80';
+                    h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);">';
+                    h += '<div><div style="font-size:12px;font-weight:600;color:var(--adm-text-1);">' + escapeHtml(s.nome) + '</div>';
+                    h += '<div style="font-size:10px;color:var(--adm-text-3);">' + escapeHtml(s.ct) + ' · ' + escapeHtml(s.faixa) + '</div></div>';
+                    h += '<div style="text-align:right;">' + _rptBadge(s.diasSemTreinar + ' dias', dc) + '</div>';
+                    h += '</div>';
+                });
+                h += '</div>';
+            }
+            if (!h) h = '<div style="text-align:center;padding:20px;color:var(--adm-text-3);font-size:12px;">✅ Sem alertas no momento.</div>';
+            alertEl.innerHTML = h;
+        }
+
+        // ── ALUNOS ────────────────────────────────────────────────────
+        function _rptRenderAlunos(students) {
+            var nome    = (document.getElementById('rptF-alunos-nome')   ||{}).value||'';
+            var status  = (document.getElementById('rptF-alunos-status') ||{}).value||'';
+            var faixa   = (document.getElementById('rptF-alunos-faixa')  ||{}).value||'';
+            var ct      = (document.getElementById('rptF-alunos-ct')     ||{}).value||'';
+            var fil = students.filter(function(s) {
+                if (nome   && s.nome.toLowerCase().indexOf(nome.toLowerCase()) < 0) return false;
+                if (status && s.status !== status) return false;
+                if (faixa  && s.faixa  !== faixa)  return false;
+                if (ct     && s.ct     !== ct)     return false;
+                return true;
+            });
+            var ativos = fil.filter(function(s){ return s.status==='ATIVO'; }).length;
+            var inat   = fil.filter(function(s){ return s.status!=='ATIVO'; }).length;
+            var novos  = fil.filter(function(s){ return s.tempoDias<=30; }).length;
+            var kEl = document.getElementById('rptKpi-alunos');
+            if (kEl) kEl.innerHTML = _rptKpi(fil.length,'Total filtrado') + _rptKpi(ativos,'Ativos','#4ade80') + _rptKpi(inat,'Inativos','#9ca3af') + _rptKpi(novos,'Novos (30d)','#818cf8');
+            var cols = ['Nome','CT','Faixa','Grau','Modalidades','Status','Na academia','Ficha'];
+            var rows = fil.map(function(s) {
+                var sc = s.status==='ATIVO' ? '#4ade80' : '#9ca3af';
+                return {
+                    _raw: [s.nome, s.ct, s.faixa, s.grau, s.modalidades, s.status, s.tempoDias, 0],
+                    _cells: [escapeHtml(s.nome), escapeHtml(s.ct), escapeHtml(s.faixa), s.grau||'—', escapeHtml(s.modalidades.split(',').slice(0,2).join(', ')||'—'), _rptBadge(s.status, sc), Math.floor(s.tempoDias/30)+'m', _rptBtn360(s.email, s.nome)]
+                };
+            });
+            _rptTable('rptTable-alunos', cols, _rptSortRows(rows,'alunos',6,false), 'alunos');
+        }
+
+        // ── RETENÇÃO ──────────────────────────────────────────────────
+        function _rptRenderRetencao(students) {
+            var minDias = parseInt((document.getElementById('rptF-retencao-dias')||{}).value||'0');
+            var ct      = (document.getElementById('rptF-retencao-ct')  ||{}).value||'';
+            var nome    = (document.getElementById('rptF-retencao-nome')||{}).value||'';
+            var fil = students.filter(function(s) {
+                if (s.status !== 'ATIVO') return false;
+                if (minDias > 0 && s.diasSemTreinar < minDias) return false;
+                if (ct   && s.ct   !== ct)   return false;
+                if (nome && s.nome.toLowerCase().indexOf(nome.toLowerCase()) < 0) return false;
+                return true;
+            });
+            var criticos  = fil.filter(function(s){ return s.diasSemTreinar > 60; }).length;
+            var altorisco = fil.filter(function(s){ return s.diasSemTreinar > 30 && s.diasSemTreinar <= 60; }).length;
+            var atencao   = fil.filter(function(s){ return s.diasSemTreinar > 15 && s.diasSemTreinar <= 30; }).length;
+            var kEl = document.getElementById('rptKpi-retencao');
+            if (kEl) kEl.innerHTML = _rptKpi(fil.length,'Em observação') + _rptKpi(atencao,'Atenção (+15d)','#fbbf24') + _rptKpi(altorisco,'Alto risco (+30d)','#f97316') + _rptKpi(criticos,'Críticos (+60d)','#f87171');
+            var cols = ['Nome','CT','Faixa','Último treino','Dias sem treinar','Treinos/mês','Situação','Ficha'];
+            var rows = fil.map(function(s) {
+                var dias = s.diasSemTreinar > 900 ? '—' : s.diasSemTreinar;
+                var cor  = s.diasSemTreinar>60?'#f87171':s.diasSemTreinar>30?'#f97316':s.diasSemTreinar>15?'#fbbf24':'#4ade80';
+                var sit  = s.diasSemTreinar>60?'Crítico':s.diasSemTreinar>30?'Alto risco':s.diasSemTreinar>15?'Atenção':'Saudável';
+                return {
+                    _raw: [s.nome, s.ct, s.faixa, s.ultimaPresenca, s.diasSemTreinar===999?9999:s.diasSemTreinar, s.p30, sit, 0],
+                    _rowStyle: s.diasSemTreinar>30 ? 'border-left:3px solid '+cor+';' : '',
+                    _cells: [escapeHtml(s.nome), escapeHtml(s.ct), escapeHtml(s.faixa), escapeHtml(s.ultimaPresenca), dias, s.p30, _rptBadge(sit, cor), _rptBtn360(s.email, s.nome)]
+                };
+            });
+            _rptTable('rptTable-retencao', cols, _rptSortRows(rows,'retencao',4,false), 'retencao');
+        }
+
+        // ── FREQUÊNCIA ────────────────────────────────────────────────
+        function _rptRenderFrequencia(students) {
+            var periodo = (document.getElementById('rptF-frequencia-periodo')||{}).value||'p30';
+            var ct      = (document.getElementById('rptF-frequencia-ct')    ||{}).value||'';
+            var nome    = (document.getElementById('rptF-frequencia-nome')  ||{}).value||'';
+            var fil = students.filter(function(s) {
+                if (s.status !== 'ATIVO') return false;
+                if (ct   && s.ct   !== ct)   return false;
+                if (nome && s.nome.toLowerCase().indexOf(nome.toLowerCase()) < 0) return false;
+                return true;
+            });
+            var sorted = fil.slice().sort(function(a,b){ return (periodo==='p90'?b.p90:b.p30) - (periodo==='p90'?a.p90:a.p30); });
+            var totalTreinos = sorted.reduce(function(ac,s){ return ac+(periodo==='p90'?s.p90:s.p30); },0);
+            var media = sorted.length>0 ? (totalTreinos/sorted.length).toFixed(1) : 0;
+            var melhor = sorted[0] || null;
+            var kEl = document.getElementById('rptKpi-frequencia');
+            if (kEl) kEl.innerHTML = _rptKpi(sorted.length,'Alunos ativos') + _rptKpi(media,'Média de treinos') + _rptKpi(melhor?escapeHtml(melhor.nome.split(' ')[0]):'—','Mais frequente','var(--adm-primary)') + _rptKpi(melhor?(periodo==='p90'?melhor.p90:melhor.p30):0,'Treinos (líder)','#4ade80');
+            var periodoLabel = periodo==='p90'?'Treinos 90d':'Treinos 30d';
+            var cols = ['#','Nome','CT','Faixa',periodoLabel,'Ficha'];
+            var rows = sorted.map(function(s, idx) {
+                var treinos = periodo==='p90'?s.p90:s.p30;
+                var medalhao = idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':String(idx+1);
+                return {
+                    _raw: [idx+1, s.nome, s.ct, s.faixa, treinos, 0],
+                    _cells: [medalhao, escapeHtml(s.nome), escapeHtml(s.ct), escapeHtml(s.faixa), treinos, _rptBtn360(s.email, s.nome)]
+                };
+            });
+            _rptTable('rptTable-frequencia', cols, rows, 'frequencia');
+        }
+
+        // ── FINANCEIRO ────────────────────────────────────────────────
+        function _rptRenderFinanceiro(students) {
+            var fstatus = (document.getElementById('rptF-financeiro-status')||{}).value||'';
+            var ct      = (document.getElementById('rptF-financeiro-ct')   ||{}).value||'';
+            var nome    = (document.getElementById('rptF-financeiro-nome') ||{}).value||'';
+            var fil = students.filter(function(s) {
+                if (ct     && s.ct !== ct) return false;
+                if (nome   && s.nome.toLowerCase().indexOf(nome.toLowerCase()) < 0) return false;
+                if (fstatus && s.finStatus.toUpperCase() !== fstatus) return false;
+                return true;
+            });
+            var inadimplentes = fil.filter(function(s){ return s.emAtraso; });
+            var emDia   = fil.filter(function(s){ return s.finStatus==='PAGO'||s.finStatus==='ATIVO'; }).length;
+            var recPrev = fil.reduce(function(ac,s){ return ac+s.planoValor; },0);
+            var kEl = document.getElementById('rptKpi-financeiro');
+            if (kEl) kEl.innerHTML = _rptKpi(fil.length,'Total filtrado') + _rptKpi(inadimplentes.length,'Inadimplentes','#f87171') + _rptKpi(emDia,'Em dia','#4ade80') + _rptKpi('R$'+Math.round(recPrev),'Receita prevista','var(--adm-primary)');
+            var cols = ['Nome','CT','Plano','Mensalidade','Status','Vencimento','Ficha'];
+            var rows = fil.map(function(s) {
+                var fc = s.emAtraso?'#f87171':(s.finStatus==='PAGO'||s.finStatus==='ATIVO')?'#4ade80':'#fbbf24';
+                var fLabel = s.finStatus||'—';
+                return {
+                    _raw: [s.nome, s.ct, s.planoNome, s.planoValor, s.finStatus, s.vencimento, 0],
+                    _rowStyle: s.emAtraso ? 'border-left:3px solid #f87171;' : '',
+                    _cells: [escapeHtml(s.nome), escapeHtml(s.ct), escapeHtml(s.planoNome||'—'), s.planoValor>0?'R$'+s.planoValor.toFixed(2):'—', _rptBadge(fLabel, fc), escapeHtml(s.vencimento||'—'), _rptBtn360(s.email, s.nome)]
+                };
+            });
+            _rptTable('rptTable-financeiro', cols, _rptSortRows(rows,'financeiro'), 'financeiro');
+        }
+
+        // ── GRADUAÇÃO ─────────────────────────────────────────────────
+        function _rptRenderGraduacao(students) {
+            var faixa    = (document.getElementById('rptF-graduacao-faixa')   ||{}).value||'';
+            var minMeses = parseInt((document.getElementById('rptF-graduacao-minMeses')||{}).value||'0');
+            var ct       = (document.getElementById('rptF-graduacao-ct')      ||{}).value||'';
+            var nome     = (document.getElementById('rptF-graduacao-nome')    ||{}).value||'';
+            var minDias  = minMeses * 30;
+            var fil = students.filter(function(s) {
+                if (s.status !== 'ATIVO') return false;
+                if (faixa && s.faixa !== faixa) return false;
+                if (ct    && s.ct   !== ct)    return false;
+                if (nome  && s.nome.toLowerCase().indexOf(nome.toLowerCase()) < 0) return false;
+                if (minDias > 0 && s.diasNaFaixa < minDias) return false;
+                return true;
+            });
+            var muitoTempo = fil.filter(function(s){ return s.diasNaFaixa > 365; }).length;
+            var kEl = document.getElementById('rptKpi-graduacao');
+            if (kEl) kEl.innerHTML = _rptKpi(fil.length,'Candidatos') + _rptKpi(muitoTempo,'+1 ano na faixa','#f87171') + _rptKpi(fil.filter(function(s){return s.p30>=6;}).length,'Frequência boa','#4ade80') + _rptKpi(fil.filter(function(s){return s.diasNaFaixa>=180&&s.p30>=4;}).length,'Elegíveis','#fbbf24');
+            var cols = ['Nome','CT','Faixa','Grau','Meses na faixa','Treinos/mês','Elegível','Ficha'];
+            var rows = fil.map(function(s) {
+                var meses   = Math.floor(s.diasNaFaixa/30);
+                var elegivel = s.diasNaFaixa >= 180 && s.p30 >= 4;
+                var ec = elegivel ? '#4ade80' : '#9ca3af';
+                return {
+                    _raw: [s.nome, s.ct, s.faixa, s.grau, s.diasNaFaixa, s.p30, elegivel?1:0, 0],
+                    _cells: [escapeHtml(s.nome), escapeHtml(s.ct), escapeHtml(s.faixa), s.grau||'—', meses+'m', s.p30, _rptBadge(elegivel?'Sim':'Pendente', ec), _rptBtn360(s.email, s.nome)]
+                };
+            });
+            _rptTable('rptTable-graduacao', cols, _rptSortRows(rows,'graduacao',4,false), 'graduacao');
+        }
+
+        // ── EXPORTAR CSV ───────────────────────────────────────────────
+        function rptExportCSV(cat) {
+            if (!_rptData) return;
+            var s = _rptData.students;
+            var rows, headers;
+            switch(cat) {
+                case 'alunos':
+                    headers = ['Nome','Email','CT','Faixa','Grau','Modalidades','Status','Na academia (dias)','Data cadastro'];
+                    rows = s.map(function(a){ return [a.nome,a.email,a.ct,a.faixa,a.grau,a.modalidades,a.status,a.tempoDias,a.dataCadastro]; });
+                    break;
+                case 'retencao':
+                    headers = ['Nome','Email','CT','Faixa','Ultima presença','Dias sem treinar','Treinos 30d','Score retencao'];
+                    rows = s.filter(function(a){ return a.status==='ATIVO'; }).sort(function(a,b){ return b.diasSemTreinar-a.diasSemTreinar; }).map(function(a){ return [a.nome,a.email,a.ct,a.faixa,a.ultimaPresenca,a.diasSemTreinar===999?'':a.diasSemTreinar,a.p30,a.scoreRetencao]; });
+                    break;
+                case 'frequencia':
+                    headers = ['Pos.','Nome','Email','CT','Faixa','Treinos 30d','Treinos 90d'];
+                    rows = s.filter(function(a){ return a.status==='ATIVO'; }).sort(function(a,b){ return b.p30-a.p30; }).map(function(a,i){ return [i+1,a.nome,a.email,a.ct,a.faixa,a.p30,a.p90]; });
+                    break;
+                case 'financeiro':
+                    headers = ['Nome','Email','CT','Plano','Mensalidade','Status financeiro','Vencimento'];
+                    rows = s.map(function(a){ return [a.nome,a.email,a.ct,a.planoNome,a.planoValor,a.finStatus,a.vencimento]; });
+                    break;
+                case 'graduacao':
+                    headers = ['Nome','Email','CT','Faixa','Grau','Meses na faixa','Treinos 30d'];
+                    rows = s.filter(function(a){ return a.status==='ATIVO'; }).sort(function(a,b){ return b.diasNaFaixa-a.diasNaFaixa; }).map(function(a){ return [a.nome,a.email,a.ct,a.faixa,a.grau,Math.floor(a.diasNaFaixa/30),a.p30]; });
+                    break;
+                default: return;
+            }
+            var csv = '\uFEFF' + headers.join(',') + '\n' + rows.map(function(r){ return r.map(function(v){ var s2 = String(v||''); return s2.indexOf(',')>=0||s2.indexOf('"')>=0 ? '"'+s2.replace(/"/g,'""')+'"' : s2; }).join(','); }).join('\n');
+            var a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+            a.download = 'relatorio_' + cat + '_' + new Date().toLocaleDateString('pt-BR').replace(/\//g,'-') + '.csv';
+            a.click();
+        }
+
+        function rptExportPDF() { window.print(); }
 
         function renderAcaoGroup(title, tipo, items, dotColor, defaultOpen) {
             var h = '<div class="rpt-acao-group">';
