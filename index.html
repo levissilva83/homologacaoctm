@@ -5420,6 +5420,42 @@
         .stu-modal-save:active { opacity: 0.7; }
         .stu-modal-save:disabled { opacity: 0.4; }
 
+        /* Abas do stuModal */
+        .stu-tabs-nav {
+            display: flex;
+            gap: 2px;
+            padding: 0 12px 0;
+            border-bottom: 1px solid var(--border);
+            overflow-x: auto;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+            background: rgba(10,10,15,0.97);
+            position: sticky;
+            top: 53px;
+            z-index: 9;
+        }
+        .stu-tabs-nav::-webkit-scrollbar { display: none; }
+        .stu-tab-btn {
+            flex-shrink: 0;
+            padding: 10px 14px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-3);
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: color 0.15s, border-color 0.15s;
+            white-space: nowrap;
+        }
+        .stu-tab-btn.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+        .stu-tab-pane { display: none; }
+        .stu-tab-pane.active { display: block; }
+
         .stu-modal-body { padding: 16px; }
 
         /* Student hero in modal */
@@ -11848,6 +11884,36 @@
                             <div id="rptAlunosCompletoMsg" style="font-size:11px;min-height:16px;margin-top:6px;"></div>
                         </div>
 
+                        <!-- Relatório 360° Individual -->
+                        <div class="admin-card" style="margin-bottom:12px;">
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                                <div style="font-size:18px;">🎯</div>
+                                <div>
+                                    <div style="font-size:12px;font-weight:800;color:var(--adm-text-1);">Relatório 360° do Aluno</div>
+                                    <div style="font-size:10px;color:var(--adm-text-3);">Visão completa: frequência, evolução, financeiro e scores de engajamento</div>
+                                </div>
+                            </div>
+                            <div style="display:flex;gap:6px;align-items:flex-end;">
+                                <div style="flex:1;">
+                                    <label style="font-size:9px;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:3px;">Buscar aluno</label>
+                                    <input type="text" id="rpt360Search" placeholder="Nome ou e-mail do aluno..." oninput="rpt360FilterAlunos()" style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                                </div>
+                                <button onclick="rpt360Abrir()" style="padding:8px 14px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;">🎯 Ver Relatório</button>
+                            </div>
+                            <div id="rpt360Suggestions" style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:8px;margin-top:4px;display:none;max-height:180px;overflow-y:auto;"></div>
+                        </div>
+
+                        <!-- Modal 360° -->
+                        <div id="rpt360Modal" style="display:none;position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.82);overflow-y:auto;">
+                            <div style="min-height:100%;display:flex;align-items:flex-start;justify-content:center;padding:12px;">
+                                <div id="rpt360Content" style="background:var(--adm-bg);border-radius:16px;width:100%;max-width:580px;overflow:hidden;">
+                                    <!-- header do modal -->
+                                    <div id="rpt360Header" style="padding:16px;"></div>
+                                    <div id="rpt360Body" style="padding:0 16px 24px;"></div>
+                                </div>
+                            </div>
+                        </div>
+
 
                         <div id="rptLoading" style="text-align:center;padding:30px;color:var(--adm-text-3);font-size:12px;">Carregando relatório...</div>
 
@@ -12467,11 +12533,10 @@
                     <button class="stu-modal-save" id="stuSaveBtn" onclick="saveStuModal()">Salvar</button>
                 </div>
             </div>
-            <div class="stu-modal-body">
-                <div id="stuModalMsg" class="stu-modal-msg"></div>
+            <div class="stu-modal-body" style="padding:0;">
 
-                <!-- Hero -->
-                <div class="stu-hero">
+                <!-- Hero (fora das abas — sempre visível) -->
+                <div class="stu-hero" style="padding:16px 16px 12px;">
                     <div class="stu-hero-avatar" id="stuAvatar">?</div>
                     <div class="stu-hero-name" id="stuHeroName">—</div>
                     <div class="stu-hero-email" id="stuHeroEmail">—</div>
@@ -12492,50 +12557,207 @@
                     </div>
                 </div>
 
-                <!-- Core -->
-                <div class="stu-section">
-                    <div class="stu-section-title">👤 Dados do Aluno</div>
-                    <div class="stu-field">
-                        <label>Nome Completo</label>
-                        <input type="text" id="stuName">
-                    </div>
+                <div id="stuModalMsg" class="stu-modal-msg" style="margin:0 16px 8px;"></div>
 
-                    <div class="stu-field">
-                        <label>CT Principal</label>
-                        <select id="stuCT" onchange="onStuCTChange()"></select>
-                    </div>
-                    <div class="stu-field">
-                        <label>📅 Dias de Treino</label>
-                        <div class="stu-days-row" id="stuDiasGrid">
-                            <button type="button" class="stu-day-btn" data-day="seg" onclick="this.classList.toggle('on')">S</button>
-                            <button type="button" class="stu-day-btn" data-day="ter" onclick="this.classList.toggle('on')">T</button>
-                            <button type="button" class="stu-day-btn" data-day="qua" onclick="this.classList.toggle('on')">Q</button>
-                            <button type="button" class="stu-day-btn" data-day="qui" onclick="this.classList.toggle('on')">Q</button>
-                            <button type="button" class="stu-day-btn" data-day="sex" onclick="this.classList.toggle('on')">S</button>
-                            <button type="button" class="stu-day-btn" data-day="sab" onclick="this.classList.toggle('on')">S</button>
-                            <button type="button" class="stu-day-btn" data-day="dom" onclick="this.classList.toggle('on')">D</button>
+                <!-- Navegação por abas -->
+                <div class="stu-tabs-nav" id="stuTabsNav">
+                    <button class="stu-tab-btn active" data-stutab="essencial"  onclick="switchStuTab('essencial')">⚡ Essencial</button>
+                    <button class="stu-tab-btn"         data-stutab="perfil"     onclick="switchStuTab('perfil')">👤 Perfil</button>
+                    <button class="stu-tab-btn"         data-stutab="admin"      onclick="switchStuTab('admin')">💼 Admin</button>
+                    <button class="stu-tab-btn"         data-stutab="historico"  onclick="switchStuTab('historico')">🏆 Histórico</button>
+                </div>
+
+                <!-- ══════════════════════════════════════════════════ -->
+                <!-- ABA: ESSENCIAL                                    -->
+                <!-- ══════════════════════════════════════════════════ -->
+                <div class="stu-tab-pane active" id="stuTab-essencial" style="padding:16px;">
+
+                    <div class="stu-section">
+                        <div class="stu-section-title">🏫 Identificação</div>
+                        <div class="stu-field">
+                            <label>Nome Completo</label>
+                            <input type="text" id="stuName">
                         </div>
-                        <div class="stu-days-hint" id="stuDiasHint"></div>
-                    </div>
+                        <div class="stu-field">
+                            <label>CT Principal</label>
+                            <select id="stuCT" onchange="onStuCTChange()"></select>
+                        </div>
+                        <div class="stu-field">
+                            <label>📅 Dias de Treino</label>
+                            <div class="stu-days-row" id="stuDiasGrid">
+                                <button type="button" class="stu-day-btn" data-day="seg" onclick="this.classList.toggle('on')">S</button>
+                                <button type="button" class="stu-day-btn" data-day="ter" onclick="this.classList.toggle('on')">T</button>
+                                <button type="button" class="stu-day-btn" data-day="qua" onclick="this.classList.toggle('on')">Q</button>
+                                <button type="button" class="stu-day-btn" data-day="qui" onclick="this.classList.toggle('on')">Q</button>
+                                <button type="button" class="stu-day-btn" data-day="sex" onclick="this.classList.toggle('on')">S</button>
+                                <button type="button" class="stu-day-btn" data-day="sab" onclick="this.classList.toggle('on')">S</button>
+                                <button type="button" class="stu-day-btn" data-day="dom" onclick="this.classList.toggle('on')">D</button>
+                            </div>
+                            <div class="stu-days-hint" id="stuDiasHint"></div>
+                        </div>
 
-                    <!-- HORÁRIOS DE TREINO POR MODALIDADE -->
-                    <div class="stu-field" id="stuHorariosSection" style="display:none;">
-                        <label>🕐 Meus Horários de Treino</label>
-                        <div style="font-size:10px;color:var(--adm-text-3);margin-bottom:8px;">Selecione os horários que você vai treinar. Isso facilita o registro de presença.</div>
-                        <div id="stuHorariosContainer">
-                            <div style="text-align:center;padding:12px;color:var(--adm-text-3);font-size:12px;">Carregando horários...</div>
+                        <!-- HORÁRIOS DE TREINO POR MODALIDADE -->
+                        <div class="stu-field" id="stuHorariosSection" style="display:none;">
+                            <label>🕐 Meus Horários de Treino</label>
+                            <div style="font-size:10px;color:var(--adm-text-3);margin-bottom:8px;">Selecione os horários que você vai treinar.</div>
+                            <div id="stuHorariosContainer">
+                                <div style="text-align:center;padding:12px;color:var(--adm-text-3);font-size:12px;">Carregando horários...</div>
+                            </div>
+                        </div>
+                        <div id="stuAvisoSemHorario" style="display:none;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:10px;padding:12px;margin-bottom:8px;">
+                            <div style="font-size:12px;font-weight:700;color:#fbbf24;margin-bottom:4px;">⚠️ Nenhum horário cadastrado</div>
+                            <div style="font-size:11px;color:var(--adm-text-3);">Adicione horários de treino para que os alunos possam selecionar.</div>
+                            <div style="font-size:11px;color:#fbbf24;margin-top:6px;cursor:pointer;" onclick="sisSwitchTab('schedule')">→ Ir para configuração de horários</div>
                         </div>
                     </div>
 
-                    <!-- AVISO ADMIN SEM HORÁRIO -->
-                    <div id="stuAvisoSemHorario" style="display:none;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:10px;padding:12px;margin-bottom:8px;">
-                        <div style="font-size:12px;font-weight:700;color:#fbbf24;margin-bottom:4px;">⚠️ Nenhum horário cadastrado</div>
-                        <div style="font-size:11px;color:var(--adm-text-3);">Adicione os horários de treino de cada modalidade para que seus alunos possam selecionar seus horários.</div>
-                        <div style="font-size:11px;color:#fbbf24;margin-top:6px;cursor:pointer;" onclick="sisSwitchTab('schedule')">→ Ir para configuração de horários</div>
+                    <!-- Modalidades -->
+                    <div class="stu-section" id="stuModalidadesSection">
+                        <div class="stu-section-title">🎯 Modalidades</div>
+                        <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;line-height:1.5;">
+                            Marque as modalidades. Cada uma terá seu próprio perfil de graduação e check-in.
+                        </div>
+                        <div id="stuModalidadesGrid" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                        <div style="margin-top:12px;">
+                            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:5px;">⭐ Modalidade Principal</label>
+                            <select id="stuModalidadePrincipal" style="width:100%;padding:8px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:12px;">
+                                <option value="">— Selecione a principal —</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <!-- RBAC: dois toggles separados por papel -->
-                    <div id="stuAdminRow" style="display:none;">
+                    <!-- Zona de perigo — nesta aba para acesso rápido -->
+                    <div class="stu-danger-zone">
+                        <button class="stu-delete-btn" id="stuDeleteBtn" onclick="deleteStuFromModal()">🗑️ Excluir Aluno</button>
+                    </div>
+
+                </div>
+
+                <!-- ══════════════════════════════════════════════════ -->
+                <!-- ABA: PERFIL                                       -->
+                <!-- ══════════════════════════════════════════════════ -->
+                <div class="stu-tab-pane" id="stuTab-perfil" style="padding:16px;display:none;">
+
+                    <div class="stu-section">
+                        <div class="stu-section-title">👤 Informações Pessoais</div>
+                        <div class="stu-field-row">
+                            <div class="stu-field">
+                                <label>Data de Nascimento</label>
+                                <input type="date" id="stuNascimento">
+                            </div>
+                            <div class="stu-field">
+                                <label>Gênero</label>
+                                <select id="stuGenero">
+                                    <option value="">—</option>
+                                    <option value="Masculino">Masculino</option>
+                                    <option value="Feminino">Feminino</option>
+                                    <option value="Outro">Outro</option>
+                                    <option value="Prefiro não informar">Prefiro não informar</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="stu-field">
+                            <label>Profissão</label>
+                            <input type="text" id="stuProfissao" placeholder="Ex: Engenheiro, Professor...">
+                        </div>
+                        <div class="stu-field">
+                            <label>Bairro / Cidade</label>
+                            <input type="text" id="stuBairro" placeholder="Ex: Tijuca - Rio de Janeiro">
+                        </div>
+                    </div>
+
+                    <div class="stu-section">
+                        <div class="stu-section-title">📱 Contato</div>
+                        <div class="stu-field-row">
+                            <div class="stu-field">
+                                <label>Telefone</label>
+                                <input type="tel" id="stuTelefone" placeholder="(21) 99999-9999">
+                            </div>
+                            <div class="stu-field">
+                                <label>Instagram</label>
+                                <input type="text" id="stuInstagram" placeholder="@usuario">
+                            </div>
+                        </div>
+                        <div class="stu-field">
+                            <label>Contato de Emergência</label>
+                            <input type="text" id="stuEmergencia" placeholder="Nome — (21) 99999-9999">
+                        </div>
+                    </div>
+
+                    <div class="stu-section">
+                        <div class="stu-section-title">🎯 Treino</div>
+                        <div class="stu-field-row">
+                            <div class="stu-field">
+                                <label>Como conheceu</label>
+                                <select id="stuOrigem">
+                                    <option value="">—</option>
+                                    <option value="Instagram / Redes Sociais">Instagram / Redes Sociais</option>
+                                    <option value="Indicação de amigo">Indicação de amigo</option>
+                                    <option value="Google / Pesquisa">Google / Pesquisa</option>
+                                    <option value="Passando pelo local">Passando pelo local</option>
+                                    <option value="Evento / Competição">Evento / Competição</option>
+                                    <option value="Outro">Outro</option>
+                                </select>
+                            </div>
+                            <div class="stu-field">
+                                <label>Objetivo</label>
+                                <select id="stuObjetivo">
+                                    <option value="">—</option>
+                                    <option value="Saúde e condicionamento">Saúde</option>
+                                    <option value="Defesa pessoal">Defesa pessoal</option>
+                                    <option value="Competição">Competição</option>
+                                    <option value="Hobby / Lazer">Hobby / Lazer</option>
+                                    <option value="Disciplina / Foco">Disciplina / Foco</option>
+                                    <option value="Socializar">Socializar</option>
+                                    <option value="Faixa preta">Faixa preta</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="stu-field-row">
+                            <div class="stu-field">
+                                <label>Horário preferido</label>
+                                <select id="stuHorario">
+                                    <option value="Manhã">Manhã (6h–11:59h)</option>
+                                    <option value="Noite">Noite (18h–23:59h)</option>
+                                </select>
+                            </div>
+                            <div class="stu-field">
+                                <label>Experiência</label>
+                                <select id="stuExperiencia">
+                                    <option value="">—</option>
+                                    <option value="Nunca treinei">Nunca treinei</option>
+                                    <option value="Menos de 1 ano">Menos de 1 ano</option>
+                                    <option value="1-2 anos">1-2 anos</option>
+                                    <option value="3-5 anos">3-5 anos</option>
+                                    <option value="5-10 anos">5-10 anos</option>
+                                    <option value="10+ anos">10+ anos</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stu-section">
+                        <div class="stu-section-title">🏥 Saúde</div>
+                        <div class="stu-field">
+                            <label>Lesão ou Condição Médica</label>
+                            <textarea id="stuSaude" placeholder="Ex: Lesão no joelho, hérnia de disco..."></textarea>
+                        </div>
+                        <div class="stu-field" id="stuSaudeKidsField" style="display:none;">
+                            <label>Saúde / Obs. Kids</label>
+                            <textarea id="stuSaudeKids" placeholder="Observações de saúde para alunos menores..."></textarea>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ══════════════════════════════════════════════════ -->
+                <!-- ABA: ADMIN                                        -->
+                <!-- ══════════════════════════════════════════════════ -->
+                <div class="stu-tab-pane" id="stuTab-admin" style="padding:16px;display:none;">
+
+                    <!-- Papel no sistema -->
+                    <div class="stu-section" id="stuAdminRow" style="display:none;">
+                        <div class="stu-section-title">🔐 Papel no Sistema</div>
                         <div class="stu-toggle-row" style="margin-bottom:8px;">
                             <div class="stu-toggle-label">
                                 🛡️ Administrador
@@ -12552,24 +12774,23 @@
                         </div>
                     </div>
 
-                    <!-- CTs do Professor (visível só quando admin=true) -->
-                    <div class="stu-field" id="stuProfCTsSection" style="display:none;margin-top:14px;">
-                        <label style="display:flex;align-items:center;gap:6px;color:var(--text-1);">
+                    <!-- CTs e permissões de professor -->
+                    <div class="stu-field" id="stuProfCTsSection" style="display:none;margin-bottom:12px;">
+                        <label style="display:flex;align-items:center;gap:6px;color:var(--text-1);font-size:11px;font-weight:700;margin-bottom:6px;">
                             🏫 CTs onde este professor dá aula
                         </label>
                         <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;line-height:1.5;">
-                            Marque os CTs que este professor leciona. Somente esses CTs aparecerão na tela de check-in quando ele fizer login como administrador.
+                            Somente esses CTs aparecerão na tela de check-in quando ele logar como admin.
                         </div>
                         <div id="stuProfCTsGrid" class="stu-cts-lib-grid"></div>
                     </div>
 
-                    <!-- Modalidades do Professor (atribuídas pelo admin) -->
-                    <div class="stu-field" id="profModalidadesSection" style="display:none;margin-top:14px;background:rgba(201,162,58,0.04);border:1px solid rgba(201,162,58,0.15);border-radius:12px;padding:14px;">
-                        <label style="display:flex;align-items:center;gap:6px;color:var(--adm-primary);font-weight:700;margin-bottom:4px;">
+                    <div class="stu-field" id="profModalidadesSection" style="display:none;margin-bottom:12px;background:rgba(201,162,58,0.04);border:1px solid rgba(201,162,58,0.15);border-radius:12px;padding:14px;">
+                        <label style="display:flex;align-items:center;gap:6px;color:var(--adm-primary);font-weight:700;margin-bottom:4px;font-size:11px;">
                             📋 Modalidades do Professor
                         </label>
                         <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:12px;line-height:1.5;">
-                            Defina quais modalidades este professor é responsável. Ele só verá alunos dessas modalidades.
+                            Defina quais modalidades este professor é responsável.
                         </div>
                         <div id="profModalidadesGrid" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
                         <button onclick="salvarModalidadesProfessor()" style="width:100%;padding:10px;background:var(--adm-primary);border:none;border-radius:8px;color:#000;font-size:12px;font-weight:800;cursor:pointer;">
@@ -12578,224 +12799,131 @@
                         <div id="profModalidadesMsg" style="font-size:11px;text-align:center;margin-top:6px;"></div>
                     </div>
 
-                    <!-- CTs Liberados para Cronograma (visível só quando admin=false) -->
-                    <div class="stu-field" id="stuCTsLiberadosSection" style="display:none;margin-top:14px;">
-                        <label style="display:flex;align-items:center;gap:6px;">
+                    <div class="stu-field" id="stuCTsLiberadosSection" style="display:none;margin-bottom:12px;">
+                        <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;">
                             📅 Acesso ao Cronograma de outros CTs
                         </label>
                         <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;line-height:1.5;">
-                            Marque os CTs que este aluno pode <strong>visualizar o cronograma</strong> de aulas, além do seu CT principal.
+                            Marque os CTs que este aluno pode visualizar o cronograma.
                         </div>
                         <div id="stuCTsLiberadosGrid" class="stu-cts-lib-grid"></div>
                     </div>
 
-                    <!-- ══ MODALIDADES ══ -->
-                    <div class="stu-field" id="stuModalidadesSection" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
-                        <label style="display:flex;align-items:center;gap:6px;color:var(--text-1);font-weight:700;">
-                            🎯 Modalidades
-                        </label>
-                        <div style="font-size:11px;color:var(--text-3);margin-bottom:10px;line-height:1.5;">
-                            Marque as modalidades que este aluno pratica no CT. Cada modalidade terá seu próprio perfil de graduação e check-in.
+                    <!-- Responsável financeiro -->
+                    <div class="stu-section">
+                        <div class="stu-section-title">👨‍👩‍👧 Responsável Financeiro</div>
+                        <div class="stu-field">
+                            <label>E-mail do Responsável</label>
+                            <input type="email" id="stuResponsavelEmail" placeholder="responsavel@email.com">
                         </div>
-                        <div id="stuModalidadesGrid" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
-                        <div style="margin-top:12px;">
-                            <label style="font-size:11px;color:var(--text-3);font-weight:600;display:block;margin-bottom:5px;">⭐ Modalidade Principal (carregada no login)</label>
-                            <select id="stuModalidadePrincipal" style="width:100%;padding:8px;background:var(--bg-elevated);color:var(--text-1);border:1px solid var(--border);border-radius:8px;font-size:12px;">
-                                <option value="">— Selecione a principal —</option>
+                        <div class="stu-field-row">
+                            <div class="stu-field">
+                                <label>Nome do Responsável</label>
+                                <input type="text" id="stuResponsavelNome" placeholder="Nome completo">
+                            </div>
+                            <div class="stu-field">
+                                <label>Telefone</label>
+                                <input type="tel" id="stuResponsavelTelefone" placeholder="(21) 99999-9999">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dados administrativos -->
+                    <div class="stu-section">
+                        <div class="stu-section-title">📋 Dados Administrativos</div>
+                        <div class="stu-field-row">
+                            <div class="stu-field">
+                                <label>CPF</label>
+                                <input type="text" id="stuCPF" placeholder="000.000.000-00" maxlength="14"
+                                    oninput="this.value=this.value.replace(/\D/g,'').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4').substring(0,14)">
+                            </div>
+                            <div class="stu-field">
+                                <label>Endereço Completo</label>
+                                <input type="text" id="stuEnderecoCompleto" placeholder="Rua, nº, bairro, cidade">
+                            </div>
+                        </div>
+                        <div class="stu-field">
+                            <label>🔒 Observações Internas <span style="font-size:9px;color:var(--adm-text-3);font-weight:400;">(só admin vê)</span></label>
+                            <textarea id="stuObsAdmin" placeholder="Histórico, acordos, situações especiais..." rows="3" style="resize:vertical;"></textarea>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ══════════════════════════════════════════════════ -->
+                <!-- ABA: HISTÓRICO                                    -->
+                <!-- ══════════════════════════════════════════════════ -->
+                <div class="stu-tab-pane" id="stuTab-historico" style="padding:16px;display:none;">
+
+                    <!-- Graduação -->
+                    <div class="stu-section">
+                        <div class="stu-section-title">🏆 Linha do Tempo · Graduação</div>
+                        <div class="grad-add-form" id="gradAddForm">
+                            <select id="gradTipo" onchange="onGradTipoChange()">
+                                <option value="grau">🏅 Nível / Grau</option>
+                                <option value="faixa">🎖️ Graduação de Rank</option>
                             </select>
+                            <select id="gradFaixa"></select>
+                            <select id="gradGrau" style="display:none;"></select>
+                            <input type="date" id="gradDataEvento" title="Data do evento" style="padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;min-width:130px;">
+                            <input type="text" id="gradObs" placeholder="Obs (opcional)" style="min-width:100px;">
+                            <button class="grad-add-btn" onclick="addGraduacao()">✅ Aprovar</button>
+                        </div>
+                        <div id="gradTimeline" class="grad-timeline">
+                            <div class="grad-empty">Nenhum evento registrado</div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Treinos Base (Migração) -->
-                <div class="stu-section" id="stuTreinosBaseSection">
-                    <div class="stu-section-title">📦 Saldo de Treinos (Migração)</div>
-                    <div style="font-size:11px;color:var(--text-3);margin-bottom:12px;line-height:1.6;">
-                        Para alunos migrando de outro sistema. Os treinos informados aqui são <strong>somados</strong> aos treinos reais do CT Manager.
-                    </div>
-                    <div id="stuTreinosBaseGrid" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;">
-                        <!-- Preenchido dinamicamente por openStuModal() -->
-                    </div>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                        <button onclick="adicionarLinhatreinoBase()" style="padding:7px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--adm-border);border-radius:8px;color:var(--adm-text-2);font-size:11px;font-weight:700;cursor:pointer;">➕ Adicionar modalidade</button>
-                        <button onclick="_salvarTreinosBaseComFeedback()" style="padding:7px 14px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);border-radius:8px;color:#4ade80;font-size:11px;font-weight:700;cursor:pointer;">💾 Salvar saldo</button>
-                    </div>
-                    <div id="stuTreinosBaseMsg" style="font-size:11px;margin-top:6px;min-height:16px;"></div>
-                </div>
-
-                <!-- Personal -->
-                <div class="stu-section">
-                    <div class="stu-section-title">👤 Informações Pessoais</div>
-                    <div class="stu-field-row">
-                        <div class="stu-field">
-                            <label>Data de Nascimento</label>
-                            <input type="date" id="stuNascimento">
+                    <!-- Saldo de treinos base (migração) -->
+                    <div class="stu-section" id="stuTreinosBaseSection">
+                        <div class="stu-section-title">📦 Saldo de Treinos (Migração)</div>
+                        <div style="font-size:11px;color:var(--text-3);margin-bottom:12px;line-height:1.6;">
+                            Para alunos migrando de outro sistema. Os treinos aqui são <strong>somados</strong> aos reais do CT Manager.
                         </div>
-                        <div class="stu-field">
-                            <label>Gênero</label>
-                            <select id="stuGenero">
-                                <option value="">—</option>
-                                <option value="Masculino">Masculino</option>
-                                <option value="Feminino">Feminino</option>
-                                <option value="Outro">Outro</option>
-                                <option value="Prefiro não informar">Prefiro não informar</option>
+                        <div id="stuTreinosBaseGrid" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <button onclick="adicionarLinhatreinoBase()" style="padding:7px 14px;background:rgba(255,255,255,0.05);border:1px solid var(--adm-border);border-radius:8px;color:var(--adm-text-2);font-size:11px;font-weight:700;cursor:pointer;">➕ Adicionar modalidade</button>
+                            <button onclick="_salvarTreinosBaseComFeedback()" style="padding:7px 14px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);border-radius:8px;color:#4ade80;font-size:11px;font-weight:700;cursor:pointer;">💾 Salvar saldo</button>
+                        </div>
+                        <div id="stuTreinosBaseMsg" style="font-size:11px;margin-top:6px;min-height:16px;"></div>
+                    </div>
+
+                    <!-- Saldo de Aulas Importadas -->
+                    <div class="stu-section" id="saldoAulasSection">
+                        <div class="stu-section-title">📥 Aulas Importadas (migração)</div>
+                        <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:10px;">
+                            Alunos vindos de outra plataforma. O saldo soma ao total de treinos para graduação.
+                        </div>
+                        <div id="saldoAulasList" style="margin-bottom:10px;"></div>
+                        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <select id="saldoModId" style="flex:1;min-width:110px;">
+                                <option value="bjj">BJJ</option>
+                                <option value="muay_thai">Muay Thai</option>
+                                <option value="muaythai">Muay Thai (prajied)</option>
+                                <option value="muay_thai_khan">Muay Thai Khan</option>
+                                <option value="judo">Judô</option>
+                                <option value="karate">Karatê</option>
+                                <option value="kickboxing">Kickboxing</option>
+                                <option value="capoeira">Capoeira</option>
                             </select>
+                            <input type="number" id="saldoQtd" min="0" max="9999" placeholder="Qtd aulas" style="width:100px;padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
+                            <button onclick="salvarSaldoAulas()" style="padding:6px 14px;background:rgba(201,162,58,0.15);border:1px solid rgba(201,162,58,0.4);border-radius:8px;color:#C9A23A;font-size:12px;font-weight:700;cursor:pointer;">💾 Salvar</button>
                         </div>
+                        <div id="saldoAulasMsg" style="font-size:11px;margin-top:6px;"></div>
                     </div>
-                    <div class="stu-field">
-                        <label>Profissão</label>
-                        <input type="text" id="stuProfissao" placeholder="Ex: Engenheiro, Professor...">
-                    </div>
-                    <div class="stu-field">
-                        <label>Bairro / Cidade</label>
-                        <input type="text" id="stuBairro" placeholder="Ex: Tijuca - Rio de Janeiro">
-                    </div>
-                </div>
 
-                <!-- Contact -->
-                <div class="stu-section">
-                    <div class="stu-section-title">📱 Contato</div>
-                    <div class="stu-field-row">
-                        <div class="stu-field">
-                            <label>Telefone</label>
-                            <input type="tel" id="stuTelefone" placeholder="(21) 99999-9999">
+                    <!-- Dependentes -->
+                    <div id="stuFamiliaSection" style="margin-bottom:12px;padding:12px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                            <div style="font-size:12px;font-weight:700;color:var(--text-1);">👨‍👩‍👧‍👦 Dependentes</div>
+                            <button onclick="abrirModalCriarDependente()" style="padding:5px 10px;background:rgba(201,162,58,0.1);border:1px solid rgba(201,162,58,0.3);border-radius:7px;color:#C9A23A;font-size:10px;font-weight:700;cursor:pointer;">+ Adicionar</button>
                         </div>
-                        <div class="stu-field">
-                            <label>Instagram</label>
-                            <input type="text" id="stuInstagram" placeholder="@usuario">
-                        </div>
+                        <div id="stuDependentesList" style="font-size:11px;color:var(--text-3);">Carregando...</div>
                     </div>
-                    <div class="stu-field">
-                        <label>Contato de Emergência</label>
-                        <input type="text" id="stuEmergencia" placeholder="Nome — (21) 99999-9999">
-                    </div>
+
                 </div>
 
-                <!-- Training -->
-                <div class="stu-section">
-                    <div class="stu-section-title">🎯 Treino</div>
-                    <div class="stu-field-row">
-                        <div class="stu-field">
-                            <label>Como conheceu</label>
-                            <select id="stuOrigem">
-                                <option value="">—</option>
-                                <option value="Instagram / Redes Sociais">Instagram / Redes Sociais</option>
-                                <option value="Indicação de amigo">Indicação de amigo</option>
-                                <option value="Google / Pesquisa">Google / Pesquisa</option>
-                                <option value="Passando pelo local">Passando pelo local</option>
-                                <option value="Evento / Competição">Evento / Competição</option>
-                                <option value="Outro">Outro</option>
-                            </select>
-                        </div>
-                        <div class="stu-field">
-                            <label>Objetivo</label>
-                            <select id="stuObjetivo">
-                                <option value="">—</option>
-                                <option value="Saúde e condicionamento">Saúde</option>
-                                <option value="Defesa pessoal">Defesa pessoal</option>
-                                <option value="Competição">Competição</option>
-                                <option value="Hobby / Lazer">Hobby / Lazer</option>
-                                <option value="Disciplina / Foco">Disciplina / Foco</option>
-                                <option value="Socializar">Socializar</option>
-                                <option value="Faixa preta">Faixa preta</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="stu-field-row">
-                        <div class="stu-field">
-                            <label>Horário preferido</label>
-                            <select id="stuHorario">
-                                <option value="Manhã">Manhã (6h-11:59h)</option>
-                                <option value="Noite">Noite (18h-23:59h)</option>
-                            </select>
-                        </div>
-                        <div class="stu-field">
-                            <label>Experiência</label>
-                            <select id="stuExperiencia">
-                                <option value="">—</option>
-                                <option value="Nunca treinei">Nunca treinei</option>
-                                <option value="Menos de 1 ano">Menos de 1 ano</option>
-                                <option value="1-2 anos">1-2 anos</option>
-                                <option value="3-5 anos">3-5 anos</option>
-                                <option value="5-10 anos">5-10 anos</option>
-                                <option value="10+ anos">10+ anos</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Health -->
-                <div class="stu-section">
-                    <div class="stu-section-title">🏥 Saúde</div>
-                    <div class="stu-field">
-                        <label>Lesão ou Condição Médica</label>
-                        <textarea id="stuSaude" placeholder="Ex: Lesão no joelho, hérnia de disco..."></textarea>
-                    </div>
-                </div>
-
-                <!-- Saldo de Aulas Importadas -->
-                <div class="stu-section" id="saldoAulasSection">
-                    <div class="stu-section-title">📥 Aulas Importadas (migração)</div>
-                    <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:10px;">
-                        Alunos vindos de outra plataforma. O saldo soma ao total de treinos para fins de graduação.
-                    </div>
-                    <div id="saldoAulasList" style="margin-bottom:10px;"></div>
-                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                        <select id="saldoModId" style="flex:1;min-width:110px;">
-                            <option value="bjj">BJJ</option>
-                            <option value="muay_thai">Muay Thai</option>
-                            <option value="muaythai">Muay Thai (prajied)</option>
-                            <option value="muay_thai_khan">Muay Thai Khan</option>
-                            <option value="judo">Judô</option>
-                            <option value="karate">Karatê</option>
-                            <option value="kickboxing">Kickboxing</option>
-                            <option value="capoeira">Capoeira</option>
-                        </select>
-                        <input type="number" id="saldoQtd" min="0" max="9999" placeholder="Qtd aulas" style="width:100px;padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
-                        <button onclick="salvarSaldoAulas()" style="padding:6px 14px;background:rgba(201,162,58,0.15);border:1px solid rgba(201,162,58,0.4);border-radius:8px;color:#C9A23A;font-size:12px;font-weight:700;cursor:pointer;">💾 Salvar</button>
-                    </div>
-                    <div id="saldoAulasMsg" style="font-size:11px;margin-top:6px;"></div>
-                </div>
-
-                <!-- Graduation Timeline -->
-                <div class="stu-section">
-                    <div class="stu-section-title">🏆 Linha do Tempo · Graduação</div>
-                    <div class="grad-add-form" id="gradAddForm">
-                        <!-- Form populated dynamically by buildGradAddForm() based on modality schema -->
-                        <select id="gradTipo" onchange="onGradTipoChange()">
-                            <option value="grau">🏅 Nível / Grau</option>
-                            <option value="faixa">🎖️ Graduação de Rank</option>
-                        </select>
-                        <select id="gradFaixa">
-                            <!-- populated by buildGradAddForm() -->
-                        </select>
-                        <select id="gradGrau" style="display:none;">
-                            <!-- populated by buildGradAddForm() -->
-                        </select>
-                        <input type="date" id="gradDataEvento" title="Data do evento (deixe vazio para hoje)" style="padding:6px 8px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;min-width:130px;">
-                        <input type="text" id="gradObs" placeholder="Obs (opcional)" style="min-width:100px;">
-                        <button class="grad-add-btn" onclick="addGraduacao()">✅ Aprovar</button>
-                    </div>
-                    <div id="gradTimeline" class="grad-timeline">
-                        <div class="grad-empty">Nenhum evento registrado</div>
-                    </div>
-                </div>
-
-                <!-- Família -->
-                <div id="stuFamiliaSection" style="margin-top:14px;padding:12px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px;">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                        <div style="font-size:12px;font-weight:700;color:var(--text-1);">👨‍👩‍👧‍👦 Dependentes</div>
-                        <button onclick="abrirModalCriarDependente()" style="padding:5px 10px;background:rgba(201,162,58,0.1);border:1px solid rgba(201,162,58,0.3);border-radius:7px;color:#C9A23A;font-size:10px;font-weight:700;cursor:pointer;">+ Adicionar</button>
-                    </div>
-                    <div id="stuDependentesList" style="font-size:11px;color:var(--text-3);">Carregando...</div>
-                </div>
-
-                <!-- Danger Zone -->
-                <div class="stu-danger-zone">
-                    <button class="stu-delete-btn" id="stuDeleteBtn" onclick="deleteStuFromModal()">🗑️ Excluir Aluno</button>
-                </div>
-
-                <!-- Modal criar dependente -->
+                <!-- Modal criar dependente (fora das abas) -->
                 <div id="modalCriarDependente" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:10000;align-items:center;justify-content:center;padding:16px;">
                     <div style="background:var(--bg-card);border-radius:16px;padding:20px;width:100%;max-width:400px;">
                         <div style="font-size:14px;font-weight:800;color:var(--text-1);margin-bottom:14px;">➕ Cadastrar Dependente</div>
@@ -12812,6 +12940,7 @@
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
     </div>
@@ -25159,8 +25288,10 @@
 
                 // ── Pré-carrega respostas existentes ──
                 window._ctRespostasPerfil = {};
+                window._ctDadosPerfil = {}; // cache completo para PDF
                 r.contratos.forEach(function(ct) {
                     if (ct.respostaMinha) window._ctRespostasPerfil[ct.tipo] = ct.respostaMinha;
+                    window._ctDadosPerfil[ct.tipo] = ct; // salva objeto completo
                 });
 
                 var h = '';
@@ -25211,11 +25342,18 @@
                         h += '<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;'
                            + 'background:' + bgTop + ';border:1px solid ' + borderColor + ';border-radius:8px;margin-bottom:10px;">';
                         h += '<div style="font-size:18px;">🖊️</div>';
-                        h += '<div>';
+                        h += '<div style="flex:1;">';
                         h += '<div style="font-size:10px;font-weight:800;color:' + seloColor + ';">' + seloText + '</div>';
                         h += '<div style="font-size:9px;color:var(--text-3);margin-top:1px;">📅 ' + escapeHtml(ct.dataResposta) + ' &nbsp;·&nbsp; '
                            + escapeHtml((currentUser && currentUser.name) || (currentUser && currentUser.email) || '') + '</div>';
-                        h += '</div></div>';
+                        h += '</div>';
+                        if (aceito) {
+                            h += '<button onclick="baixarContratoPDF(\'' + escapeHtml(ct.tipo) + '\')" '
+                               + 'style="flex-shrink:0;padding:5px 10px;background:rgba(201,162,58,0.12);color:var(--accent);'
+                               + 'border:1px solid rgba(201,162,58,0.3);border-radius:8px;font-size:10px;font-weight:700;cursor:pointer;">'
+                               + '📄 PDF</button>';
+                        }
+                        h += '</div>';
                     } else if (!pendente) {
                         // respondido mas sem data salva (registros antigos)
                         var seloColor2 = aceito ? '#4ade80' : '#f87171';
@@ -25310,6 +25448,52 @@
                     sec.style.display = 'none';
                 }
             }
+        }
+
+        function baixarContratoPDF(tipo) {
+            var ct         = (window._ctDadosPerfil && window._ctDadosPerfil[tipo]) || {};
+            var titulo     = ct.titulo || tipo;
+            var texto      = ct.texto  || '';
+            var dataAssinatura = ct.dataResposta || new Date().toLocaleDateString('pt-BR');
+            var nomeAluno  = (currentUser && currentUser.name)  || '';
+            var emailAluno = (currentUser && currentUser.email) || '';
+            var nomeCT     = (currentUser && currentUser.ct)    || '';
+            var agora      = dataAssinatura || new Date().toLocaleDateString('pt-BR');
+
+            var html = '<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8">'
+                + '<title>Contrato — ' + titulo + '</title>'
+                + '<style>'
+                + 'body{font-family:Arial,sans-serif;margin:0;padding:32px;color:#1a1a1a;background:#fff;max-width:680px;margin:0 auto;}'
+                + 'h1{font-size:20px;font-weight:900;margin:0 0 4px;color:#111;}'
+                + '.meta{font-size:11px;color:#666;margin-bottom:24px;padding-bottom:12px;border-bottom:1px solid #ddd;}'
+                + '.ct{font-size:14px;font-weight:700;color:#333;margin-bottom:16px;}'
+                + '.texto{font-size:13px;line-height:1.8;color:#222;white-space:pre-wrap;padding:16px;background:#f9f9f9;border-radius:6px;border:1px solid #e5e5e5;margin-bottom:24px;}'
+                + '.selo{border:2px solid #16a34a;border-radius:10px;padding:16px 20px;background:#f0fdf4;margin-bottom:20px;}'
+                + '.selo-titulo{font-size:13px;font-weight:800;color:#15803d;margin-bottom:6px;}'
+                + '.selo-linha{font-size:12px;color:#333;margin-bottom:3px;}'
+                + '.rodape{font-size:10px;color:#999;border-top:1px solid #eee;padding-top:12px;text-align:center;}'
+                + '@media print{body{padding:20px;}@page{size:A4;margin:1.5cm;}}'
+                + '</style></head><body>'
+                + '<h1>' + titulo + '</h1>'
+                + '<div class="meta">CT Manager · Gerado em ' + new Date().toLocaleString('pt-BR') + '</div>'
+                + (nomeCT ? '<div class="ct">🏢 ' + nomeCT + '</div>' : '')
+                + '<div class="texto">' + (texto || '').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>'
+                + '<div class="selo">'
+                + '<div class="selo-titulo">✅ DOCUMENTO ASSINADO DIGITALMENTE</div>'
+                + '<div class="selo-linha"><strong>Aluno:</strong> ' + nomeAluno + '</div>'
+                + '<div class="selo-linha"><strong>E-mail:</strong> ' + emailAluno + '</div>'
+                + '<div class="selo-linha"><strong>Data da assinatura:</strong> ' + agora + '</div>'
+                + '<div class="selo-linha"><strong>Tipo:</strong> ' + tipo + '</div>'
+                + '</div>'
+                + '<div class="rodape">Este documento é um comprovante de aceite digital gerado pelo CT Manager. '
+                + 'A assinatura digital tem validade conforme Lei 14.063/2020.</div>'
+                + '</body></html>';
+
+            var win = window.open('', '_blank', 'width=720,height=900');
+            if (!win) { alert('Permita pop-ups para baixar o PDF.'); return; }
+            win.document.write(html);
+            win.document.close();
+            win.onload = function() { win.focus(); win.print(); };
         }
 
         async function _salvarMeusContratos() {
@@ -26171,6 +26355,7 @@
 
         // --- ATTENDANCE REPORT ---
         var _rptData = null;
+        var _cachedAlunos = [];
         var _rptFilterCT = '';
 
         function initReportDates() {
@@ -26315,6 +26500,12 @@
                 if (loading) loading.style.display = 'none';
                 if (data.success) {
                     _rptData = data;
+                    // Popular cache para autocomplete 360°
+                    if (data.faltasAlunos) {
+                        _cachedAlunos = data.faltasAlunos.map(function(f) {
+                            return { nome: f.name || '', email: f.email || '', ct: f.ct || '' };
+                        });
+                    }
                     // Populate CT select
                     var ctSel = document.getElementById('rptCTSelect');
                     if (ctSel && data.allCTs) {
@@ -26569,6 +26760,227 @@
             rptMiniList('rptPromo',
                 (data.insights.elegiveisPromo || []).map(function(p) { return {name:p.name, meta:p.faixa+' → '+p.proxFaixa+' · '+p.treinos+' treinos · '+escapeHtml(p.ct||''), tag:'Elegível', tagCls:'blue'}; }),
                 'Nenhum elegível no momento');
+        }
+
+        // ══════════════════════════════════════════════════════════
+        // RELATÓRIO 360° INDIVIDUAL
+        // ══════════════════════════════════════════════════════════
+        var _rpt360Email = '';
+
+        function rpt360FilterAlunos() {
+            var q = (document.getElementById('rpt360Search').value || '').toLowerCase().trim();
+            var sug = document.getElementById('rpt360Suggestions');
+            if (!q || q.length < 2) { sug.style.display = 'none'; return; }
+            var alunos = _cachedAlunos || [];
+            var matches = alunos.filter(function(a) {
+                return (a.nome||'').toLowerCase().indexOf(q) >= 0 || (a.email||'').toLowerCase().indexOf(q) >= 0;
+            }).slice(0, 8);
+            if (matches.length === 0) { sug.style.display = 'none'; return; }
+            sug.innerHTML = matches.map(function(a) {
+                return '<div onclick="rpt360SelectAluno(\'' + escapeHtml(a.email) + '\',\'' + escapeHtml(a.nome) + '\')" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--adm-border);font-size:12px;" onmouseover="this.style.background=\'var(--adm-bg-elevated)\'" onmouseout="this.style.background=\'\'">'
+                    + '<div style="font-weight:700;color:var(--adm-text-1);">' + escapeHtml(a.nome) + '</div>'
+                    + '<div style="font-size:10px;color:var(--adm-text-3);">' + escapeHtml(a.email) + ' · ' + escapeHtml(a.ct||'') + '</div>'
+                    + '</div>';
+            }).join('');
+            sug.style.display = 'block';
+        }
+
+        function rpt360SelectAluno(email, nome) {
+            _rpt360Email = email;
+            document.getElementById('rpt360Search').value = nome + ' (' + email + ')';
+            document.getElementById('rpt360Suggestions').style.display = 'none';
+        }
+
+        async function rpt360Abrir() {
+            var email = _rpt360Email;
+            if (!email) {
+                var v = (document.getElementById('rpt360Search').value || '').trim().toLowerCase();
+                if (v.indexOf('@') > 0) email = v;
+            }
+            if (!email) { alert('Selecione um aluno na lista de sugestões.'); return; }
+            var modal = document.getElementById('rpt360Modal');
+            var body  = document.getElementById('rpt360Body');
+            var header = document.getElementById('rpt360Header');
+            modal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            header.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:15px;font-weight:800;color:var(--adm-text-1);">🎯 Relatório 360°</div><button onclick="rpt360Fechar()" style="background:none;border:none;font-size:22px;color:var(--adm-text-3);cursor:pointer;">×</button></div>';
+            body.innerHTML = '<div style="text-align:center;padding:40px;color:var(--adm-text-3);"><div style="font-size:24px;margin-bottom:8px;">⏳</div>Carregando dados do aluno...</div>';
+            try {
+                var d = await secureFetch('getRelatorio360', { targetEmail: email });
+                if (!d.success) { body.innerHTML = '<div style="text-align:center;padding:40px;color:#f87171;">❌ ' + (d.message||'Erro') + '</div>'; return; }
+                rpt360Render(d, header, body);
+            } catch(e) {
+                body.innerHTML = '<div style="text-align:center;padding:40px;color:#f87171;">❌ ' + e.message + '</div>';
+            }
+        }
+
+        function rpt360Fechar() {
+            document.getElementById('rpt360Modal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        function rpt360Score(val, label, cor) {
+            var radius = 28, circ = 2 * Math.PI * radius;
+            var dash = (val / 100) * circ, gap = circ - dash;
+            var scoreColor = val >= 70 ? '#4ade80' : val >= 40 ? '#fbbf24' : '#f87171';
+            if (cor) scoreColor = cor;
+            return '<div style="text-align:center;flex:1;">'
+                + '<svg width="72" height="72" viewBox="0 0 72 72">'
+                + '<circle cx="36" cy="36" r="' + radius + '" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="7"/>'
+                + '<circle cx="36" cy="36" r="' + radius + '" fill="none" stroke="' + scoreColor + '" stroke-width="7" stroke-linecap="round"'
+                + ' stroke-dasharray="' + dash.toFixed(1) + ' ' + gap.toFixed(1) + '" stroke-dashoffset="' + (circ/4).toFixed(1) + '"/>'
+                + '<text x="36" y="40" text-anchor="middle" font-size="14" font-weight="800" fill="' + scoreColor + '">' + val + '</text>'
+                + '</svg>'
+                + '<div style="font-size:10px;color:var(--adm-text-3);margin-top:2px;">' + label + '</div>'
+                + '</div>';
+        }
+
+        function rpt360Render(d, header, body) {
+            var c = d.cadastro, pre = d.presenca, evo = d.evolucao, fin = d.financeiro, sc = d.scores;
+            var riscoColor = d.riscoEvasao === 'ALTO' ? '#f87171' : d.riscoEvasao === 'MÉDIO' ? '#fbbf24' : '#4ade80';
+
+            // ── Header ──────────────────────────────────────────────
+            header.innerHTML =
+                '<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
+                + '<div style="display:flex;gap:12px;align-items:center;">'
+                + (c.avatar ? '<img src="' + escapeHtml(c.avatar) + '" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--adm-primary);">' : '<div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#000;">' + escapeHtml((c.nome||'?')[0].toUpperCase()) + '</div>')
+                + '<div>'
+                + '<div style="font-size:16px;font-weight:900;color:var(--adm-text-1);">' + escapeHtml(c.nome) + '</div>'
+                + '<div style="font-size:11px;color:var(--adm-text-3);margin-top:1px;">' + escapeHtml(c.ct) + ' · ' + escapeHtml(c.faixa) + (c.grau > 0 ? ' G' + c.grau : '') + '</div>'
+                + '<div style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:' + riscoColor + '22;color:' + riscoColor + ';border:1px solid ' + riscoColor + '44;">Risco evasão: ' + escapeHtml(d.riscoEvasao) + '</div>'
+                + '</div></div>'
+                + '<button onclick="rpt360Fechar()" style="background:none;border:none;font-size:22px;color:var(--adm-text-3);cursor:pointer;padding:0;">×</button>'
+                + '</div>';
+
+            var h = '';
+
+            // ── Alertas ──────────────────────────────────────────────
+            if (d.alertas && d.alertas.length > 0) {
+                d.alertas.forEach(function(al) {
+                    var alColor = al.nivel === 'urgente' ? '#f87171' : '#fbbf24';
+                    h += '<div style="display:flex;gap:8px;align-items:center;padding:9px 12px;background:' + alColor + '14;border:1px solid ' + alColor + '33;border-radius:8px;margin-bottom:6px;">'
+                        + '<div style="font-size:14px;">' + (al.nivel === 'urgente' ? '🔴' : '🟡') + '</div>'
+                        + '<div style="font-size:11px;color:' + alColor + ';font-weight:700;">' + escapeHtml(al.msg) + '</div>'
+                        + '</div>';
+                });
+            }
+
+            // ── Scores ───────────────────────────────────────────────
+            h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:14px;margin-bottom:10px;">'
+                + '<div style="font-size:10px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Indicadores Inteligentes</div>'
+                + '<div style="display:flex;gap:4px;">'
+                + rpt360Score(sc.engajamento, 'Engajamento')
+                + rpt360Score(sc.evolucao, 'Evolução Téc.')
+                + rpt360Score(sc.retencao, 'Retenção')
+                + '</div></div>';
+
+            // ── Resumo executivo ─────────────────────────────────────
+            h += '<div style="background:rgba(129,140,248,0.08);border:1px solid rgba(129,140,248,0.2);border-radius:12px;padding:12px;margin-bottom:10px;">'
+                + '<div style="font-size:10px;font-weight:800;color:var(--adm-primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📝 Resumo Executivo</div>'
+                + '<div style="font-size:12px;color:var(--adm-text-2);line-height:1.7;">' + escapeHtml(d.resumoExecutivo) + '</div>'
+                + '</div>';
+
+            // ── Dados cadastrais ─────────────────────────────────────
+            h += rpt360Section('👤 Dados Cadastrais', [
+                ['Email', c.email], ['CT', c.ct], ['Modalidade(s)', c.modalidades],
+                ['Faixa / Grau', c.faixa + (c.grau > 0 ? ' · Grau ' + c.grau : '')],
+                ['Ingresso', c.dataCadastro], ['Tempo na academia', Math.floor(c.tempoDias/30) + ' meses (' + c.tempoDias + ' dias)'],
+                ['Nascimento', c.nascimento], ['Telefone', c.telefone],
+                ['Horário preferido', c.horario], ['Objetivo', c.objetivo],
+                ['Status', c.status],
+            ]);
+
+            // ── Frequência ───────────────────────────────────────────
+            h += rpt360Section('📅 Indicadores de Frequência', [
+                ['Última presença', pre.ultimaPresenca || 'Sem registro'],
+                ['Dias sem treinar', pre.diasSemTreinar > 900 ? '—' : pre.diasSemTreinar + ' dias'],
+                ['Últ. 7 dias', pre.p7 + ' treinos'],
+                ['Últ. 30 dias', pre.p30 + ' treinos'],
+                ['Últ. 90 dias', pre.p90 + ' treinos'],
+                ['Total de treinos', pre.total],
+                ['Média / semana', pre.mediaSemanaTreinos],
+                ['Média / mês', pre.mediaMesTreinos],
+                ['Frequência %', pre.freqPct + '%'],
+                ['Dia preferido', pre.diaPref || '—'],
+                ['Horário preferido', pre.horaPref || '—'],
+                ['Modalidade mais freq.', pre.modFreq || '—'],
+            ]);
+
+            // ── Evolução técnica ─────────────────────────────────────
+            h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:12px;margin-bottom:10px;">'
+                + '<div style="font-size:10px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🥋 Evolução Técnica</div>'
+                + rpt360Rows([
+                    ['Faixa atual', evo.faixaAtual + (evo.grauAtual > 0 ? ' · Grau ' + evo.grauAtual : '')],
+                    ['Tempo na faixa atual', Math.floor(evo.diasNaFaixaAtual/30) + ' meses'],
+                    ['Total de graduações', evo.totalGraus],
+                    ['Tempo médio entre graus', evo.tempoMedioGrad > 0 ? Math.floor(evo.tempoMedioGrad/30) + ' meses' : '—'],
+                    ['Previsão próx. graduação', evo.previsaoProxGrad > 0 ? 'Em ~' + Math.floor(evo.previsaoProxGrad/30) + ' meses' : '—'],
+                ]);
+            if (evo.historico && evo.historico.length > 0) {
+                h += '<div style="font-size:10px;font-weight:700;color:var(--adm-text-3);margin:10px 0 4px;">Histórico de graduações</div>';
+                h += '<div style="display:flex;flex-direction:column;gap:4px;">';
+                evo.historico.slice().reverse().slice(0,8).forEach(function(g) {
+                    h += '<div style="display:flex;justify-content:space-between;padding:5px 8px;background:var(--adm-bg-elevated);border-radius:6px;font-size:11px;">'
+                        + '<span style="color:var(--adm-text-1);">' + escapeHtml(g.nivel) + (g.grau > 0 ? ' G' + g.grau : '') + (g.modalidade ? ' <span style="color:var(--adm-text-3);">(' + escapeHtml(g.modalidade) + ')</span>' : '') + '</span>'
+                        + '<span style="color:var(--adm-text-3);">' + escapeHtml(g.data) + '</span>'
+                        + '</div>';
+                });
+                h += '</div>';
+            }
+            h += '</div>';
+
+            // ── Financeiro ───────────────────────────────────────────
+            var finStatus = fin.mensalidade.status || '—';
+            var finColor = finStatus === 'PAGO' || finStatus === 'ATIVO' ? '#4ade80' : (finStatus === 'ATRASADO' ? '#f87171' : '#fbbf24');
+            h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:12px;margin-bottom:10px;">'
+                + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+                + '<div style="font-size:10px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;">💰 Financeiro</div>'
+                + '<div style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:' + finColor + '22;color:' + finColor + ';border:1px solid ' + finColor + '44;">' + escapeHtml(finStatus) + '</div>'
+                + '</div>'
+                + rpt360Rows([
+                    ['Plano', fin.mensalidade.planoNome || fin.mensalidade.planoId || '—'],
+                    ['Valor mensal', fin.mensalidade.valor > 0 ? 'R$ ' + fin.mensalidade.valor.toFixed(2) : '—'],
+                    ['Próximo vencimento', fin.mensalidade.vencimento || '—'],
+                    ['Pagamentos realizados', fin.totalPagamentos],
+                    ['Qtd. atrasos', fin.atrasos],
+                    ['Total pago no ano', 'R$ ' + fin.totalPagoAno.toFixed(2)],
+                    ['Último pagamento', fin.ultimoPag ? fin.ultimoPag.data + ' · R$ ' + (fin.ultimoPag.valor||0).toFixed(2) : '—'],
+                ]);
+            if (fin.historico && fin.historico.length > 0) {
+                h += '<div style="font-size:10px;font-weight:700;color:var(--adm-text-3);margin:10px 0 4px;">Histórico recente</div>';
+                h += '<div style="display:flex;flex-direction:column;gap:3px;">';
+                fin.historico.slice(0,6).forEach(function(pg) {
+                    var pgColor = pg.status === 'PAGO' ? '#4ade80' : '#f87171';
+                    h += '<div style="display:flex;justify-content:space-between;padding:5px 8px;background:var(--adm-bg-elevated);border-radius:6px;font-size:11px;">'
+                        + '<span style="color:var(--adm-text-3);">' + escapeHtml(pg.data) + '</span>'
+                        + '<span style="color:var(--adm-text-1);">R$ ' + (pg.valor||0).toFixed(2) + '</span>'
+                        + '<span style="color:' + pgColor + ';font-weight:700;">' + escapeHtml(pg.status) + '</span>'
+                        + '</div>';
+                });
+                h += '</div>';
+            }
+            h += '</div>';
+
+            // ── Botão imprimir ────────────────────────────────────────
+            h += '<button onclick="window.print()" style="width:100%;padding:11px;background:var(--adm-bg-card);color:var(--adm-text-2);border:1px solid var(--adm-border);border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;margin-top:4px;">🖨️ Imprimir / Salvar PDF</button>';
+
+            body.innerHTML = h;
+        }
+
+        function rpt360Section(title, rows) {
+            return '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:12px;margin-bottom:10px;">'
+                + '<div style="font-size:10px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">' + title + '</div>'
+                + rpt360Rows(rows)
+                + '</div>';
+        }
+
+        function rpt360Rows(rows) {
+            return rows.filter(function(r){ return r[1] !== undefined && r[1] !== null && r[1] !== ''; }).map(function(r, i) {
+                return '<div style="display:flex;justify-content:space-between;padding:5px 0;' + (i > 0 ? 'border-top:1px solid var(--adm-border);' : '') + '">'
+                    + '<span style="font-size:11px;color:var(--adm-text-3);">' + escapeHtml(r[0]) + '</span>'
+                    + '<span style="font-size:11px;color:var(--adm-text-1);font-weight:600;text-align:right;max-width:55%;">' + escapeHtml(String(r[1])) + '</span>'
+                    + '</div>';
+            }).join('');
         }
 
         function renderAcaoGroup(title, tipo, items, dotColor, defaultOpen) {
@@ -40717,10 +41129,8 @@
             modal.style.display = 'block';
             document.body.style.overflow = 'hidden';
 
-            // Carrega dependentes desta conta
-            setTimeout(function() { loadStuDependentes(email); }, 300);
-            // Carrega TreinosBase (saldo de migração)
-            _loadStuTreinosBase(email);
+            // Sempre abre na aba Essencial
+            switchStuTab('essencial');
 
             // Hero
             document.getElementById('stuAvatar').textContent = (s.name || '?').charAt(0).toUpperCase();
@@ -40850,6 +41260,21 @@
             document.getElementById('stuHorario').value = s.horario || '';
             document.getElementById('stuExperiencia').value = s.experiencia || '';
             document.getElementById('stuSaude').value = s.saude || '';
+            // Campos administrativos extras
+            document.getElementById('stuResponsavelEmail').value    = s.responsavelEmail    || '';
+            document.getElementById('stuResponsavelNome').value     = s.responsavelNome     || '';
+            document.getElementById('stuResponsavelTelefone').value = s.responsavelTelefone || '';
+            document.getElementById('stuCPF').value                 = s.cpf                 || '';
+            document.getElementById('stuEnderecoCompleto').value    = s.enderecoCompleto    || '';
+            document.getElementById('stuObsAdmin').value            = s.obsAdmin            || '';
+            // SaudeKids — exibe só se menores (nascimento indica idade < 18)
+            var stuSaudeKidsField = document.getElementById('stuSaudeKidsField');
+            document.getElementById('stuSaudeKids').value = s.saudeKids || '';
+            if (stuSaudeKidsField) {
+                var _nasc = s.nascimento || '';
+                var _idade = _nasc ? Math.floor((new Date() - new Date(_nasc)) / 31557600000) : 99;
+                stuSaudeKidsField.style.display = (_idade < 18 || s.saudeKids) ? '' : 'none';
+            }
 
             // Dias de treino
             var diasStr = s.diasTreino || '';
@@ -41359,6 +41784,24 @@
             } catch(e) { alert('Erro de conexão'); }
         }
 
+        function switchStuTab(tab) {
+            document.querySelectorAll('.stu-tab-btn').forEach(function(btn) {
+                btn.classList.toggle('active', btn.getAttribute('data-stutab') === tab);
+            });
+            document.querySelectorAll('.stu-tab-pane').forEach(function(pane) {
+                var isActive = pane.id === 'stuTab-' + tab;
+                pane.style.display = isActive ? 'block' : 'none';
+                pane.classList.toggle('active', isActive);
+            });
+            // Lazy-load graduações ao entrar em Histórico
+            if (tab === 'historico' && stuModalEmail) {
+                if (typeof loadGraduacoes === 'function') loadGraduacoes(stuModalEmail);
+                if (typeof loadSaldoAulas === 'function') loadSaldoAulas();
+                if (typeof _loadStuTreinosBase === 'function') _loadStuTreinosBase(stuModalEmail);
+                if (typeof loadStuDependentes === 'function') loadStuDependentes(stuModalEmail);
+            }
+        }
+
         function closeStuModal() {
             document.getElementById('stuModal').style.display = 'none';
             document.body.style.overflow = '';
@@ -41418,6 +41861,13 @@
                 horario: document.getElementById('stuHorario').value,
                 experiencia: document.getElementById('stuExperiencia').value,
                 saude: document.getElementById('stuSaude').value,
+                saudeKids:           document.getElementById('stuSaudeKids').value,
+                responsavelEmail:    document.getElementById('stuResponsavelEmail').value.trim(),
+                responsavelNome:     document.getElementById('stuResponsavelNome').value.trim(),
+                responsavelTelefone: document.getElementById('stuResponsavelTelefone').value.trim(),
+                cpf:                 document.getElementById('stuCPF').value.replace(/\D/g,''),
+                enderecoCompleto:    document.getElementById('stuEnderecoCompleto').value.trim(),
+                obsAdmin:            document.getElementById('stuObsAdmin').value.trim(),
                 diasTreino: (function() {
                     var dias = [];
                     document.querySelectorAll('#stuDiasGrid .stu-day-btn.on').forEach(function(btn) {
