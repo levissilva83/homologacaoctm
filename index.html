@@ -11830,47 +11830,9 @@
 
                     <!-- ════ SUB-TAB: RELATÓRIOS ════ -->
                     <div class="sis-subtab-panel" id="sis-panel-relatorios" style="display:none;">
-
-                        <!-- Filtros -->
-                        <div class="admin-card" style="margin-bottom:12px;">
-                            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
-                                <button class="rpt-quick-btn active" onclick="setRptQuickPeriod('hoje', this)" style="padding:6px 14px;border-radius:8px;background:rgba(201,162,58,0.12);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.3);font-size:11px;font-weight:700;cursor:pointer;">Hoje</button>
-                                <button class="rpt-quick-btn" onclick="setRptQuickPeriod('semana', this)" style="padding:6px 14px;border-radius:8px;background:var(--adm-bg-card);color:var(--adm-text-2);border:1px solid var(--adm-border);font-size:11px;font-weight:700;cursor:pointer;">Esta semana</button>
-                                <button class="rpt-quick-btn" onclick="setRptQuickPeriod('mes', this)" style="padding:6px 14px;border-radius:8px;background:var(--adm-bg-card);color:var(--adm-text-2);border:1px solid var(--adm-border);font-size:11px;font-weight:700;cursor:pointer;">Este mês</button>
-                                <button class="rpt-quick-btn" onclick="setRptQuickPeriod('ano', this)" style="padding:6px 14px;border-radius:8px;background:var(--adm-bg-card);color:var(--adm-text-2);border:1px solid var(--adm-border);font-size:11px;font-weight:700;cursor:pointer;">Este ano</button>
-                            </div>
-                            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                                <div style="display:flex;flex-direction:column;gap:2px;">
-                                    <label style="font-size:9px;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:0.5px;">De</label>
-                                    <input type="date" id="rptDateFrom" onchange="generateReport()" style="padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
-                                </div>
-                                <div style="display:flex;flex-direction:column;gap:2px;">
-                                    <label style="font-size:9px;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:0.5px;">Até</label>
-                                    <input type="date" id="rptDateTo" onchange="generateReport()" style="padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
-                                </div>
-                                <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:120px;">
-                                    <label style="font-size:9px;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:0.5px;">CT</label>
-                                    <select id="rptCTSelect" onchange="generateReport()" style="padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;width:100%;">
-                                        <option value="">Todos os CTs</option>
-                                    </select>
-                                </div>
-                                <div style="display:flex;flex-direction:column;gap:2px;flex:1;min-width:120px;">
-                                    <label style="font-size:9px;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:0.5px;">Turno</label>
-                                    <select id="rptTurnoSelect" onchange="if(_rptData) renderReport(_rptData)" style="padding:7px 10px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;width:100%;">
-                                        <option value="">Todos</option>
-                                        <option value="manha">🌅 Manhã</option>
-                                        <option value="noite">🌙 Noite</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;">
-                                <div id="rptPeriodLabel" style="font-size:11px;color:var(--adm-text-3);"></div>
-                                <button onclick="exportReportCSV()" style="padding:7px 14px;border-radius:8px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;font-size:11px;font-weight:800;cursor:pointer;">⬇️ Exportar CSV</button>
-                            </div>
-                        </div>
-
                         <!-- Relatório Completo de Alunos -->
                         <div class="admin-card" style="margin-bottom:12px;">
+
                             <div style="font-size:12px;font-weight:800;color:var(--adm-text-1);margin-bottom:4px;">📋 Relatório Completo de Alunos</div>
                             <p style="font-size:11px;color:var(--adm-text-3);margin:0 0 10px;line-height:1.6;">
                                 Exporta dados cadastrais, CT, modalidades matriculadas (com nível/grau atual),
@@ -11915,62 +11877,6 @@
                         </div>
 
 
-                        <div id="rptLoading" style="text-align:center;padding:30px;color:var(--adm-text-3);font-size:12px;">Carregando relatório...</div>
-
-                        <div id="rptContent" style="display:none;">
-
-                            <!-- KPIs -->
-                            <div class="rpt-kpi-grid" id="rptKPICards"></div>
-
-                            <!-- Central de Ações -->
-                            <div class="admin-card" id="rptAcoesSection" style="display:none;margin-bottom:12px;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                                    <div style="font-size:12px;font-weight:800;color:var(--adm-text-1);">🎯 Central de Ações</div>
-                                    <span id="rptAcoesCount" style="font-size:10px;color:var(--adm-text-3);"></span>
-                                </div>
-                                <div id="rptAcoes"></div>
-                            </div>
-
-                            <!-- Visão por turno -->
-                            <div class="admin-card" style="margin-bottom:12px;">
-                                <div style="font-size:12px;font-weight:800;color:var(--adm-text-1);margin-bottom:8px;">🕐 Visão por Turno</div>
-                                <div id="rptTurnoCards"></div>
-                            </div>
-
-                            <!-- Visão por CT -->
-                            <div class="admin-card" style="margin-bottom:12px;">
-                                <div style="font-size:12px;font-weight:800;color:var(--adm-text-1);margin-bottom:8px;">🏢 Visão por CT</div>
-                                <div id="rptCTCards"></div>
-                            </div>
-
-                            <!-- Presença por horário -->
-                            <div class="admin-card" style="margin-bottom:12px;">
-                                <div class="rpt-acao-header open" onclick="toggleRptSection(this)" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;">
-                                    <div style="font-size:12px;font-weight:800;color:var(--adm-text-1);">📅 Presença por Horário</div>
-                                    <span class="rpt-acao-arrow">▶</span>
-                                </div>
-                                <div id="rptHourlySummary" style="margin-top:8px;"></div>
-                            </div>
-
-                            <!-- Faltas acumuladas -->
-                            <div class="admin-card" style="margin-bottom:12px;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                                    <div style="font-size:12px;font-weight:800;color:var(--adm-text-1);">❌ Faltas Acumuladas</div>
-                                    <span id="rptFaltasBadge" style="font-size:10px;color:var(--adm-text-3);background:var(--adm-bg-card);padding:2px 8px;border-radius:10px;"></span>
-                                </div>
-                                <div id="rptFaltasList"></div>
-                            </div>
-
-                            <!-- Elegíveis a avaliação -->
-                            <div class="admin-card" style="margin-bottom:12px;">
-                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                                    <div style="font-size:12px;font-weight:800;color:var(--adm-text-1);">🎓 Elegíveis para Avaliação</div>
-                                    <span id="rptPromoBadge" style="font-size:10px;color:var(--adm-text-3);background:var(--adm-bg-card);padding:2px 8px;border-radius:10px;"></span>
-                                </div>
-                                <div id="rptPromo"></div>
-                            </div>
-
-                        </div>
                     </div><!-- /sis-panel-relatorios -->
 
                 </div><!-- /admin-container -->
@@ -26766,20 +26672,44 @@
         // RELATÓRIO 360° INDIVIDUAL
         // ══════════════════════════════════════════════════════════
         var _rpt360Email = '';
+        var _rpt360AlunosCarregados = false;
 
-        function rpt360FilterAlunos() {
+        async function rpt360CarregarAlunos() {
+            if (_rpt360AlunosCarregados) return;
+            try {
+                var res = await secureFetch('getStudentsList', {});
+                if (res && res.students) {
+                    _cachedAlunos = res.students.map(function(s) {
+                        return { nome: s.name || '', email: s.email || '', ct: s.ct || '' };
+                    });
+                    _rpt360AlunosCarregados = true;
+                }
+            } catch(e) {}
+        }
+
+        async function rpt360FilterAlunos() {
             var q = (document.getElementById('rpt360Search').value || '').toLowerCase().trim();
             var sug = document.getElementById('rpt360Suggestions');
+            _rpt360Email = '';
             if (!q || q.length < 2) { sug.style.display = 'none'; return; }
+            if (!_rpt360AlunosCarregados) {
+                sug.innerHTML = '<div style="padding:10px 12px;font-size:11px;color:var(--adm-text-3);">🔄 Buscando alunos...</div>';
+                sug.style.display = 'block';
+                await rpt360CarregarAlunos();
+            }
             var alunos = _cachedAlunos || [];
             var matches = alunos.filter(function(a) {
                 return (a.nome||'').toLowerCase().indexOf(q) >= 0 || (a.email||'').toLowerCase().indexOf(q) >= 0;
             }).slice(0, 8);
-            if (matches.length === 0) { sug.style.display = 'none'; return; }
+            if (matches.length === 0) {
+                sug.innerHTML = '<div style="padding:10px 12px;font-size:11px;color:var(--adm-text-3);">Nenhum aluno encontrado. Tente digitar o e-mail completo.</div>';
+                sug.style.display = 'block';
+                return;
+            }
             sug.innerHTML = matches.map(function(a) {
                 return '<div onclick="rpt360SelectAluno(\'' + escapeHtml(a.email) + '\',\'' + escapeHtml(a.nome) + '\')" style="padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--adm-border);font-size:12px;" onmouseover="this.style.background=\'var(--adm-bg-elevated)\'" onmouseout="this.style.background=\'\'">'
                     + '<div style="font-weight:700;color:var(--adm-text-1);">' + escapeHtml(a.nome) + '</div>'
-                    + '<div style="font-size:10px;color:var(--adm-text-3);">' + escapeHtml(a.email) + ' · ' + escapeHtml(a.ct||'') + '</div>'
+                    + '<div style="font-size:10px;color:var(--adm-text-3);">' + escapeHtml(a.email) + (a.ct ? ' \u00b7 ' + escapeHtml(a.ct) : '') + '</div>'
                     + '</div>';
             }).join('');
             sug.style.display = 'block';
@@ -26792,31 +26722,60 @@
         }
 
         async function rpt360Abrir() {
+            // Carrega Chart.js sob demanda (uma vez)
+            if (!window.Chart) {
+                await new Promise(function(resolve) {
+                    var s = document.createElement('script');
+                    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+                    s.onload = resolve; s.onerror = resolve;
+                    document.head.appendChild(s);
+                });
+            }
             var email = _rpt360Email;
             if (!email) {
                 var v = (document.getElementById('rpt360Search').value || '').trim().toLowerCase();
                 if (v.indexOf('@') > 0) email = v;
             }
-            if (!email) { alert('Selecione um aluno na lista de sugestões.'); return; }
-            var modal = document.getElementById('rpt360Modal');
-            var body  = document.getElementById('rpt360Body');
+            if (!email) {
+                var sug = document.getElementById('rpt360Suggestions');
+                if (sug && sug.style.display !== 'none') {
+                    var first = sug.querySelector('[onclick]');
+                    if (first) { first.click(); email = _rpt360Email; }
+                }
+            }
+            if (!email) {
+                var inp = document.getElementById('rpt360Search');
+                inp.focus();
+                inp.style.border = '1.5px solid #f87171';
+                setTimeout(function(){ inp.style.border = ''; }, 2000);
+                var sug2 = document.getElementById('rpt360Suggestions');
+                sug2.innerHTML = '<div style="padding:10px 12px;font-size:11px;color:#f87171;">\u26A0\uFE0F Digite o nome ou e-mail do aluno e selecione na lista.</div>';
+                sug2.style.display = 'block';
+                return;
+            }
+            var modal  = document.getElementById('rpt360Modal');
+            var body   = document.getElementById('rpt360Body');
             var header = document.getElementById('rpt360Header');
             modal.style.display = 'block';
             document.body.style.overflow = 'hidden';
-            header.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:15px;font-weight:800;color:var(--adm-text-1);">🎯 Relatório 360°</div><button onclick="rpt360Fechar()" style="background:none;border:none;font-size:22px;color:var(--adm-text-3);cursor:pointer;">×</button></div>';
-            body.innerHTML = '<div style="text-align:center;padding:40px;color:var(--adm-text-3);"><div style="font-size:24px;margin-bottom:8px;">⏳</div>Carregando dados do aluno...</div>';
+            header.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center;"><div style="font-size:15px;font-weight:800;color:var(--adm-text-1);">\uD83C\uDFAF Relat\u00F3rio 360\u00B0</div><button onclick="rpt360Fechar()" style="background:none;border:none;font-size:22px;color:var(--adm-text-3);cursor:pointer;">\u00D7</button></div>';
+            body.innerHTML = '<div style="text-align:center;padding:40px;color:var(--adm-text-3);"><div style="font-size:28px;margin-bottom:10px;">\u23F3</div>Carregando dados do aluno...</div>';
             try {
                 var d = await secureFetch('getRelatorio360', { targetEmail: email });
-                if (!d.success) { body.innerHTML = '<div style="text-align:center;padding:40px;color:#f87171;">❌ ' + (d.message||'Erro') + '</div>'; return; }
+                if (!d.success) {
+                    body.innerHTML = '<div style="text-align:center;padding:40px;color:#f87171;font-size:13px;">\u274C ' + escapeHtml(d.message||'Erro ao carregar') + '</div>';
+                    return;
+                }
                 rpt360Render(d, header, body);
             } catch(e) {
-                body.innerHTML = '<div style="text-align:center;padding:40px;color:#f87171;">❌ ' + e.message + '</div>';
+                body.innerHTML = '<div style="text-align:center;padding:40px;color:#f87171;font-size:13px;">\u274C ' + escapeHtml(e.message) + '</div>';
             }
         }
 
         function rpt360Fechar() {
             document.getElementById('rpt360Modal').style.display = 'none';
             document.body.style.overflow = '';
+            document.getElementById('rpt360Suggestions').style.display = 'none';
         }
 
         function rpt360Score(val, label, cor) {
@@ -26843,11 +26802,15 @@
             header.innerHTML =
                 '<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
                 + '<div style="display:flex;gap:12px;align-items:center;">'
-                + (c.avatar ? '<img src="' + escapeHtml(c.avatar) + '" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--adm-primary);">' : '<div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#000;">' + escapeHtml((c.nome||'?')[0].toUpperCase()) + '</div>')
+                + (c.avatar ? '<img src="' + escapeHtml(c.avatar) + '" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--adm-primary);">'
+                  : '<div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#000;">' + escapeHtml((c.nome||'?')[0].toUpperCase()) + '</div>')
                 + '<div>'
                 + '<div style="font-size:16px;font-weight:900;color:var(--adm-text-1);">' + escapeHtml(c.nome) + '</div>'
                 + '<div style="font-size:11px;color:var(--adm-text-3);margin-top:1px;">' + escapeHtml(c.ct) + ' · ' + escapeHtml(c.faixa) + (c.grau > 0 ? ' G' + c.grau : '') + '</div>'
-                + '<div style="display:inline-block;margin-top:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:' + riscoColor + '22;color:' + riscoColor + ';border:1px solid ' + riscoColor + '44;">Risco evasão: ' + escapeHtml(d.riscoEvasao) + '</div>'
+                + '<div style="margin-top:5px;display:flex;gap:6px;flex-wrap:wrap;">'
+                + '<div style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:' + riscoColor + '22;color:' + riscoColor + ';border:1px solid ' + riscoColor + '44;">Risco: ' + escapeHtml(d.riscoEvasao) + '</div>'
+                + (pre.streakAtual > 0 ? '<div style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(251,191,36,0.12);color:#fbbf24;border:1px solid rgba(251,191,36,0.3);">🔥 ' + pre.streakAtual + ' sem. seguidas</div>' : '')
+                + '</div>'
                 + '</div></div>'
                 + '<button onclick="rpt360Fechar()" style="background:none;border:none;font-size:22px;color:var(--adm-text-3);cursor:pointer;padding:0;">×</button>'
                 + '</div>';
@@ -26865,9 +26828,25 @@
                 });
             }
 
+            // ── KPIs rápidos ─────────────────────────────────────────
+            h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;">';
+            var kpis = [
+                { v: pre.total, l: 'Total treinos' },
+                { v: pre.p30 + '/mês', l: 'Últ. 30 dias' },
+                { v: pre.diasSemTreinar > 900 ? '—' : pre.diasSemTreinar + 'd', l: 'Sem treinar' },
+                { v: fin.ltv > 0 ? 'R$' + Math.round(fin.ltv) : '—', l: 'LTV total' }
+            ];
+            kpis.forEach(function(k) {
+                h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:10px;padding:10px 8px;text-align:center;">'
+                    + '<div style="font-size:15px;font-weight:800;color:var(--adm-text-1);">' + escapeHtml(String(k.v)) + '</div>'
+                    + '<div style="font-size:9px;color:var(--adm-text-3);margin-top:2px;">' + k.l + '</div>'
+                    + '</div>';
+            });
+            h += '</div>';
+
             // ── Scores ───────────────────────────────────────────────
             h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:14px;margin-bottom:10px;">'
-                + '<div style="font-size:10px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Indicadores Inteligentes</div>'
+                + '<div style="font-size:10px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Indicadores inteligentes</div>'
                 + '<div style="display:flex;gap:4px;">'
                 + rpt360Score(sc.engajamento, 'Engajamento')
                 + rpt360Score(sc.evolucao, 'Evolução Téc.')
@@ -26876,22 +26855,143 @@
 
             // ── Resumo executivo ─────────────────────────────────────
             h += '<div style="background:rgba(129,140,248,0.08);border:1px solid rgba(129,140,248,0.2);border-radius:12px;padding:12px;margin-bottom:10px;">'
-                + '<div style="font-size:10px;font-weight:800;color:var(--adm-primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📝 Resumo Executivo</div>'
+                + '<div style="font-size:10px;font-weight:800;color:var(--adm-primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📝 Resumo executivo</div>'
                 + '<div style="font-size:12px;color:var(--adm-text-2);line-height:1.7;">' + escapeHtml(d.resumoExecutivo) + '</div>'
                 + '</div>';
 
+            // ── Ações rápidas ─────────────────────────────────────────
+            var waNum = c.telefone ? c.telefone.replace(/\D/g,'') : '';
+            h += '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">';
+            if (waNum) {
+                h += '<a href="https://wa.me/55' + waNum + '" target="_blank" style="flex:1;min-width:120px;padding:9px;background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.3);border-radius:9px;color:#25D366;font-size:11px;font-weight:700;text-align:center;text-decoration:none;display:block;">💬 WhatsApp</a>';
+            }
+            if (waNum) {
+                h += '<a href="tel:' + waNum + '" style="flex:1;min-width:100px;padding:9px;background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:9px;color:var(--adm-text-2);font-size:11px;font-weight:700;text-align:center;text-decoration:none;display:block;">📞 Ligar</a>';
+            }
+            h += '<button onclick="window.print()" style="flex:1;min-width:100px;padding:9px;background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:9px;color:var(--adm-text-2);font-size:11px;font-weight:700;cursor:pointer;">🖨️ PDF</button>';
+            h += '</div>';
+
+            // ── Heatmap de frequência ─────────────────────────────────
+            h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:12px;margin-bottom:10px;">';
+            h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
+            h += '<div style="font-size:10px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;">📆 Frequência — últimas 12 semanas</div>';
+            h += '<div style="font-size:10px;color:var(--adm-text-3);">';
+            if (pre.streakRecord > 0) h += '🏆 Recorde: ' + pre.streakRecord + ' sem.';
+            h += '</div></div>';
+            // Labels dias
+            h += '<div style="display:flex;gap:2px;margin-bottom:4px;padding-left:22px;">';
+            ['D','S','T','Q','Q','S','S'].forEach(function(l) {
+                h += '<div style="width:12px;text-align:center;font-size:8px;color:var(--adm-text-3);">' + l + '</div>';
+            });
+            h += '</div>';
+            if (pre.heatmap && pre.heatmap.length) {
+                // Agrupa em semanas (colunas)
+                var semanas = [];
+                var currentWeek = [];
+                // Alinhar ao domingo inicial
+                var firstDow = pre.heatmap[0].dow; // 0=Dom
+                for (var pad = 0; pad < firstDow; pad++) currentWeek.push(null);
+                pre.heatmap.forEach(function(item) {
+                    currentWeek.push(item);
+                    if (currentWeek.length === 7) { semanas.push(currentWeek); currentWeek = []; }
+                });
+                if (currentWeek.length > 0) {
+                    while (currentWeek.length < 7) currentWeek.push(null);
+                    semanas.push(currentWeek);
+                }
+                h += '<div style="display:flex;gap:2px;">';
+                // Label de meses
+                var lastMes = '';
+                semanas.forEach(function(sem, si) {
+                    var firstDay = sem.find(function(x){ return x; });
+                    var mes = firstDay ? firstDay.date.substring(5,7) : '';
+                    var nomeMes = mes ? ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][parseInt(mes)] : '';
+                    h += '<div style="display:flex;flex-direction:column;gap:2px;">';
+                    h += '<div style="font-size:7px;color:var(--adm-text-3);height:10px;text-align:center;">' + (nomeMes !== lastMes ? nomeMes : '') + '</div>';
+                    if (nomeMes !== lastMes && nomeMes) lastMes = nomeMes;
+                    sem.forEach(function(item) {
+                        if (!item) {
+                            h += '<div style="width:12px;height:12px;border-radius:2px;background:transparent;"></div>';
+                        } else {
+                            var col = item.count === 0 ? 'rgba(255,255,255,0.04)' : item.count === 1 ? 'rgba(201,162,58,0.25)' : item.count === 2 ? 'rgba(201,162,58,0.55)' : '#C9A23A';
+                            h += '<div style="width:12px;height:12px;border-radius:2px;background:' + col + ';" title="' + item.date + ': ' + item.count + ' treinos"></div>';
+                        }
+                    });
+                    h += '</div>';
+                });
+                h += '</div>';
+            }
+            // Legenda
+            h += '<div style="display:flex;gap:4px;align-items:center;margin-top:8px;justify-content:flex-end;">';
+            h += '<span style="font-size:9px;color:var(--adm-text-3);">Menos</span>';
+            ['rgba(255,255,255,0.04)','rgba(201,162,58,0.25)','rgba(201,162,58,0.55)','#C9A23A'].forEach(function(col) {
+                h += '<div style="width:10px;height:10px;border-radius:2px;background:' + col + ';"></div>';
+            });
+            h += '<span style="font-size:9px;color:var(--adm-text-3);">Mais</span>';
+            h += '</div>';
+            h += '</div>';
+
+            // ── Tendência mensal (Chart.js) ───────────────────────────
+            h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:12px;margin-bottom:10px;">';
+            h += '<div style="font-size:10px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">📈 Tendência — treinos por mês</div>';
+            h += '<div style="position:relative;height:120px;"><canvas id="rpt360TrendChart" role="img" aria-label="Gráfico de tendência de treinos por mês"></canvas></div>';
+            h += '</div>';
+
+            // ── Progresso de graduação ────────────────────────────────
+            if (evo.tempoMedioGrad > 0 || evo.diasNaFaixaAtual > 0) {
+                var progressPct = evo.tempoMedioGrad > 0
+                    ? Math.min(Math.round((evo.diasNaFaixaAtual / evo.tempoMedioGrad) * 100), 100)
+                    : 0;
+                var progColor = progressPct >= 80 ? '#4ade80' : progressPct >= 50 ? '#fbbf24' : 'var(--adm-primary)';
+                h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:12px;margin-bottom:10px;">';
+                h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+                h += '<div style="font-size:10px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;">🥋 Progresso para próxima graduação</div>';
+                h += '<div style="font-size:12px;font-weight:800;color:' + progColor + ';">' + progressPct + '%</div>';
+                h += '</div>';
+                h += '<div style="background:rgba(255,255,255,0.06);border-radius:6px;height:10px;overflow:hidden;">';
+                h += '<div style="height:100%;width:' + progressPct + '%;background:' + progColor + ';border-radius:6px;transition:width .5s;"></div>';
+                h += '</div>';
+                h += '<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--adm-text-3);">';
+                h += '<span>' + escapeHtml(evo.faixaAtual) + (evo.grauAtual > 0 ? ' G' + evo.grauAtual : '') + '</span>';
+                h += '<span>' + Math.floor(evo.diasNaFaixaAtual/30) + ' meses na faixa';
+                if (evo.previsaoProxGrad > 0) h += ' · Previsão: ~' + Math.floor(evo.previsaoProxGrad/30) + ' meses';
+                h += '</span>';
+                h += '</div>';
+                h += '</div>';
+            }
+
+            // ── Distribuição por dia da semana ────────────────────────
+            if (pre.byDow && Object.keys(pre.byDow).length > 0) {
+                var ordemDow = ['Seg','Ter','Qua','Qui','Sex','Sab','Dom'];
+                var maxDow = Math.max.apply(null, ordemDow.map(function(d){ return pre.byDow[d]||0; }));
+                h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:12px;margin-bottom:10px;">';
+                h += '<div style="font-size:10px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">📊 Presença por dia da semana</div>';
+                h += '<div style="display:flex;gap:4px;align-items:flex-end;height:48px;">';
+                ordemDow.forEach(function(dia) {
+                    var val = pre.byDow[dia] || 0;
+                    var pct = maxDow > 0 ? Math.round((val/maxDow)*100) : 0;
+                    var isTop = dia === pre.diaPref;
+                    h += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">';
+                    h += '<div style="font-size:9px;color:var(--adm-text-3);">' + (val||'') + '</div>';
+                    h += '<div style="width:100%;background:' + (isTop ? 'var(--adm-primary)' : 'rgba(201,162,58,0.25)') + ';border-radius:3px 3px 0 0;height:' + Math.max(pct*0.32, val>0?4:0) + 'px;"></div>';
+                    h += '<div style="font-size:9px;color:' + (isTop ? 'var(--adm-primary)' : 'var(--adm-text-3)') + ';font-weight:' + (isTop?'700':'400') + ';">' + dia.substring(0,1) + '</div>';
+                    h += '</div>';
+                });
+                h += '</div></div>';
+            }
+
             // ── Dados cadastrais ─────────────────────────────────────
-            h += rpt360Section('👤 Dados Cadastrais', [
+            h += rpt360Section('👤 Dados cadastrais', [
                 ['Email', c.email], ['CT', c.ct], ['Modalidade(s)', c.modalidades],
                 ['Faixa / Grau', c.faixa + (c.grau > 0 ? ' · Grau ' + c.grau : '')],
-                ['Ingresso', c.dataCadastro], ['Tempo na academia', Math.floor(c.tempoDias/30) + ' meses (' + c.tempoDias + ' dias)'],
+                ['Ingresso', c.dataCadastro], ['Tempo de academia', Math.floor(c.tempoDias/30) + ' meses (' + c.tempoDias + ' dias)'],
                 ['Nascimento', c.nascimento], ['Telefone', c.telefone],
                 ['Horário preferido', c.horario], ['Objetivo', c.objetivo],
                 ['Status', c.status],
             ]);
 
-            // ── Frequência ───────────────────────────────────────────
-            h += rpt360Section('📅 Indicadores de Frequência', [
+            // ── Frequência (texto) ────────────────────────────────────
+            h += rpt360Section('📅 Indicadores de frequência', [
                 ['Última presença', pre.ultimaPresenca || 'Sem registro'],
                 ['Dias sem treinar', pre.diasSemTreinar > 900 ? '—' : pre.diasSemTreinar + ' dias'],
                 ['Últ. 7 dias', pre.p7 + ' treinos'],
@@ -26901,14 +27001,14 @@
                 ['Média / semana', pre.mediaSemanaTreinos],
                 ['Média / mês', pre.mediaMesTreinos],
                 ['Frequência %', pre.freqPct + '%'],
-                ['Dia preferido', pre.diaPref || '—'],
-                ['Horário preferido', pre.horaPref || '—'],
+                ['Sequência atual', pre.streakAtual > 0 ? pre.streakAtual + ' semanas' : '—'],
+                ['Recorde de sequência', pre.streakRecord > 0 ? pre.streakRecord + ' semanas' : '—'],
                 ['Modalidade mais freq.', pre.modFreq || '—'],
             ]);
 
             // ── Evolução técnica ─────────────────────────────────────
             h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:12px;margin-bottom:10px;">'
-                + '<div style="font-size:10px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🥋 Evolução Técnica</div>'
+                + '<div style="font-size:10px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🥋 Evolução técnica</div>'
                 + rpt360Rows([
                     ['Faixa atual', evo.faixaAtual + (evo.grauAtual > 0 ? ' · Grau ' + evo.grauAtual : '')],
                     ['Tempo na faixa atual', Math.floor(evo.diasNaFaixaAtual/30) + ' meses'],
@@ -26943,7 +27043,8 @@
                     ['Próximo vencimento', fin.mensalidade.vencimento || '—'],
                     ['Pagamentos realizados', fin.totalPagamentos],
                     ['Qtd. atrasos', fin.atrasos],
-                    ['Total pago no ano', 'R$ ' + fin.totalPagoAno.toFixed(2)],
+                    ['Total pago este ano', 'R$ ' + fin.totalPagoAno.toFixed(2)],
+                    ['LTV (total histórico)', fin.ltv > 0 ? 'R$ ' + fin.ltv.toFixed(2) : '—'],
                     ['Último pagamento', fin.ultimoPag ? fin.ultimoPag.data + ' · R$ ' + (fin.ultimoPag.valor||0).toFixed(2) : '—'],
                 ]);
             if (fin.historico && fin.historico.length > 0) {
@@ -26961,10 +27062,42 @@
             }
             h += '</div>';
 
-            // ── Botão imprimir ────────────────────────────────────────
-            h += '<button onclick="window.print()" style="width:100%;padding:11px;background:var(--adm-bg-card);color:var(--adm-text-2);border:1px solid var(--adm-border);border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;margin-top:4px;">🖨️ Imprimir / Salvar PDF</button>';
-
             body.innerHTML = h;
+
+            // ── Chart.js trend (executa após innerHTML) ───────────────
+            setTimeout(function() {
+                var canvas = document.getElementById('rpt360TrendChart');
+                if (!canvas || !pre.trend || !pre.trend.length) return;
+                if (window._rpt360Chart) { try { window._rpt360Chart.destroy(); } catch(e2){} }
+                var labels = pre.trend.map(function(t){ return t.mes; });
+                var data   = pre.trend.map(function(t){ return t.count; });
+                var ctx = canvas.getContext('2d');
+                window._rpt360Chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Treinos',
+                            data: data,
+                            borderColor: '#C9A23A',
+                            backgroundColor: 'rgba(201,162,58,0.12)',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#C9A23A',
+                            pointRadius: 4,
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: '#5C5E80', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                            y: { ticks: { color: '#5C5E80', font: { size: 10 }, stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
+                        }
+                    }
+                });
+            }, 100);
         }
 
         function rpt360Section(title, rows) {
@@ -38182,14 +38315,17 @@
                 var chavePix = '';
                 var valorFmt = 'R\$ ' + parseFloat(valor||0).toFixed(2);
 
-                if (res.success) {
-                    // jsonResponse retorna tudo no nível raiz (não aninhado em .data)
-                    pixCode  = res.pixCode  || '';
-                    pixQR    = res.qrBase64 || '';
-                    chavePix = res.chavePix || ''; // PIX manual (chave estática)
-                    if (!pixCode && chavePix) pixCode = chavePix; // usa chave estática se não gerou dinâmico
-                    valorFmt = 'R\$ ' + parseFloat(res.valor||valor||0).toFixed(2);
+                if (!res.success) {
+                    var errMsg = res.message || 'Erro ao gerar cobrança.';
+                    alert('\u26A0\uFE0F ' + errMsg + '\n\nVerifique se o aluno possui um plano com valor definido em Financeiro \u2192 Mensalidades.');
+                    return;
                 }
+                // jsonResponse retorna tudo no nível raiz (não aninhado em .data)
+                pixCode  = res.pixCode  || '';
+                pixQR    = res.qrBase64 || '';
+                chavePix = res.chavePix || ''; // PIX manual (chave estática)
+                if (!pixCode && chavePix) pixCode = chavePix; // usa chave estática se não gerou dinâmico
+                valorFmt = 'R\$ ' + parseFloat(res.valor||valor||0).toFixed(2);
 
                 // Monta mensagem WhatsApp
                 // Formata data de vencimento em pt-BR (dd/mm/yyyy)
