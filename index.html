@@ -26797,99 +26797,87 @@
         function rpt360Render(d, header, body) {
             var c = d.cadastro, pre = d.presenca, evo = d.evolucao, fin = d.financeiro, sc = d.scores;
             var riscoColor = d.riscoEvasao === 'ALTO' ? '#f87171' : d.riscoEvasao === 'MÉDIO' ? '#fbbf24' : '#4ade80';
+            var riscoLabel = d.riscoEvasao === 'ALTO' ? '🔴 Risco alto de evasão' : d.riscoEvasao === 'MÉDIO' ? '🟡 Atenção' : '🟢 Ativo e engajado';
 
-            // ── Header ──────────────────────────────────────────────
+            function ptDate(s) {
+                if (!s) return '—';
+                // já está em dd/MM/yyyy
+                if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
+                try {
+                    var dt = new Date(s);
+                    if (isNaN(dt.getTime())) return s;
+                    return ('0'+dt.getDate()).slice(-2)+'/'+('0'+(dt.getMonth()+1)).slice(-2)+'/'+dt.getFullYear();
+                } catch(e) { return s; }
+            }
+
+            // ── Header ────────────────────────────────────────────────
             header.innerHTML =
                 '<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
                 + '<div style="display:flex;gap:12px;align-items:center;">'
-                + (c.avatar ? '<img src="' + escapeHtml(c.avatar) + '" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--adm-primary);">'
-                  : '<div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#000;">' + escapeHtml((c.nome||'?')[0].toUpperCase()) + '</div>')
+                + (c.avatar
+                    ? '<img src="' + escapeHtml(c.avatar) + '" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--adm-primary);">'
+                    : '<div style="width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#000;">' + escapeHtml((c.nome||'?')[0].toUpperCase()) + '</div>')
                 + '<div>'
                 + '<div style="font-size:16px;font-weight:900;color:var(--adm-text-1);">' + escapeHtml(c.nome) + '</div>'
-                + '<div style="font-size:11px;color:var(--adm-text-3);margin-top:1px;">' + escapeHtml(c.ct) + ' · ' + escapeHtml(c.faixa) + (c.grau > 0 ? ' G' + c.grau : '') + '</div>'
-                + '<div style="margin-top:5px;display:flex;gap:6px;flex-wrap:wrap;">'
-                + '<div style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:' + riscoColor + '22;color:' + riscoColor + ';border:1px solid ' + riscoColor + '44;">Risco: ' + escapeHtml(d.riscoEvasao) + '</div>'
-                + (pre.streakAtual > 0 ? '<div style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:rgba(251,191,36,0.12);color:#fbbf24;border:1px solid rgba(251,191,36,0.3);">🔥 ' + pre.streakAtual + ' sem. seguidas</div>' : '')
-                + '</div>'
+                + '<div style="font-size:12px;color:var(--adm-text-3);margin-top:2px;">' + escapeHtml(c.ct||'—') + ' · ' + escapeHtml(c.faixa||'—') + (c.grau > 0 ? ' · Grau ' + c.grau : '') + '</div>'
+                + '<div style="margin-top:6px;display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;background:' + riscoColor + '22;color:' + riscoColor + ';border:1px solid ' + riscoColor + '44;">' + riscoLabel + '</div>'
                 + '</div></div>'
-                + '<button onclick="rpt360Fechar()" style="background:none;border:none;font-size:22px;color:var(--adm-text-3);cursor:pointer;padding:0;">×</button>'
+                + '<button onclick="rpt360Fechar()" style="background:none;border:none;font-size:22px;color:var(--adm-text-3);cursor:pointer;line-height:1;">×</button>'
                 + '</div>';
 
             var h = '';
 
-            // ── Alertas ──────────────────────────────────────────────
+            // ── Alertas (só se existirem) ─────────────────────────────
             if (d.alertas && d.alertas.length > 0) {
                 d.alertas.forEach(function(al) {
-                    var alColor = al.nivel === 'urgente' ? '#f87171' : '#fbbf24';
-                    h += '<div style="display:flex;gap:8px;align-items:center;padding:9px 12px;background:' + alColor + '14;border:1px solid ' + alColor + '33;border-radius:8px;margin-bottom:6px;">'
-                        + '<div style="font-size:14px;">' + (al.nivel === 'urgente' ? '🔴' : '🟡') + '</div>'
-                        + '<div style="font-size:11px;color:' + alColor + ';font-weight:700;">' + escapeHtml(al.msg) + '</div>'
-                        + '</div>';
+                    var ac = al.nivel === 'urgente' ? '#f87171' : '#fbbf24';
+                    h += '<div style="padding:10px 12px;background:' + ac + '14;border-left:3px solid ' + ac + ';border-radius:0 8px 8px 0;margin-bottom:6px;font-size:12px;color:' + ac + ';font-weight:600;">'
+                        + escapeHtml(al.msg) + '</div>';
                 });
             }
 
-            // ── KPIs rápidos ─────────────────────────────────────────
-            h += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;">';
-            var kpis = [
-                { v: pre.total, l: 'Total treinos' },
-                { v: pre.p30 + '/mês', l: 'Últ. 30 dias' },
-                { v: pre.diasSemTreinar > 900 ? '—' : pre.diasSemTreinar + 'd', l: 'Sem treinar' },
-                { v: fin.ltv > 0 ? 'R$' + Math.round(fin.ltv) : '—', l: 'LTV total' }
-            ];
-            kpis.forEach(function(k) {
-                h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:10px;padding:10px 8px;text-align:center;">'
-                    + '<div style="font-size:15px;font-weight:800;color:var(--adm-text-1);">' + escapeHtml(String(k.v)) + '</div>'
-                    + '<div style="font-size:9px;color:var(--adm-text-3);margin-top:2px;">' + k.l + '</div>'
-                    + '</div>';
-            });
-            h += '</div>';
-
-            // ── Scores ───────────────────────────────────────────────
-            h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:14px;margin-bottom:10px;">'
-                + '<div style="font-size:10px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Indicadores inteligentes</div>'
-                + '<div style="display:flex;gap:4px;">'
-                + rpt360Score(sc.engajamento, 'Engajamento')
-                + rpt360Score(sc.evolucao, 'Evolução Téc.')
-                + rpt360Score(sc.retencao, 'Retenção')
-                + '</div></div>';
-
-            // ── Resumo executivo ─────────────────────────────────────
-            h += '<div style="background:rgba(129,140,248,0.08);border:1px solid rgba(129,140,248,0.2);border-radius:12px;padding:12px;margin-bottom:10px;">'
-                + '<div style="font-size:10px;font-weight:800;color:var(--adm-primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📝 Resumo executivo</div>'
-                + '<div style="font-size:12px;color:var(--adm-text-2);line-height:1.7;">' + escapeHtml(d.resumoExecutivo) + '</div>'
+            // ── Resumo executivo — linguagem simples ─────────────────
+            h += '<div style="background:rgba(201,162,58,0.07);border:1px solid rgba(201,162,58,0.2);border-radius:12px;padding:14px;margin-bottom:12px;">'
+                + '<div style="font-size:10px;font-weight:700;color:var(--adm-primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;">📋 Situação do aluno</div>'
+                + '<div style="font-size:13px;color:var(--adm-text-1);line-height:1.7;">' + escapeHtml(d.resumoExecutivo) + '</div>'
                 + '</div>';
 
-            // ── Ações rápidas ─────────────────────────────────────────
-            var waNum = c.telefone ? c.telefone.replace(/\D/g,'') : '';
-            h += '<div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;">';
-            if (waNum) {
-                h += '<a href="https://wa.me/55' + waNum + '" target="_blank" style="flex:1;min-width:120px;padding:9px;background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.3);border-radius:9px;color:#25D366;font-size:11px;font-weight:700;text-align:center;text-decoration:none;display:block;">💬 WhatsApp</a>';
-            }
-            if (waNum) {
-                h += '<a href="tel:' + waNum + '" style="flex:1;min-width:100px;padding:9px;background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:9px;color:var(--adm-text-2);font-size:11px;font-weight:700;text-align:center;text-decoration:none;display:block;">📞 Ligar</a>';
-            }
-            h += '<button onclick="window.print()" style="flex:1;min-width:100px;padding:9px;background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:9px;color:var(--adm-text-2);font-size:11px;font-weight:700;cursor:pointer;">🖨️ PDF</button>';
+            // ── 3 números que importam ────────────────────────────────
+            var numColor = function(v, bom, ruim) { return v >= bom ? '#4ade80' : v >= ruim ? '#fbbf24' : '#f87171'; };
+            h += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">';
+            // Frequência no mês
+            var f30c = numColor(pre.p30, 8, 4);
+            h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:12px;text-align:center;">'
+                + '<div style="font-size:26px;font-weight:900;color:' + f30c + ';">' + pre.p30 + '</div>'
+                + '<div style="font-size:10px;color:var(--adm-text-3);margin-top:2px;">treinos este mês</div>'
+                + '</div>';
+            // Dias sem treinar
+            var dsc = pre.diasSemTreinar > 900 ? '#5C5E80' : numColor(100 - Math.min(pre.diasSemTreinar*2, 100), 60, 30);
+            var dsv = pre.diasSemTreinar > 900 ? '—' : pre.diasSemTreinar + 'd';
+            h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:12px;text-align:center;">'
+                + '<div style="font-size:26px;font-weight:900;color:' + dsc + ';">' + dsv + '</div>'
+                + '<div style="font-size:10px;color:var(--adm-text-3);margin-top:2px;">sem treinar</div>'
+                + '</div>';
+            // Status financeiro
+            var finStatus = fin.mensalidade.status || '';
+            var finLbl = finStatus === 'PAGO' || finStatus === 'ATIVO' ? '✅ Em dia' : finStatus === 'ATRASADO' ? '⚠️ Atrasado' : finStatus || '—';
+            var finC = finStatus === 'PAGO' || finStatus === 'ATIVO' ? '#4ade80' : finStatus === 'ATRASADO' ? '#f87171' : '#fbbf24';
+            h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:12px;text-align:center;">'
+                + '<div style="font-size:14px;font-weight:800;color:' + finC + ';margin-top:4px;">' + finLbl + '</div>'
+                + '<div style="font-size:10px;color:var(--adm-text-3);margin-top:4px;">financeiro</div>'
+                + '</div>';
             h += '</div>';
 
-            // ── Heatmap de frequência ─────────────────────────────────
-            h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:12px;margin-bottom:10px;">';
-            h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
-            h += '<div style="font-size:10px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;">📆 Frequência — últimas 12 semanas</div>';
-            h += '<div style="font-size:10px;color:var(--adm-text-3);">';
-            if (pre.streakRecord > 0) h += '🏆 Recorde: ' + pre.streakRecord + ' sem.';
-            h += '</div></div>';
-            // Labels dias
-            h += '<div style="display:flex;gap:2px;margin-bottom:4px;padding-left:22px;">';
-            ['D','S','T','Q','Q','S','S'].forEach(function(l) {
-                h += '<div style="width:12px;text-align:center;font-size:8px;color:var(--adm-text-3);">' + l + '</div>';
-            });
-            h += '</div>';
+            // ── Heatmap ───────────────────────────────────────────────
             if (pre.heatmap && pre.heatmap.length) {
-                // Agrupa em semanas (colunas)
-                var semanas = [];
-                var currentWeek = [];
-                // Alinhar ao domingo inicial
-                var firstDow = pre.heatmap[0].dow; // 0=Dom
+                h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:14px;margin-bottom:12px;">';
+                h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
+                h += '<div style="font-size:11px;font-weight:700;color:var(--adm-text-2);">📆 Frequência — últimas 12 semanas</div>';
+                if (pre.streakAtual > 0) h += '<div style="font-size:10px;color:#fbbf24;font-weight:700;">🔥 ' + pre.streakAtual + ' sem. seguidas</div>';
+                h += '</div>';
+
+                var semanas = [], currentWeek = [];
+                var firstDow = pre.heatmap[0].dow;
                 for (var pad = 0; pad < firstDow; pad++) currentWeek.push(null);
                 pre.heatmap.forEach(function(item) {
                     currentWeek.push(item);
@@ -26899,200 +26887,168 @@
                     while (currentWeek.length < 7) currentWeek.push(null);
                     semanas.push(currentWeek);
                 }
-                h += '<div style="display:flex;gap:2px;">';
-                // Label de meses
-                var lastMes = '';
-                semanas.forEach(function(sem, si) {
-                    var firstDay = sem.find(function(x){ return x; });
-                    var mes = firstDay ? firstDay.date.substring(5,7) : '';
-                    var nomeMes = mes ? ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][parseInt(mes)] : '';
-                    h += '<div style="display:flex;flex-direction:column;gap:2px;">';
-                    h += '<div style="font-size:7px;color:var(--adm-text-3);height:10px;text-align:center;">' + (nomeMes !== lastMes ? nomeMes : '') + '</div>';
-                    if (nomeMes !== lastMes && nomeMes) lastMes = nomeMes;
+
+                // Labels de meses
+                h += '<div style="display:flex;gap:3px;margin-bottom:3px;padding-left:0;">';
+                var lastMes2 = '';
+                semanas.forEach(function(sem) {
+                    var fd = sem.find(function(x){ return x; });
+                    var mes = fd ? fd.date.substring(5,7) : '';
+                    var nomM = mes ? ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][parseInt(mes)] : '';
+                    h += '<div style="flex:1;font-size:8px;color:var(--adm-text-3);text-align:left;">' + (nomM !== lastMes2 ? nomM : '') + '</div>';
+                    if (nomM !== lastMes2 && nomM) lastMes2 = nomM;
+                });
+                h += '</div>';
+
+                h += '<div style="display:flex;gap:3px;">';
+                semanas.forEach(function(sem) {
+                    h += '<div style="flex:1;display:flex;flex-direction:column;gap:2px;">';
                     sem.forEach(function(item) {
                         if (!item) {
-                            h += '<div style="width:12px;height:12px;border-radius:2px;background:transparent;"></div>';
+                            h += '<div style="height:10px;border-radius:2px;background:transparent;"></div>';
                         } else {
-                            var col = item.count === 0 ? 'rgba(255,255,255,0.04)' : item.count === 1 ? 'rgba(201,162,58,0.25)' : item.count === 2 ? 'rgba(201,162,58,0.55)' : '#C9A23A';
-                            h += '<div style="width:12px;height:12px;border-radius:2px;background:' + col + ';" title="' + item.date + ': ' + item.count + ' treinos"></div>';
+                            var col = item.count === 0 ? 'rgba(255,255,255,0.05)' : item.count === 1 ? 'rgba(201,162,58,0.3)' : item.count >= 2 ? '#C9A23A' : '#C9A23A';
+                            h += '<div style="height:10px;border-radius:2px;background:' + col + ';"></div>';
                         }
                     });
                     h += '</div>';
                 });
                 h += '</div>';
-            }
-            // Legenda
-            h += '<div style="display:flex;gap:4px;align-items:center;margin-top:8px;justify-content:flex-end;">';
-            h += '<span style="font-size:9px;color:var(--adm-text-3);">Menos</span>';
-            ['rgba(255,255,255,0.04)','rgba(201,162,58,0.25)','rgba(201,162,58,0.55)','#C9A23A'].forEach(function(col) {
-                h += '<div style="width:10px;height:10px;border-radius:2px;background:' + col + ';"></div>';
-            });
-            h += '<span style="font-size:9px;color:var(--adm-text-3);">Mais</span>';
-            h += '</div>';
-            h += '</div>';
 
-            // ── Tendência mensal (Chart.js) ───────────────────────────
-            h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:12px;margin-bottom:10px;">';
-            h += '<div style="font-size:10px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">📈 Tendência — treinos por mês</div>';
-            h += '<div style="position:relative;height:120px;"><canvas id="rpt360TrendChart" role="img" aria-label="Gráfico de tendência de treinos por mês"></canvas></div>';
-            h += '</div>';
-
-            // ── Progresso de graduação ────────────────────────────────
-            if (evo.tempoMedioGrad > 0 || evo.diasNaFaixaAtual > 0) {
-                var progressPct = evo.tempoMedioGrad > 0
-                    ? Math.min(Math.round((evo.diasNaFaixaAtual / evo.tempoMedioGrad) * 100), 100)
-                    : 0;
-                var progColor = progressPct >= 80 ? '#4ade80' : progressPct >= 50 ? '#fbbf24' : 'var(--adm-primary)';
-                h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:12px;margin-bottom:10px;">';
-                h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
-                h += '<div style="font-size:10px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;">🥋 Progresso para próxima graduação</div>';
-                h += '<div style="font-size:12px;font-weight:800;color:' + progColor + ';">' + progressPct + '%</div>';
-                h += '</div>';
-                h += '<div style="background:rgba(255,255,255,0.06);border-radius:6px;height:10px;overflow:hidden;">';
-                h += '<div style="height:100%;width:' + progressPct + '%;background:' + progColor + ';border-radius:6px;transition:width .5s;"></div>';
-                h += '</div>';
-                h += '<div style="display:flex;justify-content:space-between;margin-top:6px;font-size:10px;color:var(--adm-text-3);">';
-                h += '<span>' + escapeHtml(evo.faixaAtual) + (evo.grauAtual > 0 ? ' G' + evo.grauAtual : '') + '</span>';
-                h += '<span>' + Math.floor(evo.diasNaFaixaAtual/30) + ' meses na faixa';
-                if (evo.previsaoProxGrad > 0) h += ' · Previsão: ~' + Math.floor(evo.previsaoProxGrad/30) + ' meses';
-                h += '</span>';
-                h += '</div>';
+                h += '<div style="display:flex;gap:6px;align-items:center;margin-top:8px;justify-content:flex-end;font-size:10px;color:var(--adm-text-3);">'
+                    + 'Menos <div style="width:10px;height:10px;border-radius:2px;background:rgba(255,255,255,0.05);display:inline-block;vertical-align:middle;"></div>'
+                    + '<div style="width:10px;height:10px;border-radius:2px;background:rgba(201,162,58,0.3);display:inline-block;vertical-align:middle;"></div>'
+                    + '<div style="width:10px;height:10px;border-radius:2px;background:#C9A23A;display:inline-block;vertical-align:middle;"></div> Mais'
+                    + '</div>';
                 h += '</div>';
             }
 
-            // ── Distribuição por dia da semana ────────────────────────
-            if (pre.byDow && Object.keys(pre.byDow).length > 0) {
-                var ordemDow = ['Seg','Ter','Qua','Qui','Sex','Sab','Dom'];
-                var maxDow = Math.max.apply(null, ordemDow.map(function(d){ return pre.byDow[d]||0; }));
-                h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:12px;margin-bottom:10px;">';
-                h += '<div style="font-size:10px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">📊 Presença por dia da semana</div>';
-                h += '<div style="display:flex;gap:4px;align-items:flex-end;height:48px;">';
-                ordemDow.forEach(function(dia) {
-                    var val = pre.byDow[dia] || 0;
-                    var pct = maxDow > 0 ? Math.round((val/maxDow)*100) : 0;
-                    var isTop = dia === pre.diaPref;
-                    h += '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">';
-                    h += '<div style="font-size:9px;color:var(--adm-text-3);">' + (val||'') + '</div>';
-                    h += '<div style="width:100%;background:' + (isTop ? 'var(--adm-primary)' : 'rgba(201,162,58,0.25)') + ';border-radius:3px 3px 0 0;height:' + Math.max(pct*0.32, val>0?4:0) + 'px;"></div>';
-                    h += '<div style="font-size:9px;color:' + (isTop ? 'var(--adm-primary)' : 'var(--adm-text-3)') + ';font-weight:' + (isTop?'700':'400') + ';">' + dia.substring(0,1) + '</div>';
-                    h += '</div>';
+            // ── Tendência mensal ──────────────────────────────────────
+            if (pre.trend && pre.trend.length) {
+                h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:14px;margin-bottom:12px;">';
+                h += '<div style="font-size:11px;font-weight:700;color:var(--adm-text-2);margin-bottom:10px;">📈 Treinos por mês</div>';
+                h += '<div style="position:relative;height:110px;"><canvas id="rpt360TrendChart" role="img" aria-label="Treinos por mês"></canvas></div>';
+                h += '</div>';
+            }
+
+            // ── Graduação ─────────────────────────────────────────────
+            h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:14px;margin-bottom:12px;">';
+            h += '<div style="font-size:11px;font-weight:700;color:var(--adm-text-2);margin-bottom:10px;">🥋 Graduação</div>';
+            h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">';
+            h += '<div>'
+                + '<div style="font-size:18px;font-weight:800;color:var(--adm-text-1);">' + escapeHtml(evo.faixaAtual||'—') + (evo.grauAtual > 0 ? ' · Grau ' + evo.grauAtual : '') + '</div>'
+                + '<div style="font-size:11px;color:var(--adm-text-3);margin-top:2px;">' + Math.floor((evo.diasNaFaixaAtual||0)/30) + ' meses nesta faixa</div>'
+                + '</div>';
+            h += '<div style="text-align:right;">'
+                + '<div style="font-size:10px;color:var(--adm-text-3);">Última graduação</div>'
+                + '<div style="font-size:12px;font-weight:700;color:var(--adm-text-1);margin-top:2px;">' + (evo.ultimaGrad ? ptDate(evo.ultimaGrad.data) : '—') + '</div>'
+                + '</div>';
+            h += '</div>';
+            // Barra de progresso
+            if (evo.tempoMedioGrad > 0) {
+                var pct = Math.min(Math.round(((evo.diasNaFaixaAtual||0) / evo.tempoMedioGrad) * 100), 100);
+                var pc = pct >= 80 ? '#4ade80' : pct >= 50 ? '#fbbf24' : 'var(--adm-primary)';
+                h += '<div style="background:rgba(255,255,255,0.06);border-radius:6px;height:8px;overflow:hidden;margin-bottom:5px;">'
+                    + '<div style="height:100%;width:' + pct + '%;background:' + pc + ';border-radius:6px;"></div></div>';
+                h += '<div style="display:flex;justify-content:space-between;font-size:10px;color:var(--adm-text-3);">'
+                    + '<span>' + pct + '% do caminho para próxima graduação</span>'
+                    + (evo.previsaoProxGrad > 0 ? '<span>Previsão: ~' + Math.floor(evo.previsaoProxGrad/30) + ' meses</span>' : '')
+                    + '</div>';
+            }
+            // Histórico resumido
+            if (evo.historico && evo.historico.length > 0) {
+                h += '<div style="margin-top:10px;border-top:1px solid var(--adm-border);padding-top:8px;">';
+                h += '<div style="font-size:10px;color:var(--adm-text-3);margin-bottom:6px;">Histórico</div>';
+                h += '<div style="display:flex;flex-direction:column;gap:3px;">';
+                evo.historico.slice().reverse().slice(0,5).forEach(function(g) {
+                    h += '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;">'
+                        + '<span style="color:var(--adm-text-1);">' + escapeHtml(g.nivel||'—') + (g.grau > 0 ? ' · Grau ' + g.grau : '') + '</span>'
+                        + '<span style="color:var(--adm-text-3);">' + ptDate(g.data) + '</span>'
+                        + '</div>';
                 });
                 h += '</div></div>';
             }
+            h += '</div>';
 
-            // ── Dados cadastrais ─────────────────────────────────────
-            h += rpt360Section('👤 Dados cadastrais', [
-                ['Email', c.email], ['CT', c.ct], ['Modalidade(s)', c.modalidades],
-                ['Faixa / Grau', c.faixa + (c.grau > 0 ? ' · Grau ' + c.grau : '')],
-                ['Ingresso', c.dataCadastro], ['Tempo de academia', Math.floor(c.tempoDias/30) + ' meses (' + c.tempoDias + ' dias)'],
-                ['Nascimento', c.nascimento], ['Telefone', c.telefone],
-                ['Horário preferido', c.horario], ['Objetivo', c.objetivo],
-                ['Status', c.status],
-            ]);
-
-            // ── Frequência (texto) ────────────────────────────────────
-            h += rpt360Section('📅 Indicadores de frequência', [
-                ['Última presença', pre.ultimaPresenca || 'Sem registro'],
-                ['Dias sem treinar', pre.diasSemTreinar > 900 ? '—' : pre.diasSemTreinar + ' dias'],
-                ['Últ. 7 dias', pre.p7 + ' treinos'],
-                ['Últ. 30 dias', pre.p30 + ' treinos'],
-                ['Últ. 90 dias', pre.p90 + ' treinos'],
+            // ── Presença detalhada ────────────────────────────────────
+            h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:14px;margin-bottom:12px;">';
+            h += '<div style="font-size:11px;font-weight:700;color:var(--adm-text-2);margin-bottom:10px;">📅 Presença</div>';
+            var presRows = [
+                ['Última vez no treino', ptDate(pre.ultimaPresenca) || '—'],
                 ['Total de treinos', pre.total],
-                ['Média / semana', pre.mediaSemanaTreinos],
-                ['Média / mês', pre.mediaMesTreinos],
-                ['Frequência %', pre.freqPct + '%'],
-                ['Sequência atual', pre.streakAtual > 0 ? pre.streakAtual + ' semanas' : '—'],
-                ['Recorde de sequência', pre.streakRecord > 0 ? pre.streakRecord + ' semanas' : '—'],
-                ['Modalidade mais freq.', pre.modFreq || '—'],
+                ['Últimos 7 dias', pre.p7 + ' treinos'],
+                ['Últimos 30 dias', pre.p30 + ' treinos'],
+                ['Últimos 90 dias', pre.p90 + ' treinos'],
+                ['Média por semana', pre.mediaSemanaTreinos],
+                ['Dia preferido', pre.diaPref || '—'],
+                ['Sequência atual', pre.streakAtual > 0 ? pre.streakAtual + ' semanas seguidas' : '—'],
+                ['Maior sequência', pre.streakRecord > 0 ? pre.streakRecord + ' semanas' : '—'],
+            ];
+            h += rpt360Rows(presRows);
+            h += '</div>';
+
+            // ── Dados pessoais ────────────────────────────────────────
+            h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:14px;margin-bottom:12px;">';
+            h += '<div style="font-size:11px;font-weight:700;color:var(--adm-text-2);margin-bottom:10px;">👤 Dados do aluno</div>';
+            h += rpt360Rows([
+                ['Nome', c.nome],
+                ['E-mail', c.email],
+                ['CT', c.ct],
+                ['Modalidade(s)', c.modalidades],
+                ['Data de nascimento', ptDate(c.nascimento)],
+                ['Telefone', c.telefone || '—'],
+                ['Na academia desde', ptDate(c.dataCadastro)],
+                ['Tempo de academia', Math.floor((c.tempoDias||0)/30) + ' meses'],
+                ['Objetivo', c.objetivo || '—'],
+                ['Status', c.status || '—'],
             ]);
-
-            // ── Evolução técnica ─────────────────────────────────────
-            h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:12px;margin-bottom:10px;">'
-                + '<div style="font-size:10px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🥋 Evolução técnica</div>'
-                + rpt360Rows([
-                    ['Faixa atual', evo.faixaAtual + (evo.grauAtual > 0 ? ' · Grau ' + evo.grauAtual : '')],
-                    ['Tempo na faixa atual', Math.floor(evo.diasNaFaixaAtual/30) + ' meses'],
-                    ['Total de graduações', evo.totalGraus],
-                    ['Tempo médio entre graus', evo.tempoMedioGrad > 0 ? Math.floor(evo.tempoMedioGrad/30) + ' meses' : '—'],
-                    ['Previsão próx. graduação', evo.previsaoProxGrad > 0 ? 'Em ~' + Math.floor(evo.previsaoProxGrad/30) + ' meses' : '—'],
-                ]);
-            if (evo.historico && evo.historico.length > 0) {
-                h += '<div style="font-size:10px;font-weight:700;color:var(--adm-text-3);margin:10px 0 4px;">Histórico de graduações</div>';
-                h += '<div style="display:flex;flex-direction:column;gap:4px;">';
-                evo.historico.slice().reverse().slice(0,8).forEach(function(g) {
-                    h += '<div style="display:flex;justify-content:space-between;padding:5px 8px;background:var(--adm-bg-elevated);border-radius:6px;font-size:11px;">'
-                        + '<span style="color:var(--adm-text-1);">' + escapeHtml(g.nivel) + (g.grau > 0 ? ' G' + g.grau : '') + (g.modalidade ? ' <span style="color:var(--adm-text-3);">(' + escapeHtml(g.modalidade) + ')</span>' : '') + '</span>'
-                        + '<span style="color:var(--adm-text-3);">' + escapeHtml(g.data) + '</span>'
-                        + '</div>';
-                });
-                h += '</div>';
-            }
             h += '</div>';
 
-            // ── Financeiro ───────────────────────────────────────────
-            var finStatus = fin.mensalidade.status || '—';
-            var finColor = finStatus === 'PAGO' || finStatus === 'ATIVO' ? '#4ade80' : (finStatus === 'ATRASADO' ? '#f87171' : '#fbbf24');
-            h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:12px;margin-bottom:10px;">'
-                + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
-                + '<div style="font-size:10px;font-weight:800;color:var(--adm-text-3);text-transform:uppercase;letter-spacing:.5px;">💰 Financeiro</div>'
-                + '<div style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:' + finColor + '22;color:' + finColor + ';border:1px solid ' + finColor + '44;">' + escapeHtml(finStatus) + '</div>'
-                + '</div>'
-                + rpt360Rows([
-                    ['Plano', fin.mensalidade.planoNome || fin.mensalidade.planoId || '—'],
-                    ['Valor mensal', fin.mensalidade.valor > 0 ? 'R$ ' + fin.mensalidade.valor.toFixed(2) : '—'],
-                    ['Próximo vencimento', fin.mensalidade.vencimento || '—'],
-                    ['Pagamentos realizados', fin.totalPagamentos],
-                    ['Qtd. atrasos', fin.atrasos],
-                    ['Total pago este ano', 'R$ ' + fin.totalPagoAno.toFixed(2)],
-                    ['LTV (total histórico)', fin.ltv > 0 ? 'R$ ' + fin.ltv.toFixed(2) : '—'],
-                    ['Último pagamento', fin.ultimoPag ? fin.ultimoPag.data + ' · R$ ' + (fin.ultimoPag.valor||0).toFixed(2) : '—'],
-                ]);
-            if (fin.historico && fin.historico.length > 0) {
-                h += '<div style="font-size:10px;font-weight:700;color:var(--adm-text-3);margin:10px 0 4px;">Histórico recente</div>';
-                h += '<div style="display:flex;flex-direction:column;gap:3px;">';
-                fin.historico.slice(0,6).forEach(function(pg) {
-                    var pgColor = pg.status === 'PAGO' ? '#4ade80' : '#f87171';
-                    h += '<div style="display:flex;justify-content:space-between;padding:5px 8px;background:var(--adm-bg-elevated);border-radius:6px;font-size:11px;">'
-                        + '<span style="color:var(--adm-text-3);">' + escapeHtml(pg.data) + '</span>'
-                        + '<span style="color:var(--adm-text-1);">R$ ' + (pg.valor||0).toFixed(2) + '</span>'
-                        + '<span style="color:' + pgColor + ';font-weight:700;">' + escapeHtml(pg.status) + '</span>'
-                        + '</div>';
-                });
-                h += '</div>';
-            }
+            // ── Financeiro ────────────────────────────────────────────
+            h += '<div style="background:var(--adm-bg-card);border:1px solid var(--adm-border);border-radius:12px;padding:14px;margin-bottom:12px;">';
+            h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">';
+            h += '<div style="font-size:11px;font-weight:700;color:var(--adm-text-2);">💰 Financeiro</div>';
+            h += '<div style="font-size:12px;font-weight:700;color:' + finC + ';">' + finLbl + '</div>';
             h += '</div>';
+            h += rpt360Rows([
+                ['Plano', fin.mensalidade.planoNome || fin.mensalidade.planoId || '—'],
+                ['Mensalidade', fin.mensalidade.valor > 0 ? 'R$ ' + fin.mensalidade.valor.toFixed(2) : '—'],
+                ['Próximo vencimento', ptDate(fin.mensalidade.vencimento)],
+                ['Último pagamento', fin.ultimoPag ? ptDate(fin.ultimoPag.data) + ' · R$ ' + (fin.ultimoPag.valor||0).toFixed(2) : '—'],
+                ['Pagamentos realizados', fin.totalPagamentos],
+                ['Atrasos', fin.atrasos > 0 ? fin.atrasos + ' vez(es)' : 'Nenhum'],
+                ['Total pago (histórico)', fin.ltv > 0 ? 'R$ ' + fin.ltv.toFixed(2) : '—'],
+            ]);
+            h += '</div>';
+
+            // ── Botão PDF ─────────────────────────────────────────────
+            h += '<button onclick="window.print()" style="width:100%;padding:13px;background:var(--adm-primary);color:#000;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;margin-bottom:4px;">📄 Baixar PDF / Imprimir</button>';
 
             body.innerHTML = h;
 
-            // ── Chart.js trend (executa após innerHTML) ───────────────
+            // Chart.js trend
             setTimeout(function() {
                 var canvas = document.getElementById('rpt360TrendChart');
                 if (!canvas || !pre.trend || !pre.trend.length) return;
                 if (window._rpt360Chart) { try { window._rpt360Chart.destroy(); } catch(e2){} }
-                var labels = pre.trend.map(function(t){ return t.mes; });
-                var data   = pre.trend.map(function(t){ return t.count; });
-                var ctx = canvas.getContext('2d');
-                window._rpt360Chart = new Chart(ctx, {
-                    type: 'line',
+                window._rpt360Chart = new Chart(canvas.getContext('2d'), {
+                    type: 'bar',
                     data: {
-                        labels: labels,
+                        labels: pre.trend.map(function(t){ return t.mes; }),
                         datasets: [{
                             label: 'Treinos',
-                            data: data,
+                            data: pre.trend.map(function(t){ return t.count; }),
+                            backgroundColor: 'rgba(201,162,58,0.5)',
                             borderColor: '#C9A23A',
-                            backgroundColor: 'rgba(201,162,58,0.12)',
-                            borderWidth: 2,
-                            pointBackgroundColor: '#C9A23A',
-                            pointRadius: 4,
-                            fill: true,
-                            tension: 0.3
+                            borderWidth: 1,
+                            borderRadius: 4
                         }]
                     },
                     options: {
                         responsive: true, maintainAspectRatio: false,
                         plugins: { legend: { display: false } },
                         scales: {
-                            x: { ticks: { color: '#5C5E80', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                            x: { ticks: { color: '#5C5E80', font: { size: 10 } }, grid: { display: false } },
                             y: { ticks: { color: '#5C5E80', font: { size: 10 }, stepSize: 1 }, grid: { color: 'rgba(255,255,255,0.04)' }, beginAtZero: true }
                         }
                     }
