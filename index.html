@@ -28815,23 +28815,33 @@
         }
 
         function getMuscTreinosAll() {
-            // Converte MUSC_TREINOS para formato unificado + adiciona customizados
-            var base = MUSC_TREINOS.map(function(t) {
-                return {
-                    id: t.id, nome: t.nome, descricao: t.sub,
-                    cor: t.cor, label: t.label,
-                    exercicios: t.exercicios.map(function(e) { return { nome: e.nome, sets: e.sets }; }),
-                    descanso: t.descanso || '', custom: false
-                };
-            });
-            var custom = _treinosCustom.map(function(t) {
-                return {
-                    id: t.id, nome: t.nome, descricao: t.descricao,
-                    cor: t.cor, label: t.nome,
-                    exercicios: t.exercicios,
-                    descanso: '', custom: true
-                };
-            });
+            // Treinos padrão do sistema (hardcoded) + customizados pelo professor na planilha
+            var removedIds = _treinosCustom
+                .filter(function(t){ return t.id && t.id.endsWith('_removed'); })
+                .map(function(t){ return t.id.replace('_removed',''); });
+
+            var base = MUSC_TREINOS
+                .filter(function(t){ return removedIds.indexOf(t.id) === -1; })
+                .map(function(t) {
+                    return {
+                        id: t.id, nome: t.nome, descricao: t.sub,
+                        cor: t.cor, label: t.label,
+                        exercicios: t.exercicios.map(function(e){ return { nome: e.nome, sets: e.sets }; }),
+                        descanso: t.descanso || '', custom: false
+                    };
+                });
+
+            var custom = _treinosCustom
+                .filter(function(t){ return t.id && !t.id.endsWith('_removed'); })
+                .map(function(t) {
+                    return {
+                        id: t.id, nome: t.nome, descricao: t.descricao,
+                        cor: t.cor, label: t.nome,
+                        exercicios: t.exercicios,
+                        descanso: '', custom: true
+                    };
+                });
+
             return base.concat(custom);
         }
 
@@ -29111,11 +29121,19 @@
             h += '</div>';
 
             var todos = getMuscTreinosAll();
+            if (todos.length === 0) {
+                h += '<div style="text-align:center;padding:32px 16px;color:var(--text-3);">';
+                h += '<div style="font-size:32px;margin-bottom:10px;">💪</div>';
+                h += '<div style="font-size:13px;font-weight:700;color:var(--text-2);margin-bottom:6px;">Nenhum treino cadastrado</div>';
+                h += '<div style="font-size:11px;line-height:1.6;">O professor ainda não criou módulos de treino.<br>Acesse o painel admin → <strong>Módulos de Treino</strong> para criar.</div>';
+                h += '</div>';
+                return h;
+            }
             todos.forEach(function(t) {
-                h += '<div onclick="selectMuscTreino(\'' + t.id + '\')" style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg-elevated);border:1.5px solid var(--border);border-radius:12px;margin-bottom:6px;cursor:pointer;" ontouchstart="this.style.transform=\'scale(0.98)\'" ontouchend="this.style.transform=\'\'">';
+                h += '<div onclick="selectMuscTreino(\'' + t.id + '\')" style="display:flex;align-items:center;gap:10px;padding:12px;background:var(--bg-elevated);border:1.5px solid var(--border);border-radius:12px;margin-bottom:6px;cursor:pointer;" ontouchstart="this.style.transform=\'scale(0.98)\'" ontouchend="this.style.transform=\'\'">'; 
                 h += '<div style="width:42px;height:42px;border-radius:12px;background:' + (t.cor||'#3b82f6') + ';display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;color:#fff;font-weight:900;">' + escapeHtml((t.label||t.nome).substring(0,2)) + '</div>';
                 h += '<div style="flex:1;min-width:0;">';
-                h += '<div style="font-size:13px;font-weight:800;color:var(--text-1);">' + escapeHtml(t.nome) + (t.custom ? ' <span style="font-size:9px;background:rgba(201,162,58,0.14);color:var(--accent);padding:1px 5px;border-radius:4px;">CUSTOM</span>' : '') + '</div>';
+                h += '<div style="font-size:13px;font-weight:800;color:var(--text-1);">' + escapeHtml(t.nome) + '</div>';
                 h += '<div style="font-size:10px;color:var(--text-3);">' + escapeHtml(t.descricao||t.sub||'') + '</div>';
                 h += '</div>';
                 h += '<div style="font-size:16px;color:var(--text-3);">▶</div>';
@@ -38643,6 +38661,49 @@
                     try { await secureFetch('deleteTreinoCustom', { id: _TREINOS_PADRAO[i].id+'_removed' }); } catch(ei){}
                 }
                 loadAdminTreinos();
+            } catch(e) { alert('Erro: ' + e.message); }
+        }
+
+        // ===== CRIAR / EXCLUIR TREINO (admin + professor) =====
+        async function adminSalvarTreino() {
+            var nome   = (document.getElementById('adminTreinoNome').value || '').trim();
+            var desc   = (document.getElementById('adminTreinoDesc').value || '').trim();
+            var exsRaw = (document.getElementById('adminTreinoExs').value  || '').trim();
+            var cor    = document.getElementById('adminTreinoCor').value || '#3b82f6';
+            var msg    = document.getElementById('adminTreinoMsg');
+            if (!nome) { if (msg) { msg.style.color='#f87171'; msg.textContent='❌ Nome obrigatório.'; } return; }
+            var exercicios = exsRaw.split('\n').map(function(l) {
+                l = l.trim(); if (!l) return null;
+                var parts = l.split('|');
+                return { nome: (parts[0]||'').trim(), sets: (parts[1]||'').trim() };
+            }).filter(Boolean);
+            if (msg) { msg.style.color='var(--adm-text-3)'; msg.textContent='Salvando...'; }
+            try {
+                var res = await secureFetch('saveTreinoCustom', {
+                    nome: nome, descricao: desc,
+                    exercicios: JSON.stringify(exercicios), cor: cor
+                });
+                if (res && res.success) {
+                    if (msg) { msg.style.color='#4ade80'; msg.textContent='✅ Treino criado!'; }
+                    document.getElementById('adminTreinoNome').value = '';
+                    document.getElementById('adminTreinoDesc').value = '';
+                    document.getElementById('adminTreinoExs').value  = '';
+                    document.getElementById('adminTreinoCor').value  = '#3b82f6';
+                    loadAdminTreinos();
+                    loadTreinosCustom();
+                    setTimeout(function(){ if(msg) msg.textContent=''; }, 3000);
+                } else {
+                    if (msg) { msg.style.color='#f87171'; msg.textContent='❌ ' + ((res&&res.message)||'Erro'); }
+                }
+            } catch(e) { if (msg) { msg.style.color='#f87171'; msg.textContent='❌ ' + e.message; } }
+        }
+
+        async function adminExcluirTreino(id) {
+            if (!confirm('Excluir este treino? Os alunos não poderão mais acessá-lo.')) return;
+            try {
+                await secureFetch('deleteTreinoCustom', { id: id });
+                loadAdminTreinos();
+                loadTreinosCustom();
             } catch(e) { alert('Erro: ' + e.message); }
         }
 
