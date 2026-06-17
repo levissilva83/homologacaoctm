@@ -12573,11 +12573,12 @@
                 <div id="stuModalMsg" class="stu-modal-msg" style="margin:0 16px 8px;"></div>
 
                 <!-- Navegação por abas -->
+                <!-- [FIX 2026-06-17] Ordem ajustada: Essencial passou a ser a última aba -->
                 <div class="stu-tabs-nav" id="stuTabsNav">
-                    <button class="stu-tab-btn active" data-stutab="essencial"  onclick="switchStuTab('essencial')">⚡ Essencial</button>
                     <button class="stu-tab-btn"         data-stutab="perfil"     onclick="switchStuTab('perfil')">👤 Perfil</button>
                     <button class="stu-tab-btn"         data-stutab="admin"      onclick="switchStuTab('admin')">💼 Admin</button>
                     <button class="stu-tab-btn"         data-stutab="historico"  onclick="switchStuTab('historico')">🏆 Histórico</button>
+                    <button class="stu-tab-btn active"  data-stutab="essencial"  onclick="switchStuTab('essencial')">⚡ Essencial</button>
                 </div>
 
                 <!-- ══════════════════════════════════════════════════ -->
@@ -41807,8 +41808,19 @@
             }
 
             // Profile fields
+            // [FIX 2026-06-17] Backend retorna nascimento em dd/MM/yyyy, mas
+            // <input type="date"> só aceita yyyy-MM-dd — sem conversão o navegador
+            // rejeita o valor silenciosamente e o campo fica vazio (afetava sobretudo
+            // dependentes, cuja data é gravada como objeto Date e serializada em BR).
             var nascimento = s.nascimento || '';
-            if (nascimento && nascimento.indexOf('T') > 0) nascimento = nascimento.split('T')[0];
+            if (nascimento && nascimento.indexOf('T') > 0) {
+                nascimento = nascimento.split('T')[0];
+            } else if (nascimento && nascimento.indexOf('/') > -1) {
+                var _ndParts = nascimento.split('/'); // dd/MM/yyyy
+                if (_ndParts.length === 3) {
+                    nascimento = _ndParts[2] + '-' + _ndParts[1].padStart(2,'0') + '-' + _ndParts[0].padStart(2,'0');
+                }
+            }
             document.getElementById('stuNascimento').value = nascimento;
             // Re-renderiza grade de modalidades ao mudar nascimento (atualiza faixas BJJ kids/adulto)
             (function() {
