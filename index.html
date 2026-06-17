@@ -39132,6 +39132,7 @@
                             h += '<button onclick="cobrarViaWhatsApp(\'' + escapeHtml(p.email) + '\',\'' + escapeHtml(p.nome||'') + '\',\'' + escapeHtml(p.vencimento||'') + '\',' + parseFloat(p.planoValor||0) + ',\'' + escapeHtml(p.planoNome||'') + '\')" style="padding:4px 10px;border-radius:7px;background:rgba(37,211,102,0.12);color:#25D366;border:1px solid rgba(37,211,102,0.3);font-size:9px;font-weight:700;cursor:pointer;">🟢 PIX + WhatsApp</button>';
                         }
                         h += '<button onclick="atribuirPlanoModal(\'' + escapeHtml(p.email) + '\')" style="padding:4px 10px;border-radius:7px;background:rgba(201,162,58,0.08);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.2);font-size:9px;font-weight:700;cursor:pointer;">📋 Atribuir plano</button>';
+                        h += '<button onclick="abrirAuditoriaAluno(\'' + escapeHtml(p.email) + '\',\'' + escapeHtml(p.nome||p.email) + '\')" style="padding:4px 10px;border-radius:7px;background:rgba(96,165,250,0.08);color:#60a5fa;border:1px solid rgba(96,165,250,0.2);font-size:9px;font-weight:700;cursor:pointer;" title="Histórico completo de pagamentos e auditoria">📊 Auditoria</button>';
                         h += '<button onclick="definirDiaCobrancaAluno(\'' + escapeHtml(p.email) + '\',' + (p.diaCobranca||0) + ')" style="padding:4px 10px;border-radius:7px;background:rgba(37,99,235,0.08);color:#60a5fa;border:1px solid rgba(37,99,235,0.2);font-size:9px;font-weight:700;cursor:pointer;" title="Definir dia de cobrança individual">📅 Dia ' + (p.diaCobranca ? p.diaCobranca : 'padrão') + '</button>';
                         h += '<button onclick="abrirCobrancaAvulsa(\'' + escapeHtml(p.email) + '\',\'' + escapeHtml(p.nome||p.email) + '\')" style="padding:4px 10px;border-radius:7px;background:rgba(168,85,247,0.1);color:#a855f7;border:1px solid rgba(168,85,247,0.25);font-size:9px;font-weight:700;cursor:pointer;">💰 Cobrança avulsa</button>';
                         h += '<button onclick="toggleBolsista(\'' + escapeHtml(p.email) + '\',true,this)" style="padding:4px 10px;border-radius:7px;background:rgba(96,165,250,0.08);color:#60a5fa;border:1px solid rgba(96,165,250,0.2);font-size:9px;font-weight:700;cursor:pointer;">🎓 Marcar bolsista</button>';
@@ -44330,6 +44331,89 @@
         }
         function _fecharReceitaSheet() { var s = document.getElementById('receitaSheet'); if (s) s.remove(); }
         var _receitaMesAtual = { mes: new Date().getMonth()+1, ano: new Date().getFullYear() };
+        // ── Auditoria de pagamentos por aluno (bottom sheet) ──────────────────
+        function abrirAuditoriaAluno(email, nome) {
+            var old = document.getElementById('auditoriaSheet'); if (old) old.remove();
+            var sh = document.createElement('div'); sh.id = 'auditoriaSheet';
+            sh.innerHTML = '<div onclick="_fecharAuditoriaSheet()" style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9998;"></div>'
+              + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:#1a1f2e;border-radius:20px 20px 0 0;padding:24px 20px 36px;z-index:9999;max-height:85vh;overflow-y:auto;">'
+              + '<div style="width:40px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 20px;"></div>'
+              + '<div style="font-size:15px;font-weight:800;color:#fff;text-align:center;margin-bottom:4px;">📊 Auditoria de Pagamentos</div>'
+              + '<div style="font-size:11px;color:rgba(255,255,255,.4);text-align:center;margin-bottom:16px;">' + escapeHtml(nome||email) + '</div>'
+              + '<div id="auditoriaSheetBody" style="min-height:80px;display:flex;align-items:center;justify-content:center;"><div style="font-size:12px;color:rgba(255,255,255,.4);">Carregando...</div></div>'
+              + '</div>';
+            document.body.appendChild(sh);
+            _buscarAuditoriaAluno(email);
+        }
+        function _fecharAuditoriaSheet() {
+            var sh = document.getElementById('auditoriaSheet'); if (sh) sh.remove();
+        }
+        async function _buscarAuditoriaAluno(email) {
+            var body = document.getElementById('auditoriaSheetBody');
+            try {
+                var res = await secureFetch('getAuditoriaAluno', { email: email });
+                if (!res || !res.success) { body.innerHTML = '<div style="font-size:12px;color:#f87171;">Erro ao carregar auditoria.</div>'; return; }
+                _renderAuditoriaSheet(res);
+            } catch(e) {
+                body.innerHTML = '<div style="font-size:12px;color:#f87171;">Erro de conexão.</div>';
+            }
+        }
+        function _renderAuditoriaSheet(res) {
+            var body = document.getElementById('auditoriaSheetBody'); if (!body) return;
+            var html = '';
+
+            // ── Resumo no topo ──
+            html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">'
+                  + '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px;text-align:center;">'
+                  + '<div style="font-size:9px;color:rgba(255,255,255,.4);">Total pago</div>'
+                  + '<div style="font-size:14px;font-weight:800;color:#4ade80;">R$ ' + res.totalPago.toFixed(2) + '</div></div>'
+                  + '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px;text-align:center;">'
+                  + '<div style="font-size:9px;color:rgba(255,255,255,.4);">Pagamentos</div>'
+                  + '<div style="font-size:14px;font-weight:800;color:#fff;">' + res.totalPagamentos + '</div></div>'
+                  + '<div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px;text-align:center;">'
+                  + '<div style="font-size:9px;color:rgba(255,255,255,.4);">1º pagamento</div>'
+                  + '<div style="font-size:12px;font-weight:700;color:#fff;">' + (res.primeiroPagamento || '—') + '</div></div>'
+                  + '</div>';
+
+            // ── Status atual ──
+            var stCor = res.statusAtual === 'PAGO' ? '#4ade80' : res.statusAtual === 'ATRASADO' ? '#f87171' : '#fbbf24';
+            html += '<div style="background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;">'
+                  + '<span style="font-size:11px;color:rgba(255,255,255,.5);">Status atual</span>'
+                  + '<span style="font-size:11px;font-weight:700;color:' + stCor + ';">' + res.statusAtual + (res.vencimentoAtual ? ' · venc. ' + res.vencimentoAtual : '') + '</span>'
+                  + '</div>';
+
+            // ── Alerta de gaps (pagamentos perdidos) ──
+            if (res.totalGaps > 0) {
+                html += '<div style="background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);border-radius:10px;padding:10px 12px;margin-bottom:14px;">'
+                      + '<div style="font-size:11px;font-weight:700;color:#f87171;margin-bottom:6px;">⚠️ ' + res.totalGaps + ' ciclo(s) sem pagamento registrado:</div>';
+                res.gaps.forEach(function(g) {
+                    html += '<div style="font-size:10px;color:rgba(255,255,255,.6);padding:2px 0;">• Ciclo de ' + g.cicloEsperado + ' — ' + g.diasAtras + ' dias atrás</div>';
+                });
+                html += '<div style="font-size:9px;color:rgba(255,255,255,.35);margin-top:6px;">Pode ser inadimplência real ou pagamento não registrado (ex: confirmado manualmente sem gerar histórico antes da correção do sistema). Revise antes de cobrar.</div>'
+                      + '</div>';
+            } else if (res.totalPagamentos > 0) {
+                html += '<div style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.25);border-radius:10px;padding:8px 12px;margin-bottom:14px;font-size:10px;color:#4ade80;">✅ Nenhum gap detectado no histórico de pagamentos.</div>';
+            }
+
+            // ── Linha do tempo de pagamentos ──
+            html += '<div style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6);margin-bottom:8px;">Linha do tempo (mais recente primeiro)</div>';
+            if (res.pagamentos.length === 0) {
+                html += '<div style="font-size:11px;color:rgba(255,255,255,.35);text-align:center;padding:16px 0;">Nenhum pagamento registrado no histórico.</div>';
+            } else {
+                var lista = res.pagamentos.slice().reverse(); // mais recente primeiro na exibição
+                lista.forEach(function(p) {
+                    var metIcon = p.metodo === 'manual' || p.metodo === 'pix_manual' ? '🟢' : p.metodo === 'Cartão' || p.metodo === 'cartao' ? '💳' : '🔵';
+                    html += '<div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:8px;padding:8px 10px;margin-bottom:6px;">'
+                          + '<div><div style="font-size:11px;font-weight:700;color:#fff;">' + metIcon + ' ' + p.data + '</div>'
+                          + '<div style="font-size:9px;color:rgba(255,255,255,.4);">' + escapeHtml(p.planoNome||'Mensalidade') + (p.vencimento ? ' · venc. ' + p.vencimento : '') + '</div></div>'
+                          + '<div style="font-size:12px;font-weight:800;color:#4ade80;">R$ ' + p.valor.toFixed(2) + '</div>'
+                          + '</div>';
+                });
+            }
+
+            body.innerHTML = html;
+        }
+
         function abrirReceitaMensal() {
             var old = document.getElementById('receitaSheet'); if (old) old.remove();
             var sh = document.createElement('div'); sh.id = 'receitaSheet';
