@@ -8633,6 +8633,7 @@
                                     Baixe o certificado da sua graduação atual ou de graduações anteriores, assinado pelo seu professor.
                                 </div>
                                 <button onclick="gerarCertificado('')" style="width:100%;padding:13px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.3px;">📜 Gerar certificado da faixa atual</button>
+                                <button onclick="gerarCarteirinha('')" style="width:100%;padding:13px;background:rgba(201,162,58,0.12);color:#C9A23A;border:1px solid rgba(201,162,58,0.3);border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.3px;margin-top:8px;">🪪 Minha carteirinha</button>
                                 <div id="meusCertsRetroLista" style="margin-top:14px;"></div>
                             </div>
                         </div><!-- fim evo-subtab-pane#evoSubCertificados -->
@@ -11833,7 +11834,8 @@
                     <div class="sis-subtab-panel" id="sis-panel-relatorios" style="display:none;">
 
                         <!-- Navegação por categoria -->
-                        <div id="rptNavBar" style="display:flex;overflow-x:auto;scrollbar-width:none;gap:4px;padding:12px 16px 0;background:var(--adm-bg);border-bottom:1px solid var(--adm-border);position:sticky;top:0;z-index:8;">
+                        <div style="position:sticky;top:0;z-index:8;background:var(--adm-bg-card);box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+                        <div id="rptNavBar" style="display:flex;overflow-x:auto;scrollbar-width:none;gap:4px;padding:12px 16px 0;border-bottom:1px solid var(--adm-border);position:relative;" onscroll="_rptUpdateFade('rptNavBar')">
                             <button class="rptNavBtn active" data-cat="dashboard" onclick="switchRptCat('dashboard')" style="flex-shrink:0;padding:8px 14px;border-radius:8px 8px 0 0;border:1px solid var(--adm-border);border-bottom:none;background:var(--adm-bg-card);color:var(--adm-primary);font-size:11px;font-weight:800;cursor:pointer;">📊 Dashboard</button>
                             <button class="rptNavBtn" data-cat="alunos" onclick="switchRptCat('alunos')" style="flex-shrink:0;padding:8px 14px;border-radius:8px 8px 0 0;border:1px solid var(--adm-border);border-bottom:none;background:transparent;color:var(--adm-text-3);font-size:11px;font-weight:700;cursor:pointer;">👥 Alunos</button>
                             <button class="rptNavBtn" data-cat="retencao" onclick="switchRptCat('retencao')" style="flex-shrink:0;padding:8px 14px;border-radius:8px 8px 0 0;border:1px solid var(--adm-border);border-bottom:none;background:transparent;color:var(--adm-text-3);font-size:11px;font-weight:700;cursor:pointer;">🔔 Retenção</button>
@@ -11842,6 +11844,9 @@
                             <button class="rptNavBtn" data-cat="graduacao" onclick="switchRptCat('graduacao')" style="flex-shrink:0;padding:8px 14px;border-radius:8px 8px 0 0;border:1px solid var(--adm-border);border-bottom:none;background:transparent;color:var(--adm-text-3);font-size:11px;font-weight:700;cursor:pointer;">🥋 Graduação</button>
                             <button class="rptNavBtn" data-cat="aluno360" onclick="switchRptCat('aluno360')" style="flex-shrink:0;padding:8px 14px;border-radius:8px 8px 0 0;border:1px solid var(--adm-border);border-bottom:none;background:transparent;color:var(--adm-text-3);font-size:11px;font-weight:700;cursor:pointer;">🎯 Ficha 360°</button>
                         </div>
+                        <div id="rptFade_rptNavBar" style="display:none;position:absolute;top:0;right:0;bottom:0;width:20px;background:linear-gradient(to right, transparent, var(--adm-bg-card));pointer-events:none;"></div>
+                        </div>
+                        <script>setTimeout(function(){ _rptUpdateFade('rptNavBar'); }, 100);</script>
 
                         <!-- Estado: carregando -->
                         <div id="rptIntLoading" style="text-align:center;padding:48px 16px;color:var(--adm-text-3);">
@@ -12018,9 +12023,12 @@
 
                         <!-- ██ TAXAS DE GRADUAÇÃO ██ -->
                         <div class="admin-section" id="taxaGradSection" style="margin-top:20px;">
-                            <div class="admin-section-title">🎖️ Taxas de Graduação</div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                                <div class="admin-section-title" style="margin-bottom:0;">🎖️ Taxas de Graduação</div>
+                                <button onclick="abrirGraduacaoLote()" style="padding:8px 14px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap;">🎓 Graduar alunos</button>
+                            </div>
                             <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:12px;">
-                                Quando uma graduação for aprovada, o sistema pode gerar automaticamente uma cobrança avulsa com o valor configurado. (Disponível nos planos Profissional e Premium)
+                                Selecione os alunos que vão ser graduados (faixa ou grau) e, se houver taxa configurada, a cobrança é gerada automaticamente e aparece na mensalidade do aluno.
                             </div>
                             <div id="taxaGradList" style="margin-bottom:12px;"><div style="font-size:11px;color:var(--adm-text-3);">Carregando...</div></div>
                             <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:12px;">
@@ -12568,6 +12576,7 @@
                             <div class="stu-hero-stat-lbl">CT</div>
                         </div>
                     </div>
+                    <button onclick="gerarCarteirinha(stuModalEmail)" style="width:100%;padding:10px;margin-top:10px;background:rgba(201,162,58,0.12);color:#C9A23A;border:1px solid rgba(201,162,58,0.3);border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;">🪪 Gerar carteirinha</button>
                 </div>
 
                 <div id="stuModalMsg" class="stu-modal-msg" style="margin:0 16px 8px;"></div>
@@ -27271,7 +27280,11 @@
                 return;
             }
             var sortState = _rptSort[cat] || { col: null, asc: true };
-            var h = '<div style="overflow-x:auto;border-radius:10px;border:1px solid var(--adm-border);">';
+            // [FIX layout] wrapper com position:relative para o indicador de fade,
+            // e id próprio no scroller para detectar overflow real via JS
+            var scrollerId = 'rptScroller_' + cat;
+            var h = '<div style="position:relative;border-radius:10px;border:1px solid var(--adm-border);">';
+            h += '<div id="' + scrollerId + '" style="overflow-x:auto;border-radius:10px;" onscroll="_rptUpdateFade(\'' + scrollerId + '\')">';
             h += '<table style="width:100%;border-collapse:collapse;font-size:11px;">';
             h += '<thead><tr style="background:var(--adm-bg-card);">';
             cols.forEach(function(col, ci) {
@@ -27284,12 +27297,32 @@
                 var bg = ri % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.02)';
                 var rowStyle = row._rowStyle || '';
                 h += '<tr style="background:' + bg + ';' + rowStyle + '">';
-                row._cells.forEach(function(cell) { h += '<td style="padding:8px 10px;color:var(--adm-text-1);border-bottom:1px solid rgba(255,255,255,0.04);">' + cell + '</td>'; });
+                row._cells.forEach(function(cell) { h += '<td style="padding:8px 10px;color:var(--adm-text-1);white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.04);">' + cell + '</td>'; });
                 h += '</tr>';
             });
             h += '</tbody></table></div>';
-            h += '<div style="font-size:10px;color:var(--adm-text-3);margin-top:6px;text-align:right;">' + rows.length + ' resultado(s)</div>';
+            // Indicador de fade na borda direita — só aparece quando há overflow real
+            h += '<div id="rptFade_' + cat + '" style="display:none;position:absolute;top:0;right:0;bottom:0;width:24px;background:linear-gradient(to right, transparent, var(--adm-bg-card));pointer-events:none;border-radius:0 10px 10px 0;"></div>';
+            h += '</div>';
+            h += '<div style="font-size:10px;color:var(--adm-text-3);margin-top:6px;text-align:right;">' + rows.length + ' resultado(s)' +
+                 '<span id="rptScrollHint_' + cat + '" style="display:none;margin-left:8px;">← role para o lado para ver mais →</span></div>';
             el.innerHTML = h;
+            // Verifica se há overflow real e mostra o indicador/dica
+            setTimeout(function() { _rptUpdateFade(scrollerId); }, 0);
+        }
+
+        // [FIX layout] Mostra/esconde o indicador de fade e a dica de scroll
+        // horizontal, baseado em haver overflow real (scrollWidth > clientWidth)
+        function _rptUpdateFade(scrollerId) {
+            var scroller = document.getElementById(scrollerId);
+            if (!scroller) return;
+            var cat = scrollerId.replace('rptScroller_', '');
+            var fade = document.getElementById('rptFade_' + cat);
+            var hint = document.getElementById('rptScrollHint_' + cat);
+            var temOverflow = scroller.scrollWidth > scroller.clientWidth + 2;
+            var chegouNoFim = scroller.scrollLeft + scroller.clientWidth >= scroller.scrollWidth - 2;
+            if (fade) fade.style.display = (temOverflow && !chegouNoFim) ? 'block' : 'none';
+            if (hint) hint.style.display = temOverflow ? 'inline' : 'none';
         }
 
         function _rptSortBy(cat, colIdx) {
@@ -35330,7 +35363,7 @@
                 'saveCampEvento','aprovarInscricao','rejeitarInscricao',
                 'createCT','deleteCT',
                 'vincularGatewayCT','salvarPlano','deletarPlano',
-                'getPagamentosAdmin','atribuirPlanoAluno','marcarPago','setDiaCobrancaAluno','getDiaCobrancaAluno','setModalidadesAluno',
+                'getPagamentosAdmin','atribuirPlanoAluno','marcarPago','setDiaCobrancaAluno','getDiaCobrancaAluno','setModalidadesAluno','listarAlunosParaEvento','listarAlunosParaGraduacao','aplicarGraduacaoLote',
                 'salvarConfigMP','saveWellnessConfig','saveModalidade','deleteModalidade',
                 'getFaixasModalidade','saveFaixaModalidade','deleteFaixaModalidade','reorderFaixasModalidade',
                 'painelCriarCliente','ativarClienteAdmin','getContratos','cobrarAgora',
@@ -43493,6 +43526,92 @@
             });
         }
 
+        // ── Carteirinha digital do aluno ──────────────────────────────────────
+        async function gerarCarteirinha(emailAluno) {
+            var loading = document.createElement('div');
+            loading.id = 'carteirinhaLoading';
+            loading.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10000;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;';
+            loading.textContent = 'Gerando carteirinha...';
+            document.body.appendChild(loading);
+            try {
+                var res = await secureFetch('getCarteirinha', { email: emailAluno || '' });
+                if (!res || !res.success) { alert((res&&res.message)||'Erro ao gerar carteirinha'); loading.remove(); return; }
+                await _desenharCarteirinha(res);
+            } catch(e) { alert('Erro: ' + e.message); }
+            loading.remove();
+        }
+
+        async function _desenharCarteirinha(d) {
+            var W = 1000, H = 600; // formato cartão, paisagem
+            var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+            var ctx = cv.getContext('2d');
+
+            // Fundo escuro, no padrão visual do app (dark/gold)
+            ctx.fillStyle = '#15171f'; ctx.fillRect(0,0,W,H);
+            // Faixa decorativa dourada no topo
+            var grad = ctx.createLinearGradient(0,0,W,0);
+            grad.addColorStop(0,'#8C6A0A'); grad.addColorStop(0.5,'#F8E7A1'); grad.addColorStop(1,'#C9A23A');
+            ctx.fillStyle = grad; ctx.fillRect(0,0,W,10);
+            ctx.fillRect(0,H-10,W,10);
+
+            try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch(e){}
+
+            // ── Foto do aluno (esquerda) ──
+            var fotoBoxX = 50, fotoBoxY = 70, fotoBoxW = 300, fotoBoxH = 380;
+            ctx.strokeStyle = '#C9A23A'; ctx.lineWidth = 4;
+            ctx.strokeRect(fotoBoxX, fotoBoxY, fotoBoxW, fotoBoxH);
+            var foto = d.avatar ? await _carregarImg(d.avatar) : null;
+            if (foto) {
+                // cover: recorta para preencher a caixa sem distorcer
+                var fr = foto.width / foto.height, br = fotoBoxW / fotoBoxH;
+                var sx, sy, sw, sh;
+                if (fr > br) { sh = foto.height; sw = sh * br; sx = (foto.width - sw) / 2; sy = 0; }
+                else { sw = foto.width; sh = sw / br; sx = 0; sy = (foto.height - sh) / 2; }
+                ctx.drawImage(foto, sx, sy, sw, sh, fotoBoxX, fotoBoxY, fotoBoxW, fotoBoxH);
+            } else {
+                ctx.fillStyle = '#262a38'; ctx.fillRect(fotoBoxX, fotoBoxY, fotoBoxW, fotoBoxH);
+                ctx.fillStyle = '#555'; ctx.textAlign = 'center'; ctx.font = '700 22px Manrope, sans-serif';
+                ctx.fillText('Sem foto', fotoBoxX + fotoBoxW/2, fotoBoxY + fotoBoxH/2);
+            }
+
+            // ── Dados (direita) ──
+            var labelX = 400, valueX = 400;
+            ctx.textAlign = 'left';
+
+            function _campo(label, valor, y) {
+                ctx.fillStyle = '#C9A23A'; ctx.font = '700 16px Manrope, sans-serif';
+                ctx.fillText(label.toUpperCase(), labelX, y);
+                ctx.fillStyle = '#fff'; ctx.font = '800 30px Manrope, sans-serif';
+                ctx.fillText(valor || '-', valueX, y + 36);
+            }
+
+            _campo('Nome', d.nome, 100);
+            _campo('Data de nascimento', d.nascimento, 200);
+            _campo('Matrícula', d.matricula ? ('#' + d.matricula) : '-', 300);
+
+            // Nome do CT, no canto inferior direito da área de dados
+            if (d.ct) {
+                ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = '600 16px Manrope, sans-serif';
+                ctx.fillText(d.ct, labelX, 400);
+            }
+
+            _mostrarCarteirinhaPreview(cv, d.nome);
+        }
+
+        function _mostrarCarteirinhaPreview(cv, nomeAluno) {
+            var old = document.getElementById('carteirinhaPreviewSheet'); if (old) old.remove();
+            var dataUrl = cv.toDataURL('image/png');
+            var sh = document.createElement('div'); sh.id = 'carteirinhaPreviewSheet';
+            sh.innerHTML = '<div onclick="document.getElementById(\'carteirinhaPreviewSheet\').remove()" style="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:10000;"></div>'
+              + '<div onclick="event.stopPropagation()" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1a1f2e;border-radius:16px;padding:18px;z-index:10001;width:92%;max-width:520px;max-height:88vh;overflow-y:auto;">'
+              + '<div style="font-size:14px;font-weight:800;color:#fff;text-align:center;margin-bottom:12px;">🪪 Carteirinha</div>'
+              + '<img src="' + dataUrl + '" style="width:100%;border-radius:8px;border:1px solid rgba(255,255,255,0.1);">'
+              + '<a href="' + dataUrl + '" download="carteirinha-' + (nomeAluno||'aluno').replace(/[^a-zA-Z0-9]/g,'_') + '.png" style="display:block;text-align:center;width:100%;padding:13px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-top:14px;text-decoration:none;box-sizing:border-box;">⬇️ Baixar carteirinha (PNG)</a>'
+              + '<button onclick="document.getElementById(\'carteirinhaPreviewSheet\').remove()" style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,.3);font-size:12px;cursor:pointer;margin-top:6px;">Fechar</button>'
+              + '</div>';
+            document.body.appendChild(sh);
+        }
+
         // Escurece uma cor hex por um fator (0-1)
         function _darken(hex, f) {
             try {
@@ -43895,7 +44014,7 @@
                 if (!encerrado) {
                     h += '<div style="display:flex;gap:6px;flex-wrap:wrap;">';
                     if (ev.modo === 'lote') {
-                        h += '<button onclick="abrirCobrarLote(\'' + ev.id + '\',\'' + escapeHtml(ev.nome) + '\')" style="padding:6px 12px;border-radius:7px;background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.3);font-size:11px;font-weight:700;cursor:pointer;">👥 Cobrar alunos</button>';
+                        h += '<button onclick="abrirCobrarLote(\'' + ev.id + '\',\'' + escapeHtml(ev.nome) + '\')" style="padding:6px 12px;border-radius:7px;background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.3);font-size:11px;font-weight:700;cursor:pointer;">🎫 Atribuir evento</button>';
                     }
                     h += '<button onclick="verInscricoes(\'' + ev.id + '\',\'' + escapeHtml(ev.nome) + '\')" style="padding:6px 12px;border-radius:7px;background:rgba(255,255,255,0.05);color:var(--adm-text-2);border:1px solid rgba(255,255,255,0.1);font-size:11px;font-weight:700;cursor:pointer;">📋 Inscritos</button>';
                     h += '<button onclick="encerrarEvento(' + ev.row + ')" style="padding:6px 12px;border-radius:7px;background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.4);border:1px solid rgba(255,255,255,0.08);font-size:11px;font-weight:700;cursor:pointer;">Encerrar</button>';
@@ -43990,30 +44109,114 @@
             document.body.appendChild(sh);
         }
         var _loteEventoId = null;
+        var _loteAlunosTodos = []; // cache da lista completa, para filtrar no cliente sem refetch
         async function abrirCobrarLote(eventoId, nome) {
             _loteEventoId = eventoId;
-            var res = await secureFetch('getPagamentosAdmin', {});
-            var alunos = (res && res.pagamentos) || [];
+            var res = await secureFetch('listarAlunosParaEvento', {});
+            _loteAlunosTodos = (res && res.alunos) || [];
+            var cts = (res && res.cts) || [];
+
             var old = document.getElementById('loteSheet'); if (old) old.remove();
             var sh = document.createElement('div'); sh.id = 'loteSheet';
-            var lista = alunos.map(function(a){
-                return '<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:4px;cursor:pointer;"><input type="checkbox" class="loteChk" value="' + escapeHtml(a.email) + '" style="width:15px;height:15px;accent-color:#C9A23A;"><span style="font-size:12px;color:var(--adm-text-2);">' + escapeHtml(a.nome||a.email) + '</span></label>';
-            }).join('');
+
+            // Filtro de CT só aparece se houver mais de um CT
+            var filtroCtHtml = '';
+            if (cts.length > 1) {
+                filtroCtHtml = '<select id="loteFiltroCT" onchange="_loteAplicarFiltros()" style="width:100%;padding:9px 10px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:9px;color:#fff;font-size:12px;box-sizing:border-box;margin-bottom:8px;">'
+                  + '<option value="">Todos os CTs</option>'
+                  + cts.map(function(c){ return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('')
+                  + '</select>';
+            }
+
+            // Faixas distintas presentes na lista, para o filtro de seleção em massa
+            var faixasSet = {};
+            _loteAlunosTodos.forEach(function(a){ if (a.faixa) faixasSet[a.faixa] = true; });
+            var faixas = Object.keys(faixasSet).sort();
+            var faixasOptHtml = faixas.map(function(f){ return '<option value="' + escapeHtml(f) + '">' + escapeHtml(f) + '</option>'; }).join('');
+
             sh.innerHTML = '<div onclick="document.getElementById(\'loteSheet\').remove()" style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9998;"></div>'
-              + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:#1a1f2e;border-radius:20px 20px 0 0;padding:24px 20px 36px;z-index:9999;max-height:85vh;overflow-y:auto;">'
-              + '<div style="width:40px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 16px;"></div>'
-              + '<div style="font-size:15px;font-weight:800;color:#fff;text-align:center;margin-bottom:4px;">Cobrar alunos</div>'
-              + '<div style="font-size:11px;color:rgba(255,255,255,.4);text-align:center;margin-bottom:14px;">' + escapeHtml(nome) + '</div>'
-              + '<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:8px;cursor:pointer;"><input type="checkbox" onchange="_loteSelAll(this)" style="width:15px;height:15px;accent-color:#C9A23A;"><span style="font-size:12px;font-weight:700;color:#C9A23A;">Selecionar todos</span></label>'
-              + lista
-              + '<button onclick="_confirmarCobrarLote()" style="width:100%;padding:13px;background:linear-gradient(135deg,#4ade80,#16a34a);color:#000;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-top:12px;">Gerar cobrancas</button>'
-              + '<button onclick="document.getElementById(\'loteSheet\').remove()" style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,.25);font-size:12px;cursor:pointer;margin-top:6px;">Cancelar</button>'
+              + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:#1a1f2e;border-radius:20px 20px 0 0;padding:24px 20px 36px;z-index:9999;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;">'
+              + '<div style="width:40px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 16px;flex-shrink:0;"></div>'
+              + '<div style="font-size:15px;font-weight:800;color:#fff;text-align:center;margin-bottom:4px;flex-shrink:0;">🎫 Atribuir evento</div>'
+              + '<div style="font-size:11px;color:rgba(255,255,255,.4);text-align:center;margin-bottom:14px;flex-shrink:0;">' + escapeHtml(nome) + '</div>'
+              + '<div style="flex-shrink:0;">'
+              + filtroCtHtml
+              + '<input type="text" id="loteFiltroNome" oninput="_loteAplicarFiltros()" placeholder="🔎 Buscar por nome..." style="width:100%;padding:9px 10px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:9px;color:#fff;font-size:12px;box-sizing:border-box;margin-bottom:8px;">'
+              + (faixas.length ? ('<div style="display:flex;gap:6px;margin-bottom:10px;">'
+                  + '<select id="loteFiltroFaixa" style="flex:1;padding:8px;background:rgba(255,255,255,.05);border:1.5px solid rgba(255,255,255,.08);border-radius:8px;color:rgba(255,255,255,.6);font-size:11px;">'
+                  + '<option value="">Selecionar por faixa...</option>' + faixasOptHtml + '</select>'
+                  + '<button onclick="_loteSelecionarPorFaixa()" style="padding:8px 12px;background:rgba(201,162,58,.12);border:1.5px solid rgba(201,162,58,.3);border-radius:8px;color:#C9A23A;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">+ Adicionar</button>'
+                  + '</div>') : '')
+              + '<label style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:6px;cursor:pointer;background:rgba(255,255,255,.02);border-radius:8px;"><input type="checkbox" id="loteSelTodosVisiveis" onchange="_loteSelAll(this)" style="width:15px;height:15px;accent-color:#C9A23A;"><span style="font-size:12px;font-weight:700;color:#C9A23A;">Selecionar todos (visíveis no filtro)</span></label>'
+              + '<div id="loteContagem" style="font-size:10px;color:rgba(255,255,255,.35);margin-bottom:8px;"></div>'
+              + '</div>'
+              + '<div id="loteListaWrap" style="overflow-y:auto;flex:1;min-height:120px;"></div>'
+              + '<button onclick="_confirmarCobrarLote()" style="width:100%;padding:13px;background:linear-gradient(135deg,#4ade80,#16a34a);color:#000;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-top:12px;flex-shrink:0;">Atribuir evento aos selecionados</button>'
+              + '<button onclick="document.getElementById(\'loteSheet\').remove()" style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,.25);font-size:12px;cursor:pointer;margin-top:6px;flex-shrink:0;">Cancelar</button>'
               + '</div>';
             document.body.appendChild(sh);
+            _loteAplicarFiltros();
         }
-        function _loteSelAll(chk) { document.querySelectorAll('.loteChk').forEach(function(c){ c.checked = chk.checked; }); }
+
+        // Mantém os emails já marcados ao reaplicar filtro (não perde seleção ao buscar)
+        function _loteEmailsSelecionadosAtuais() {
+            return Array.from(document.querySelectorAll('.loteChk:checked')).map(function(c){ return c.value; });
+        }
+
+        function _loteAplicarFiltros() {
+            var selecionadosAntes = {};
+            _loteEmailsSelecionadosAtuais().forEach(function(e){ selecionadosAntes[e] = true; });
+
+            var ctSel = (document.getElementById('loteFiltroCT') || {}).value || '';
+            var nomeFiltro = ((document.getElementById('loteFiltroNome') || {}).value || '').toLowerCase().trim();
+
+            var visiveis = _loteAlunosTodos.filter(function(a) {
+                if (ctSel && a.ct !== ctSel) return false;
+                if (nomeFiltro && (a.nome||a.email).toLowerCase().indexOf(nomeFiltro) === -1) return false;
+                return true;
+            });
+
+            var wrap = document.getElementById('loteListaWrap');
+            if (!visiveis.length) {
+                wrap.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.35);font-size:12px;padding:20px 0;">Nenhum aluno encontrado com esse filtro.</div>';
+            } else {
+                wrap.innerHTML = visiveis.map(function(a){
+                    var checked = selecionadosAntes[a.email] ? ' checked' : '';
+                    return '<label style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:4px;cursor:pointer;">'
+                      + '<span style="display:flex;align-items:center;gap:8px;"><input type="checkbox" class="loteChk" data-faixa="' + escapeHtml(a.faixa) + '" value="' + escapeHtml(a.email) + '"' + checked + ' onchange="_loteAtualizarContagem()" style="width:15px;height:15px;accent-color:#C9A23A;"><span style="font-size:12px;color:var(--adm-text-2);">' + escapeHtml(a.nome||a.email) + '</span></span>'
+                      + '<span style="font-size:9px;color:rgba(255,255,255,.3);">' + escapeHtml(a.faixa||'') + (a.ct ? ' · ' + escapeHtml(a.ct) : '') + '</span>'
+                      + '</label>';
+                }).join('');
+            }
+
+            var selTodosChk = document.getElementById('loteSelTodosVisiveis');
+            if (selTodosChk) selTodosChk.checked = false;
+            _loteAtualizarContagem();
+        }
+
+        function _loteSelecionarPorFaixa() {
+            var faixa = (document.getElementById('loteFiltroFaixa') || {}).value || '';
+            if (!faixa) return;
+            document.querySelectorAll('.loteChk').forEach(function(c) {
+                if (c.getAttribute('data-faixa') === faixa) c.checked = true;
+            });
+            _loteAtualizarContagem();
+        }
+
+        function _loteSelAll(chk) {
+            document.querySelectorAll('.loteChk').forEach(function(c){ c.checked = chk.checked; });
+            _loteAtualizarContagem();
+        }
+
+        function _loteAtualizarContagem() {
+            var total = document.querySelectorAll('.loteChk').length;
+            var marcados = _loteEmailsSelecionadosAtuais().length;
+            var el = document.getElementById('loteContagem');
+            if (el) el.textContent = marcados + ' selecionado(s) de ' + total + ' exibido(s)';
+        }
+
         async function _confirmarCobrarLote() {
-            var emails = Array.from(document.querySelectorAll('.loteChk:checked')).map(function(c){ return c.value; });
+            var emails = _loteEmailsSelecionadosAtuais();
             if (!emails.length) { alert('Selecione ao menos um aluno.'); return; }
             var res = await secureFetch('cobrarEventoLote', { eventoId: _loteEventoId, emails: emails });
             if (res && res.success) { var s=document.getElementById('loteSheet'); if(s)s.remove(); alert(res.message); loadEventos(); }
@@ -44205,6 +44408,124 @@
             if (!confirm('Remover esta taxa?')) return;
             var res = await secureFetch('deleteTaxaGraduacao', { row: row });
             if (res && res.success) loadTaxasGrad(); else alert((res&&res.message)||'Erro');
+        }
+
+        // ── Graduação em lote ────────────────────────────────────────────
+        var _gradAlunosTodos = [];     // cache da lista carregada para a modalidade atual
+        var _gradFaixasModalidade = []; // sequência de faixas da modalidade selecionada
+        var _gradDestinos = {};         // email -> { acao: 'faixa'|'grau'|null, valor }
+
+        var MOD_LABELS = { bjj:'BJJ', bjj_kids:'BJJ Kids', bjj_feminino:'BJJ Feminino', muaythai:'Muay Thai', muaythai_kids:'Muay Thai Kids', judo:'Judô', karate:'Karatê', karate_kyokushin:'Karatê Kyokushin', karate_shotokan:'Karatê Shotokan', kravmaga:'Krav Maga', kungfu:'Kung Fu' };
+
+        function abrirGraduacaoLote() {
+            var old = document.getElementById('gradLoteSheet'); if (old) old.remove();
+            var sh = document.createElement('div'); sh.id = 'gradLoteSheet';
+            sh.innerHTML = '<div onclick="document.getElementById(\'gradLoteSheet\').remove()" style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9998;"></div>'
+              + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:#1a1f2e;border-radius:20px 20px 0 0;padding:24px 20px 36px;z-index:9999;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;">'
+              + '<div style="width:40px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 16px;flex-shrink:0;"></div>'
+              + '<div style="font-size:15px;font-weight:800;color:#fff;text-align:center;margin-bottom:14px;flex-shrink:0;">🎓 Graduar Alunos</div>'
+              + '<div style="flex-shrink:0;">'
+              + '<label style="font-size:10px;color:rgba(255,255,255,.4);display:block;margin-bottom:4px;">Modalidade *</label>'
+              + '<select id="gradFiltroModalidade" onchange="_gradCarregarAlunos()" style="width:100%;padding:10px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:9px;color:#fff;font-size:12px;box-sizing:border-box;margin-bottom:10px;">'
+              + '<option value="">Selecione a modalidade...</option>'
+              + Object.keys(MOD_LABELS).map(function(k){ return '<option value="' + k + '">' + MOD_LABELS[k] + '</option>'; }).join('')
+              + '</select>'
+              + '<div id="gradFiltrosExtra" style="display:none;">'
+              + '<select id="gradFiltroCT" onchange="_gradAplicarFiltros()" style="width:100%;padding:9px 10px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:9px;color:#fff;font-size:12px;box-sizing:border-box;margin-bottom:8px;"><option value="">Todos os CTs</option></select>'
+              + '<input type="text" id="gradFiltroNome" oninput="_gradAplicarFiltros()" placeholder="🔎 Buscar por nome..." style="width:100%;padding:9px 10px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.1);border-radius:9px;color:#fff;font-size:12px;box-sizing:border-box;margin-bottom:10px;">'
+              + '</div>'
+              + '</div>'
+              + '<div id="gradListaWrap" style="overflow-y:auto;flex:1;min-height:80px;"></div>'
+              + '<div id="gradResumo" style="font-size:10px;color:rgba(255,255,255,.35);margin-top:8px;text-align:right;flex-shrink:0;"></div>'
+              + '<button onclick="_confirmarGraduacaoLote()" style="width:100%;padding:13px;background:linear-gradient(135deg,#4ade80,#16a34a);color:#000;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-top:12px;flex-shrink:0;">Aplicar graduações</button>'
+              + '<button onclick="document.getElementById(\'gradLoteSheet\').remove()" style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,.25);font-size:12px;cursor:pointer;margin-top:6px;flex-shrink:0;">Cancelar</button>'
+              + '</div>';
+            document.body.appendChild(sh);
+        }
+
+        async function _gradCarregarAlunos() {
+            var modId = document.getElementById('gradFiltroModalidade').value;
+            var wrap = document.getElementById('gradListaWrap');
+            var extra = document.getElementById('gradFiltrosExtra');
+            _gradDestinos = {};
+            if (!modId) { extra.style.display = 'none'; wrap.innerHTML = ''; _gradAtualizarResumo(); return; }
+
+            wrap.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.4);font-size:12px;padding:16px 0;">Carregando alunos...</div>';
+            var res = await secureFetch('listarAlunosParaGraduacao', { modId: modId });
+            if (!res || !res.success) {
+                wrap.innerHTML = '<div style="text-align:center;color:#f87171;font-size:12px;padding:16px 0;">' + ((res&&res.message)||'Erro ao carregar.') + '</div>';
+                extra.style.display = 'none';
+                return;
+            }
+            _gradAlunosTodos = res.alunos || [];
+            _gradFaixasModalidade = res.faixasModalidade || [];
+
+            var ctSel = document.getElementById('gradFiltroCT');
+            ctSel.innerHTML = '<option value="">Todos os CTs</option>' + (res.cts||[]).map(function(c){ return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>'; }).join('');
+            extra.style.display = (res.cts && res.cts.length > 1) ? 'block' : 'none';
+            if (res.cts && res.cts.length <= 1) ctSel.parentElement; // CT único: filtro de CT fica oculto mas busca por nome continua visível
+            document.getElementById('gradFiltroNome').value = '';
+
+            _gradAplicarFiltros();
+        }
+
+        function _gradAplicarFiltros() {
+            var ctSel = (document.getElementById('gradFiltroCT')||{}).value || '';
+            var nomeFiltro = ((document.getElementById('gradFiltroNome')||{}).value || '').toLowerCase().trim();
+            var visiveis = _gradAlunosTodos.filter(function(a){
+                if (ctSel && a.ct !== ctSel) return false;
+                if (nomeFiltro && (a.nome||a.email).toLowerCase().indexOf(nomeFiltro) === -1) return false;
+                return true;
+            });
+
+            var wrap = document.getElementById('gradListaWrap');
+            if (!visiveis.length) {
+                wrap.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,.35);font-size:12px;padding:20px 0;">Nenhum aluno encontrado para essa modalidade/filtro.</div>';
+                _gradAtualizarResumo();
+                return;
+            }
+
+            wrap.innerHTML = visiveis.map(function(a){
+                var destinoAtual = _gradDestinos[a.email];
+                var opcoes = '<option value="">— não graduar —</option>';
+                if (a.proximaFaixa) opcoes += '<option value="faixa"' + (destinoAtual && destinoAtual.acao==='faixa' ? ' selected':'') + '>🎗 Subir faixa → ' + escapeHtml(a.proximaFaixa) + '</option>';
+                if (a.podeSubirGrau) opcoes += '<option value="grau"' + (destinoAtual && destinoAtual.acao==='grau' ? ' selected':'') + '>🏅 Subir grau → ' + (a.grauAtual+1) + '</option>';
+
+                return '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 10px;background:rgba(255,255,255,0.03);border-radius:8px;margin-bottom:5px;">'
+                  + '<div style="min-width:0;flex:1;"><div style="font-size:12px;color:var(--adm-text-2);font-weight:600;">' + escapeHtml(a.nome||a.email) + '</div>'
+                  + '<div style="font-size:9px;color:rgba(255,255,255,.35);">' + escapeHtml(a.faixaAtual) + (a.grauAtual ? ' · grau ' + a.grauAtual : '') + (a.ct ? ' · ' + escapeHtml(a.ct) : '') + '</div></div>'
+                  + '<select class="gradAcaoSel" data-email="' + escapeHtml(a.email) + '" onchange="_gradSetDestino(this)" style="flex-shrink:0;padding:6px 8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:7px;color:#fff;font-size:10px;max-width:170px;">' + opcoes + '</select>'
+                  + '</div>';
+            }).join('');
+            _gradAtualizarResumo();
+        }
+
+        function _gradSetDestino(sel) {
+            var email = sel.getAttribute('data-email');
+            if (!sel.value) { delete _gradDestinos[email]; }
+            else { _gradDestinos[email] = { acao: sel.value }; }
+            _gradAtualizarResumo();
+        }
+
+        function _gradAtualizarResumo() {
+            var qtd = Object.keys(_gradDestinos).length;
+            var el = document.getElementById('gradResumo');
+            if (el) el.textContent = qtd ? (qtd + ' aluno(s) com graduação selecionada') : 'Nenhuma graduação selecionada ainda';
+        }
+
+        async function _confirmarGraduacaoLote() {
+            var modId = document.getElementById('gradFiltroModalidade').value;
+            var emails = Object.keys(_gradDestinos);
+            if (!emails.length) { alert('Selecione a ação (faixa ou grau) de ao menos um aluno.'); return; }
+            var itens = emails.map(function(email){ return { email: email, modId: modId, acao: _gradDestinos[email].acao }; });
+            var res = await secureFetch('aplicarGraduacaoLote', { itens: itens });
+            if (res && res.success) {
+                var s = document.getElementById('gradLoteSheet'); if (s) s.remove();
+                alert(res.message);
+                loadTaxasGrad();
+            } else {
+                alert((res&&res.message)||'Erro ao aplicar graduações.');
+            }
         }
 
         // ═══ RECURSOS NOVOS (Cobrança Avulsa, Receita Mensal, Taxa Gateway) ═══
