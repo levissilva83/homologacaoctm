@@ -8634,6 +8634,7 @@
                                 </div>
                                 <button onclick="gerarCertificado('')" style="width:100%;padding:13px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.3px;">📜 Gerar certificado da faixa atual</button>
                                 <button onclick="gerarCarteirinha('')" style="width:100%;padding:13px;background:rgba(201,162,58,0.12);color:#C9A23A;border:1px solid rgba(201,162,58,0.3);border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.3px;margin-top:8px;">🪪 Minha carteirinha</button>
+                                <button onclick="abrirMeuQR()" style="width:100%;padding:13px;background:rgba(201,162,58,0.12);color:#C9A23A;border:1px solid rgba(201,162,58,0.3);border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.3px;margin-top:8px;">📱 Meu QR de presença</button>
                                 <div id="meusCertsRetroLista" style="margin-top:14px;"></div>
                             </div>
                         </div><!-- fim evo-subtab-pane#evoSubCertificados -->
@@ -10870,8 +10871,10 @@
                             </div>
                             <div id="presListKPI" style="display:none;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;"></div>
                             <div id="presListResults"><div class="admin-empty">Selecione CT e data</div></div>
-                            <div style="margin-top:12px;text-align:center;">
-                                <button onclick="gerarRelatorioPresenca()" style="padding:10px 24px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">📊 Gerar Relatório</button>
+                            <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+                                <button onclick="abrirLeitorQR()" style="padding:10px 20px;background:rgba(201,162,58,0.15);color:#C9A23A;border:1px solid rgba(201,162,58,0.4);border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">📷 Escanear QR do aluno</button>
+                                <button onclick="gerarRelatorioPresenca()" style="padding:10px 20px;background:linear-gradient(135deg,var(--adm-primary),var(--adm-primary-bright));color:#000;border:none;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;">📊 Gerar Relatório</button>
+                            </div>
                             </div>
                             <div id="presRelatorio" style="display:none;margin-top:12px;"></div>
                         </div>
@@ -16193,12 +16196,20 @@
             try {
                 var params = new URLSearchParams(window.location.search);
                 var qrCT   = params.get('qr');   // ex: ?qr=CT+Taz
-                var qrAcao = params.get('acao');  // sempre 'checkin'
+                var qrAcao = params.get('acao');  // 'checkin' ou 'checkin_aluno'
                 if (qrCT && qrAcao === 'checkin') {
                     // Guarda no sessionStorage para usar após login
                     sessionStorage.setItem('qrCheckinCT', decodeURIComponent(qrCT));
                     sessionStorage.setItem('qrCheckinPendente', '1');
-                    // Limpa URL sem recarregar
+                    if (window.history && window.history.replaceState) {
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                }
+                // [NOVO] Link do QR do aluno — professor abre pelo browser
+                if (qrCT && qrAcao === 'checkin_aluno') {
+                    var emailAluno = decodeURIComponent(qrCT);
+                    sessionStorage.setItem('qrCheckinAlunoEmail', emailAluno);
+                    sessionStorage.setItem('qrCheckinAlunoPendente', '1');
                     if (window.history && window.history.replaceState) {
                         window.history.replaceState({}, document.title, window.location.pathname);
                     }
@@ -16235,6 +16246,24 @@
                     document.body.appendChild(toast);
                     setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 4000);
                 }, 800);
+            } catch(e) {}
+        }
+
+        // [NOVO] Após login do professor via link do QR do aluno
+        function checkQRCheckinAlunoPendente() {
+            try {
+                if (sessionStorage.getItem('qrCheckinAlunoPendente') !== '1') return;
+                var emailAluno = sessionStorage.getItem('qrCheckinAlunoEmail') || '';
+                sessionStorage.removeItem('qrCheckinAlunoPendente');
+                sessionStorage.removeItem('qrCheckinAlunoEmail');
+                if (!emailAluno) return;
+                // Só professor ou admin pode confirmar
+                var role = getRole();
+                if (role !== 'professor' && role !== 'admin') {
+                    alert('Apenas professores e admins podem confirmar presença via QR.');
+                    return;
+                }
+                setTimeout(function() { _abrirConfirmacaoQR(emailAluno); }, 800);
             } catch(e) {}
         }
 
@@ -16877,6 +16906,7 @@
             }
             // Verifica se veio de QR Code e redireciona para check-in
             checkQRCheckinPendente();
+            checkQRCheckinAlunoPendente();
         }
 
         async function checkMandatoryProfile() {
@@ -43542,13 +43572,12 @@
         }
 
         async function _desenharCarteirinha(d) {
-            var W = 1000, H = 600; // formato cartão, paisagem
+            var W = 1000, H = 600;
             var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
             var ctx = cv.getContext('2d');
 
             // Fundo escuro, no padrão visual do app (dark/gold)
             ctx.fillStyle = '#15171f'; ctx.fillRect(0,0,W,H);
-            // Faixa decorativa dourada no topo
             var grad = ctx.createLinearGradient(0,0,W,0);
             grad.addColorStop(0,'#8C6A0A'); grad.addColorStop(0.5,'#F8E7A1'); grad.addColorStop(1,'#C9A23A');
             ctx.fillStyle = grad; ctx.fillRect(0,0,W,10);
@@ -43557,12 +43586,11 @@
             try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch(e){}
 
             // ── Foto do aluno (esquerda) ──
-            var fotoBoxX = 50, fotoBoxY = 70, fotoBoxW = 300, fotoBoxH = 380;
+            var fotoBoxX = 50, fotoBoxY = 70, fotoBoxW = 300, fotoBoxH = 430;
             ctx.strokeStyle = '#C9A23A'; ctx.lineWidth = 4;
             ctx.strokeRect(fotoBoxX, fotoBoxY, fotoBoxW, fotoBoxH);
             var foto = d.avatar ? await _carregarImg(d.avatar) : null;
             if (foto) {
-                // cover: recorta para preencher a caixa sem distorcer
                 var fr = foto.width / foto.height, br = fotoBoxW / fotoBoxH;
                 var sx, sy, sw, sh;
                 if (fr > br) { sh = foto.height; sw = sh * br; sx = (foto.width - sw) / 2; sy = 0; }
@@ -43575,30 +43603,258 @@
             }
 
             // ── Dados (direita) ──
-            var labelX = 400, valueX = 400;
+            var labelX = 400;
             ctx.textAlign = 'left';
 
-            function _campo(label, valor, y) {
-                ctx.fillStyle = '#C9A23A'; ctx.font = '700 16px Manrope, sans-serif';
-                ctx.fillText(label.toUpperCase(), labelX, y);
-                ctx.fillStyle = '#fff'; ctx.font = '800 30px Manrope, sans-serif';
-                ctx.fillText(valor || '-', valueX, y + 36);
+            // Formatação de data dd/mm/yyyy no client (fallback caso o backend não tenha formatado)
+            function _fmtData(s) {
+                if (!s) return '-';
+                // Já está correto
+                if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
+                // Tenta parsear qualquer outro formato
+                try {
+                    var d2 = new Date(s);
+                    if (!isNaN(d2.getTime())) {
+                        return ('0'+d2.getDate()).slice(-2)+'/'+('0'+(d2.getMonth()+1)).slice(-2)+'/'+d2.getFullYear();
+                    }
+                } catch(e) {}
+                return s; // retorna como veio se não conseguir parsear
             }
 
-            _campo('Nome', d.nome, 100);
-            _campo('Data de nascimento', d.nascimento, 200);
-            _campo('Matrícula', d.matricula ? ('#' + d.matricula) : '-', 300);
+            // Catálogo de modalidades (mesmo usado no app)
+            var _MOD_NOMES = {
+                bjj:'BJJ', bjj_kids:'BJJ Kids', bjj_feminino:'BJJ Feminino',
+                muay_thai:'Muay Thai', muay_thai_kids:'Muay Thai Kids', muay_thai_feminino:'Muay Thai Feminino',
+                judo:'Judô', judo_kids:'Judô Kids', karate:'Karatê', kung_fu:'Kung Fu',
+                capoeira:'Capoeira', boxe:'Boxe', kickboxing:'Kickboxing',
+                taekwondo:'Taekwondo', mma:'MMA', wrestling:'Wrestling',
+                savate:'Savate', savate_kids:'Savate Kids',
+                muay_thai_khan:'Muay Thai Khan', muay_thai_trad:'Muay Thai Trad.'
+            };
+            function _nomeModal(id) {
+                if (!id) return '';
+                var base = id.replace(/_feminino$/, '').replace(/_kids$/, '');
+                return _MOD_NOMES[id] || _MOD_NOMES[base] || id.replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();});
+            }
 
-            // Nome do CT, no canto inferior direito da área de dados
+            function _campo(label, valor, y) {
+                ctx.fillStyle = '#C9A23A'; ctx.font = '700 15px Manrope, sans-serif';
+                ctx.fillText(label.toUpperCase(), labelX, y);
+                ctx.fillStyle = '#fff'; ctx.font = '800 28px Manrope, sans-serif';
+                ctx.fillText(valor || '-', labelX, y + 34);
+            }
+
+            _campo('Nome',             d.nome,                       90);
+            _campo('Data de nascimento', _fmtData(d.nascimento),     190);
+            _campo('Matrícula',        d.matricula ? ('#' + d.matricula) : '-', 290);
+            if (d.modalidade) {
+                _campo('Modalidade',   _nomeModal(d.modalidade),     390);
+            }
+
+            // CT no rodapé da área de dados
             if (d.ct) {
-                ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.font = '600 16px Manrope, sans-serif';
-                ctx.fillText(d.ct, labelX, 400);
+                ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.font = '500 15px Manrope, sans-serif';
+                ctx.fillText(d.ct, labelX, 510);
+            }
+
+            // ── QR Code no canto inferior esquerdo (abaixo da foto) ──
+            var qrUrl = _gerarURLCheckinQR(d.email || (currentUser && currentUser.email) || '');
+            var qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&format=png&margin=8&data=' + encodeURIComponent(qrUrl);
+            var qrImg = await _carregarImg(qrSrc);
+            if (qrImg) {
+                var qrSize = 100;
+                var qrX = fotoBoxX, qrY = fotoBoxY + fotoBoxH + 10;
+                // Fundo branco para o QR legível
+                ctx.fillStyle = '#fff'; ctx.fillRect(qrX, qrY, qrSize, qrSize);
+                ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
+                ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.font = '500 11px Manrope, sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText('QR de presença', qrX, qrY + qrSize + 14);
             }
 
             _mostrarCarteirinhaPreview(cv, d.nome);
         }
 
         function _mostrarCarteirinhaPreview(cv, nomeAluno) {
+
+        // ── QR Code do Aluno ──────────────────────────────────────────────────
+        // Tela dedicada para o aluno mostrar o QR para o professor escanear.
+        // O QR é estático (sem validade) — pode ser impresso na carteirinha.
+        function _gerarURLCheckinQR(email) {
+            var ctmId = '';
+            try { var p = new URLSearchParams(window.location.search); ctmId = p.get('ctm') || ''; } catch(e) {}
+            return 'https://ctapp.online/?ctm=' + encodeURIComponent(ctmId) + '&acao=checkin_aluno&qr=' + encodeURIComponent(email);
+        }
+
+        function abrirMeuQR() {
+            if (!currentUser || !currentUser.email) return;
+            var email = currentUser.email;
+            var nome  = currentUser.name || email;
+            var url   = _gerarURLCheckinQR(email);
+            var qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=400x400&format=png&margin=15&data=' + encodeURIComponent(url);
+            var old = document.getElementById('meuQRSheet'); if (old) old.remove();
+            var sh = document.createElement('div'); sh.id = 'meuQRSheet';
+            sh.innerHTML =
+                '<div onclick="document.getElementById(\'meuQRSheet\').remove()" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10000;"></div>' +
+                '<div onclick="event.stopPropagation()" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1a1f2e;border-radius:20px;padding:24px;z-index:10001;width:90%;max-width:380px;text-align:center;">' +
+                  '<div style="font-size:15px;font-weight:800;color:#C9A23A;margin-bottom:4px;">📱 Meu QR de presença</div>' +
+                  '<div style="font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:16px;">Mostre para o professor escanear</div>' +
+                  '<div style="background:#fff;border-radius:16px;padding:12px;display:inline-block;margin-bottom:16px;">' +
+                    '<img src="' + qrSrc + '" width="200" height="200" style="display:block;" />' +
+                  '</div>' +
+                  '<div style="font-size:16px;font-weight:800;color:#fff;margin-bottom:4px;">' + escapeHtml(nome) + '</div>' +
+                  '<div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:20px;">' + escapeHtml(email) + '</div>' +
+                  '<button onclick="document.getElementById(\'meuQRSheet\').remove()" style="width:100%;padding:12px;background:transparent;border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:rgba(255,255,255,0.5);font-size:13px;cursor:pointer;">Fechar</button>' +
+                '</div>';
+            document.body.appendChild(sh);
+        }
+
+        // ── Leitor de QR Code (Professor/Admin) ───────────────────────────────
+        var _qrStream = null, _qrAnim = null;
+
+        function abrirLeitorQR() {
+            var old = document.getElementById('leitorQRSheet'); if (old) old.remove();
+            var sh = document.createElement('div'); sh.id = 'leitorQRSheet';
+            sh.innerHTML =
+                '<div style="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:10000;"></div>' +
+                '<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#13151e;border-radius:20px;padding:20px;z-index:10001;width:92%;max-width:420px;">' +
+                  '<div style="font-size:14px;font-weight:800;color:#C9A23A;text-align:center;margin-bottom:12px;">📷 Escanear QR do aluno</div>' +
+                  '<div style="position:relative;background:#000;border-radius:12px;overflow:hidden;margin-bottom:12px;">' +
+                    '<video id="qrVideo" autoplay playsinline style="width:100%;display:block;max-height:300px;object-fit:cover;"></video>' +
+                    '<canvas id="qrCanvas" style="display:none;"></canvas>' +
+                    '<div style="position:absolute;inset:0;border:3px solid rgba(201,162,58,0.6);border-radius:12px;pointer-events:none;"></div>' +
+                    '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:160px;height:160px;border:2px solid #C9A23A;border-radius:8px;pointer-events:none;"></div>' +
+                  '</div>' +
+                  '<div id="qrStatus" style="text-align:center;font-size:12px;color:rgba(255,255,255,0.5);margin-bottom:12px;">Aponte a câmera para o QR Code do aluno</div>' +
+                  '<button onclick="fecharLeitorQR()" style="width:100%;padding:11px;background:transparent;border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:rgba(255,255,255,0.5);font-size:13px;cursor:pointer;">Cancelar</button>' +
+                '</div>';
+            document.body.appendChild(sh);
+            _iniciarCamera();
+        }
+
+        function fecharLeitorQR() {
+            if (_qrAnim) { cancelAnimationFrame(_qrAnim); _qrAnim = null; }
+            if (_qrStream) { _qrStream.getTracks().forEach(function(t){ t.stop(); }); _qrStream = null; }
+            var sh = document.getElementById('leitorQRSheet'); if (sh) sh.remove();
+        }
+
+        function _iniciarCamera() {
+            var video = document.getElementById('qrVideo');
+            if (!video) return;
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+            .then(function(stream) {
+                _qrStream = stream;
+                video.srcObject = stream;
+                video.play();
+                video.addEventListener('loadeddata', function() { _tickQR(); });
+            })
+            .catch(function(e) {
+                var st = document.getElementById('qrStatus');
+                if (st) st.textContent = '❌ Câmera não disponível: ' + e.message;
+            });
+        }
+
+        function _tickQR() {
+            var video = document.getElementById('qrVideo');
+            var canvas = document.getElementById('qrCanvas');
+            if (!video || !canvas || !document.getElementById('leitorQRSheet')) return;
+            var ctx2 = canvas.getContext('2d');
+            canvas.width  = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx2.drawImage(video, 0, 0, canvas.width, canvas.height);
+            var imageData = ctx2.getImageData(0, 0, canvas.width, canvas.height);
+            // Usa jsQR (carregado via CDN quando necessário)
+            if (typeof jsQR === 'function') {
+                var code = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: 'dontInvert' });
+                if (code && code.data) { _processarQRLido(code.data); return; }
+            }
+            _qrAnim = requestAnimationFrame(_tickQR);
+        }
+
+        function _processarQRLido(url) {
+            fecharLeitorQR();
+            // Extrai o e-mail do aluno da URL ?qr=EMAIL
+            var email = '';
+            try {
+                var u = new URL(url);
+                email = decodeURIComponent(u.searchParams.get('qr') || '');
+                // Valida que é um e-mail e que a ação é checkin_aluno
+                if (!email || u.searchParams.get('acao') !== 'checkin_aluno') {
+                    alert('QR Code inválido — não é um QR de presença do CTM Manager.');
+                    return;
+                }
+            } catch(e) {
+                alert('QR Code não reconhecido.');
+                return;
+            }
+            _abrirConfirmacaoQR(email);
+        }
+
+        function _abrirConfirmacaoQR(email) {
+            // Busca horários disponíveis para montar o seletor
+            var ct = (document.getElementById('presListCT') && document.getElementById('presListCT').value) || '';
+            var horOpts = '<option value="">Horário livre</option>';
+            try {
+                var sel = document.getElementById('presListHorario');
+                if (sel) { for (var i = 0; i < sel.options.length; i++) { if (sel.options[i].value) horOpts += '<option value="'+escapeHtml(sel.options[i].value)+'">'+escapeHtml(sel.options[i].text)+'</option>'; } }
+            } catch(e) {}
+
+            var modOpts = '<option value="">Modalidade padrão do aluno</option>';
+            if (typeof MODALIDADES_CATALOG !== 'undefined') {
+                MODALIDADES_CATALOG.forEach(function(m) {
+                    if (!/_kids$|_feminino$/.test(m.id)) modOpts += '<option value="'+m.id+'">'+escapeHtml(m.nome)+'</option>';
+                });
+            }
+
+            var old = document.getElementById('confirmQRSheet'); if (old) old.remove();
+            var sh = document.createElement('div'); sh.id = 'confirmQRSheet';
+            sh.innerHTML =
+                '<div style="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:10000;"></div>' +
+                '<div onclick="event.stopPropagation()" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1a1f2e;border-radius:20px;padding:20px;z-index:10001;width:90%;max-width:380px;">' +
+                  '<div style="font-size:14px;font-weight:800;color:#C9A23A;text-align:center;margin-bottom:4px;">✅ Confirmar presença</div>' +
+                  '<div style="font-size:12px;color:rgba(255,255,255,0.5);text-align:center;margin-bottom:16px;">' + escapeHtml(email) + '</div>' +
+                  '<label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px;">HORÁRIO DA AULA</label>' +
+                  '<select id="qrHorario" style="width:100%;padding:10px;background:#262a38;color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:13px;margin-bottom:10px;">' + horOpts + '</select>' +
+                  '<label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px;">MODALIDADE</label>' +
+                  '<select id="qrModalidade" style="width:100%;padding:10px;background:#262a38;color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:13px;margin-bottom:16px;">' + modOpts + '</select>' +
+                  '<button onclick="_enviarCheckinQR(\''+escapeHtml(email)+'\')" style="width:100%;padding:13px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;">✅ Confirmar presença</button>' +
+                  '<button onclick="document.getElementById(\'confirmQRSheet\').remove()" style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,.3);font-size:12px;cursor:pointer;">Cancelar</button>' +
+                '</div>';
+            document.body.appendChild(sh);
+        }
+
+        async function _enviarCheckinQR(email) {
+            var horario    = (document.getElementById('qrHorario') || {}).value    || '';
+            var modalidade = (document.getElementById('qrModalidade') || {}).value || '';
+            var ct = (document.getElementById('presListCT') && document.getElementById('presListCT').value) || '';
+            var btn = document.querySelector('#confirmQRSheet button');
+            if (btn) { btn.disabled = true; btn.textContent = 'Registrando...'; }
+            try {
+                var res = await secureFetch('confirmarCheckinQR', { alunoEmail: email, horario: horario, modalidade: modalidade, ct: ct });
+                var sh = document.getElementById('confirmQRSheet'); if (sh) sh.remove();
+                if (res && res.success) {
+                    _gmsg('✅ Presença de ' + (res.nome || email) + ' registrada!', 'success');
+                    if (typeof loadPresencaList === 'function') setTimeout(loadPresencaList, 600);
+                } else {
+                    alert('❌ ' + ((res && res.message) || 'Erro ao registrar presença'));
+                }
+            } catch(e) {
+                alert('Erro: ' + e.message);
+                if (btn) { btn.disabled = false; btn.textContent = '✅ Confirmar presença'; }
+            }
+        }
+
+        // Carrega jsQR sob demanda (só quando o leitor é aberto pela primeira vez)
+        (function _injectJsQR() {
+            if (typeof jsQR !== 'undefined') return;
+            var s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+            document.head.appendChild(s);
+        })();
+
+        // ── fim QR Code ───────────────────────────────────────────────────────
+
+
             var old = document.getElementById('carteirinhaPreviewSheet'); if (old) old.remove();
             var dataUrl = cv.toDataURL('image/png');
             var sh = document.createElement('div'); sh.id = 'carteirinhaPreviewSheet';
