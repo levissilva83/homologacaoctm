@@ -43571,6 +43571,12 @@
             loading.remove();
         }
 
+        function _gerarURLCheckinQR(email) {
+            var ctmId = '';
+            try { var p = new URLSearchParams(window.location.search); ctmId = p.get('ctm') || ''; } catch(e) {}
+            return 'https://ctapp.online/?ctm=' + encodeURIComponent(ctmId) + '&acao=checkin_aluno&qr=' + encodeURIComponent(email);
+        }
+
         async function _desenharCarteirinha(d) {
             var W = 1000, H = 600;
             var cv = document.createElement('canvas'); cv.width = W; cv.height = H;
@@ -43680,11 +43686,6 @@
         // ── QR Code do Aluno ──────────────────────────────────────────────────
         // Tela dedicada para o aluno mostrar o QR para o professor escanear.
         // O QR é estático (sem validade) — pode ser impresso na carteirinha.
-        function _gerarURLCheckinQR(email) {
-            var ctmId = '';
-            try { var p = new URLSearchParams(window.location.search); ctmId = p.get('ctm') || ''; } catch(e) {}
-            return 'https://ctapp.online/?ctm=' + encodeURIComponent(ctmId) + '&acao=checkin_aluno&qr=' + encodeURIComponent(email);
-        }
 
         function abrirMeuQR() {
             if (!currentUser || !currentUser.email) return;
