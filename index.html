@@ -43663,25 +43663,17 @@
                 ctx.fillText(d.ct, labelX, 510);
             }
 
-            // ── QR Code no canto inferior esquerdo (abaixo da foto) ──
+            // ── QR Code: calculado mas NÃO desenhado no canvas ──
+            // Desenhar imagem de domínio externo (api.qrserver.com) contamina o
+            // canvas com CORS "tainted", impedindo toDataURL(). O QR é exibido
+            // como <img> HTML separado no preview, fora do canvas.
             var qrUrl = _gerarURLCheckinQR(d.email || (currentUser && currentUser.email) || '');
-            var qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&format=png&margin=8&data=' + encodeURIComponent(qrUrl);
-            var qrImg = await _carregarImg(qrSrc);
-            if (qrImg) {
-                var qrSize = 100;
-                var qrX = fotoBoxX, qrY = fotoBoxY + fotoBoxH + 10;
-                // Fundo branco para o QR legível
-                ctx.fillStyle = '#fff'; ctx.fillRect(qrX, qrY, qrSize, qrSize);
-                ctx.drawImage(qrImg, qrX, qrY, qrSize, qrSize);
-                ctx.fillStyle = 'rgba(255,255,255,0.35)'; ctx.font = '500 11px Manrope, sans-serif';
-                ctx.textAlign = 'left';
-                ctx.fillText('QR de presença', qrX, qrY + qrSize + 14);
-            }
+            var qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&format=png&margin=10&data=' + encodeURIComponent(qrUrl);
 
-            _mostrarCarteirinhaPreview(cv, d.nome);
+            _mostrarCarteirinhaPreview(cv, d.nome, qrSrc);
         }
 
-        function _mostrarCarteirinhaPreview(cv, nomeAluno) {
+        function _mostrarCarteirinhaPreview(cv, nomeAluno, qrSrc) {
 
         // ── QR Code do Aluno ──────────────────────────────────────────────────
         // Tela dedicada para o aluno mostrar o QR para o professor escanear.
@@ -43859,10 +43851,22 @@
             var old = document.getElementById('carteirinhaPreviewSheet'); if (old) old.remove();
             var dataUrl = cv.toDataURL('image/png');
             var sh = document.createElement('div'); sh.id = 'carteirinhaPreviewSheet';
+            var qrBlock = qrSrc
+              ? '<div style="display:flex;align-items:center;gap:12px;margin-top:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(201,162,58,0.2);border-radius:12px;padding:12px;">'
+              +   '<div style="background:#fff;border-radius:8px;padding:6px;flex-shrink:0;">'
+              +     '<img src="' + qrSrc + '" width="80" height="80" style="display:block;">'
+              +   '</div>'
+              +   '<div>'
+              +     '<div style="font-size:11px;font-weight:700;color:#C9A23A;margin-bottom:3px;">QR DE PRESENÇA</div>'
+              +     '<div style="font-size:11px;color:rgba(255,255,255,0.45);line-height:1.5;">Professor escaneia para registrar a presença do aluno</div>'
+              +   '</div>'
+              + '</div>'
+              : '';
             sh.innerHTML = '<div onclick="document.getElementById(\'carteirinhaPreviewSheet\').remove()" style="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:10000;"></div>'
               + '<div onclick="event.stopPropagation()" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1a1f2e;border-radius:16px;padding:18px;z-index:10001;width:92%;max-width:520px;max-height:88vh;overflow-y:auto;">'
               + '<div style="font-size:14px;font-weight:800;color:#fff;text-align:center;margin-bottom:12px;">🪪 Carteirinha</div>'
               + '<img src="' + dataUrl + '" style="width:100%;border-radius:8px;border:1px solid rgba(255,255,255,0.1);">'
+              + qrBlock
               + '<a href="' + dataUrl + '" download="carteirinha-' + (nomeAluno||'aluno').replace(/[^a-zA-Z0-9]/g,'_') + '.png" style="display:block;text-align:center;width:100%;padding:13px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-top:14px;text-decoration:none;box-sizing:border-box;">⬇️ Baixar carteirinha (PNG)</a>'
               + '<button onclick="document.getElementById(\'carteirinhaPreviewSheet\').remove()" style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,.3);font-size:12px;cursor:pointer;margin-top:6px;">Fechar</button>'
               + '</div>';
