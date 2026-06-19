@@ -11731,22 +11731,31 @@
           <span id="asnPlanoResumidoValor" class="asn-plan-resumo-val"></span>
         </div>
 
-        <!-- [ALTERADO] Forma de pagamento: cartão é o único método para
-             NOVA assinatura — cobrança recorrente automática, sem depender
-             de o cliente lembrar de pagar todo mês. PIX só aparece depois,
-             como fallback automático, se uma cobrança no cartão falhar
-             (ver asnPixFallbackArea, controlado por verificarPixFallback()). -->
-        <div style="margin-bottom:16px;background:rgba(201,162,58,0.06);border:1px solid rgba(201,162,58,0.18);border-radius:12px;padding:12px;">
-          <div style="font-size:11px;color:var(--text-2);line-height:1.6;">
-            💳 <strong style="color:var(--gold);">Cobrança automática mensal no cartão.</strong><br>
-            Sem precisar lembrar de pagar — renovação acontece sozinha todo mês.
+        <!-- Seleção de método de pagamento: PIX é a opção padrão/destacada.
+             Cartão fica disponível como alternativa de cobrança recorrente
+             automática. PIX também é oferecido automaticamente como
+             fallback se uma cobrança recorrente no cartão falhar (ver
+             asnPixFallbackArea, controlado por verificarPixFallback()). -->
+        <div style="margin-bottom:20px;">
+          <div style="font-size:11px;font-weight:700;color:var(--text-3);letter-spacing:.5px;margin-bottom:10px;">FORMA DE PAGAMENTO</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <button id="asnMetodoPixBtn" onclick="asnSelecionarMetodo('pix')"
+              style="padding:14px 10px;border-radius:14px;border:2px solid #22c55e;background:rgba(34,197,94,0.1);color:#22c55e;font-size:13px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .2s;">
+              <span style="font-size:24px;">🟢</span>
+              <span>PIX</span>
+              <span style="font-size:9px;font-weight:500;opacity:.8;">Pagamento único</span>
+            </button>
+            <button id="asnMetodoCartaoBtn" onclick="asnSelecionarMetodo('cartao')"
+              style="padding:14px 10px;border-radius:14px;border:2px solid var(--border);background:transparent;color:var(--text-3);font-size:13px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .2s;">
+              <span style="font-size:24px;">💳</span>
+              <span>Cartão</span>
+              <span style="font-size:9px;font-weight:500;opacity:.8;">Recorrente automático</span>
+            </button>
           </div>
         </div>
-        <div id="asnMetodoCartaoBtn" style="display:none;"></div>
-        <div id="asnMetodoPixBtn" style="display:none;"></div>
 
         <!-- Painel Cartão -->
-        <div id="asnPainelCartao">
+        <div id="asnPainelCartao" style="display:none;">
           <div class="asn-card-form-header" style="margin-bottom:14px;">
             <div class="asn-card-icon">&#128179;</div>
             <div>
@@ -11783,7 +11792,7 @@
         </div>
 
         <!-- Painel PIX -->
-        <div id="asnPainelPix" style="display:none;">
+        <div id="asnPainelPix">
           <div class="asn-card-form-header" style="margin-bottom:14px;">
             <div class="asn-card-icon" style="background:rgba(34,197,94,0.15);">🟢</div>
             <div>
