@@ -11480,6 +11480,17 @@
             </div>
             <div id="asnVencAviso" style="display:none;margin:12px 4px 0;padding:11px 14px;border-radius:11px;font-size:12.5px;font-weight:700;text-align:center;"></div>
             <button id="asnBtnRegularizar" onclick="asnRegularizarPagamento()" style="display:none;width:calc(100% - 8px);margin:10px 4px 0;padding:13px;background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;border:none;border-radius:11px;font-size:14px;font-weight:800;cursor:pointer;">&#128179; Pagar agora e regularizar</button>
+
+            <!-- [NOVO] PIX Fallback automático — aparece quando a cobrança
+                 recorrente no cartão falhou e o sistema já gerou um PIX
+                 alternativo, sem o admin precisar pedir nada. -->
+            <div id="asnPixFallbackArea" style="display:none;margin:10px 4px 0;background:rgba(34,197,94,0.06);border:1.5px solid rgba(34,197,94,0.25);border-radius:12px;padding:14px;">
+              <div style="font-size:12px;font-weight:800;color:#22c55e;margin-bottom:8px;">🟢 Cartão não foi cobrado — pague via PIX</div>
+              <div style="font-size:11px;color:var(--text-2);margin-bottom:10px;line-height:1.5;">Geramos um PIX para você regularizar agora, sem precisar trocar seus dados de cartão.</div>
+              <img id="asnPixFallbackQr" src="" alt="QR Code PIX" style="width:160px;height:160px;border-radius:10px;display:block;margin:0 auto 10px;border:3px solid rgba(34,197,94,0.3);">
+              <div id="asnPixFallbackCode" style="background:rgba(0,0,0,0.2);border-radius:8px;padding:10px;word-break:break-all;font-size:9px;font-family:monospace;color:var(--text-2);max-height:60px;overflow-y:auto;margin-bottom:8px;"></div>
+              <button onclick="asnCopiarPixFallback()" style="width:100%;padding:10px;background:rgba(34,197,94,0.15);border:1.5px solid rgba(34,197,94,0.3);color:#22c55e;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;">&#128203; Copiar código PIX</button>
+            </div>
             <div class="asn-status-actions">
               <button onclick="asnAbrirTrocarPlano()" class="asn-btn-outline asn-btn-gold">&#128260; Trocar Plano</button>
               <button onclick="asnConfirmarCancelar()" class="asn-btn-outline asn-btn-danger">&#10005; Cancelar</button>
@@ -11720,24 +11731,19 @@
           <span id="asnPlanoResumidoValor" class="asn-plan-resumo-val"></span>
         </div>
 
-        <!-- Seleção de método de pagamento -->
-        <div style="margin-bottom:20px;">
-          <div style="font-size:11px;font-weight:700;color:var(--text-3);letter-spacing:.5px;margin-bottom:10px;">FORMA DE PAGAMENTO</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-            <button id="asnMetodoCartaoBtn" onclick="asnSelecionarMetodo('cartao')"
-              style="padding:14px 10px;border-radius:14px;border:2px solid var(--gold);background:rgba(201,162,58,0.1);color:var(--gold);font-size:13px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .2s;">
-              <span style="font-size:24px;">💳</span>
-              <span>Cartão</span>
-              <span style="font-size:9px;font-weight:500;opacity:.8;">Recorrente automático</span>
-            </button>
-            <button id="asnMetodoPixBtn" onclick="asnSelecionarMetodo('pix')"
-              style="padding:14px 10px;border-radius:14px;border:2px solid var(--border);background:transparent;color:var(--text-3);font-size:13px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;transition:all .2s;">
-              <span style="font-size:24px;">🟢</span>
-              <span>PIX</span>
-              <span style="font-size:9px;font-weight:500;opacity:.8;">Pagamento único</span>
-            </button>
+        <!-- [ALTERADO] Forma de pagamento: cartão é o único método para
+             NOVA assinatura — cobrança recorrente automática, sem depender
+             de o cliente lembrar de pagar todo mês. PIX só aparece depois,
+             como fallback automático, se uma cobrança no cartão falhar
+             (ver asnPixFallbackArea, controlado por verificarPixFallback()). -->
+        <div style="margin-bottom:16px;background:rgba(201,162,58,0.06);border:1px solid rgba(201,162,58,0.18);border-radius:12px;padding:12px;">
+          <div style="font-size:11px;color:var(--text-2);line-height:1.6;">
+            💳 <strong style="color:var(--gold);">Cobrança automática mensal no cartão.</strong><br>
+            Sem precisar lembrar de pagar — renovação acontece sozinha todo mês.
           </div>
         </div>
+        <div id="asnMetodoCartaoBtn" style="display:none;"></div>
+        <div id="asnMetodoPixBtn" style="display:none;"></div>
 
         <!-- Painel Cartão -->
         <div id="asnPainelCartao">
@@ -46482,7 +46488,43 @@
             _txt('asnSubId', (!_subIdEhPix && _subId) ? 'Assinatura: ' + _subId.substring(0, 20) + '...' : '');
             _renderHistorico();
             _renderProximasDatas();
+
+            // [NOVO] Cartão falhou (INADIMPLENTE) → checa se já existe um
+            // PIX fallback gerado automaticamente, e exibe pronto pra pagar.
+            if ((a.status || '').toString().toUpperCase() === 'INADIMPLENTE') {
+                _verificarPixFallback();
+            } else {
+                _show('asnPixFallbackArea', 'none');
+            }
         }
+
+        async function _verificarPixFallback() {
+            try {
+                var res = await secureFetch('getPixFallbackAssinatura', { email: currentUser.email });
+                var area = _el('asnPixFallbackArea');
+                if (!area) return;
+                if (res && res.success && res.temFallback) {
+                    var qrImg  = _el('asnPixFallbackQr');
+                    var codeEl = _el('asnPixFallbackCode');
+                    if (qrImg && res.qrBase64)  qrImg.src = 'data:image/png;base64,' + res.qrBase64;
+                    if (codeEl) codeEl.textContent = res.pixCode || '';
+                    window._asnPixFallbackCodeAtual = res.pixCode || '';
+                    area.style.display = 'block';
+                } else {
+                    area.style.display = 'none';
+                }
+            } catch(e) { /* silencioso — não bloqueia o resto da tela */ }
+        }
+
+        window.asnCopiarPixFallback = function() {
+            var codigo = window._asnPixFallbackCodeAtual || '';
+            if (!codigo) return;
+            navigator.clipboard.writeText(codigo).then(function() {
+                showToast('Código PIX copiado!', 'success');
+            }).catch(function() {
+                showToast('Não foi possível copiar — copie manualmente', 'error');
+            });
+        };
 
         function _renderHistorico() {
             var el = _el('asnHistoricoLista'); if (!el) return;
