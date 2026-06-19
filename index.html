@@ -21409,15 +21409,6 @@
                 var data = await secureFetch('getPagamentoStatus', { email: currentUser.email });
                 _pagData = data;
                 _syncMensalidadeVenc(data.proximoVencimento, data.status);
-
-                // [NOVO] Busca cobranças avulsas pendentes em paralelo
-                try {
-                    var avRes = await secureFetch('getCobrancasAvulsas', { email: currentUser.email });
-                    data._avulsas = (avRes && avRes.success && avRes.cobrancas)
-                        ? avRes.cobrancas.filter(function(c){ return (c.status||'').toUpperCase() === 'PENDENTE'; })
-                        : [];
-                } catch(eAv) { data._avulsas = []; }
-
                 renderPagamentos(data);
 
                 // Retoma polling automaticamente se PIX ainda pendente
@@ -21686,26 +21677,6 @@
 
             if (atrasado) {
                 h += '<div class="pag-atrasado-alert">⚠️ Sua mensalidade está em atraso. Regularize para evitar suspensão.</div>';
-            }
-
-            // [NOVO] Cobranças avulsas pendentes (taxas, equipamentos, eventos, etc.)
-            // — coexistem com a mensalidade normal, sem substituí-la.
-            if (data._avulsas && data._avulsas.length > 0) {
-                h += '<div style="background:rgba(201,162,58,0.05);border:1px solid rgba(201,162,58,0.2);border-radius:12px;padding:12px;margin-bottom:10px;">';
-                h += '<div style="font-size:12px;font-weight:800;color:var(--accent);margin-bottom:8px;">🧾 Cobrança' + (data._avulsas.length > 1 ? 's' : '') + ' avulsa' + (data._avulsas.length > 1 ? 's' : '') + ' pendente' + (data._avulsas.length > 1 ? 's' : '') + '</div>';
-                data._avulsas.forEach(function(av) {
-                    h += '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-top:1px solid rgba(255,255,255,0.06);">';
-                    h += '<div>';
-                    h += '<div style="font-size:12px;font-weight:700;color:var(--text-1);">' + escapeHtml(av.descricao) + '</div>';
-                    h += '<div style="font-size:10px;color:var(--text-3);">Venc. ' + escapeHtml(av.dataVenc||'') + '</div>';
-                    h += '</div>';
-                    h += '<div style="text-align:right;">';
-                    h += '<div style="font-size:13px;font-weight:800;color:var(--accent);">R$ ' + parseFloat(av.valor||0).toFixed(2).replace('.', ',') + '</div>';
-                    h += '<button onclick="pagarCobrancaAvulsa(\'' + av.id + '\')" style="margin-top:3px;padding:5px 12px;background:linear-gradient(135deg,#22c55e,#15803d);color:#fff;border:none;border-radius:7px;font-size:10px;font-weight:800;cursor:pointer;">💰 Pagar</button>';
-                    h += '</div>';
-                    h += '</div>';
-                });
-                h += '</div>';
             }
 
             // Alerta de fallback PIX (cartão recusado)
@@ -22177,23 +22148,6 @@
                 if (e.key === 'Enter' && callback) callback(cvvInp.value);
             });
         }
-
-                // [NOVO] Pagamento de cobrança avulsa pelo próprio aluno
-                async function pagarCobrancaAvulsa(id) {
-                    try {
-                        var res = await secureFetch('gerarPixCobrancaAvulsa', { id: id });
-                        if (!res || !res.success) {
-                            alert('❌ ' + ((res && res.message) || 'Erro ao gerar PIX'));
-                            return;
-                        }
-                        var valorFmt = 'R$ ' + parseFloat(res.valor||0).toFixed(2).replace('.', ',');
-                        if (res.pixManual) {
-                            _showAvulsaPixModal({ descricao: res.descricao||'Cobrança avulsa', valor: valorFmt, pixCode: res.chavePix||'', qrBase64: '', manual: true });
-                        } else {
-                            _showAvulsaPixModal({ descricao: res.descricao||'Cobrança avulsa', valor: valorFmt, pixCode: res.pixCode||'', qrBase64: res.qrBase64||'', manual: false });
-                        }
-                    } catch(e) { alert('Erro: ' + e.message); }
-                }
 
                 async function pagarAgora(btnId) {
             var btn = btnId ? document.getElementById(btnId) : null;
