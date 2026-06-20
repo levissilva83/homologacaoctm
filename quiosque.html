@@ -52,6 +52,10 @@
   <div id="start">
     <div id="logo2" style="font-size:22px;font-weight:800;letter-spacing:2px;color:#C9A23A;">CT MANAGER</div>
     <div style="font-size:54px;">🥋</div>
+    <div class="muted" style="margin-bottom:-4px;">Selecione a turma deste tablet:</div>
+    <select id="horarioSelect" style="padding:12px 16px;border-radius:10px;border:1px solid rgba(201,162,58,.4);background:#111;color:#fff;font-size:15px;min-width:240px;text-align:center;">
+      <option value="">Carregando horários...</option>
+    </select>
     <button class="btn" id="startBtn">Iniciar Quiosque</button>
     <div class="muted">Toque para ligar a câmera e ativar o modo recepção.</div>
   </div>
@@ -67,7 +71,7 @@
 
     var ENV = {
       token: null, ct: '', confidence: 90, cameraMode: 'user',
-      som: true, tempoRetorno: 3, permitirVisitante: false
+      som: true, tempoRetorno: 3, permitirVisitante: false, horario: ''
     };
     var STATE = 'idle';           // idle | scan | success | error | cooldown
     var lastFrame = null;         // p/ detecção de movimento
@@ -171,7 +175,13 @@
     // ── Loop principal ───────────────────────────────────────
     function iniciarLoop(){
       if (loopTimer) clearInterval(loopTimer);
-      loopTimer = setInterval(tick, 1500);
+      // [ALTERADO 2026-06-20] De 1500ms para 9000ms. O reconhecimento agora
+      // usa IA com visão computacional (handleReconhecerAlunoQuiosque —
+      // mesma tecnologia do módulo "Foto"), que custa mais por chamada do
+      // que o antigo searchFaceRek (nunca chegou a funcionar de fato).
+      // Intervalo maior mantém o custo viável sem perder a automação por
+      // detecção de movimento.
+      loopTimer = setInterval(tick, 9000);
     }
     async function tick(){
       if (busy || STATE === 'success' || STATE === 'scan' || STATE === 'cooldown') return;
@@ -181,14 +191,17 @@
       busy = true;
       setState('scan');
       try {
-        var res = await api('searchFaceRek', { fotoBase64: b64, ct: ENV.ct, threshold: ENV.confidence });
-        if (res && res.success && res.matches && res.matches.length){
-          var m = res.matches[0];
-          if ((m.similarity||0) >= ENV.confidence){
-            await confirmar(m);
-          } else { flashErro('Aproxime mais o rosto'); }
-        } else {
+        // [ALTERADO 2026-06-20] reconhecerAlunoQuiosque substitui o antigo
+        // searchFaceRek — usa a mesma tecnologia de IA do módulo "Foto"
+        // (visão computacional via Claude), restrita aos alunos esperados
+        // no horário selecionado (não compara contra todos do CT).
+        var res = await api('reconhecerAlunoQuiosque', { fotoBase64: b64, ct: ENV.ct, horario: ENV.horario || '' });
+        if (res && res.success && res.match && (res.match.confianca||0) >= ENV.confidence){
+          await confirmar(res.match);
+        } else if (res && res.success) {
           flashErro('Aluno não identificado');
+        } else {
+          flashErro((res && res.message) || 'Erro ao identificar');
         }
       } catch(e){ flashErro('Falha de conexão'); }
       busy = false;
@@ -222,6 +235,35 @@
     }
     function voltarIdle(){ lastFrame = null; setState('idle'); }
 
+    // [NOVO 2026-06-20] Carrega os horários de aula do CT, para restringir
+    // o reconhecimento facial aos alunos esperados na turma selecionada
+    // (essencial para manter o custo/velocidade da IA viáveis).
+    async function carregarHorarios(){
+      var sel = $('horarioSelect');
+      if (!sel) return;
+      sel.innerHTML = '<option value="">Carregando horários...</option>';
+      try {
+        var res = await api('getHorariosCT', { ct: ENV.ct });
+        var unique = {};
+        if (res && res.success && res.slotsPorMod) {
+          Object.keys(res.slotsPorMod).forEach(function(modId){
+            (res.slotsPorMod[modId] || []).forEach(function(t){ unique[t] = true; });
+          });
+        }
+        var times = Object.keys(unique).sort();
+        var h = '';
+        if (times.length === 0) {
+          h = '<option value="">Turma única (sem grade de horários)</option>';
+        } else {
+          h = '<option value="">Selecione o horário da turma...</option>';
+          times.forEach(function(t){ h += '<option value="' + t + '">🕐 ' + t + '</option>'; });
+        }
+        sel.innerHTML = h;
+      } catch(e) {
+        sel.innerHTML = '<option value="">Turma única (sem grade de horários)</option>';
+      }
+    }
+
     // ── Boot ─────────────────────────────────────────────────
     async function boot(){
       ENV.token = getToken();
@@ -245,7 +287,9 @@
           }
         }
       } catch(e){}
+      await carregarHorarios();
       $('startBtn').onclick = async function(){
+        ENV.horario = ($('horarioSelect') && $('horarioSelect').value) || '';
         var ok = await startCamera();
         if (!ok){ $('setupMsg').textContent = 'Não foi possível acessar a câmera. Verifique as permissões do navegador.'; $('setup').style.display='flex'; return; }
         try { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); } catch(e){}

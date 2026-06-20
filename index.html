@@ -9758,10 +9758,11 @@
                                 style="padding:8px 4px 6px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--adm-text-3);font-size:9px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2;">
                                 <span style="font-size:15px;">📊</span><span>Check-ins</span>
                             </button>
-                            <button class="adm-painel-tab-btn" id="admPainelTabBtn6" onclick="switchAdmPainelTab(6)"
-                                style="padding:8px 4px 6px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--adm-text-3);font-size:9px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2;">
-                                <span style="font-size:15px;">📸</span><span>Foto</span>
-                            </button>
+                            <!-- [REMOVIDO 2026-06-20] Botão "Foto" — a tecnologia de
+                                 reconhecimento por IA foi migrada para o Quiosque
+                                 (Sistema → Quiosque Facial), que agora reconhece o
+                                 aluno automaticamente pela câmera em vez de depender
+                                 de upload manual de foto de grupo aqui no Painel. -->
                             <button class="adm-painel-tab-btn" id="admPainelTabBtn7" onclick="switchAdmPainelTab(7);loadFrequenciaMensal();"
                                 style="padding:8px 4px 6px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--adm-text-3);font-size:9px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.2;">
                                 <span style="font-size:15px;">📊</span><span>Frequência</span>
@@ -38224,7 +38225,7 @@
                 var data = await secureFetch('removerGatewayToken', { gatewayId: gatewayId });
                 if (data.success) { showToast && showToast('Token excluído!', 'success'); loadGatewayTokens(); }
                 else alert('❌ ' + data.message);
-            } catch(e) { alert('Erro de conexão'); }
+            } catch(e) { alert('Erro: ' + e.message); }
         }
 
         function editarGatewayToken(t) {
@@ -38346,7 +38347,7 @@
                 var data = await secureFetch('removerVinculoCT', { ct: ct });
                 if (data.success) { showToast && showToast('CT removido!', 'success'); loadVinculosCT(); }
                 else alert('❌ ' + data.message);
-            } catch(e) { alert('Erro de conexão'); }
+            } catch(e) { alert('Erro: ' + e.message); }
         }
 
         function editarVinculoCT(v) {
@@ -38513,7 +38514,7 @@
                 var data = await secureFetch('deletarPlano', { id: id });
                 if (data.success) { showToast && showToast('Plano excluído!', 'success'); loadPlanosList(); }
                 else alert('❌ ' + data.message);
-            } catch(e) { alert('Erro de conexão'); }
+            } catch(e) { alert('Erro: ' + e.message); }
         }
 
         function editarPlano(p) {
@@ -43960,47 +43961,56 @@
             _abrirConfirmacaoQR(email);
         }
 
-        function _abrirConfirmacaoQR(email) {
-            // Busca horários disponíveis para montar o seletor
-            var ct = (document.getElementById('presListCT') && document.getElementById('presListCT').value) || '';
-            var horOpts = '<option value="">Horário livre</option>';
-            try {
-                var sel = document.getElementById('presListHorario');
-                if (sel) { for (var i = 0; i < sel.options.length; i++) { if (sel.options[i].value) horOpts += '<option value="'+escapeHtml(sel.options[i].value)+'">'+escapeHtml(sel.options[i].text)+'</option>'; } }
-            } catch(e) {}
-
-            var modOpts = '<option value="">Modalidade padrão do aluno</option>';
-            if (typeof MODALIDADES_CATALOG !== 'undefined') {
-                MODALIDADES_CATALOG.forEach(function(m) {
-                    if (!/_kids$|_feminino$/.test(m.id)) modOpts += '<option value="'+m.id+'">'+escapeHtml(m.nome)+'</option>';
-                });
-            }
-
+        async function _abrirConfirmacaoQR(email) {
+            // [SIMPLIFICADO 2026-06-20] Fluxo agora é: escanear → mostra info
+            // do aluno → confirma direto. Sem seleção de horário/modalidade —
+            // o backend já usa a modalidade principal do aluno e o horário
+            // atual como padrão quando esses campos não são informados.
             var old = document.getElementById('confirmQRSheet'); if (old) old.remove();
             var sh = document.createElement('div'); sh.id = 'confirmQRSheet';
             sh.innerHTML =
                 '<div style="position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:10000;"></div>' +
                 '<div onclick="event.stopPropagation()" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#1a1f2e;border-radius:20px;padding:20px;z-index:10001;width:90%;max-width:380px;">' +
-                  '<div style="font-size:14px;font-weight:800;color:#C9A23A;text-align:center;margin-bottom:4px;">✅ Confirmar presença</div>' +
-                  '<div style="font-size:12px;color:rgba(255,255,255,0.5);text-align:center;margin-bottom:16px;">' + escapeHtml(email) + '</div>' +
-                  '<label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px;">HORÁRIO DA AULA</label>' +
-                  '<select id="qrHorario" style="width:100%;padding:10px;background:#262a38;color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:13px;margin-bottom:10px;">' + horOpts + '</select>' +
-                  '<label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px;">MODALIDADE</label>' +
-                  '<select id="qrModalidade" style="width:100%;padding:10px;background:#262a38;color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:8px;font-size:13px;margin-bottom:16px;">' + modOpts + '</select>' +
-                  '<button onclick="_enviarCheckinQR(\''+escapeHtml(email)+'\')" style="width:100%;padding:13px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;">✅ Confirmar presença</button>' +
+                  '<div style="font-size:14px;font-weight:800;color:#C9A23A;text-align:center;margin-bottom:16px;">✅ Confirmar presença</div>' +
+                  '<div id="qrAlunoInfo" style="text-align:center;margin-bottom:20px;">' +
+                    '<div style="width:64px;height:64px;border-radius:50%;background:#262a38;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:24px;">⏳</div>' +
+                    '<div style="font-size:13px;color:rgba(255,255,255,0.5);">Carregando dados...</div>' +
+                  '</div>' +
+                  '<button id="qrConfirmBtn" onclick="_enviarCheckinQR(\''+escapeHtml(email)+'\')" style="width:100%;padding:13px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:8px;">✅ Confirmar presença</button>' +
                   '<button onclick="document.getElementById(\'confirmQRSheet\').remove()" style="width:100%;padding:10px;background:transparent;border:none;color:rgba(255,255,255,.3);font-size:12px;cursor:pointer;">Cancelar</button>' +
                 '</div>';
             document.body.appendChild(sh);
+
+            // Busca dados do aluno (nome, faixa, foto) para exibir antes de confirmar
+            try {
+                var info = await secureFetch('getCarteirinha', { email: email });
+                var infoBox = document.getElementById('qrAlunoInfo');
+                if (infoBox) {
+                    if (info && info.success) {
+                        var fotoHtml = info.avatar
+                            ? '<img src="'+info.avatar+'" style="width:64px;height:64px;border-radius:50%;object-fit:cover;margin:0 auto 10px;display:block;border:2px solid #C9A23A;">'
+                            : '<div style="width:64px;height:64px;border-radius:50%;background:#262a38;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:24px;">🥋</div>';
+                        infoBox.innerHTML =
+                            fotoHtml +
+                            '<div style="font-size:15px;font-weight:800;color:#fff;">' + escapeHtml(info.nome || email) + '</div>' +
+                            '<div style="font-size:11px;color:rgba(255,255,255,0.5);margin-top:2px;">' + escapeHtml(info.faixa || '') + (info.ct ? ' · ' + escapeHtml(info.ct) : '') + '</div>';
+                    } else {
+                        infoBox.innerHTML =
+                            '<div style="width:64px;height:64px;border-radius:50%;background:#262a38;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:24px;">🥋</div>' +
+                            '<div style="font-size:13px;color:rgba(255,255,255,0.5);">' + escapeHtml(email) + '</div>';
+                    }
+                }
+            } catch(e) {
+                var infoBox2 = document.getElementById('qrAlunoInfo');
+                if (infoBox2) infoBox2.innerHTML = '<div style="font-size:13px;color:rgba(255,255,255,0.5);">' + escapeHtml(email) + '</div>';
+            }
         }
 
         async function _enviarCheckinQR(email) {
-            var horario    = (document.getElementById('qrHorario') || {}).value    || '';
-            var modalidade = (document.getElementById('qrModalidade') || {}).value || '';
-            var ct = (document.getElementById('presListCT') && document.getElementById('presListCT').value) || '';
-            var btn = document.querySelector('#confirmQRSheet button');
+            var btn = document.getElementById('qrConfirmBtn');
             if (btn) { btn.disabled = true; btn.textContent = 'Registrando...'; }
             try {
-                var res = await secureFetch('confirmarCheckinQR', { alunoEmail: email, horario: horario, modalidade: modalidade, ct: ct });
+                var res = await secureFetch('confirmarCheckinQR', { alunoEmail: email });
                 var sh = document.getElementById('confirmQRSheet'); if (sh) sh.remove();
                 if (res && res.success) {
                     _gmsg('✅ Presença de ' + (res.nome || email) + ' registrada!', 'success');
