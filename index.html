@@ -9280,7 +9280,7 @@
                         <!--                   Congelamento | Dependentes    -->
                         <!-- ══════════════════════════════════════════════════ -->
                         <div class="perfil-tabs-nav perfil-tabs-nav--secondary" id="perfilTabsNavSec" style="margin-top:20px;">
-                            <button class="perfil-tab-btn perfil-tab-btn--secondary active" data-ptabsec="mensalidade" onclick="switchPerfilTabSec('mensalidade')">💳 Mensalidade</button>
+                            <button class="perfil-tab-btn perfil-tab-btn--secondary active" data-ptabsec="mensalidade" onclick="switchPerfilTabSec('mensalidade')">💰 Financeiro</button>
                             <button class="perfil-tab-btn perfil-tab-btn--secondary"        data-ptabsec="contratos"   onclick="switchPerfilTabSec('contratos')">📋 Contratos</button>
                             <button class="perfil-tab-btn perfil-tab-btn--secondary"        data-ptabsec="congelamento" onclick="switchPerfilTabSec('congelamento')">❄️ Congelamento</button>
                             <button class="perfil-tab-btn perfil-tab-btn--secondary"        data-ptabsec="familia"     onclick="switchPerfilTabSec('familia')">👥 Dependentes</button>
@@ -20968,7 +20968,7 @@
                 var _hNC = '<div style="padding:16px 0;">';
                 // Tabs: Mensalidade | Histórico
                 _hNC += '<div style="display:flex;gap:0;background:rgba(255,255,255,0.03);border-radius:12px;padding:4px;margin-bottom:16px;">';
-                _hNC += '<button id="pagStuTabBtn1" onclick="switchPagStuTab(1)" style="flex:1;padding:9px 4px;border:none;border-radius:8px;background:rgba(201,162,58,0.15);color:var(--accent);font-size:12px;font-weight:800;cursor:pointer;border-bottom:2px solid var(--accent);">💳 Minha Mensalidade</button>';
+                _hNC += '<button id="pagStuTabBtn1" onclick="switchPagStuTab(1)" style="flex:1;padding:9px 4px;border:none;border-radius:8px;background:rgba(201,162,58,0.15);color:var(--accent);font-size:12px;font-weight:800;cursor:pointer;border-bottom:2px solid var(--accent);">💳 Pagamentos</button>';
                 _hNC += '<button id="pagStuTabBtn2" onclick="switchPagStuTab(2)" style="flex:1;padding:9px 4px;border:none;border-radius:8px;background:transparent;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;">🕐 Histórico</button>';
                 _hNC += '</div>';
                 // Tab 1: mensalidade + cobranças pendentes
@@ -21591,8 +21591,31 @@
             if (!el) return;
             _pagDataGlobal = data;
             if (!data.success || !data.configurado) {
+                var _avulsasSemCfg = (data.cobrancasAvulsas || []).filter(function(a){ return a.status !== 'PAGO' && a.status !== 'CANCELADO'; });
+                var _avHtmlSemCfg = '';
+                if (_avulsasSemCfg.length > 0) {
+                    _avHtmlSemCfg += '<div style="background:var(--bg-card);border-radius:16px;border:1px solid rgba(168,85,247,0.25);padding:16px;margin-bottom:12px;">';
+                    _avHtmlSemCfg += '<div style="font-size:11px;font-weight:800;color:#a855f7;letter-spacing:.6px;margin-bottom:12px;">📌 COBRANÇAS PENDENTES (' + _avulsasSemCfg.length + ')</div>';
+                    _avulsasSemCfg.forEach(function(av) {
+                        var _vDateSc = av.dataVenc ? av.dataVenc.split('/').reverse().join('-') : '';
+                        var isAtrasadoSc = _vDateSc && (new Date(_vDateSc) < new Date());
+                        var corSc = isAtrasadoSc ? '#f87171' : '#fbbf24';
+                        _avHtmlSemCfg += '<div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.18);border-radius:12px;padding:14px;margin-bottom:10px;">';
+                        _avHtmlSemCfg += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
+                        _avHtmlSemCfg += '<div style="font-size:13px;font-weight:700;color:var(--text-1);">' + escapeHtml(av.descricao) + '</div>';
+                        _avHtmlSemCfg += '<div style="font-size:16px;font-weight:900;color:#a855f7;">R$ ' + parseFloat(av.valor).toFixed(2) + '</div>';
+                        _avHtmlSemCfg += '</div>';
+                        if (av.dataVenc) _avHtmlSemCfg += '<div style="font-size:10px;color:' + corSc + ';margin-bottom:8px;">📅 Vencimento: ' + escapeHtml(av.dataVenc) + (isAtrasadoSc ? ' · Em atraso' : '') + '</div>';
+                        if (av.obs) _avHtmlSemCfg += '<div style="font-size:10px;color:var(--text-3);margin-bottom:8px;">' + escapeHtml(av.obs) + '</div>';
+                        _avHtmlSemCfg += '<div id="avulsaPixArea_' + escapeHtml(av.id) + '"></div>';
+                        _avHtmlSemCfg += '<button onclick="pagarAvulsaAluno(\'' + escapeHtml(av.id) + '\',this)" style="width:100%;padding:11px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;">🟢 Pagar via PIX</button>';
+                        _avHtmlSemCfg += '</div>';
+                    });
+                    _avHtmlSemCfg += '</div>';
+                }
                 el.innerHTML =
                     '<div style="padding:8px 0;">' +
+                    _avHtmlSemCfg +
                     '<div style="text-align:center;padding:14px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px dashed var(--border);margin-bottom:12px;">' +
                     '<div style="font-size:11px;color:var(--text-3);">Cobrança automática não configurada pelo professor.<br>Você já pode cadastrar sua forma de pagamento.</div>' +
                     '</div>' +
@@ -21629,19 +21652,19 @@
 
             var h = '';
 
-            // ── Tabs: Minha Mensalidade | Histórico ──────────────────────
+            // ── Tabs: Pagamentos | Histórico ──────────────────────
             h += '<div style="display:flex;gap:0;background:rgba(255,255,255,0.03);border-radius:12px;padding:4px;margin-bottom:16px;">';
-            h += '<button id="pagStuTabBtn1" onclick="switchPagStuTab(1)" style="flex:1;padding:9px 4px;border:none;border-radius:8px;background:rgba(201,162,58,0.15);color:var(--accent);font-size:12px;font-weight:800;cursor:pointer;border-bottom:2px solid var(--accent);transition:all 0.15s;">💳 Minha Mensalidade</button>';
+            h += '<button id="pagStuTabBtn1" onclick="switchPagStuTab(1)" style="flex:1;padding:9px 4px;border:none;border-radius:8px;background:rgba(201,162,58,0.15);color:var(--accent);font-size:12px;font-weight:800;cursor:pointer;border-bottom:2px solid var(--accent);transition:all 0.15s;">💳 Pagamentos</button>';
             h += '<button id="pagStuTabBtn2" onclick="switchPagStuTab(2)" style="flex:1;padding:9px 4px;border:none;border-radius:8px;background:transparent;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;">🕐 Histórico</button>';
             h += '</div>';
 
-            // ── TAB 1: Minha Mensalidade ──────────────────────────────────
+            // ── TAB 1: Pagamentos (mensalidade + avulsas) ──────────────────────
             h += '<div id="pagStuTab1">';
 
             // Card de status
             h += '<div class="pag-card">';
             h += '<div class="pag-card-header"><div>';
-            h += '<div class="pag-card-title">💳 Minha Mensalidade</div>';
+            h += '<div class="pag-card-title">💳 Mensalidade</div>';
             if (plano.nome) {
                 h += '<div class="pag-card-sub">' + escapeHtml(plano.nome) + ' — R$ ' + parseFloat(plano.valor||0).toFixed(2) + (plano.frequencia ? ' · ' + (plano.frequencia.charAt(0).toUpperCase()+plano.frequencia.slice(1)) : '') + '</div>';
                 if (proxVenc) h += '<div class="pag-card-sub" style="color:var(--text-3);">📅 Próximo vencimento: <strong>' + escapeHtml(proxVenc) + '</strong></div>';
@@ -21677,6 +21700,30 @@
 
             if (atrasado) {
                 h += '<div class="pag-atrasado-alert">⚠️ Sua mensalidade está em atraso. Regularize para evitar suspensão.</div>';
+            }
+
+            // ── Cobranças Avulsas Pendentes (planos avulsos atribuídos pelo admin) ──
+            var _avulsasPerf = data.cobrancasAvulsas || [];
+            var _avPendPerf  = _avulsasPerf.filter(function(a){ return a.status !== 'PAGO' && a.status !== 'CANCELADO'; });
+            if (_avPendPerf.length > 0) {
+                h += '<div style="margin-top:14px;background:var(--bg-card);border-radius:16px;border:1px solid rgba(168,85,247,0.25);padding:16px;">';
+                h += '<div style="font-size:11px;font-weight:800;color:#a855f7;letter-spacing:.6px;margin-bottom:12px;">📌 COBRANÇAS PENDENTES (' + _avPendPerf.length + ')</div>';
+                _avPendPerf.forEach(function(av) {
+                    var _vDatePerf = av.dataVenc ? av.dataVenc.split('/').reverse().join('-') : '';
+                    var isAtrasadoPerf = _vDatePerf && (new Date(_vDatePerf) < new Date());
+                    var corPerf = isAtrasadoPerf ? '#f87171' : '#fbbf24';
+                    h += '<div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.18);border-radius:12px;padding:14px;margin-bottom:10px;">';
+                    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
+                    h += '<div style="font-size:13px;font-weight:700;color:var(--text-1);">' + escapeHtml(av.descricao) + '</div>';
+                    h += '<div style="font-size:16px;font-weight:900;color:#a855f7;">R$ ' + parseFloat(av.valor).toFixed(2) + '</div>';
+                    h += '</div>';
+                    if (av.dataVenc) h += '<div style="font-size:10px;color:' + corPerf + ';margin-bottom:8px;">📅 Vencimento: ' + escapeHtml(av.dataVenc) + (isAtrasadoPerf ? ' · Em atraso' : '') + '</div>';
+                    if (av.obs) h += '<div style="font-size:10px;color:var(--text-3);margin-bottom:8px;">' + escapeHtml(av.obs) + '</div>';
+                    h += '<div id="avulsaPixArea_' + escapeHtml(av.id) + '"></div>';
+                    h += '<button onclick="pagarAvulsaAluno(\'' + escapeHtml(av.id) + '\',this)" style="width:100%;padding:11px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;">🟢 Pagar via PIX</button>';
+                    h += '</div>';
+                });
+                h += '</div>';
             }
 
             // Alerta de fallback PIX (cartão recusado)
