@@ -12131,9 +12131,10 @@
                                     Cadastre aqui o <strong>Access Token</strong> de cada gateway de pagamento. Um token pode ser reutilizado em vários CTs (próxima aba).
                                 </div>
 
-                                <!-- Formulário novo token -->
+                                <!-- Formulário novo token / edição -->
                                 <div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;padding:12px;margin-bottom:12px;">
-                                    <div style="font-size:11px;font-weight:800;color:var(--adm-text-1);margin-bottom:10px;">+ Novo Gateway</div>
+                                    <div id="gwTokenFormTitle" style="font-size:11px;font-weight:800;color:var(--adm-text-1);margin-bottom:10px;">+ Novo Gateway</div>
+                                    <input type="hidden" id="gwGatewayId" value="">
 
                                     <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">Gateway de Pagamento</label>
                                     <select id="gwGateway" onchange="atualizarInfoGateway()" style="width:100%;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:8px;">
@@ -12154,7 +12155,8 @@
                                     <input type="text" id="gwLabel" placeholder="Ex: Mercado Pago — Academia Central" style="width:100%;box-sizing:border-box;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:10px;">
 
                                     <div id="gwMsg" style="font-size:11px;margin-bottom:6px;min-height:16px;"></div>
-                                    <button onclick="salvarGatewayToken()" style="width:100%;padding:10px;background:linear-gradient(135deg,#C9A23A,#F8E7A1 55%,#8C6A0A);color:#0D0B08;border:none;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;">💾 Salvar Token</button>
+                                    <button id="gwTokenSubmitBtn" onclick="salvarGatewayToken()" style="width:100%;padding:10px;background:linear-gradient(135deg,#C9A23A,#F8E7A1 55%,#8C6A0A);color:#0D0B08;border:none;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;">💾 Salvar Token</button>
+                                    <button id="gwTokenCancelBtn" onclick="cancelarEdicaoToken()" style="display:none;width:100%;padding:9px;background:transparent;color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px;">Cancelar edição</button>
                                     <button onclick="verificarGatewayAdmin()" style="width:100%;padding:9px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);border-radius:9px;color:#93c5fd;font-size:11px;font-weight:700;cursor:pointer;margin-top:6px;">🔍 Verificar token salvo no sistema</button>
                                 </div>
 
@@ -12203,9 +12205,10 @@
                                     <select id="planoCTFiltro" onchange="loadPlanosList()" style="padding:6px 10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:11px;"></select>
                                 </div>
 
-                                <!-- Form novo plano -->
+                                <!-- Form novo plano / edição -->
                                 <div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;padding:12px;margin-bottom:12px;">
-                                    <div style="font-size:11px;font-weight:800;color:var(--adm-text-1);margin-bottom:10px;">+ Novo Plano</div>
+                                    <div id="mpPlanoFormTitle" style="font-size:11px;font-weight:800;color:var(--adm-text-1);margin-bottom:10px;">+ Novo Plano</div>
+                                    <input type="hidden" id="mpPlanoId" value="">
 
                                     <div style="display:grid;grid-template-columns:1fr 90px;gap:6px;margin-bottom:6px;">
                                         <input type="text" id="mpPlanoNome" placeholder="Nome (ex: Mensal Adulto)" style="padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
@@ -12230,7 +12233,10 @@
                                     </div>
 
                                     <input type="text" id="mpPlanoDesc" placeholder="Descrição (opcional)" style="width:100%;box-sizing:border-box;padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:8px;">
-                                    <button onclick="criarPlanoMP()" style="width:100%;padding:9px;background:rgba(201,162,58,0.08);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.25);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✅ Criar plano</button>
+                                    <div style="display:flex;gap:6px;">
+                                        <button id="mpPlanoSubmitBtn" onclick="criarPlanoMP()" style="flex:1;padding:9px;background:rgba(201,162,58,0.08);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.25);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✅ Criar plano</button>
+                                        <button id="mpPlanoCancelBtn" onclick="cancelarEdicaoPlano()" style="display:none;padding:9px 14px;background:transparent;color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Cancelar</button>
+                                    </div>
                                 </div>
 
                                 <div id="mpPlanosList"><div class="admin-empty" style="font-size:11px;">Carregando...</div></div>
@@ -38089,27 +38095,38 @@
         }
 
         async function salvarGatewayToken() {
+            var gatewayId = (document.getElementById('gwGatewayId').value || '').trim();
             var gateway = (document.getElementById('gwGateway').value || '').trim();
             var token   = (document.getElementById('gwAccessToken') ? document.getElementById('gwAccessToken').value : '').trim();
             var label   = (document.getElementById('gwLabel').value || '').trim();
             var msg     = document.getElementById('gwMsg');
 
             if (!gateway) { msg.style.color='#f87171'; msg.textContent='Selecione o gateway'; return; }
-            if (!token && gateway !== 'pix_manual') { msg.style.color='#f87171'; msg.textContent='Informe o Access Token'; return; }
+            if (!token && gateway !== 'pix_manual' && !gatewayId) { msg.style.color='#f87171'; msg.textContent='Informe o Access Token'; return; }
             if (!label) label = gateway;
 
             msg.style.color = 'var(--adm-text-3)'; msg.textContent = 'Salvando...';
             try {
-                var data = await secureFetch('salvarGatewayToken', { gateway: gateway, accessToken: token, label: label });
+                var payload = { gateway: gateway, accessToken: token, label: label };
+                if (gatewayId) payload.gatewayId = gatewayId; // [FIX] presença do gatewayId faz o backend ATUALIZAR a linha existente
+                var data = await secureFetch('salvarGatewayToken', payload);
                 if (data.success) {
                     msg.style.color = '#4ade80'; msg.textContent = '✅ ' + data.message;
                     if (document.getElementById('gwAccessToken')) document.getElementById('gwAccessToken').value = '';
                     document.getElementById('gwLabel').value = '';
+                    cancelarEdicaoToken(); // reseta id/título/botões para o estado "novo"
                     loadGatewayTokens();
                 } else {
                     msg.style.color = '#f87171'; msg.textContent = '❌ ' + data.message;
                 }
             } catch(e) { msg.style.color = '#f87171'; msg.textContent = 'Erro de conexão'; }
+        }
+
+        function cancelarEdicaoToken() {
+            document.getElementById('gwGatewayId').value = '';
+            var title = document.getElementById('gwTokenFormTitle'); if (title) title.textContent = '+ Novo Gateway';
+            var btn = document.getElementById('gwTokenSubmitBtn'); if (btn) btn.textContent = '💾 Salvar Token';
+            var cancelBtn = document.getElementById('gwTokenCancelBtn'); if (cancelBtn) cancelBtn.style.display = 'none';
         }
 
         async function loadGatewayTokens() {
@@ -38162,14 +38179,21 @@
             var gwSel  = document.getElementById('gwGateway');
             var tokIn  = document.getElementById('gwAccessToken');
             var lblIn  = document.getElementById('gwLabel');
+            var idIn   = document.getElementById('gwGatewayId');
             if (gwSel) for (var i = 0; i < gwSel.options.length; i++) {
                 if (gwSel.options[i].value === t.gateway) { gwSel.selectedIndex = i; break; }
             }
-            if (tokIn) tokIn.value = '';  // token oculto por segurança — admin redigita
+            if (tokIn) tokIn.value = '';  // token oculto por segurança — admin redigita (vazio = mantém o token já salvo)
             if (lblIn) lblIn.value = t.label || '';
+            if (idIn)  idIn.value  = t.gatewayId || '';
+
+            var title = document.getElementById('gwTokenFormTitle'); if (title) title.textContent = '✏️ Editando: ' + (t.label || t.gateway || '');
+            var btn = document.getElementById('gwTokenSubmitBtn'); if (btn) btn.textContent = '💾 Salvar alterações';
+            var cancelBtn = document.getElementById('gwTokenCancelBtn'); if (cancelBtn) cancelBtn.style.display = 'block';
+
             var form = document.getElementById('gwTokenForm') || gwSel && gwSel.closest('div');
             if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            if (typeof showToast === 'function') showToast('Dados carregados — atualize o token e clique em Cadastrar', 'info');
+            if (typeof showToast === 'function') showToast('Token deixado em branco mantém o valor já salvo — preencha só se quiser substituir', 'info');
         }
 
         function _populateGatewaySelects() {
@@ -38398,6 +38422,7 @@
         }
 
         async function criarPlanoMP() {
+            var id    = (document.getElementById('mpPlanoId').value || '').trim();
             var ct    = (document.getElementById('mpPlanoCT').value || '').trim();
             var nome  = (document.getElementById('mpPlanoNome').value || '').trim();
             var valor = (document.getElementById('mpPlanoValor').value || '').trim();
@@ -38409,15 +38434,25 @@
             if (!valor || parseFloat(valor) <= 0) { alert('Valor obrigatório e maior que zero'); return; }
 
             try {
-                var data = await secureFetch('salvarPlano', { ct: ct, nome: nome, valor: valor, frequencia: freq, descricao: desc });
+                var payload = { ct: ct, nome: nome, valor: valor, frequencia: freq, descricao: desc };
+                if (id) payload.id = id; // [FIX] presença do id faz o backend ATUALIZAR a linha existente, em vez de criar uma nova
+                var data = await secureFetch('salvarPlano', payload);
                 if (data.success) {
-                    document.getElementById('mpPlanoNome').value  = '';
-                    document.getElementById('mpPlanoValor').value = '';
-                    if (document.getElementById('mpPlanoDesc')) document.getElementById('mpPlanoDesc').value = '';
+                    cancelarEdicaoPlano(); // limpa formulário e volta ao estado "novo plano"
                     loadPlanosList();
-                    alert('✅ Plano criado!');
+                    alert(id ? '✅ Plano atualizado!' : '✅ Plano criado!');
                 } else { alert('❌ ' + data.message); }
             } catch(e) { alert('Erro de conexão'); }
+        }
+
+        function cancelarEdicaoPlano() {
+            document.getElementById('mpPlanoId').value = '';
+            document.getElementById('mpPlanoNome').value = '';
+            document.getElementById('mpPlanoValor').value = '';
+            if (document.getElementById('mpPlanoDesc')) document.getElementById('mpPlanoDesc').value = '';
+            var title = document.getElementById('mpPlanoFormTitle'); if (title) title.textContent = '+ Novo Plano';
+            var btn = document.getElementById('mpPlanoSubmitBtn'); if (btn) btn.textContent = '✅ Criar plano';
+            var cancelBtn = document.getElementById('mpPlanoCancelBtn'); if (cancelBtn) cancelBtn.style.display = 'none';
         }
 
         async function deletarPlano(id) {
@@ -38449,7 +38484,7 @@
             // Guarda o ID para que criarPlanoMP atualize em vez de criar
             if (idIn) idIn.value = p.id || '';
             else {
-                // Se não há campo oculto, cria um
+                // Fallback de segurança — não deveria acontecer, já que o campo é fixo no HTML
                 var hidden = document.getElementById('_editPlanoId');
                 if (!hidden) {
                     hidden = document.createElement('input');
@@ -38458,9 +38493,14 @@
                 }
                 hidden.value = p.id || '';
             }
+
+            var title = document.getElementById('mpPlanoFormTitle'); if (title) title.textContent = '✏️ Editando: ' + (p.nome || '');
+            var btn = document.getElementById('mpPlanoSubmitBtn'); if (btn) btn.textContent = '💾 Salvar alterações';
+            var cancelBtn = document.getElementById('mpPlanoCancelBtn'); if (cancelBtn) cancelBtn.style.display = 'block';
+
             var form = ctSel && ctSel.closest('[style*="border-radius"]');
             if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            if (typeof showToast === 'function') showToast('Plano carregado — edite e clique em Criar Plano para salvar', 'info');
+            if (typeof showToast === 'function') showToast('Plano carregado — edite e clique em Salvar alterações', 'info');
         }
 
         // ── ABA 4: Cobranças ──────────────────────────────────────
