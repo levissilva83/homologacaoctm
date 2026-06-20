@@ -9280,7 +9280,7 @@
                         <!--                   Congelamento | Dependentes    -->
                         <!-- ══════════════════════════════════════════════════ -->
                         <div class="perfil-tabs-nav perfil-tabs-nav--secondary" id="perfilTabsNavSec" style="margin-top:20px;">
-                            <button class="perfil-tab-btn perfil-tab-btn--secondary active" data-ptabsec="mensalidade" onclick="switchPerfilTabSec('mensalidade')">💰 Financeiro</button>
+                            <button class="perfil-tab-btn perfil-tab-btn--secondary active" data-ptabsec="mensalidade" onclick="switchPerfilTabSec('mensalidade')">💳 Mensalidade</button>
                             <button class="perfil-tab-btn perfil-tab-btn--secondary"        data-ptabsec="contratos"   onclick="switchPerfilTabSec('contratos')">📋 Contratos</button>
                             <button class="perfil-tab-btn perfil-tab-btn--secondary"        data-ptabsec="congelamento" onclick="switchPerfilTabSec('congelamento')">❄️ Congelamento</button>
                             <button class="perfil-tab-btn perfil-tab-btn--secondary"        data-ptabsec="familia"     onclick="switchPerfilTabSec('familia')">👥 Dependentes</button>
@@ -12028,10 +12028,6 @@
                             style="flex-shrink:0;padding:13px 18px;border:none;background:transparent;color:rgba(255,255,255,0.4);font-size:11px;font-weight:800;cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.3px;">
                             🎫 Eventos
                         </button>
-                        <button onclick="switchFinSubTab('avulsas')" id="finSubBtn_avulsas"
-                            style="flex-shrink:0;padding:13px 18px;border:none;background:transparent;color:rgba(255,255,255,0.4);font-size:11px;font-weight:800;cursor:pointer;border-bottom:2px solid transparent;letter-spacing:.3px;">
-                            🧾 Avulsas
-                        </button>
                     </div>
 
                     <!-- Painel: Eventos -->
@@ -12088,23 +12084,6 @@
                         </div>
                     </div>
 
-                    <!-- Painel: Cobranças Avulsas -->
-                    <div id="finPainel_avulsas" style="padding:16px;display:none;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-                            <div style="font-size:15px;font-weight:800;color:var(--adm-text-1);">🧾 Cobranças Avulsas</div>
-                            <button onclick="abrirNovaCobrancaAvulsa()" style="padding:8px 14px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;">+ Nova cobrança</button>
-                        </div>
-                        <div style="font-size:11px;color:var(--adm-text-3);margin-bottom:14px;">
-                            Cobranças únicas (taxas, equipamentos, eventos) que coexistem com a mensalidade normal do aluno — não substituem a recorrência.
-                        </div>
-                        <div style="display:flex;gap:6px;margin-bottom:12px;">
-                            <button onclick="filtrarAvulsas('PENDENTE')" id="avlFiltroBtn_PENDENTE" style="flex:1;padding:8px;background:rgba(201,162,58,0.15);color:#C9A23A;border:1px solid rgba(201,162,58,0.3);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">⏳ Pendentes</button>
-                            <button onclick="filtrarAvulsas('PAGO')" id="avlFiltroBtn_PAGO" style="flex:1;padding:8px;background:transparent;color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">✅ Pagas</button>
-                            <button onclick="filtrarAvulsas('TODAS')" id="avlFiltroBtn_TODAS" style="flex:1;padding:8px;background:transparent;color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">📋 Todas</button>
-                        </div>
-                        <div id="avulsasList"><div style="text-align:center;padding:30px 0;color:rgba(255,255,255,0.4);font-size:12px;">Carregando...</div></div>
-                    </div>
-
                     <!-- Painel: Pagamentos -->
                     <div id="finPainel_pagamentos" style="padding:16px 16px 0;display:block;">
                         <div class="admin-section" id="pagamentosAdminSection">
@@ -12131,10 +12110,9 @@
                                     Cadastre aqui o <strong>Access Token</strong> de cada gateway de pagamento. Um token pode ser reutilizado em vários CTs (próxima aba).
                                 </div>
 
-                                <!-- Formulário novo token / edição -->
+                                <!-- Formulário novo token -->
                                 <div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;padding:12px;margin-bottom:12px;">
-                                    <div id="gwTokenFormTitle" style="font-size:11px;font-weight:800;color:var(--adm-text-1);margin-bottom:10px;">+ Novo Gateway</div>
-                                    <input type="hidden" id="gwGatewayId" value="">
+                                    <div style="font-size:11px;font-weight:800;color:var(--adm-text-1);margin-bottom:10px;">+ Novo Gateway</div>
 
                                     <label style="font-size:10px;color:var(--adm-text-3);font-weight:600;display:block;margin-bottom:4px;">Gateway de Pagamento</label>
                                     <select id="gwGateway" onchange="atualizarInfoGateway()" style="width:100%;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:8px;">
@@ -12155,8 +12133,7 @@
                                     <input type="text" id="gwLabel" placeholder="Ex: Mercado Pago — Academia Central" style="width:100%;box-sizing:border-box;padding:9px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:10px;">
 
                                     <div id="gwMsg" style="font-size:11px;margin-bottom:6px;min-height:16px;"></div>
-                                    <button id="gwTokenSubmitBtn" onclick="salvarGatewayToken()" style="width:100%;padding:10px;background:linear-gradient(135deg,#C9A23A,#F8E7A1 55%,#8C6A0A);color:#0D0B08;border:none;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;">💾 Salvar Token</button>
-                                    <button id="gwTokenCancelBtn" onclick="cancelarEdicaoToken()" style="display:none;width:100%;padding:9px;background:transparent;color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px;">Cancelar edição</button>
+                                    <button onclick="salvarGatewayToken()" style="width:100%;padding:10px;background:linear-gradient(135deg,#C9A23A,#F8E7A1 55%,#8C6A0A);color:#0D0B08;border:none;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer;">💾 Salvar Token</button>
                                     <button onclick="verificarGatewayAdmin()" style="width:100%;padding:9px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);border-radius:9px;color:#93c5fd;font-size:11px;font-weight:700;cursor:pointer;margin-top:6px;">🔍 Verificar token salvo no sistema</button>
                                 </div>
 
@@ -12205,10 +12182,9 @@
                                     <select id="planoCTFiltro" onchange="loadPlanosList()" style="padding:6px 10px;background:var(--adm-bg-elevated);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:7px;font-size:11px;"></select>
                                 </div>
 
-                                <!-- Form novo plano / edição -->
+                                <!-- Form novo plano -->
                                 <div style="background:var(--adm-bg-elevated);border:1px solid var(--adm-border);border-radius:10px;padding:12px;margin-bottom:12px;">
-                                    <div id="mpPlanoFormTitle" style="font-size:11px;font-weight:800;color:var(--adm-text-1);margin-bottom:10px;">+ Novo Plano</div>
-                                    <input type="hidden" id="mpPlanoId" value="">
+                                    <div style="font-size:11px;font-weight:800;color:var(--adm-text-1);margin-bottom:10px;">+ Novo Plano</div>
 
                                     <div style="display:grid;grid-template-columns:1fr 90px;gap:6px;margin-bottom:6px;">
                                         <input type="text" id="mpPlanoNome" placeholder="Nome (ex: Mensal Adulto)" style="padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;">
@@ -12227,16 +12203,12 @@
                                                 <option value="trimestral">Trimestral</option>
                                                 <option value="semestral">Semestral</option>
                                                 <option value="anual">Anual</option>
-                                                <option value="avulso">Avulso (cobrança única)</option>
                                             </select>
                                         </div>
                                     </div>
 
                                     <input type="text" id="mpPlanoDesc" placeholder="Descrição (opcional)" style="width:100%;box-sizing:border-box;padding:8px;background:var(--adm-bg-card);color:var(--adm-text-1);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;margin-bottom:8px;">
-                                    <div style="display:flex;gap:6px;">
-                                        <button id="mpPlanoSubmitBtn" onclick="criarPlanoMP()" style="flex:1;padding:9px;background:rgba(201,162,58,0.08);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.25);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✅ Criar plano</button>
-                                        <button id="mpPlanoCancelBtn" onclick="cancelarEdicaoPlano()" style="display:none;padding:9px 14px;background:transparent;color:var(--adm-text-3);border:1px solid var(--adm-border);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">Cancelar</button>
-                                    </div>
+                                    <button onclick="criarPlanoMP()" style="width:100%;padding:9px;background:rgba(201,162,58,0.08);color:var(--adm-primary);border:1px solid rgba(201,162,58,0.25);border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;">✅ Criar plano</button>
                                 </div>
 
                                 <div id="mpPlanosList"><div class="admin-empty" style="font-size:11px;">Carregando...</div></div>
@@ -20974,7 +20946,7 @@
                 var _hNC = '<div style="padding:16px 0;">';
                 // Tabs: Mensalidade | Histórico
                 _hNC += '<div style="display:flex;gap:0;background:rgba(255,255,255,0.03);border-radius:12px;padding:4px;margin-bottom:16px;">';
-                _hNC += '<button id="pagStuTabBtn1" onclick="switchPagStuTab(1)" style="flex:1;padding:9px 4px;border:none;border-radius:8px;background:rgba(201,162,58,0.15);color:var(--accent);font-size:12px;font-weight:800;cursor:pointer;border-bottom:2px solid var(--accent);">💳 Pagamentos</button>';
+                _hNC += '<button id="pagStuTabBtn1" onclick="switchPagStuTab(1)" style="flex:1;padding:9px 4px;border:none;border-radius:8px;background:rgba(201,162,58,0.15);color:var(--accent);font-size:12px;font-weight:800;cursor:pointer;border-bottom:2px solid var(--accent);">💳 Minha Mensalidade</button>';
                 _hNC += '<button id="pagStuTabBtn2" onclick="switchPagStuTab(2)" style="flex:1;padding:9px 4px;border:none;border-radius:8px;background:transparent;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;">🕐 Histórico</button>';
                 _hNC += '</div>';
                 // Tab 1: mensalidade + cobranças pendentes
@@ -21027,7 +20999,7 @@
             var temGateway = !!data.temGateway;
             var pixFallback = !!data.pixFallback;   // cartão falhou → PIX como fallback
             var motivoFalha = data.motivoFalha || '';
-            var freqLabel  = { mensal:'Mensal', trimestral:'Trimestral', semestral:'Semestral', anual:'Anual', avulso:'Avulso' };
+            var freqLabel  = { mensal:'Mensal', trimestral:'Trimestral', semestral:'Semestral', anual:'Anual' };
             var statusLabel = { pago:'✅ Em dia', emdia:'✅ Em dia', pendente:'⏳ Aguardando pagamento', atrasado:'⚠️ Em atraso', vencendo:'🟡 Vencendo em breve', inativo:'— Sem plano' };
             var statusColor = { pago:'#4ade80', emdia:'#4ade80', pendente:'#fbbf24', atrasado:'#f87171', vencendo:'#fbbf24', inativo:'#64748b' };
             var statusBg    = { pago:'rgba(74,222,128,0.08)', emdia:'rgba(74,222,128,0.08)', pendente:'rgba(251,191,36,0.08)', atrasado:'rgba(248,113,113,0.08)', vencendo:'rgba(251,191,36,0.08)', inativo:'rgba(100,116,139,0.08)' };
@@ -21597,31 +21569,8 @@
             if (!el) return;
             _pagDataGlobal = data;
             if (!data.success || !data.configurado) {
-                var _avulsasSemCfg = (data.cobrancasAvulsas || []).filter(function(a){ return a.status !== 'PAGO' && a.status !== 'CANCELADO'; });
-                var _avHtmlSemCfg = '';
-                if (_avulsasSemCfg.length > 0) {
-                    _avHtmlSemCfg += '<div style="background:var(--bg-card);border-radius:16px;border:1px solid rgba(168,85,247,0.25);padding:16px;margin-bottom:12px;">';
-                    _avHtmlSemCfg += '<div style="font-size:11px;font-weight:800;color:#a855f7;letter-spacing:.6px;margin-bottom:12px;">📌 COBRANÇAS PENDENTES (' + _avulsasSemCfg.length + ')</div>';
-                    _avulsasSemCfg.forEach(function(av) {
-                        var _vDateSc = av.dataVenc ? av.dataVenc.split('/').reverse().join('-') : '';
-                        var isAtrasadoSc = _vDateSc && (new Date(_vDateSc) < new Date());
-                        var corSc = isAtrasadoSc ? '#f87171' : '#fbbf24';
-                        _avHtmlSemCfg += '<div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.18);border-radius:12px;padding:14px;margin-bottom:10px;">';
-                        _avHtmlSemCfg += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
-                        _avHtmlSemCfg += '<div style="font-size:13px;font-weight:700;color:var(--text-1);">' + escapeHtml(av.descricao) + '</div>';
-                        _avHtmlSemCfg += '<div style="font-size:16px;font-weight:900;color:#a855f7;">R$ ' + parseFloat(av.valor).toFixed(2) + '</div>';
-                        _avHtmlSemCfg += '</div>';
-                        if (av.dataVenc) _avHtmlSemCfg += '<div style="font-size:10px;color:' + corSc + ';margin-bottom:8px;">📅 Vencimento: ' + escapeHtml(av.dataVenc) + (isAtrasadoSc ? ' · Em atraso' : '') + '</div>';
-                        if (av.obs) _avHtmlSemCfg += '<div style="font-size:10px;color:var(--text-3);margin-bottom:8px;">' + escapeHtml(av.obs) + '</div>';
-                        _avHtmlSemCfg += '<div id="avulsaPixArea_' + escapeHtml(av.id) + '"></div>';
-                        _avHtmlSemCfg += '<button onclick="pagarAvulsaAluno(\'' + escapeHtml(av.id) + '\',this)" style="width:100%;padding:11px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;">🟢 Pagar via PIX</button>';
-                        _avHtmlSemCfg += '</div>';
-                    });
-                    _avHtmlSemCfg += '</div>';
-                }
                 el.innerHTML =
                     '<div style="padding:8px 0;">' +
-                    _avHtmlSemCfg +
                     '<div style="text-align:center;padding:14px;background:rgba(255,255,255,0.02);border-radius:12px;border:1px dashed var(--border);margin-bottom:12px;">' +
                     '<div style="font-size:11px;color:var(--text-3);">Cobrança automática não configurada pelo professor.<br>Você já pode cadastrar sua forma de pagamento.</div>' +
                     '</div>' +
@@ -21658,19 +21607,19 @@
 
             var h = '';
 
-            // ── Tabs: Pagamentos | Histórico ──────────────────────
+            // ── Tabs: Minha Mensalidade | Histórico ──────────────────────
             h += '<div style="display:flex;gap:0;background:rgba(255,255,255,0.03);border-radius:12px;padding:4px;margin-bottom:16px;">';
-            h += '<button id="pagStuTabBtn1" onclick="switchPagStuTab(1)" style="flex:1;padding:9px 4px;border:none;border-radius:8px;background:rgba(201,162,58,0.15);color:var(--accent);font-size:12px;font-weight:800;cursor:pointer;border-bottom:2px solid var(--accent);transition:all 0.15s;">💳 Pagamentos</button>';
+            h += '<button id="pagStuTabBtn1" onclick="switchPagStuTab(1)" style="flex:1;padding:9px 4px;border:none;border-radius:8px;background:rgba(201,162,58,0.15);color:var(--accent);font-size:12px;font-weight:800;cursor:pointer;border-bottom:2px solid var(--accent);transition:all 0.15s;">💳 Minha Mensalidade</button>';
             h += '<button id="pagStuTabBtn2" onclick="switchPagStuTab(2)" style="flex:1;padding:9px 4px;border:none;border-radius:8px;background:transparent;color:var(--text-3);font-size:12px;font-weight:600;cursor:pointer;border-bottom:2px solid transparent;transition:all 0.15s;">🕐 Histórico</button>';
             h += '</div>';
 
-            // ── TAB 1: Pagamentos (mensalidade + avulsas) ──────────────────────
+            // ── TAB 1: Minha Mensalidade ──────────────────────────────────
             h += '<div id="pagStuTab1">';
 
             // Card de status
             h += '<div class="pag-card">';
             h += '<div class="pag-card-header"><div>';
-            h += '<div class="pag-card-title">💳 Mensalidade</div>';
+            h += '<div class="pag-card-title">💳 Minha Mensalidade</div>';
             if (plano.nome) {
                 h += '<div class="pag-card-sub">' + escapeHtml(plano.nome) + ' — R$ ' + parseFloat(plano.valor||0).toFixed(2) + (plano.frequencia ? ' · ' + (plano.frequencia.charAt(0).toUpperCase()+plano.frequencia.slice(1)) : '') + '</div>';
                 if (proxVenc) h += '<div class="pag-card-sub" style="color:var(--text-3);">📅 Próximo vencimento: <strong>' + escapeHtml(proxVenc) + '</strong></div>';
@@ -21706,30 +21655,6 @@
 
             if (atrasado) {
                 h += '<div class="pag-atrasado-alert">⚠️ Sua mensalidade está em atraso. Regularize para evitar suspensão.</div>';
-            }
-
-            // ── Cobranças Avulsas Pendentes (planos avulsos atribuídos pelo admin) ──
-            var _avulsasPerf = data.cobrancasAvulsas || [];
-            var _avPendPerf  = _avulsasPerf.filter(function(a){ return a.status !== 'PAGO' && a.status !== 'CANCELADO'; });
-            if (_avPendPerf.length > 0) {
-                h += '<div style="margin-top:14px;background:var(--bg-card);border-radius:16px;border:1px solid rgba(168,85,247,0.25);padding:16px;">';
-                h += '<div style="font-size:11px;font-weight:800;color:#a855f7;letter-spacing:.6px;margin-bottom:12px;">📌 COBRANÇAS PENDENTES (' + _avPendPerf.length + ')</div>';
-                _avPendPerf.forEach(function(av) {
-                    var _vDatePerf = av.dataVenc ? av.dataVenc.split('/').reverse().join('-') : '';
-                    var isAtrasadoPerf = _vDatePerf && (new Date(_vDatePerf) < new Date());
-                    var corPerf = isAtrasadoPerf ? '#f87171' : '#fbbf24';
-                    h += '<div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.18);border-radius:12px;padding:14px;margin-bottom:10px;">';
-                    h += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">';
-                    h += '<div style="font-size:13px;font-weight:700;color:var(--text-1);">' + escapeHtml(av.descricao) + '</div>';
-                    h += '<div style="font-size:16px;font-weight:900;color:#a855f7;">R$ ' + parseFloat(av.valor).toFixed(2) + '</div>';
-                    h += '</div>';
-                    if (av.dataVenc) h += '<div style="font-size:10px;color:' + corPerf + ';margin-bottom:8px;">📅 Vencimento: ' + escapeHtml(av.dataVenc) + (isAtrasadoPerf ? ' · Em atraso' : '') + '</div>';
-                    if (av.obs) h += '<div style="font-size:10px;color:var(--text-3);margin-bottom:8px;">' + escapeHtml(av.obs) + '</div>';
-                    h += '<div id="avulsaPixArea_' + escapeHtml(av.id) + '"></div>';
-                    h += '<button onclick="pagarAvulsaAluno(\'' + escapeHtml(av.id) + '\',this)" style="width:100%;padding:11px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;">🟢 Pagar via PIX</button>';
-                    h += '</div>';
-                });
-                h += '</div>';
             }
 
             // Alerta de fallback PIX (cartão recusado)
@@ -21856,7 +21781,7 @@
                     if (btn) { btn.style.opacity = '0.35'; btn.style.cursor = 'not-allowed'; btn.disabled = true; }
                     return;
                 }
-                var freqLabel = { mensal:'Mensal', trimestral:'Trimestral', semestral:'Semestral', anual:'Anual', avulso:'Avulso' };
+                var freqLabel = { mensal:'Mensal', trimestral:'Trimestral', semestral:'Semestral', anual:'Anual' };
                 var statusColor = { PAGO:'#4ade80', PENDENTE:'#f59e0b', ATRASADO:'#f87171' };
                 var sc = statusColor[data.status] || '#94a3b8';
                 lista.innerHTML =
@@ -24988,7 +24913,6 @@
             }
             if (sub === 'faturamento') { renderFaturamento(); }
             if (sub === 'eventos') { loadEventos(); }
-            if (sub === 'avulsas') { loadAvulsasAdmin(); }
         }
 
 
@@ -38095,38 +38019,27 @@
         }
 
         async function salvarGatewayToken() {
-            var gatewayId = (document.getElementById('gwGatewayId').value || '').trim();
             var gateway = (document.getElementById('gwGateway').value || '').trim();
             var token   = (document.getElementById('gwAccessToken') ? document.getElementById('gwAccessToken').value : '').trim();
             var label   = (document.getElementById('gwLabel').value || '').trim();
             var msg     = document.getElementById('gwMsg');
 
             if (!gateway) { msg.style.color='#f87171'; msg.textContent='Selecione o gateway'; return; }
-            if (!token && gateway !== 'pix_manual' && !gatewayId) { msg.style.color='#f87171'; msg.textContent='Informe o Access Token'; return; }
+            if (!token && gateway !== 'pix_manual') { msg.style.color='#f87171'; msg.textContent='Informe o Access Token'; return; }
             if (!label) label = gateway;
 
             msg.style.color = 'var(--adm-text-3)'; msg.textContent = 'Salvando...';
             try {
-                var payload = { gateway: gateway, accessToken: token, label: label };
-                if (gatewayId) payload.gatewayId = gatewayId; // [FIX] presença do gatewayId faz o backend ATUALIZAR a linha existente
-                var data = await secureFetch('salvarGatewayToken', payload);
+                var data = await secureFetch('salvarGatewayToken', { gateway: gateway, accessToken: token, label: label });
                 if (data.success) {
                     msg.style.color = '#4ade80'; msg.textContent = '✅ ' + data.message;
                     if (document.getElementById('gwAccessToken')) document.getElementById('gwAccessToken').value = '';
                     document.getElementById('gwLabel').value = '';
-                    cancelarEdicaoToken(); // reseta id/título/botões para o estado "novo"
                     loadGatewayTokens();
                 } else {
                     msg.style.color = '#f87171'; msg.textContent = '❌ ' + data.message;
                 }
             } catch(e) { msg.style.color = '#f87171'; msg.textContent = 'Erro de conexão'; }
-        }
-
-        function cancelarEdicaoToken() {
-            document.getElementById('gwGatewayId').value = '';
-            var title = document.getElementById('gwTokenFormTitle'); if (title) title.textContent = '+ Novo Gateway';
-            var btn = document.getElementById('gwTokenSubmitBtn'); if (btn) btn.textContent = '💾 Salvar Token';
-            var cancelBtn = document.getElementById('gwTokenCancelBtn'); if (cancelBtn) cancelBtn.style.display = 'none';
         }
 
         async function loadGatewayTokens() {
@@ -38179,21 +38092,14 @@
             var gwSel  = document.getElementById('gwGateway');
             var tokIn  = document.getElementById('gwAccessToken');
             var lblIn  = document.getElementById('gwLabel');
-            var idIn   = document.getElementById('gwGatewayId');
             if (gwSel) for (var i = 0; i < gwSel.options.length; i++) {
                 if (gwSel.options[i].value === t.gateway) { gwSel.selectedIndex = i; break; }
             }
-            if (tokIn) tokIn.value = '';  // token oculto por segurança — admin redigita (vazio = mantém o token já salvo)
+            if (tokIn) tokIn.value = '';  // token oculto por segurança — admin redigita
             if (lblIn) lblIn.value = t.label || '';
-            if (idIn)  idIn.value  = t.gatewayId || '';
-
-            var title = document.getElementById('gwTokenFormTitle'); if (title) title.textContent = '✏️ Editando: ' + (t.label || t.gateway || '');
-            var btn = document.getElementById('gwTokenSubmitBtn'); if (btn) btn.textContent = '💾 Salvar alterações';
-            var cancelBtn = document.getElementById('gwTokenCancelBtn'); if (cancelBtn) cancelBtn.style.display = 'block';
-
             var form = document.getElementById('gwTokenForm') || gwSel && gwSel.closest('div');
             if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            if (typeof showToast === 'function') showToast('Token deixado em branco mantém o valor já salvo — preencha só se quiser substituir', 'info');
+            if (typeof showToast === 'function') showToast('Dados carregados — atualize o token e clique em Cadastrar', 'info');
         }
 
         function _populateGatewaySelects() {
@@ -38398,7 +38304,7 @@
                     return;
                 }
 
-                var freqLabel = { mensal:'Mensal', trimestral:'Trim.', semestral:'Semest.', anual:'Anual', avulso:'Avulso' };
+                var freqLabel = { mensal:'Mensal', trimestral:'Trim.', semestral:'Semest.', anual:'Anual' };
                 var gwIcon    = { mercadopago: '🔵', infinitypay: '🟣', pix_manual: '🟢' };
                 var h = '';
                 _mpPlanos.forEach(function(p) {
@@ -38422,7 +38328,6 @@
         }
 
         async function criarPlanoMP() {
-            var id    = (document.getElementById('mpPlanoId').value || '').trim();
             var ct    = (document.getElementById('mpPlanoCT').value || '').trim();
             var nome  = (document.getElementById('mpPlanoNome').value || '').trim();
             var valor = (document.getElementById('mpPlanoValor').value || '').trim();
@@ -38434,25 +38339,15 @@
             if (!valor || parseFloat(valor) <= 0) { alert('Valor obrigatório e maior que zero'); return; }
 
             try {
-                var payload = { ct: ct, nome: nome, valor: valor, frequencia: freq, descricao: desc };
-                if (id) payload.id = id; // [FIX] presença do id faz o backend ATUALIZAR a linha existente, em vez de criar uma nova
-                var data = await secureFetch('salvarPlano', payload);
+                var data = await secureFetch('salvarPlano', { ct: ct, nome: nome, valor: valor, frequencia: freq, descricao: desc });
                 if (data.success) {
-                    cancelarEdicaoPlano(); // limpa formulário e volta ao estado "novo plano"
+                    document.getElementById('mpPlanoNome').value  = '';
+                    document.getElementById('mpPlanoValor').value = '';
+                    if (document.getElementById('mpPlanoDesc')) document.getElementById('mpPlanoDesc').value = '';
                     loadPlanosList();
-                    alert(id ? '✅ Plano atualizado!' : '✅ Plano criado!');
+                    alert('✅ Plano criado!');
                 } else { alert('❌ ' + data.message); }
             } catch(e) { alert('Erro de conexão'); }
-        }
-
-        function cancelarEdicaoPlano() {
-            document.getElementById('mpPlanoId').value = '';
-            document.getElementById('mpPlanoNome').value = '';
-            document.getElementById('mpPlanoValor').value = '';
-            if (document.getElementById('mpPlanoDesc')) document.getElementById('mpPlanoDesc').value = '';
-            var title = document.getElementById('mpPlanoFormTitle'); if (title) title.textContent = '+ Novo Plano';
-            var btn = document.getElementById('mpPlanoSubmitBtn'); if (btn) btn.textContent = '✅ Criar plano';
-            var cancelBtn = document.getElementById('mpPlanoCancelBtn'); if (cancelBtn) cancelBtn.style.display = 'none';
         }
 
         async function deletarPlano(id) {
@@ -38484,7 +38379,7 @@
             // Guarda o ID para que criarPlanoMP atualize em vez de criar
             if (idIn) idIn.value = p.id || '';
             else {
-                // Fallback de segurança — não deveria acontecer, já que o campo é fixo no HTML
+                // Se não há campo oculto, cria um
                 var hidden = document.getElementById('_editPlanoId');
                 if (!hidden) {
                     hidden = document.createElement('input');
@@ -38493,14 +38388,9 @@
                 }
                 hidden.value = p.id || '';
             }
-
-            var title = document.getElementById('mpPlanoFormTitle'); if (title) title.textContent = '✏️ Editando: ' + (p.nome || '');
-            var btn = document.getElementById('mpPlanoSubmitBtn'); if (btn) btn.textContent = '💾 Salvar alterações';
-            var cancelBtn = document.getElementById('mpPlanoCancelBtn'); if (cancelBtn) cancelBtn.style.display = 'block';
-
             var form = ctSel && ctSel.closest('[style*="border-radius"]');
             if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            if (typeof showToast === 'function') showToast('Plano carregado — edite e clique em Salvar alterações', 'info');
+            if (typeof showToast === 'function') showToast('Plano carregado — edite e clique em Criar Plano para salvar', 'info');
         }
 
         // ── ABA 4: Cobranças ──────────────────────────────────────
@@ -39440,9 +39330,8 @@
                 alert('Crie pelo menos um plano (Aba 3) antes de atribuir.');
                 return;
             }
-            var freqLblPrompt = { mensal:'Mensal', trimestral:'Trimestral', semestral:'Semestral', anual:'Anual', avulso:'AVULSO — cobrança única' };
             var escolha = prompt('Atribuir plano para ' + email + ':\n\n' +
-                _mpPlanos.map(function(p,i){ return (i+1) + '. ' + p.nome + ' — R$' + parseFloat(p.valor||0).toFixed(2) + ' (' + (freqLblPrompt[p.frequencia]||p.frequencia||'Mensal') + ', ' + (p.ct||'—') + ')'; }).join('\n') +
+                _mpPlanos.map(function(p,i){ return (i+1) + '. ' + p.nome + ' — R$' + parseFloat(p.valor||0).toFixed(2) + ' (' + (p.ct||'—') + ')'; }).join('\n') +
                 '\n\nDigite o número:');
             if (!escolha) return;
             var idx = parseInt(escolha) - 1;
@@ -44376,118 +44265,6 @@
         }
 
         // ═══ ABA EVENTOS ════════════════════════════════════════════════════
-        // ── Cobranças Avulsas (admin) ────────────────────────────────────────
-        var _avulsasCache = [];
-        var _avulsasFiltroAtual = 'PENDENTE';
-
-        async function loadAvulsasAdmin() {
-            var box = document.getElementById('avulsasList'); if (!box) return;
-            box.innerHTML = '<div style="text-align:center;padding:30px 0;color:rgba(255,255,255,0.4);font-size:12px;">Carregando...</div>';
-            var res = await secureFetch('getCobrancasAvulsas', {});
-            if (!res || !res.success) { box.innerHTML = '<div style="text-align:center;padding:30px 0;color:#f87171;font-size:12px;">Erro ao carregar cobranças.</div>'; return; }
-            _avulsasCache = res.cobrancas || [];
-            filtrarAvulsas(_avulsasFiltroAtual);
-        }
-
-        function filtrarAvulsas(filtro) {
-            _avulsasFiltroAtual = filtro;
-            ['PENDENTE','PAGO','TODAS'].forEach(function(f) {
-                var btn = document.getElementById('avlFiltroBtn_' + f);
-                if (!btn) return;
-                if (f === filtro) { btn.style.background='rgba(201,162,58,0.15)'; btn.style.color='#C9A23A'; btn.style.borderColor='rgba(201,162,58,0.3)'; }
-                else { btn.style.background='transparent'; btn.style.color='var(--adm-text-3)'; btn.style.borderColor='var(--adm-border)'; }
-            });
-
-            var box = document.getElementById('avulsasList'); if (!box) return;
-            var lista = _avulsasCache.filter(function(c) {
-                if (filtro === 'TODAS') return true;
-                return (c.status||'').toUpperCase() === filtro;
-            });
-
-            if (!lista.length) {
-                box.innerHTML = '<div style="text-align:center;padding:30px 0;color:rgba(255,255,255,0.4);font-size:12px;">Nenhuma cobrança ' + (filtro==='PENDENTE'?'pendente':filtro==='PAGO'?'paga':'') + '.</div>';
-                return;
-            }
-
-            var h = '';
-            lista.forEach(function(c) {
-                var pago = (c.status||'').toUpperCase() === 'PAGO';
-                var cancelado = (c.status||'').toUpperCase() === 'CANCELADO';
-                var cor = pago ? '#4ade80' : (cancelado ? 'rgba(255,255,255,0.3)' : '#C9A23A');
-                var statusLbl = pago ? '✅ Pago' : (cancelado ? '⛔ Cancelado' : '⏳ Pendente');
-                h += '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:13px;margin-bottom:9px;' + (pago||cancelado ? 'opacity:.7;' : '') + '">';
-                h += '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">';
-                h += '<div style="flex:1;min-width:0;">';
-                h += '<div style="font-size:13px;font-weight:800;color:var(--adm-text-1);">' + escapeHtml(c.descricao) + '</div>';
-                h += '<div style="font-size:10px;color:var(--adm-text-3);margin-top:2px;">' + escapeHtml(c.email) + ' · ' + escapeHtml(c.ct||'') + '</div>';
-                h += '<div style="font-size:10px;color:var(--adm-text-3);margin-top:1px;">📅 Venc. ' + escapeHtml(c.dataVenc||'') + (c.dataPag ? ' · Pago em ' + escapeHtml(c.dataPag) : '') + '</div>';
-                h += '</div>';
-                h += '<div style="text-align:right;flex-shrink:0;">';
-                h += '<div style="font-size:15px;font-weight:900;color:' + cor + ';">R$ ' + parseFloat(c.valor||0).toFixed(2) + '</div>';
-                h += '<div style="font-size:9px;font-weight:700;color:' + cor + ';margin-top:2px;">' + statusLbl + '</div>';
-                h += '</div></div>';
-                if (!pago && !cancelado) {
-                    h += '<div style="display:flex;gap:6px;margin-top:10px;">';
-                    h += '<button onclick="marcarAvulsaPaga(\'' + c.id + '\')" style="flex:1;padding:7px;border-radius:7px;background:rgba(74,222,128,0.12);color:#4ade80;border:1px solid rgba(74,222,128,0.3);font-size:11px;font-weight:700;cursor:pointer;">✅ Marcar paga</button>';
-                    h += '<button onclick="cancelarAvulsaAdmin(\'' + c.id + '\')" style="padding:7px 12px;border-radius:7px;background:rgba(248,113,113,0.1);color:#f87171;border:none;font-size:11px;cursor:pointer;">✕</button>';
-                    h += '</div>';
-                }
-                h += '</div>';
-            });
-            box.innerHTML = h;
-        }
-
-        async function marcarAvulsaPaga(id) {
-            if (!confirm('Confirmar que esta cobrança foi paga?')) return;
-            var res = await secureFetch('pagarCobrancaAvulsa', { id: id });
-            if (res && res.success) { loadAvulsasAdmin(); } else { alert('❌ ' + ((res&&res.message)||'Erro')); }
-        }
-
-        async function cancelarAvulsaAdmin(id) {
-            if (!confirm('Cancelar esta cobrança avulsa?')) return;
-            var res = await secureFetch('cancelarCobrancaAvulsa', { id: id });
-            if (res && res.success) { loadAvulsasAdmin(); } else { alert('❌ ' + ((res&&res.message)||'Erro')); }
-        }
-
-        function abrirNovaCobrancaAvulsa() {
-            var old = document.getElementById('novaAvulsaSheet'); if (old) old.remove();
-            var sh = document.createElement('div'); sh.id = 'novaAvulsaSheet';
-            sh.innerHTML = '<div onclick="document.getElementById(\'novaAvulsaSheet\').remove()" style="position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9998;"></div>'
-              + '<div onclick="event.stopPropagation()" style="position:fixed;bottom:0;left:0;right:0;background:#1a1f2e;border-radius:20px 20px 0 0;padding:24px 20px 36px;z-index:9999;max-height:90vh;overflow-y:auto;">'
-              + '<div style="width:40px;height:4px;background:rgba(255,255,255,.15);border-radius:2px;margin:0 auto 20px;"></div>'
-              + '<div style="font-size:15px;font-weight:800;color:#fff;text-align:center;margin-bottom:18px;">🧾 Nova Cobrança Avulsa</div>'
-              + '<div style="display:flex;flex-direction:column;gap:10px;">'
-              + '<div><label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px;">E-mail do aluno</label>'
-              + '<input type="email" id="avlNovoEmail" placeholder="aluno@email.com" style="width:100%;padding:11px;background:#262a38;color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:9px;font-size:13px;box-sizing:border-box;"></div>'
-              + '<div><label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px;">Descrição</label>'
-              + '<input type="text" id="avlNovoDescricao" placeholder="Ex: Taxa de equipamento" style="width:100%;padding:11px;background:#262a38;color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:9px;font-size:13px;box-sizing:border-box;"></div>'
-              + '<div><label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px;">Valor (R$)</label>'
-              + '<input type="number" id="avlNovoValor" placeholder="0.00" step="0.01" style="width:100%;padding:11px;background:#262a38;color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:9px;font-size:13px;box-sizing:border-box;"></div>'
-              + '<div><label style="font-size:11px;color:rgba(255,255,255,0.5);display:block;margin-bottom:4px;">Vencimento (opcional, dd/mm/aaaa)</label>'
-              + '<input type="text" id="avlNovoVenc" placeholder="Hoje, se vazio" style="width:100%;padding:11px;background:#262a38;color:#fff;border:1px solid rgba(255,255,255,0.1);border-radius:9px;font-size:13px;box-sizing:border-box;"></div>'
-              + '<div id="avlNovoMsg" style="font-size:12px;color:#f87171;"></div>'
-              + '<button onclick="_criarCobrancaAvulsa()" style="width:100%;padding:13px;background:linear-gradient(135deg,#C9A23A,#8C6A0A);color:#000;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;margin-top:6px;">Criar cobrança</button>'
-              + '</div></div>';
-            document.body.appendChild(sh);
-        }
-
-        async function _criarCobrancaAvulsa() {
-            var email = (document.getElementById('avlNovoEmail').value || '').trim();
-            var descricao = (document.getElementById('avlNovoDescricao').value || '').trim();
-            var valor = parseFloat(document.getElementById('avlNovoValor').value) || 0;
-            var dataVenc = (document.getElementById('avlNovoVenc').value || '').trim();
-            var msgEl = document.getElementById('avlNovoMsg');
-            if (!email || !descricao || valor <= 0) { msgEl.textContent = 'Preencha email, descrição e um valor válido.'; return; }
-            msgEl.style.color = 'var(--adm-text-3)'; msgEl.textContent = 'Criando...';
-            var res = await secureFetch('criarCobrancaAvulsa', { email: email, descricao: descricao, valor: valor, dataVenc: dataVenc });
-            if (res && res.success) {
-                var sh = document.getElementById('novaAvulsaSheet'); if (sh) sh.remove();
-                loadAvulsasAdmin();
-            } else {
-                msgEl.style.color = '#f87171'; msgEl.textContent = (res && res.message) || 'Erro ao criar cobrança';
-            }
-        }
-
         async function loadEventos() {
             var box = document.getElementById('eventosList'); if (!box) return;
             box.innerHTML = '<div style="text-align:center;padding:30px 0;color:rgba(255,255,255,0.4);font-size:12px;">Carregando...</div>';
@@ -46830,7 +46607,7 @@
             _planos.forEach(function (p) {
                 var valorNum = isNaN(parseFloat(p.valor)) ? 0 : parseFloat(p.valor);
                 var freq     = (p.frequencia || 'mensal').toString().toLowerCase();
-                var freqLbl  = { mensal:'Mensal', trimestral:'Trimestral', semestral:'Semestral', anual:'Anual', avulso:'Avulso' }[freq] || freq;
+                var freqLbl  = { mensal:'Mensal', trimestral:'Trimestral', semestral:'Semestral', anual:'Anual' }[freq] || freq;
                 var desc     = (p.descricao || '').toString().trim().length > 2 ? (p.descricao || '') : '';
                 var isSel    = paraTroca ? (_trocaSel && _trocaSel.id_plano === p.id_plano) : (_planoSel && _planoSel.id_plano === p.id_plano);
 
