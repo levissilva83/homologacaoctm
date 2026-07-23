@@ -13017,6 +13017,17 @@
                                     <button onclick="verificarGatewayAdmin()" style="width:100%;padding:9px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);border-radius:9px;color:#93c5fd;font-size:11px;font-weight:700;cursor:pointer;margin-top:6px;">🔍 Verificar token salvo no sistema</button>
                                 </div>
 
+                                <!-- Chave PIX do Asaas (necessária para gerar QR Code) -->
+                                <div style="background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.2);border-radius:10px;padding:12px;margin-bottom:12px;">
+                                    <div style="font-size:12px;font-weight:800;color:var(--adm-text-1);margin-bottom:4px;">🔑 Chave PIX (Asaas)</div>
+                                    <div style="font-size:10px;color:var(--adm-text-3);line-height:1.5;margin-bottom:8px;">
+                                        O Asaas só gera QR Code se a conta tiver uma chave PIX. Se o PIX aparecer em branco no app do aluno, é isso que está faltando.
+                                    </div>
+                                    <div id="asaasPixStatus" style="font-size:11px;margin-bottom:8px;min-height:16px;color:var(--adm-text-3);">—</div>
+                                    <button onclick="verificarChavePixAsaas()" style="width:100%;padding:9px;background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);border-radius:9px;color:#93c5fd;font-size:11px;font-weight:700;cursor:pointer;margin-bottom:6px;">🔍 Verificar chave PIX</button>
+                                    <button onclick="ativarChavePixAsaas(this)" style="width:100%;padding:9px;background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.3);border-radius:9px;color:#4ade80;font-size:11px;font-weight:700;cursor:pointer;">✅ Ativar PIX nesta conta</button>
+                                </div>
+
                                 <!-- Lista de tokens cadastrados -->
                                 <div style="font-size:10px;color:var(--adm-text-3);font-weight:600;margin-bottom:6px;">Tokens Cadastrados</div>
                                 <div id="gwTokensList"><div class="admin-empty" style="font-size:11px;">Carregando...</div></div>
@@ -22670,6 +22681,17 @@
                 var pixCodigo = data.pixCode || '';
                 var qrSrc = data.qrBase64 ? 'data:image/png;base64,' + data.qrBase64 : (data.qrUrl || '');
                 window._pixCodigoTab = pixCodigo;
+
+                // Se o gateway não devolveu NEM QR NEM código, não mostra um quadro
+                // vazio: avisa o que houve (antes o aluno via só "válido por 30 min").
+                if (container && !qrSrc && !pixCodigo) {
+                    container.innerHTML =
+                        '<div style="background:rgba(248,113,113,0.06);border:1.5px solid rgba(248,113,113,0.25);border-radius:14px;padding:16px;text-align:center;">' +
+                        '<div style="font-size:13px;font-weight:700;color:#f87171;margin-bottom:6px;">⚠️ Não foi possível gerar o PIX</div>' +
+                        '<div style="font-size:11px;color:var(--text-3);line-height:1.5;">O gateway não retornou o código. Avise o professor para conferir a configuração de pagamento do CT.</div>' +
+                        '</div>';
+                    return;
+                }
 
                 if (container) {
                     container.innerHTML =
@@ -42102,6 +42124,44 @@
                 inp.style.display = c.campo ? '' : 'none';
                 if (lbl) lbl.style.display = c.campo ? '' : 'none';
             }
+        }
+
+        // ── Chave PIX do Asaas (sem sair do CT Manager) ──
+        async function verificarChavePixAsaas() {
+            var el = document.getElementById('asaasPixStatus');
+            if (el) { el.style.color = 'var(--adm-text-3)'; el.textContent = '⏳ Consultando...'; }
+            try {
+                var res = await secureFetch('asaasStatusPix', {});
+                if (!el) return;
+                if (!res || !res.success) {
+                    el.style.color = '#f87171';
+                    el.textContent = '⚠️ ' + ((res && res.message) || 'Não foi possível consultar');
+                    return;
+                }
+                if (res.temChave) {
+                    el.style.color = '#4ade80';
+                    el.textContent = '✅ Chave PIX ativa (' + res.total + ') — QR Code funcionando';
+                } else {
+                    el.style.color = '#E7C868';
+                    el.textContent = '⚠️ Nenhuma chave PIX ativa — o QR Code não será gerado. Clique em "Ativar PIX".';
+                }
+            } catch(e) {
+                if (el) { el.style.color = '#f87171'; el.textContent = '⚠️ Erro: ' + e.message; }
+            }
+        }
+
+        async function ativarChavePixAsaas(btn) {
+            if (!confirm('Criar uma chave PIX aleatória na conta Asaas deste CT?\n\nÉ o que permite gerar o QR Code dentro do app. A chave fica na conta do CT e serve só para receber.')) return;
+            var _txt = btn ? btn.textContent : '';
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Ativando...'; }
+            try {
+                var res = await secureFetch('asaasCriarChavePix', {});
+                alert((res && res.success ? '✅ ' : '❌ ') + ((res && res.message) || 'Sem resposta'));
+                verificarChavePixAsaas();
+            } catch(e) {
+                alert('❌ Erro: ' + e.message);
+            }
+            if (btn) { btn.disabled = false; btn.textContent = _txt || '✅ Ativar PIX nesta conta'; }
         }
 
         async function salvarGatewayToken() {
