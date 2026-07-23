@@ -22314,8 +22314,10 @@
                 h += '<button onclick="removerCartao()" style="width:100%;padding:10px;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.25);color:#f87171;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">🗑 Remover cartão</button>';
             } else if (temGateway) {
                 // Gateway configurado — pode adicionar cartão
-                h += '<div style="font-size:12px;color:var(--text-3);margin-bottom:12px;line-height:1.5;">Cadastre um cartão para ativar o débito automático da mensalidade.</div>';
+                h += '<div style="font-size:12px;color:var(--text-3);margin-bottom:12px;line-height:1.5;">Ative a mensalidade automática para não precisar pagar todo mês manualmente.</div>';
                 h += '<button onclick="abrirModalCartao()" style="width:100%;padding:13px;background:linear-gradient(135deg,#009ee3,#0075bd);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.3px;">💳 Cadastrar cartão</button>';
+                // Mensalidade automática por PIX (gateways que suportam assinatura PIX, ex: Asaas)
+                h += '<button onclick="ativarMensalidadeAutomatica(this)" style="width:100%;margin-top:8px;padding:13px;background:rgba(34,197,94,0.1);border:1.5px solid rgba(34,197,94,0.3);color:#4ade80;border-radius:12px;font-size:13px;font-weight:800;cursor:pointer;">🔄 Ativar mensalidade automática</button>';
             } else {
                 // Sem gateway — orienta sobre Pix
                 h += '<div style="font-size:12px;color:var(--text-3);line-height:1.5;text-align:center;padding:8px 0;">';
@@ -42131,7 +42133,7 @@
             var el = document.getElementById('asaasPixStatus');
             if (el) { el.style.color = 'var(--adm-text-3)'; el.textContent = '⏳ Consultando...'; }
             try {
-                var res = await secureFetch('asaasStatusPix', {});
+                var res = await secureFetch('asaasStatusPix', { email: currentUser.email });
                 if (!el) return;
                 if (!res || !res.success) {
                     el.style.color = '#f87171';
@@ -42150,12 +42152,35 @@
             }
         }
 
+        // ── Mensalidade automática (recorrência) — padrão p/ todos os gateways ──
+        async function ativarMensalidadeAutomatica(btn) {
+            if (!confirm('Ativar a mensalidade automática?\n\nO pagamento passa a ser cobrado sozinho todo mês, no vencimento. Você pode cancelar quando quiser.')) return;
+            var _txt = btn ? btn.textContent : '';
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Ativando...'; }
+            try {
+                var res = await secureFetch('criarAssinaturaAlunoRecorrente', { email: currentUser.email });
+                if (res && res.success) {
+                    var m = '✅ ' + res.message;
+                    if (res.meio)   m += '\n\nForma: ' + res.meio;
+                    if (res.valor)  m += '\nValor: R$ ' + Number(res.valor).toFixed(2).replace('.', ',') + '/mês';
+                    if (res.inicio) m += '\nPrimeira cobrança: ' + res.inicio;
+                    alert(m);
+                    if (typeof carregarMensalidade === 'function') carregarMensalidade();
+                } else {
+                    alert('⚠️ ' + ((res && res.message) || 'Não foi possível ativar'));
+                }
+            } catch(e) {
+                alert('Erro: ' + e.message);
+            }
+            if (btn) { btn.disabled = false; btn.textContent = _txt || '🔄 Ativar mensalidade automática'; }
+        }
+
         async function ativarChavePixAsaas(btn) {
             if (!confirm('Criar uma chave PIX aleatória na conta Asaas deste CT?\n\nÉ o que permite gerar o QR Code dentro do app. A chave fica na conta do CT e serve só para receber.')) return;
             var _txt = btn ? btn.textContent : '';
             if (btn) { btn.disabled = true; btn.textContent = '⏳ Ativando...'; }
             try {
-                var res = await secureFetch('asaasCriarChavePix', {});
+                var res = await secureFetch('asaasCriarChavePix', { email: currentUser.email });
                 alert((res && res.success ? '✅ ' : '❌ ') + ((res && res.message) || 'Sem resposta'));
                 verificarChavePixAsaas();
             } catch(e) {
@@ -44310,7 +44335,20 @@
                     if (data.metodo === 'PIX' && data.pixCode) {
                         msg += '\n\n🟢 QR Code PIX gerado para o aluno.';
                     }
+                    // Se caiu no PIX porque o cartão não pôde ser usado, explica o porquê
+                    if (data.avisoCartao) {
+                        msg += '\n\n💳 Sobre o cartão:\n' + data.avisoCartao;
+                    }
                     alert(msg);
+                    loadPagamentosAdmin();
+                } else if (data.metodo === 'CartaoRecusado') {
+                    // Recusa do cartão: mostra motivo traduzido + o que fazer
+                    var m = '💳 CARTÃO NÃO AUTORIZADO' + (data.cartaoInfo ? ' (' + data.cartaoInfo + ')' : '') + '\n\n' +
+                            'Motivo: ' + (data.motivoCartao || 'não informado') + '\n\n' +
+                            '➡️ O que fazer: ' + (data.acaoCartao || 'Use PIX como alternativa.') +
+                            (data.codigoCartao ? '\n\n(código do gateway: ' + data.codigoCartao + ')' : '');
+                    if (data.gerarPix) m += '\n\n🟢 Gere um PIX para o aluno pagar agora.';
+                    alert(m);
                     loadPagamentosAdmin();
                 } else {
                     alert('⚠️ ' + (data.message || 'Não foi possível cobrar'));
